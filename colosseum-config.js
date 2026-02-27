@@ -16,18 +16,18 @@ window.ColosseumConfig = (() => {
   // ========== STRIPE (Item 14.11.3.4) ==========
   // Human: go to stripe.com → Developers → API Keys
   // Copy your publishable key (starts with pk_)
-  const STRIPE_PUBLISHABLE_KEY = 'PASTE_YOUR_STRIPE_PUBLISHABLE_KEY_HERE';
+  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51T5T9uPuHT2VlOoCgqdUqtvuez0QHuN9dKcFtYOsclcsjSoSHce8ROcw6zzF5JhPeNkiJK8cJ8DCrB8FU9jhEHwk00GAYHTzzi';
 
   // Stripe Price IDs — create products in Stripe Dashboard → Products
   // Then copy each price ID (starts with price_)
   const STRIPE_PRICES = {
-    contender_monthly:  'PASTE_STRIPE_PRICE_ID_CONTENDER_MONTHLY',
-    champion_monthly:   'PASTE_STRIPE_PRICE_ID_CHAMPION_MONTHLY',
-    creator_monthly:    'PASTE_STRIPE_PRICE_ID_CREATOR_MONTHLY',
-    tokens_50:          'PASTE_STRIPE_PRICE_ID_TOKENS_50',
-    tokens_250:         'PASTE_STRIPE_PRICE_ID_TOKENS_250',
-    tokens_600:         'PASTE_STRIPE_PRICE_ID_TOKENS_600',
-    tokens_1800:        'PASTE_STRIPE_PRICE_ID_TOKENS_1800',
+    contender_monthly:  'price_1T5THJPuHT2VlOoCYoDarYU5',
+    champion_monthly:   'price_1T5THwPuHT2VlOoCQ6TQRBlN',
+    creator_monthly:    'price_1T5TIDPuHT2VlOoCyuKuiBmx',
+    tokens_50:          'price_1T5TIoPuHT2VlOoCgsNvdHdl',
+    tokens_250:         'price_1T5TJ9PuHT2VlOoCahIFWQud',
+    tokens_600:         'price_1T5TJXPuHT2VlOoCmk8lPXDF',
+    tokens_1800:        'price_1T5TJxPuHT2VlOoCI55lrhHp',
   };
 
   // Stripe Edge Function URL (deployed to Supabase Functions)
