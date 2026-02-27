@@ -31,7 +31,7 @@ window.ColosseumConfig = (() => {
   };
 
   // Stripe Edge Function URL (deployed to Supabase Functions)
-  const STRIPE_FUNCTION_URL = 'PASTE_YOUR_STRIPE_FUNCTION_URL_HERE';
+  const STRIPE_FUNCTION_URL = 'https://faomczmipsccwbhpivmp.supabase.co/functions/v1/create-checkout-session';
 
   // ========== WEBRTC / SIGNALING (Item 14.11.3.9) ==========
   // Signaling handled by Supabase Realtime channels — no separate server needed.
