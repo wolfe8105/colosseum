@@ -56,7 +56,7 @@ window.ColosseumConfig = (() => {
     name: 'The Colosseum',
     tagline: 'Where opinions fight.',
     version: '2.0.0',
-    baseUrl: 'PASTE_YOUR_DEPLOYED_URL_HERE',  // e.g. https://thecolosseum.app
+    baseUrl: 'https://colosseum-six.vercel.app',
   };
 
   // ========== SUBSCRIPTION TIERS (Items 14.2.3) ==========
