@@ -1,0 +1,36 @@
+{
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "framework": null,
+  "rewrites": [
+    { "source": "/login", "destination": "/colosseum-login.html" },
+    { "source": "/settings", "destination": "/colosseum-settings.html" },
+    { "source": "/terms", "destination": "/colosseum-terms.html" },
+    { "source": "/privacy", "destination": "/colosseum-terms.html#privacy" },
+    { "source": "/profile-depth", "destination": "/colosseum-profile-depth.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "microphone=(self), camera=()" }
+      ]
+    },
+    {
+      "source": "/(.+\\.js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/(.+\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}
