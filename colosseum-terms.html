@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a1628">
+<title>The Colosseum — Terms of Service</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Barlow+Condensed:wght@400;600;700&display=swap');
+
+  :root {
+    --navy: #0a1628;
+    --navy-light: #132240;
+    --navy-mid: #1a2d4a;
+    --red: #c1272d;
+    --gold: #d4a843;
+    --gold-dim: #b8922e;
+    --white: #f0ece2;
+    --white-dim: #a0a8b8;
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Barlow Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: linear-gradient(145deg, #1a2d4a 0%, #2d5a8e 25%, #5b8abf 50%, #7aa3d4 75%, #3d5a80 100%);
+    color: var(--white-dim);
+    line-height: 1.7;
+  }
+
+  .legal-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,17,40,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(212,168,67,0.15);
+    padding: 10px max(12px, env(safe-area-inset-left, 0px));
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .legal-nav .logo {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .legal-nav .logo span { color: var(--red); }
+  .legal-nav .back-link {
+    color: var(--white-dim);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 4px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .legal-nav .back-link:active { color: var(--white); }
+
+  .legal-tabs {
+    display: flex;
+    background: rgba(10,17,40,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .legal-tabs::-webkit-scrollbar { display: none; }
+  .legal-tab {
+    padding: 0 16px;
+    min-height: 44px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--white-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .legal-tab:active { color: var(--white); }
+  @media (hover: hover) { .legal-tab:hover { color: var(--white); } }
+  .legal-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--gold);
+  }
+
+  .legal-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px max(14px, env(safe-area-inset-left, 0px)) 80px;
+  }
+  @media (min-width: 768px) {
+    .legal-container { padding: 32px 20px 80px; }
+  }
+
+  .legal-page { display: none; }
+  .legal-page.active { display: block; }
+
+  .legal-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  @media (min-width: 768px) { .legal-title { font-size: 32px; letter-spacing: 3px; } }
+
+  .legal-updated {
+    font-size: 13px;
+    color: var(--gold);
+    margin-bottom: 32px;
+  }
+
+  .legal-section {
+    margin-bottom: 28px;
+  }
+
+  .legal-section h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--white);
+    margin-bottom: 8px;
+    padding-left: 12px;
+    border-left: 3px solid var(--gold);
+  }
+
+  .legal-section p {
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .legal-section strong {
+    color: var(--white);
+  }
+
+  .legal-section a {
+    color: var(--gold);
+    text-decoration: underline;
+  }
+
+  .legal-footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: var(--white-dim);
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body>
+
+<nav class="legal-nav">
+  <a href="index.html" class="logo">THE <span>COLOSSEUM</span></a>
+  <a href="javascript:history.back()" class="back-link">← Back</a>
+</nav>
+
+<div class="legal-tabs">
+  <button class="legal-tab active" onclick="showTab('tos')">TERMS OF SERVICE</button>
+  <button class="legal-tab" onclick="showTab('privacy')">PRIVACY POLICY</button>
+  <button class="legal-tab" onclick="showTab('community')">COMMUNITY GUIDELINES</button>
+</div>
+
+<div class="legal-container">
+
+  <!-- ==================== TERMS OF SERVICE ==================== -->
+  <div class="legal-page active" id="page-tos">
+    <h1 class="legal-title">TERMS OF SERVICE</h1>
+    <div class="legal-updated">Last updated: February 26, 2026</div>
+
+    <div class="legal-section">
+      <h2>1. ACCEPTANCE OF TERMS</h2>
+      <p>By accessing or using The Colosseum ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+      <p>The Colosseum is a live audio debate and opinion platform operated by <strong>PASTE_COMPANY_LEGAL_NAME_HERE</strong> ("we," "us," "our").</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>2. ELIGIBILITY</h2>
+      <p>You must be at least <strong>13 years old</strong> to create an account. Users under 18 are classified as minors and may have restricted access to certain features.</p>
+      <p>If you are under 18, you represent that your parent or legal guardian has reviewed and agreed to these Terms on your behalf.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>3. ACCOUNTS</h2>
+      <p>You are responsible for maintaining the confidentiality of your login credentials. You agree to notify us immediately of any unauthorized use of your account.</p>
+      <p>You may not create accounts for the purpose of manipulating debates, votes, predictions, or leaderboards. Violations result in permanent suspension.</p>
+      <p>One account per person. Multi-accounting is prohibited.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>4. USER CONTENT</h2>
+      <p>You retain ownership of content you create on the Platform (hot takes, debate arguments, audio recordings). By posting, you grant us a worldwide, non-exclusive, royalty-free license to use, display, distribute, and create derivative works from your content for the purpose of operating and promoting the Platform.</p>
+      <p>You agree not to post content that is illegal, threatening, harassing, defamatory, obscene, or violates the rights of others.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>5. DEBATE RECORDINGS</h2>
+      <p>All debates conducted on the Platform may be recorded, transcribed, and stored. By participating in a debate, you consent to this recording.</p>
+      <p>Recordings may be used for moderation, dispute resolution, platform improvement, and — in aggregated, anonymized form — for data analytics purposes.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>6. SUBSCRIPTIONS & PAYMENTS</h2>
+      <p>Paid subscriptions (Contender, Champion, Creator) are billed monthly or annually via Stripe. You may cancel at any time; cancellation takes effect at the end of the current billing period.</p>
+      <p>Token purchases are non-refundable once used. Unused tokens remain in your account until used or account deletion.</p>
+      <p>We reserve the right to change pricing with 30 days' notice to active subscribers.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>7. PROHIBITED CONDUCT</h2>
+      <p>You agree not to: manipulate Elo ratings or debate outcomes; use bots, scripts, or automated tools; harass, threaten, or doxx other users; impersonate another person; attempt to access other users' accounts; exploit bugs rather than reporting them; use the Platform for illegal activities.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>8. MODERATION & ENFORCEMENT</h2>
+      <p>We reserve the right to moderate content, suspend or terminate accounts, and take any action necessary to maintain platform integrity. Moderation decisions may include warnings, mutes, temporary bans, or permanent bans.</p>
+      <p>Appeals may be submitted via <strong>PASTE_SUPPORT_EMAIL_HERE</strong>.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>9. PREDICTIONS & WAGERING</h2>
+      <p>The Platform may offer prediction features using virtual tokens. These are not real-money gambling. Token predictions are for entertainment purposes only and have no cash value outside the Platform.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>10. INTELLECTUAL PROPERTY</h2>
+      <p>The Colosseum name, logo, design, and underlying technology are owned by us. You may not use our trademarks without prior written consent.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>11. DATA & PRIVACY</h2>
+      <p>Your use of the Platform is also governed by our <a href="#" onclick="showTab('privacy');return false;">Privacy Policy</a>, which describes how we collect, use, and protect your information.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>12. DISCLAIMERS</h2>
+      <p>The Platform is provided "AS IS" without warranties of any kind. We do not guarantee uptime, accuracy of content, or that the Platform will meet your expectations.</p>
+      <p>User-generated content reflects the views of individual users, not of The Colosseum.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>13. LIMITATION OF LIABILITY</h2>
+      <p>To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Platform.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>14. DISPUTE RESOLUTION</h2>
+      <p>Any disputes arising from these Terms shall be resolved through binding arbitration in <strong>PASTE_JURISDICTION_HERE</strong>, except where prohibited by law.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>15. CHANGES TO TERMS</h2>
+      <p>We may update these Terms at any time. Material changes will be communicated via the Platform or email. Continued use after changes constitutes acceptance.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>16. CONTACT</h2>
+      <p>Questions about these Terms? Contact us at <strong>PASTE_SUPPORT_EMAIL_HERE</strong>.</p>
+    </div>
+  </div>
+
+
+  <!-- ==================== PRIVACY POLICY ==================== -->
+  <div class="legal-page" id="page-privacy">
+    <h1 class="legal-title">PRIVACY POLICY</h1>
+    <div class="legal-updated">Last updated: February 26, 2026</div>
+
+    <div class="legal-section">
+      <h2>1. WHAT WE COLLECT</h2>
+      <p><strong>Account data:</strong> email address, username, display name, date of birth, password (hashed).</p>
+      <p><strong>Profile data:</strong> profile depth answers, interests, preferences, avatar settings. You control what you share via the Profile Depth system.</p>
+      <p><strong>Usage data:</strong> debates participated in, votes cast, predictions made, hot takes posted, reactions, time spent, feature usage.</p>
+      <p><strong>Audio data:</strong> debate recordings and transcriptions.</p>
+      <p><strong>Device data:</strong> browser type, operating system, IP address, device identifiers (for security and fraud prevention).</p>
+      <p><strong>Payment data:</strong> processed by Stripe. We do not store full credit card numbers.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>2. HOW WE USE YOUR DATA</h2>
+      <p>To operate the Platform (authentication, matchmaking, scoring, moderation).</p>
+      <p>To improve the experience (recommendations, trending content, bug fixes).</p>
+      <p>To prevent fraud and enforce community guidelines (device fingerprinting, behavioral analysis).</p>
+      <p>To communicate with you (notifications, account updates, marketing with opt-out).</p>
+      <p><strong>Aggregated, anonymized data</strong> may be used for analytics and, in the future, provided to third-party partners for research purposes. Individual user data is never sold.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>3. PROFILE DEPTH DATA</h2>
+      <p>The Profile Depth system collects detailed information across 12 categories in exchange for subscription discounts and cosmetic rewards. This data is stored securely and used to improve your experience and, in aggregated form, to generate anonymized insights.</p>
+      <p>You can delete your Profile Depth answers at any time via Settings → Delete Account.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>4. DATA SHARING</h2>
+      <p>We do not sell individual user data. We may share data with:</p>
+      <p><strong>Service providers:</strong> Supabase (database), Stripe (payments), Vercel (hosting), Deepgram (transcription).</p>
+      <p><strong>Law enforcement:</strong> when required by law or to protect safety.</p>
+      <p><strong>B2B partners (future):</strong> only aggregated, anonymized data — never individual profiles, names, or identifying information.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>5. DATA RETENTION</h2>
+      <p>Account data is retained while your account is active. Upon account deletion, personal data is removed within 30 days. Anonymized, aggregated data may be retained indefinitely.</p>
+      <p>Debate recordings are retained for moderation and analytics purposes. You may request deletion of specific recordings via <strong>PASTE_SUPPORT_EMAIL_HERE</strong>.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>6. YOUR RIGHTS</h2>
+      <p>You may: access your data via your profile and settings; correct inaccurate data; delete your account and associated data; opt out of marketing communications; request a copy of your data.</p>
+      <p>To exercise these rights, contact <strong>PASTE_SUPPORT_EMAIL_HERE</strong> or use the in-app Settings page.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>7. MINORS</h2>
+      <p>Users under 18 are flagged as minors. We do not knowingly collect data from children under 13. If you believe a child under 13 has created an account, contact us immediately.</p>
+      <p>Minor accounts may have restricted data collection and feature access.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>8. SECURITY</h2>
+      <p>We use industry-standard security measures including encryption in transit (TLS), encrypted storage, Row Level Security (RLS) policies, and regular security reviews.</p>
+      <p>No system is 100% secure. We cannot guarantee absolute data security.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>9. COOKIES & TRACKING</h2>
+      <p>We use essential cookies for authentication and session management. We may use analytics tools to understand Platform usage. You can control cookies through your browser settings.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>10. CHANGES</h2>
+      <p>We may update this policy. Material changes will be communicated via email or in-app notification.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>11. CONTACT</h2>
+      <p>Data questions? Contact our data team at <strong>PASTE_PRIVACY_EMAIL_HERE</strong>.</p>
+    </div>
+  </div>
+
+
+  <!-- ==================== COMMUNITY GUIDELINES ==================== -->
+  <div class="legal-page" id="page-community">
+    <h1 class="legal-title">COMMUNITY GUIDELINES</h1>
+    <div class="legal-updated">Last updated: February 26, 2026</div>
+
+    <div class="legal-section">
+      <h2>THE ARENA HAS RULES</h2>
+      <p>The Colosseum is built for strong opinions, heated debate, and real disagreement. That's the point. But there's a line between arguing hard and causing harm. These guidelines define that line.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>1. ATTACK ARGUMENTS, NOT PEOPLE</h2>
+      <p>Go after the take, not the person. "That's a terrible argument because..." is fine. "You're a terrible person because..." is not. Ad hominem attacks, slurs, threats, and personal harassment will result in immediate action.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>2. NO HATE SPEECH</h2>
+      <p>Content that promotes violence, discrimination, or hatred based on race, ethnicity, religion, gender, sexual orientation, disability, or national origin is prohibited. No exceptions.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>3. NO DOXXING</h2>
+      <p>Never share another user's personal information (real name, address, phone number, workplace, school) without their explicit consent. This is a permanent ban offense.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>4. NO MANIPULATION</h2>
+      <p>Don't use multiple accounts, bots, or coordinated groups to manipulate votes, predictions, or debate outcomes. Don't intentionally lose debates to boost another account's Elo.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>5. KEEP IT LEGAL</h2>
+      <p>Don't use the Platform to plan, promote, or facilitate illegal activity. Don't threaten violence. Don't share illegal content.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>6. RESPECT THE MODERATORS</h2>
+      <p>Moderators are community members who volunteer their time. Follow their instructions during debates. If you disagree with a moderation decision, use the appeals process — don't harass the moderator.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>7. ENFORCEMENT</h2>
+      <p><strong>Warning</strong> → <strong>Mute (24h)</strong> → <strong>Temp Ban (7d)</strong> → <strong>Permanent Ban</strong>. Severe violations (threats, doxxing, hate speech) skip directly to temp or permanent ban.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>8. THE SPIRIT</h2>
+      <p>The Colosseum exists because disagreement is valuable. We want the smartest, most passionate arguments — not the loudest or cruelest. Argue like you want to convince, not like you want to destroy. The best gladiators win with skill, not with cheap shots.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="legal-footer">
+  © 2026 The Colosseum · PASTE_COMPANY_LEGAL_NAME_HERE
+</div>
+
+<script>
+function showTab(tab) {
+  document.querySelectorAll('.legal-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.legal-tab').forEach(t => t.classList.remove('active'));
+
+  const page = document.getElementById('page-' + tab);
+  if (page) page.classList.add('active');
+
+  const tabs = document.querySelectorAll('.legal-tab');
+  const tabMap = { tos: 0, privacy: 1, community: 2 };
+  if (tabs[tabMap[tab]]) tabs[tabMap[tab]].classList.add('active');
+
+  window.scrollTo(0, 0);
+}
+
+// Handle hash navigation
+if (window.location.hash === '#privacy') showTab('privacy');
+if (window.location.hash === '#community') showTab('community');
+</script>
+</body>
+</html>
