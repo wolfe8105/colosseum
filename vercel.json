@@ -3,6 +3,7 @@
   "outputDirectory": ".",
   "framework": null,
   "rewrites": [
+    { "source": "/debate", "destination": "/colosseum-debate-landing.html" },
     { "source": "/login", "destination": "/colosseum-login.html" },
     { "source": "/settings", "destination": "/colosseum-settings.html" },
     { "source": "/terms", "destination": "/colosseum-terms.html" },
