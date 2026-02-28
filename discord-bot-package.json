@@ -1,0 +1,15 @@
+{
+  "name": "colosseum-discord-bot",
+  "version": "1.0.0",
+  "description": "⚔️ The Colosseum Discord Bot — /settle to start a debate",
+  "main": "colosseum-discord-bot.js",
+  "scripts": {
+    "start": "node colosseum-discord-bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
