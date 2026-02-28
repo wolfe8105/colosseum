@@ -12,8 +12,8 @@ window.ColosseumAsync = (() => {
   // --- Placeholder Data ---
   const PLACEHOLDER_TAKES = {
     all: [
-      { id: 't1', user: 'GLADIATOR42', elo: 1847, text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.', section: 'trending', reactions: 1247, challenges: 23, time: '2h', userReacted: false },
-      { id: 't2', user: 'GRIDIRONKING', elo: 1280, text: 'Patrick Mahomes is already the greatest QB ever. Stats don\'t lie.', section: 'sports', reactions: 531, challenges: 11, time: '45m', userReacted: false },
+      { id: 't1', user: 'SHARPMIND', elo: 1847, text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.', section: 'trending', reactions: 1247, challenges: 23, time: '2h', userReacted: false },
+      { id: 't2', user: 'BOLDCLAIM', elo: 1280, text: 'Patrick Mahomes is already the greatest QB ever. Stats don\'t lie.', section: 'sports', reactions: 531, challenges: 11, time: '45m', userReacted: false },
       { id: 't3', user: 'SENATEWATCH', elo: 1340, text: 'Term limits would fix 80% of Congress overnight. Change my mind.', section: 'politics', reactions: 312, challenges: 4, time: '12m', userReacted: false },
       { id: 't4', user: 'FILMTAKES', elo: 1190, text: 'Christopher Nolan peaked at The Dark Knight. Everything since is style over substance.', section: 'entertainment', reactions: 402, challenges: 8, time: '15m', userReacted: false },
       { id: 't5', user: 'TECHBRO_NO', elo: 1590, text: 'Every generation thinks they\'re living through the apocalypse. AI doomerism is no different.', section: 'trending', reactions: 894, challenges: 17, time: '3h', userReacted: false },

@@ -41,7 +41,7 @@ window.ColosseumNotifications = (() => {
       { id: '2', type: 'reaction', title: '🔥 Your hot take is on fire', body: '247 reactions on "NBA play-in is the best thing..."', time: '15m ago', read: false },
       { id: '3', type: 'result', title: 'Debate result: YOU WON', body: 'vs FACTCHECKER — ELO +18 (now 1,218)', time: '1h ago', read: false },
       { id: '4', type: 'follow', title: 'SHARPSHOOTER followed you', body: 'ELO 1,654 — 42 wins', time: '2h ago', read: true },
-      { id: '5', type: 'system', title: 'Welcome to The Colosseum', body: 'Post a hot take, watch a debate, or jump in the arena.', time: '1d ago', read: true },
+      { id: '5', type: 'system', title: 'Welcome to The Colosseum', body: 'Post a hot take, watch a debate, or start one.', time: '1d ago', read: true },
     ];
   }
 

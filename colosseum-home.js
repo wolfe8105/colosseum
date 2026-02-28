@@ -1,7 +1,7 @@
 // ============================================================
 // COLOSSEUM HOME — Section/Banner Layout Engine (Mobile-First)
 // Items: 14.6.2, 3.16, 3.17, 8.1-8.5
-// Fox News chyron energy + ESPN stat cards + gladiator gold
+// Fox News chyron energy + ESPN stat cards + gold accents
 // Themed sections with progressive disclosure
 // ============================================================
 
@@ -15,7 +15,7 @@ const ColosseumHome = (() => {
   ];
 
   const PLACEHOLDER_LIVE = [
-    { debater1: 'GLADIATOR42', elo1: 1847, debater2: 'IRONMIND', elo2: 1792, topic: '"Is college still worth it in 2026?"', section: 'politics', spectators: 127, round: 3, totalRounds: 5, timeLeft: '1:14' },
+    { debater1: 'SHARPMIND', elo1: 1847, debater2: 'QUICKTHINKER', elo2: 1792, topic: '"Is college still worth it in 2026?"', section: 'politics', spectators: 127, round: 3, totalRounds: 5, timeLeft: '1:14' },
     { debater1: 'SHARPSHOOTER', elo1: 1654, debater2: 'HOOPSDREAMS', elo2: 1601, topic: '"LeBron is NOT the GOAT"', section: 'sports', spectators: 89, round: 1, totalRounds: 5, timeLeft: '1:48' }
   ];
 
@@ -32,14 +32,14 @@ const ColosseumHome = (() => {
     ],
     sports: [
       { user: 'HOOPHEAD', elo: 1420, text: 'The NBA play-in tournament is the best thing the league has done in 20 years.', reactions: 247, challenges: 6, time: '8m' },
-      { user: 'GRIDIRONKING', elo: 1280, text: 'Patrick Mahomes is already the greatest QB ever. Stats don\'t lie.', reactions: 531, challenges: 11, time: '45m' },
+      { user: 'BOLDCLAIM', elo: 1280, text: 'Patrick Mahomes is already the greatest QB ever. Stats don\'t lie.', reactions: 531, challenges: 11, time: '45m' },
     ],
     entertainment: [
       { user: 'FILMTAKES', elo: 1190, text: 'Christopher Nolan peaked at The Dark Knight. Everything since is style over substance.', reactions: 402, challenges: 8, time: '15m' },
       { user: 'BEATDROP', elo: 1355, text: 'Drake vs Kendrick settled it: the better artist doesn\'t always win the battle.', reactions: 678, challenges: 14, time: '1h' },
     ],
     trending: [
-      { user: 'GLADIATOR42', elo: 1847, text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.', reactions: 1247, challenges: 23, time: '2h' },
+      { user: 'SHARPMIND', elo: 1847, text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.', reactions: 1247, challenges: 23, time: '2h' },
       { user: 'TECHBRO_NO', elo: 1590, text: 'Every generation thinks they\'re living through the apocalypse. AI doomerism is no different.', reactions: 894, challenges: 17, time: '3h' },
     ]
   };

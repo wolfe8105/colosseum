@@ -12,13 +12,13 @@ window.ColosseumShare = (() => {
   // --- Share Debate Result (Item 14.5.3.1) ---
   function shareResult({ debateId, topic, winner, winnerElo, loser, loserElo, spectators }) {
     const url = `${_getBaseUrl()}/debate/${debateId || 'demo'}`;
-    const text = `⚔️ ${winner} (${winnerElo}) defeated ${loser} (${loserElo})\n"${topic}"\n👁 ${spectators} watched\n\n${url}`;
+    const text = `🏆 ${winner} (${winnerElo}) won vs ${loser} (${loserElo})\n"${topic}"\n👁 ${spectators} watched\n\n${url}`;
     _share({ title: 'Debate Result — The Colosseum', text, url });
   }
 
   // --- Share Profile (Item 14.5.3.2) ---
   function shareProfile({ userId, username, displayName, elo, wins, losses, streak }) {
-    const url = `${_getBaseUrl()}/u/${username || userId || 'gladiator'}`;
+    const url = `${_getBaseUrl()}/u/${username || userId || 'debater'}`;
     const text = `🏟️ ${displayName || username} on The Colosseum\nELO: ${elo} | W: ${wins} | L: ${losses} | Streak: ${streak}\n\n${url}`;
     _share({ title: `${displayName || username} — The Colosseum`, text, url });
   }
@@ -35,7 +35,7 @@ window.ColosseumShare = (() => {
   // --- Challenge Link (Item 14.5.3.5) ---
   function challengeLink({ topic, section }) {
     const userId = ColosseumAuth?.currentUser?.id || 'demo';
-    const username = ColosseumAuth?.currentProfile?.username || 'gladiator';
+    const username = ColosseumAuth?.currentProfile?.username || 'debater';
     const url = `${_getBaseUrl()}/challenge?from=${username}&topic=${encodeURIComponent(topic || '')}&section=${section || 'trending'}`;
     const text = `⚔️ ${username.toUpperCase()} challenges you to a debate!\n"${topic}"\n\nAccept: ${url}`;
     _share({ title: 'Challenge — The Colosseum', text, url });
@@ -70,7 +70,7 @@ window.ColosseumShare = (() => {
       ">
         <div style="font-size:48px;margin-bottom:8px;">${won ? '🏆' : '⚔️'}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:${won ? '#d4a843' : '#f0f0f0'};">
-          ${won ? 'VICTORY' : 'GOOD FIGHT'}
+          ${won ? 'YOU WON' : 'GOOD DEBATE'}
         </div>
         <div style="color:#a0a8b8;font-size:14px;margin:8px 0 20px;">
           ${won ? 'Share your win with the world.' : 'Challenge them to a rematch?'}

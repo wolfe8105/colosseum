@@ -10,14 +10,14 @@ window.ColosseumLeaderboard = (() => {
   let currentTime = 'all';
 
   const PLACEHOLDER_DATA = [
-    { rank: 1, user: 'GLADIATOR42', elo: 1847, wins: 142, losses: 38, streak: 12, level: 24, tier: 'champion' },
+    { rank: 1, user: 'SHARPMIND', elo: 1847, wins: 142, losses: 38, streak: 12, level: 24, tier: 'champion' },
     { rank: 2, user: 'SHARPSHOOTER', elo: 1792, wins: 128, losses: 45, streak: 5, level: 22, tier: 'creator' },
-    { rank: 3, user: 'IRONMIND', elo: 1754, wins: 115, losses: 41, streak: 8, level: 20, tier: 'champion' },
+    { rank: 3, user: 'QUICKTHINKER', elo: 1754, wins: 115, losses: 41, streak: 8, level: 20, tier: 'champion' },
     { rank: 4, user: 'TECHBRO_NO', elo: 1690, wins: 98, losses: 52, streak: 3, level: 18, tier: 'contender' },
     { rank: 5, user: 'FACTCHECKER', elo: 1654, wins: 91, losses: 55, streak: 2, level: 17, tier: 'contender' },
     { rank: 6, user: 'HOOPHEAD', elo: 1620, wins: 87, losses: 60, streak: 4, level: 16, tier: 'free' },
     { rank: 7, user: 'POLICYwonk', elo: 1590, wins: 83, losses: 58, streak: 1, level: 15, tier: 'contender' },
-    { rank: 8, user: 'GRIDIRONKING', elo: 1545, wins: 76, losses: 64, streak: 6, level: 14, tier: 'free' },
+    { rank: 8, user: 'BOLDCLAIM', elo: 1545, wins: 76, losses: 64, streak: 6, level: 14, tier: 'free' },
     { rank: 9, user: 'FILMTAKES', elo: 1510, wins: 71, losses: 61, streak: 0, level: 13, tier: 'free' },
     { rank: 10, user: 'BEATDROP', elo: 1488, wins: 67, losses: 63, streak: 2, level: 12, tier: 'free' },
   ];
@@ -37,7 +37,7 @@ window.ColosseumLeaderboard = (() => {
         <!-- Section Banner -->
         <div style="text-align:center;padding:16px 0 12px;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#d4a843;">🏆 RANKINGS</div>
-          <div style="color:#a0a8b8;font-size:13px;">The arena respects only the numbers.</div>
+          <div style="color:#a0a8b8;font-size:13px;">The numbers speak for themselves.</div>
         </div>
 
         <!-- My Rank Card -->

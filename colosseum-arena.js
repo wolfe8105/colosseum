@@ -47,9 +47,9 @@ const ColosseumArena = (() => {
     return `
       <div class="arena-lobby">
         <div class="arena-hero">
-          <div class="arena-hero-icon">⚔️</div>
-          <h2 class="arena-hero-title">ENTER THE ARENA</h2>
-          <p class="arena-hero-sub">Pick a topic. Find an opponent. Defend your take.</p>
+          <div class="arena-hero-icon">🎙️</div>
+          <h2 class="arena-hero-title">START A DEBATE</h2>
+          <p class="arena-hero-sub">Pick a topic. Get matched. Make your case.</p>
         </div>
 
         <!-- Quick Match -->
@@ -197,7 +197,7 @@ const ColosseumArena = (() => {
     return `
       <div class="arena-matchmaking">
         <div class="arena-mm-spinner"></div>
-        <h2 class="arena-mm-title">SEARCHING FOR OPPONENT</h2>
+        <h2 class="arena-mm-title">FINDING YOUR MATCH</h2>
         <p class="arena-mm-sub">Matching by topic and skill level...</p>
         <div class="arena-mm-wait">
           <span class="arena-mm-wait-label">Estimated wait:</span>
@@ -273,13 +273,13 @@ const ColosseumArena = (() => {
         <div class="arena-pre-badge">MATCH FOUND</div>
         <div class="arena-pre-matchup">
           <div class="arena-pre-debater">
-            <div class="arena-pre-avatar you">⚔️</div>
+            <div class="arena-pre-avatar you">🔵</div>
             <div class="arena-pre-name">${data.debater_a.name}</div>
             <div class="arena-pre-elo">${data.debater_a.elo} ELO</div>
           </div>
           <div class="arena-pre-vs">VS</div>
           <div class="arena-pre-debater">
-            <div class="arena-pre-avatar opp">🛡️</div>
+            <div class="arena-pre-avatar opp">🔴</div>
             <div class="arena-pre-name">${data.debater_b.name}</div>
             <div class="arena-pre-elo">${data.debater_b.elo} ELO</div>
           </div>
@@ -330,7 +330,7 @@ const ColosseumArena = (() => {
         <div class="arena-live-debaters">
           <div class="arena-live-debater" id="arena-debater-a">
             <div class="arena-live-avatar ${data.role === 'a' ? 'you' : ''}">
-              ${data.role === 'a' ? '⚔️' : '🛡️'}
+              ${data.role === 'a' ? '🔵' : '🔴'}
             </div>
             <div class="arena-live-name">${data.debater_a.name}</div>
             <div class="arena-live-elo">${data.debater_a.elo}</div>
@@ -344,7 +344,7 @@ const ColosseumArena = (() => {
 
           <div class="arena-live-debater" id="arena-debater-b">
             <div class="arena-live-avatar ${data.role === 'b' ? 'you' : ''}">
-              ${data.role === 'b' ? '⚔️' : '🛡️'}
+              ${data.role === 'b' ? '🔵' : '🔴'}
             </div>
             <div class="arena-live-name">${data.debater_b.name}</div>
             <div class="arena-live-elo">${data.debater_b.elo}</div>
@@ -489,14 +489,14 @@ const ColosseumArena = (() => {
 
         <div class="arena-live-debaters">
           <div class="arena-live-debater">
-            <div class="arena-live-avatar">⚔️</div>
+            <div class="arena-live-avatar">🔵</div>
             <div class="arena-live-name">${data.debater_a.name}</div>
             <div class="arena-live-elo">${data.debater_a.elo}</div>
             <canvas class="arena-waveform" id="spec-waveform-a" width="120" height="40"></canvas>
           </div>
           <div class="arena-live-vs-center"><span class="arena-live-vs">VS</span></div>
           <div class="arena-live-debater">
-            <div class="arena-live-avatar">🛡️</div>
+            <div class="arena-live-avatar">🔴</div>
             <div class="arena-live-name">${data.debater_b.name}</div>
             <div class="arena-live-elo">${data.debater_b.elo}</div>
             <canvas class="arena-waveform" id="spec-waveform-b" width="120" height="40"></canvas>
@@ -603,7 +603,7 @@ const ColosseumArena = (() => {
 
         <div class="arena-voting-matchup">
           <button class="arena-vote-btn" id="vote-for-a" ${votesCast ? 'disabled' : ''}>
-            <div class="arena-vote-avatar">⚔️</div>
+            <div class="arena-vote-avatar">🔵</div>
             <div class="arena-vote-name">${data.debater_a.name}</div>
             <div class="arena-vote-elo">${data.debater_a.elo}</div>
           </button>
@@ -611,7 +611,7 @@ const ColosseumArena = (() => {
           <div class="arena-voting-or">WHO WON?</div>
 
           <button class="arena-vote-btn" id="vote-for-b" ${votesCast ? 'disabled' : ''}>
-            <div class="arena-vote-avatar">🛡️</div>
+            <div class="arena-vote-avatar">🔴</div>
             <div class="arena-vote-name">${data.debater_b.name}</div>
             <div class="arena-vote-elo">${data.debater_b.elo}</div>
           </button>
@@ -689,7 +689,7 @@ const ColosseumArena = (() => {
 
         <div class="arena-results-matchup">
           <div class="arena-results-debater ${isWinnerA ? 'winner' : ''}">
-            <div class="arena-results-avatar">⚔️</div>
+            <div class="arena-results-avatar">🔵</div>
             <div class="arena-results-name">${data.debater_a.name}</div>
             <div class="arena-results-votes">${data.votes_a} votes</div>
             <div class="arena-results-elo ${data.elo_change_a >= 0 ? 'up' : 'down'}">
@@ -700,7 +700,7 @@ const ColosseumArena = (() => {
           <div class="arena-results-vs">VS</div>
 
           <div class="arena-results-debater ${!isWinnerA && data.winner !== 'draw' ? 'winner' : ''}">
-            <div class="arena-results-avatar">🛡️</div>
+            <div class="arena-results-avatar">🔴</div>
             <div class="arena-results-name">${data.debater_b.name}</div>
             <div class="arena-results-votes">${data.votes_b} votes</div>
             <div class="arena-results-elo ${data.elo_change_b >= 0 ? 'up' : 'down'}">

@@ -9,7 +9,7 @@ window.ColosseumPaywall = (() => {
 
   const VARIANTS = {
     general: {
-      title: 'UNLOCK THE FULL ARENA',
+      title: 'UNLOCK EVERYTHING',
       subtitle: 'Go ad-free, get more tokens, and access premium features.',
       cta: 'SEE PLANS',
       icon: '⚔️',
