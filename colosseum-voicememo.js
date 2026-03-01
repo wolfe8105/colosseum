@@ -4,6 +4,9 @@
 // Record take → opponent records reply → async voice debate
 // Uses MediaRecorder API, Supabase Storage, placeholder fallback
 // Mobile-first: bottom sheet recorder, waveform, playback
+//
+// SESSION 17: Migrated hot_takes.insert → rpc('create_voice_take')
+// Storage calls (.from('debate-audio')) are fine — separate permissions
 // ============================================================
 
 window.ColosseumVoiceMemo = (() => {
@@ -637,18 +640,18 @@ window.ColosseumVoiceMemo = (() => {
       context.debateId || null
     );
 
-    // Create async voice take entry
+    // Create async voice take entry via RPC (SESSION 17: migrated)
     if (!isPlaceholder()) {
       const supabase = getSupabase();
-      await supabase.from('hot_takes').insert({
-        user_id: currentUserId(),
-        text: '🎤 Voice Take',
-        section: context.section || 'trending',
-        voice_memo_url: url,
-        voice_memo_path: path,
-        voice_memo_duration: pendingRecording.duration,
-        parent_id: context.parentTakeId || null,
+      const { data, error } = await supabase.rpc('create_voice_take', {
+        p_section: context.section || 'trending',
+        p_voice_memo_url: url,
+        p_voice_memo_path: path,
+        p_voice_memo_duration: pendingRecording.duration,
+        p_parent_id: context.parentTakeId || null,
+        p_content: '🎤 Voice Take',
       });
+      if (error) console.error('create_voice_take error:', error);
     }
 
     pendingRecording = null;
