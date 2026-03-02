@@ -1,6 +1,6 @@
 # THE COLOSSEUM — OLD TESTAMENT
 ### The Reference Vault — Read When Relevant
-### Last Updated: Session 23 (March 2, 2026)
+### Last Updated: Session 24 (March 2, 2026)
 
 > **Read the New Testament every session.** This file contains historical build logs, detailed inventories, revenue models, and reference material. Pull specific sections only when the session's work touches those areas.
 
@@ -8,15 +8,16 @@
 
 # TABLE OF CONTENTS
 
-1. Session Build Logs (complete history, Sessions 1-23)
+1. Session Build Logs (complete history, Sessions 1-24)
 2. Revenue Model
 3. B2B Data Play
 4. Education (separate product)
 5. Honest Assessment
 6. Research Foundations
-7. Complete Inventory (502 items)
+7. Complete Inventory (502+ items)
 8. User Acquisition & Growth Strategy
 9. Design Documents & Supporting Files
+10. Debugging Lessons
 
 ---
 
@@ -145,6 +146,18 @@
 1.23.8. ✅ colosseum-config.js version bumped to 2.1.0. Feature flags: followsUI, predictionsUI, rivals.
 1.23.9. Files touched: colosseum-auth.js, colosseum-async.js, colosseum-config.js, index.html (all REBUILT). 2 new SQL files created.
 
+## 1.24. Session 24 (Mar 2) — Arena Full Build (Known Bug Fix + 4-Mode Debate System)
+1.24.1. ✅ **Known bug identified and fixed** — `colosseum-arena.js` was referenced in index.html `<script>` tag but file did not exist in repo (404 on every page load). The big red 🎙️ center nav button led to a completely blank screen. Bible incorrectly marked it ✅.
+1.24.2. ✅ **colosseum-arena.js BUILT** — 1,324 lines. Full arena module with CSS injection, 5 views (lobby, mode select, queue, debate room, post-debate), 4 debate modes (Live Audio, Voice Memo, Text Battle, AI Sparring). Integrates with ColosseumWebRTC (live audio, waveform, mute), ColosseumVoiceMemo (record/retake/send), ColosseumShare (post-debate sharing). Auto-populates lobby with Leg 3 auto-debates. Queue timeout offers graceful alternatives. AI sparring uses canned templates (TODO: Groq Edge Function).
+1.24.3. ✅ **colosseum-arena-schema.sql CREATED** — 380 lines. 11th SQL file. 4 new tables: `debate_queue`, `arena_debates`, `debate_messages`, `arena_votes`. RLS on all. 10 SECURITY DEFINER RPCs: join_debate_queue, leave_debate_queue, check_queue_status, create_ai_debate, submit_debate_message, get_debate_messages, update_arena_debate, vote_arena_debate, get_arena_feed, expire_stale_queue.
+1.24.4. ✅ **SQL pasted into Supabase** — first attempt failed (UNION ALL syntax error). Fixed by wrapping each SELECT branch in parentheses + explicit `::text` casts. Second paste succeeded.
+1.24.5. ✅ **Supabase table inventory confirmed** — 29 tables/views live (see New Testament 7.3).
+1.24.6. ✅ **Session 23 SQL confirmed pasted** — `rivals` table exists in Supabase, confirming Session 23 migration was applied.
+1.24.7. ✅ colosseum-config.js version bumped to 2.2.0. Feature flag added: arena.
+1.24.8. ✅ Both testaments updated with Session 24 content.
+1.24.9. Files created: colosseum-arena.js, colosseum-arena-schema.sql. Files updated: colosseum-config.js, both testaments.
+1.24.10. **SQL LESSON:** PostgreSQL does not allow `ORDER BY` or `LIMIT` inside individual branches of a `UNION ALL` unless each SELECT is wrapped in parentheses. Also: string literals in UNION need explicit type casts (`'arena'::text`) to match column types across branches.
+
 ---
 
 # 2. REVENUE MODEL
@@ -224,7 +237,7 @@
 
 ---
 
-# 5. HONEST ASSESSMENT (Updated Session 22)
+# 5. HONEST ASSESSMENT (Updated Session 24)
 
 5.1. Financial projections were fantasy math ($22M Year 1 with no users) — deleted and replaced with bot-driven model
 5.2. Phase 1 marked COMPLETE but Stripe wasn't connected — fixed Session 10
@@ -236,6 +249,7 @@
 5.8. **Session 19:** Bot army code complete. Actual costs $6-16/mo vs $100 estimate. Gap between "built" and "deployed" = one 60-90 minute setup session.
 5.9. **Session 22:** Infrastructure is real — 32+ files, 20+ tables, 22 functions, Stripe wired, auth working, security hardened, hot takes feed live. But user count is still 1.
 5.10. **Session 23:** Social features now exist — follows, user profile modals, predictions, hated rivals. "Single-player pretending to be multiplayer" partially addressed. Still no real users to test with. Repo fully synced for the first time.
+5.11. **Session 24:** The red button works. Arena is built — lobby, matchmaking, 4 debate modes, post-debate flow, 29 tables live, 30+ RPC functions. The app is now feature-complete enough that a stranger landing from a bot link could: browse auto-debates, post a hot take, enter the arena, spar with AI, see a verdict. But user count is still 1. The bot army remains undeployed. Every session adds features; no session has added users.
 
 ---
 
@@ -267,7 +281,7 @@
 
 ---
 
-# 7. COMPLETE INVENTORY (502 Items)
+# 7. COMPLETE INVENTORY (502+ Items)
 
 ## 7.1. Core Features (Items 1-100)
 
@@ -361,7 +375,7 @@
 7.1.71. User dropdown menu
 7.1.72. Loading screen with spinner
 7.1.73. Payment success/cancel toasts
-7.1.74. Arena placeholder screen
+7.1.74. Arena screen (fully built Session 24)
 
 ### Settings
 7.1.75. All toggle switches
@@ -477,9 +491,74 @@
 ### Auth Fix
 7.4.210. readyPromise pattern — replaces 800ms setTimeout
 
-## 7.5. Remaining Items (211-502+)
+## 7.5. Session 24 Items (211-250)
 
-The full inventory covers: Couples Court, real-dollar tipping, tournament mode, premium rooms, PPV events, browser extension, embeddable widget, AI sparring partner, short-form video clips, community captains, and all planned features across the 12-month roadmap. These items are tracked in session notes and will be detailed when implementation begins.
+### Arena Lobby
+7.5.211. Hero CTA with pulsing "ENTER THE ARENA" button
+7.5.212. Live debates feed section (from arena_debates)
+7.5.213. Auto-debates from Leg 3 as spectatable lobby content
+7.5.214. "Disagree with someone?" challenge CTA → navigates to home carousel
+7.5.215. Recent verdicts feed section
+7.5.216. Placeholder cards when Supabase empty (never a dead screen)
+7.5.217. get_arena_feed() RPC — combines arena_debates + auto_debates
+
+### Arena Mode Select
+7.5.218. Bottom-sheet overlay with 4 mode cards
+7.5.219. Live Audio mode card (🎙️, red accent, "Opponent needed")
+7.5.220. Voice Memo mode card (🎤, gold accent, "Async — anytime")
+7.5.221. Text Battle mode card (⌨️, blue accent, "Async — anytime")
+7.5.222. AI Sparring mode card (🤖, green accent, "✅ Always ready")
+7.5.223. Optional topic input field (200 char max)
+7.5.224. Cancel button to dismiss
+
+### Arena Matchmaking Queue
+7.5.225. join_debate_queue() RPC — FIFO, ±400 ELO range, instant match if opponent waiting
+7.5.226. leave_debate_queue() RPC — clears waiting entry
+7.5.227. check_queue_status() RPC — polls for match (called every 2s)
+7.5.228. Elapsed timer display
+7.5.229. ELO display
+7.5.230. Cancel button
+7.5.231. Timeout handling: live=90s, async=10s, ai=instant
+7.5.232. Graceful timeout: offers AI sparring / retry / back to lobby
+7.5.233. expire_stale_queue() RPC — clears entries older than 5 min
+7.5.234. Unique constraint: one waiting entry per user
+
+### Arena Debate Room
+7.5.235. VS banner with avatars, names, ELO for both sides
+7.5.236. Round counter display
+7.5.237. Spectator count display
+7.5.238. Message feed (scrollable, auto-scroll to bottom)
+7.5.239. System messages (round transitions, timeouts)
+7.5.240. Side A/B message bubbles with labels and round numbers
+7.5.241. Text input with char counter (2000 max), enter-to-send
+7.5.242. Live Audio: waveform canvas, mute/unmute button, status text. Wires into ColosseumWebRTC.
+7.5.243. Voice Memo: record/stop button with pulse animation, timer, retake/send buttons. Wires into ColosseumVoiceMemo.
+7.5.244. AI Sparring: typing indicator (3 dots animation), canned response templates (opening/rebuttal/closing), 1-3s simulated delay
+7.5.245. Round advancement logic (auto-advance after both sides submit)
+7.5.246. Live mode: 120s round timer with warning animation at 15s
+
+### Arena Post-Debate
+7.5.247. Victory/defeat screen (🏆 or 💀)
+7.5.248. Score display for both sides
+7.5.249. Rematch button (re-enters queue with same mode + topic)
+7.5.250. Share button (ColosseumShare or Web Share API fallback)
+7.5.251. Back to lobby button
+
+### Arena Database
+7.5.252. debate_queue table (matchmaking, unique constraint, ELO-based matching)
+7.5.253. arena_debates table (4 modes, status flow: pending→live→voting→complete)
+7.5.254. debate_messages table (text/voice rounds, AI flag)
+7.5.255. arena_votes table (spectator voting, unique per user per debate)
+7.5.256. RLS policies on all 4 tables
+7.5.257. create_ai_debate() RPC — instant, no queue
+7.5.258. submit_debate_message() RPC — validates participant
+7.5.259. get_debate_messages() RPC — returns ordered JSON
+7.5.260. update_arena_debate() RPC — status/score/winner updates
+7.5.261. vote_arena_debate() RPC — upsert + cached count update
+
+## 7.6. Remaining Items (262-502+)
+
+The full inventory covers: Couples Court, real-dollar tipping, tournament mode, premium rooms, PPV events, browser extension, embeddable widget, AI sparring with real AI (Groq), short-form video clips, community captains, and all planned features across the 12-month roadmap. These items are tracked in session notes and will be detailed when implementation begins.
 
 ---
 
@@ -590,6 +669,8 @@ The full inventory covers: Couples Court, real-dollar tipping, tournament mode, 
 10.4. **Pattern to Avoid:** Building plausible theories before testing each step. The wrong handoff proposed fixes (DOMContentLoaded wrapper, hardcoding keys) that would have masked the real problem.
 
 10.5. **Auth Race Condition — The Real Fix (Session 23):** The 800ms setTimeout was a band-aid from Session 10. Real fix: `readyPromise` that resolves only when `_checkSession()` actually completes (or placeholder mode activates). Consumer code uses `await ColosseumAuth.ready`. **Pattern: when waiting for async state, use a Promise that resolves on the actual event — never an arbitrary timeout.**
+
+10.6. **PostgreSQL UNION ALL Syntax (Session 24):** `ORDER BY` and `LIMIT` inside individual branches of a `UNION ALL` require wrapping each SELECT in parentheses. Also: string literals used in UNION need explicit type casts (e.g. `'arena'::text`) so column types match across branches. Without this, Supabase SQL Editor gives a cryptic `syntax error at or near "UNION"` message pointing at the UNION keyword, not the actual problem.
 
 ---
 
