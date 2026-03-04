@@ -333,19 +333,29 @@ SESSIONS: Built Session 26
 
 ---
 
-## LM-022: navigator.locks kill — Object.defineProperty in auth.js
+## LM-022: navigator.locks — mock must load BEFORE Supabase CDN
 ```
-DECISION: auth.js kills navigator.locks before Supabase initializes (NT, LM-020)
-  Object.defineProperty(navigator, 'locks', { value: undefined })
-PROTECTS: Prevents orphaned navigator locks from hanging every .rpc() call
-BITES YOU WHEN: You rebuild or replace auth.js and forget to include this block.
-  Every single .rpc() call will hang indefinitely after the first.
-SYMPTOM: App loads, login works, but all data fetches (hot takes, arena feed, etc.)
-  show spinners forever. No console errors — they just never resolve.
-FIX: The Object.defineProperty block must always be present in auth.js init(),
-  immediately before window.supabase.createClient() is called.
+DECISION: colosseum-locks-fix.js mocks navigator.locks with instant-resolve functions.
+  This file loads as the FIRST script tag, before the Supabase CDN.
+PROTECTS: Prevents orphaned navigator locks from hanging getSession(), signOut(),
+  token refresh, and every .rpc() call.
+BITES YOU WHEN:
+  - You remove colosseum-locks-fix.js from any HTML page's script tags
+  - You move it AFTER the Supabase CDN script tag
+  - You try to put the mock inside auth.js init() — TOO LATE, CDN already captured locks
+  - You set locks to undefined (Session 27 approach) — breaks Supabase fallback path,
+    signOut hangs, session refresh fails silently
+SYMPTOM: "getSession timed out after 3s — continuing as guest" in console.
+  Logout button does nothing. Session lost on tab close/reopen. Tier shows 'free'.
+FIX: colosseum-locks-fix.js must be <script src> BEFORE Supabase CDN on ALL pages.
+  Currently: index.html, colosseum-login.html, colosseum-plinko.html,
+  colosseum-auto-debate.html, colosseum-profile-depth.html, colosseum-settings.html
+HISTORY:
+  Session 26: Found orphaned locks hanging getSession. Added 3s timeout (band-aid).
+  Session 27: Killed locks with value: undefined in auth.js init(). Deployed untested.
+  Session 30: value: undefined broke signOut + session persistence. Tried mock in init()
+    — still too late, CDN captures locks at parse time. Final fix: separate file.
 TRADE-OFF: No cross-tab session sync. Acceptable because app is mobile-first.
-SESSIONS: Fixed Session 27, verified working Session 29
 ```
 
 ---
@@ -779,16 +789,21 @@ FIX: When building any new feature, add its flag to colosseum-config.js AND
 
 ---
 
-## LM-051: Supabase CDN must load before auth.js init
+## LM-051: Script load order — locks-fix → Supabase CDN → config → auth
 ```
-DECISION: auth.js checks window.supabase?.createClient before proceeding.
-  If CDN hasn't loaded, falls into placeholder mode.
-PROTECTS: Graceful degradation if CDN is slow
-BITES YOU WHEN: You move the Supabase CDN script tag to bottom of body, or defer it.
-  auth.js inits first, finds no window.supabase, enters placeholder mode.
-SYMPTOM: App runs entirely in placeholder mode. Looks normal. No Supabase calls.
-FIX: Supabase CDN script tag must be in <head> with no async/defer, before any
-  module scripts. Never move it.
+DECISION: Script tags in <head> must be in this exact order:
+  1. colosseum-locks-fix.js (mocks navigator.locks)
+  2. Supabase CDN (captures locks at parse time — must see the mock)
+  3. colosseum-config.js
+  4. colosseum-auth.js
+PROTECTS: Graceful auth initialization, no orphaned locks
+BITES YOU WHEN: You reorder scripts, add async/defer, or forget locks-fix.js.
+  - locks-fix after CDN = locks mock is useless, getSession hangs
+  - CDN after auth = placeholder mode, no Supabase calls
+  - config after auth = auth can't find credentials
+SYMPTOM: Various — guest mode, placeholder mode, hanging RPCs, or all three.
+FIX: Maintain the 4-file order. Never defer or async any of them.
+SESSIONS: LM-022 explains the locks history. Updated Session 30.
 ```
 
 ---
