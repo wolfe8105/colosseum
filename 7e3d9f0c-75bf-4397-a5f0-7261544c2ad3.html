@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Is LeBron the GOAT? — Michael Jordan wins | The Colosseum</title>
+<meta name="description" content="AI judged LeBron James vs Michael Jordan. Michael Jordan wins 27-29. Do you agree? Vote now.">
+<meta property="og:title" content="Is LeBron the GOAT? — Michael Jordan wins | The Colosseum">
+<meta property="og:description" content="AI judged LeBron James vs Michael Jordan. Michael Jordan wins 27-29. Do you agree? Vote now.">
+<meta property="og:image" content="https://colosseum.pages.dev/og-card-default.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://colosseum.pages.dev">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Is LeBron the GOAT? — Michael Jordan wins | The Colosseum">
+<meta name="twitter:description" content="AI judged LeBron James vs Michael Jordan. Michael Jordan wins 27-29. Do you agree? Vote now.">
+<meta name="twitter:image" content="https://colosseum.pages.dev/og-card-default.png">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Barlow+Condensed:wght@400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Barlow Condensed',sans-serif;
+    background:linear-gradient(135deg,#1a2d4a 0%,#2d5a8e 25%,#5b8abf 50%,#7aa3d4 75%,#3d5a80 100%);
+    background-attachment:fixed;
+    color:#fff;min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:#d4a843;text-decoration:none}
+  a:hover{text-decoration:underline}
+  .container{max-width:640px;margin:0 auto;padding:16px}
+  .site-header{text-align:center;padding:32px 16px 24px}
+  .site-title{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#d4a843;letter-spacing:2px;text-transform:uppercase}
+  .site-subtitle{font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px}
+  .card{
+    background:rgba(10,17,40,0.6);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(212,168,67,0.15);
+    border-radius:12px;padding:16px;margin-bottom:12px;
+  }
+  .card-title{font-family:'Cinzel',serif;font-size:16px;color:#d4a843;margin-bottom:8px}
+  .card-text{font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85)}
+  .card-meta{font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px}
+  .btn{
+    display:inline-block;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;
+    color:#0a1128;background:#d4a843;
+    padding:10px 20px;border-radius:8px;text-transform:uppercase;letter-spacing:1px;
+    min-height:44px;line-height:24px;text-align:center;
+  }
+  .btn:hover{background:#e6be5a;text-decoration:none}
+  .btn-outline{background:transparent;color:#d4a843;border:1px solid #d4a843}
+  .btn-outline:hover{background:rgba(212,168,67,0.1)}
+  .category-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+  .category-card{
+    background:rgba(10,17,40,0.5);border:1px solid rgba(212,168,67,0.12);
+    border-radius:10px;padding:16px;text-align:center;
+    min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .category-card .cat-icon{font-size:28px;margin-bottom:6px}
+  .category-card .cat-name{font-family:'Cinzel',serif;font-size:13px;color:#d4a843;text-transform:uppercase;letter-spacing:1px}
+  .debate-card{cursor:default}
+  .debate-matchup{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
+  .debate-side{font-weight:600;font-size:14px;flex:1}
+  .debate-vs{color:#d4a843;font-family:'Cinzel',serif;font-size:12px;flex-shrink:0}
+  .debate-score{display:flex;gap:12px;margin-top:8px}
+  .debate-score span{font-size:13px;color:rgba(255,255,255,0.6)}
+  .debate-score .winner{color:#d4a843;font-weight:700}
+  .verdict-tag{display:inline-block;background:rgba(212,168,67,0.15);color:#d4a843;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;margin-top:8px;text-transform:uppercase}
+  .hot-take-card{border-left:3px solid rgba(212,168,67,0.3)}
+  .hot-take-card .take-text{font-size:15px;line-height:1.5}
+  .hot-take-card .take-stats{font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px}
+  .leaderboard-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+  .lb-rank{font-family:'Cinzel',serif;color:#d4a843;font-size:16px;font-weight:700;width:28px;text-align:center}
+  .lb-name{flex:1;font-weight:600;font-size:14px}
+  .lb-elo{font-family:'Cinzel',serif;color:#d4a843;font-size:15px;font-weight:700}
+  .lb-record{font-size:12px;color:rgba(255,255,255,0.4)}
+  .section-title{font-family:'Cinzel',serif;font-size:20px;color:#d4a843;margin:24px 0 12px;text-transform:uppercase;letter-spacing:1px}
+  .cta-banner{text-align:center;padding:24px 16px;margin:24px 0}
+  .cta-banner p{font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:12px}
+  .nav-bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;justify-content:center}
+  .nav-bar a{font-size:13px;padding:6px 12px;border-radius:6px;background:rgba(10,17,40,0.4);border:1px solid rgba(212,168,67,0.1);min-height:44px;display:flex;align-items:center}
+  .nav-bar a:hover{background:rgba(212,168,67,0.1);text-decoration:none}
+  .footer{text-align:center;padding:32px 16px;font-size:12px;color:rgba(255,255,255,0.3)}
+  .empty-state{text-align:center;padding:24px;color:rgba(255,255,255,0.4);font-size:14px}
+</style>
+
+</head>
+<body>
+<div class="site-header">
+  <div class="site-title">⚔️ The Colosseum</div>
+  <div class="site-subtitle">Where opinions become battles</div>
+</div><div class="container"><nav class="nav-bar"><a href="/" style="">🏠 Home</a><a href="/leaderboard.html" style="">🏆 Leaderboard</a><a href="/arena.html" style="">⚔️ Arena</a></nav><div class="section-title">Is LeBron the GOAT?</div><div class="card-meta" style="margin-bottom:12px">sports · 2d ago</div>
+<div class="card">
+  <div class="debate-matchup">
+    <span class="debate-side" style="font-size:18px">LeBron James</span>
+    <span class="debate-vs" style="font-size:16px">VS</span>
+    <span class="debate-side" style="font-size:18px;text-align:right">Michael Jordan</span>
+  </div>
+</div>
+<div class="card">
+  <div class="card-title">Round 1</div>
+  <div style="margin-bottom:8px"><span style="color:#5b8abf;font-weight:600">LeBron James:</span> <span class="card-text">LeBron has played 21 seasons at an elite level across three different teams, winning titles with each. His longevity is unprecedented — no player in history has maintained All-NBA caliber play for this long. He has more total points, assists, and rebounds than Jordan ever accumulated.</span></div>
+  <div><span style="color:#bf5b5b;font-weight:600">Michael Jordan:</span> <span class="card-text">Jordan went 6-0 in the Finals. Six trips, six rings, six Finals MVPs. He never needed a Game 7 to close it out. LeBron is 4-6. The greatest player of all time does not lose on the biggest stage more often than he wins.</span></div>
+</div>
+<div class="card">
+  <div class="card-title">Round 2</div>
+  <div style="margin-bottom:8px"><span style="color:#5b8abf;font-weight:600">LeBron James:</span> <span class="card-text">LeBron carried the 2007 Cavaliers — a team with no other All-Star — to the Finals at age 22. He dragged the 2018 Cavaliers past the Pacers, Raptors, and Celtics essentially alone. Jordan never had to carry a roster that weak that far.</span></div>
+  <div><span style="color:#bf5b5b;font-weight:600">Michael Jordan:</span> <span class="card-text">Jordan won his first ring at 28 and never looked back. Before Pippen developed, Jordan was eliminated early — just like LeBron was before he joined Wade in Miami. The difference is Jordan fixed it by elevating his teammates, not by leaving.</span></div>
+</div>
+<div class="card">
+  <div class="card-title">Round 3</div>
+  <div style="margin-bottom:8px"><span style="color:#5b8abf;font-weight:600">LeBron James:</span> <span class="card-text">LeBron is the more complete player. He can play and guard all five positions. He is a top-75 passer in NBA history playing forward. Jordan was a better scorer and perimeter defender, but LeBron's versatility across every dimension of the game gives him the edge in the modern era.</span></div>
+  <div><span style="color:#bf5b5b;font-weight:600">Michael Jordan:</span> <span class="card-text">Jordan has 10 scoring titles, 5 MVPs, a DPOY, and the highest career playoff scoring average in history at 33.4 PPG. He dominated both ends every single night. Versatility is nice — dominance is better. And nobody dominated like Mike.</span></div>
+</div>
+<div class="card" style="border-color:rgba(212,168,67,0.3)">
+  <div class="card-title">The Verdict</div>
+  <div class="debate-score" style="font-size:20px;margin-bottom:8px">
+    <span class="">LeBron James: 27</span>
+    <span class="winner">Michael Jordan: 29</span>
+  </div>
+  <span class="verdict-tag" style="font-size:14px">🏆 Michael Jordan wins</span>
+  <div class="card-text" style="margin-top:10px">Split decision leans Jordan. The 6-0 Finals record is the tiebreaker that LeBron cannot overcome no matter how many counting stats he accumulates. But this was razor close — LeBron's case has never been stronger.</div>
+</div>
+<div class="cta-banner">
+  <p>Think LeBron James was robbed? Sign up and cast your vote.</p>
+  <a href="https://colosseum-six.vercel.app/colosseum-plinko.html" class="btn">Sign Up Free</a>
+</div></div>
+<div class="footer">
+  &copy; 2026 The Colosseum &middot;
+  <a href="https://colosseum-six.vercel.app/colosseum-plinko.html">Join</a> &middot;
+  <a href="https://colosseum-six.vercel.app/colosseum-terms.html">Terms</a>
+</div>
+</body>
+</html>
