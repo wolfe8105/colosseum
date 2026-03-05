@@ -1,0 +1,222 @@
+<!--
+  ============================================================
+  THE COLOSSEUM — LEGAL SNIPPETS
+  Paste instructions for all 8 HTML pages
+  Session 36 — March 5, 2026
+  ============================================================
+-->
+
+
+<!--
+  ============================================================
+  SNIPPET 1: FOOTER — PASTE ON ALL 8 HTML PAGES
+  ============================================================
+  
+  WHERE TO PASTE: Right before the closing </body> tag on every page.
+  
+  PAGES (8 total):
+    1. index.html
+    2. colosseum-login.html
+    3. colosseum-settings.html
+    4. colosseum-profile-depth.html
+    5. colosseum-terms.html        ← already has footer? replace it
+    6. colosseum-debate-landing.html
+    7. colosseum-auto-debate.html
+    8. colosseum-plinko.html
+  
+  NOTE: colosseum-privacy.html and the NEW colosseum-terms.html 
+  already have back-links built in. But still add the footer to 
+  colosseum-terms.html for consistency across pages.
+  ============================================================
+-->
+
+<!-- PASTE THIS CSS inside the existing <style> block on each page -->
+<style>
+  /* === LEGAL FOOTER === */
+  .colosseum-legal-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 17, 40, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(240, 192, 64, 0.15);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 9999;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .colosseum-legal-footer a {
+    color: #a0b8d0;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .colosseum-legal-footer a:hover {
+    color: #f0c040;
+  }
+  .colosseum-legal-footer .footer-sep {
+    color: rgba(240, 192, 64, 0.3);
+    font-weight: 300;
+  }
+  .colosseum-legal-footer .footer-copy {
+    color: #5a7a96;
+  }
+</style>
+
+<!-- PASTE THIS HTML right before </body> on each page -->
+<div class="colosseum-legal-footer">
+  <a href="colosseum-privacy.html">Privacy Policy</a>
+  <span class="footer-sep">|</span>
+  <a href="colosseum-terms.html">Terms of Service</a>
+  <span class="footer-sep">|</span>
+  <span class="footer-copy">&copy; 2026 The Colosseum</span>
+</div>
+
+
+<!--
+  ============================================================
+  SNIPPET 2: AI-GENERATED BADGE — PASTE ON colosseum-auto-debate.html ONLY
+  ============================================================
+  
+  WHERE TO PASTE CSS: Inside the existing <style> block
+  WHERE TO PASTE HTML: At the top of the debate content area,
+    right after the page title / heading element.
+    Look for whatever shows the debate topic — paste just below it.
+  ============================================================
+-->
+
+<!-- PASTE THIS CSS inside the <style> block on colosseum-auto-debate.html -->
+<style>
+  /* === AI-GENERATED CONTENT BADGE === */
+  .ai-generated-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(240, 192, 64, 0.1);
+    border: 1px solid rgba(240, 192, 64, 0.3);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #f0c040;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .ai-generated-badge .ai-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(240, 192, 64, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #f0c040;
+    flex-shrink: 0;
+  }
+</style>
+
+<!-- PASTE THIS HTML below the debate topic heading on colosseum-auto-debate.html -->
+<div class="ai-generated-badge">
+  <span class="ai-icon">AI</span>
+  AI-Generated Debate — Not Real People
+</div>
+
+
+<!--
+  ============================================================
+  SNIPPET 3: AI SPARRING BADGE — PASTE IN colosseum-arena.js
+  ============================================================
+  
+  This one is trickier because the arena is JS-rendered.
+  Find the AI Sparring debate room render code (the function 
+  that builds the debate room HTML when mode === 'ai-sparring').
+  
+  Add this line near the top of the debate room HTML, 
+  after the topic/title element:
+  ============================================================
+-->
+
+<!-- Add this string inside the JS template literal that renders the AI sparring debate room -->
+<!-- 
+  Something like:
+  
+  <div class="ai-generated-badge">
+    <span class="ai-icon">AI</span>
+    AI Sparring Partner — Not a Real Person
+  </div>
+
+  The CSS from Snippet 2 covers this badge too — same class names.
+  Just make sure the CSS is loaded on any page that renders arena content.
+  Since arena renders inside index.html, add the Snippet 2 CSS 
+  to index.html's <style> block as well.
+-->
+
+
+<!--
+  ============================================================
+  SNIPPET 4: AI BADGE ON colosseum-debate-landing.html
+  ============================================================
+  
+  The debate landing page can show both human and AI debates.
+  The badge should only show for AI debates.
+  
+  In the JS that renders the debate, add a conditional:
+  
+  if (debate.is_ai || debate.type === 'auto') {
+    // insert the ai-generated-badge HTML
+  }
+  
+  Add the Snippet 2 CSS to this page's <style> block too.
+  ============================================================
+-->
+
+
+<!--
+  ============================================================
+  CHECKLIST — WHAT GOES WHERE
+  ============================================================
+  
+  FILE                              FOOTER    AI BADGE CSS    AI BADGE HTML
+  ─────────────────────────────────────────────────────────────────────────
+  index.html                          ✅         ✅*             —
+  colosseum-login.html                ✅          —              —
+  colosseum-settings.html             ✅          —              —
+  colosseum-profile-depth.html        ✅          —              —
+  colosseum-terms.html (NEW)          ✅          —              —
+  colosseum-debate-landing.html       ✅         ✅           conditional
+  colosseum-auto-debate.html          ✅         ✅              ✅
+  colosseum-plinko.html               ✅          —              —
+  colosseum-privacy.html (NEW)        ✅          —              —
+  
+  * index.html gets AI badge CSS because arena (AI sparring) renders there
+  
+  ============================================================
+  ALSO NEEDED (human actions, not code):
+  ============================================================
+  
+  1. Register DMCA agent at copyright.gov/dmca-directory ($6)
+     - Requires: legal name, mailing address, email (dmca@thecolosseum.app)
+     - Renew every 3 years
+  
+  2. Set up email forwards (after domain purchase):
+     - privacy@thecolosseum.app  →  wolfe8105@gmail.com
+     - legal@thecolosseum.app    →  wolfe8105@gmail.com
+     - dmca@thecolosseum.app     →  wolfe8105@gmail.com
+  
+  3. Upload colosseum-privacy.html to GitHub repo
+  4. Replace colosseum-terms.html in GitHub repo with new version
+  5. Push to main → Vercel auto-deploys
+  
+  ============================================================
+-->
