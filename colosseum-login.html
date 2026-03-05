@@ -295,6 +295,43 @@
     font-size: 40px; text-align: center; margin-bottom: 8px;
     opacity: 0.3; filter: drop-shadow(0 0 12px rgba(212,168,67,0.3));
   }
+
+  /* === LEGAL FOOTER === */
+  .colosseum-legal-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 17, 40, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(240, 192, 64, 0.15);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 9999;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .colosseum-legal-footer a {
+    color: #a0b8d0;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .colosseum-legal-footer a:hover {
+    color: #f0c040;
+  }
+  .colosseum-legal-footer .footer-sep {
+    color: rgba(240, 192, 64, 0.3);
+    font-weight: 300;
+  }
+  .colosseum-legal-footer .footer-copy {
+    color: #5a7a96;
+  }
 </style>
 </head>
 <body>
@@ -711,5 +748,12 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<div class="colosseum-legal-footer">
+  <a href="colosseum-privacy.html">Privacy Policy</a>
+  <span class="footer-sep">|</span>
+  <a href="colosseum-terms.html">Terms of Service</a>
+  <span class="footer-sep">|</span>
+  <span class="footer-copy">&copy; 2026 The Colosseum</span>
+</div>
 </body>
 </html>

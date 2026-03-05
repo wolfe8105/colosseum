@@ -714,6 +714,10 @@ window.ColosseumArena = (() => {
     room.innerHTML = `
       <div class="arena-room-header">
         <div class="arena-room-topic">${sanitize(debate.topic)}</div>
+        ${isAI ? `<div class="ai-generated-badge" style="margin-top:8px">
+          <span class="ai-icon">AI</span>
+          AI Sparring Partner — Not a Real Person
+        </div>` : ''}
         <div class="arena-room-round" id="arena-round-label">ROUND ${debate.round}/${debate.totalRounds}</div>
         ${debate.mode === 'live' ? `<div class="arena-room-timer" id="arena-room-timer">${formatTimer(ROUND_DURATION)}</div>` : ''}
       </div>

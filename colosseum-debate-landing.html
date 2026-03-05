@@ -190,6 +190,74 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   .container{max-width:580px}
   .debate-topic{font-size:24px}
 }
+
+/* === LEGAL FOOTER === */
+.colosseum-legal-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10, 17, 40, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(240, 192, 64, 0.15);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  z-index: 9999;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+.colosseum-legal-footer a {
+  color: #a0b8d0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.colosseum-legal-footer a:hover {
+  color: #f0c040;
+}
+.colosseum-legal-footer .footer-sep {
+  color: rgba(240, 192, 64, 0.3);
+  font-weight: 300;
+}
+.colosseum-legal-footer .footer-copy {
+  color: #5a7a96;
+}
+
+/* === AI-GENERATED CONTENT BADGE === */
+.ai-generated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(240, 192, 64, 0.1);
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #f0c040;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.ai-generated-badge .ai-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(240, 192, 64, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f0c040;
+  flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -308,6 +376,14 @@ function render() {
   // Main debate card
   html += `<div class="debate-card">`;
   html += `<div class="debate-topic">${debate.topic}</div>`;
+
+  // AI badge (conditional — only for auto-generated debates)
+  if (debate.is_auto) {
+    html += `<div class="ai-generated-badge">
+      <span class="ai-icon">AI</span>
+      AI-Generated Debate — Not Real People
+    </div>`;
+  }
 
   if (!hasVoted) {
     html += `<div class="vote-row">
@@ -494,5 +570,12 @@ function goSignup() {
 // --- Init ---
 render();
 </script>
+<div class="colosseum-legal-footer">
+  <a href="colosseum-privacy.html">Privacy Policy</a>
+  <span class="footer-sep">|</span>
+  <a href="colosseum-terms.html">Terms of Service</a>
+  <span class="footer-sep">|</span>
+  <span class="footer-copy">&copy; 2026 The Colosseum</span>
+</div>
 </body>
 </html>
