@@ -449,7 +449,7 @@ function deploy() {
   }
   try {
     console.log('[DEPLOY] Running wrangler pages deploy...');
-    execSync(`wrangler pages deploy ${OUT_DIR} --project-name=${CLOUDFLARE_PROJECT} --branch=main`, {
+    execSync(`wrangler pages deploy ${OUT_DIR} --project-name=${CLOUDFLARE_PROJECT} --branch=production`, {
       stdio: 'inherit',
       timeout: 60000,
     });
