@@ -1,0 +1,12 @@
+# Mirror generator output — NEVER commit this (LM-106)
+_mirror_build/
+
+# Node
+node_modules/
+.env
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
