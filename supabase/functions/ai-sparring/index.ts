@@ -1,22 +1,36 @@
-// colosseum-ai-sparring/index.ts
-// Supabase Edge Function — AI Sparring opponent powered by Groq
+// ============================================================
+// THE COLOSSEUM — AI SPARRING Edge Function
+// Session 40: A08 hardened — removed deno.land import, CORS allowlist
+//
+// CHANGES FROM SESSION 25:
+// 1. Deno.serve replaces import from deno.land/std (CWE-829)
+//    Supabase docs: "Do NOT use deno.land/std serve. Use Deno.serve"
+// 2. CORS wildcard → allowlist (A05 fix)
+// 3. Zero external imports — only built-in Deno APIs + fetch
+//
 // Deploy: supabase functions deploy ai-sparring
 // Env var required: GROQ_API_KEY
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+// ============================================================
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.1-70b-versatile';
-const MAX_TOKENS = 200; // Keep responses punchy, not essays
+const MODEL = 'llama-3.3-70b-versatile';
+const MAX_TOKENS = 200;
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const ALLOWED_ORIGINS = [
+  'https://colosseum-six.vercel.app',
+  'https://thecolosseum.app',
+];
 
-// ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
-// Populist debater: talks like a real person, hot takes energy, real-world examples
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
 function buildSystemPrompt(topic: string, totalRounds: number): string {
   return `You are a debate opponent on The Colosseum — a live debate app where real people argue about everything.
 
@@ -45,26 +59,25 @@ YOUR RULES:
 Respond ONLY with your debate argument. No labels, no preamble, no "AI:" prefix.`;
 }
 
-// ── HANDLER ──────────────────────────────────────────────────────────────────
-serve(async (req: Request) => {
-  // Handle CORS preflight
+Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: CORS_HEADERS });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
   try {
     const body = await req.json();
     const { topic, userArg, round, totalRounds, messageHistory } = body;
 
-    // Validate required fields
     if (!topic || !userArg || !round || !totalRounds) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: topic, userArg, round, totalRounds' }),
-        { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -72,19 +85,15 @@ serve(async (req: Request) => {
     if (!groqKey) {
       return new Response(
         JSON.stringify({ error: 'GROQ_API_KEY not configured' }),
-        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Build conversation messages for Groq
-    // messageHistory: [{ role: 'user'|'assistant', content: string }]
-    const conversationMessages = [];
+    const conversationMessages: Array<{role: string, content: string}> = [];
 
-    // Inject full conversation history so AI has full context
     if (Array.isArray(messageHistory) && messageHistory.length > 0) {
       for (const msg of messageHistory) {
         if (msg.role && msg.content && typeof msg.content === 'string') {
-          // Skip voice memo placeholder messages
           if (msg.content.startsWith('🎤 Voice memo')) continue;
           conversationMessages.push({
             role: msg.role === 'user' ? 'user' : 'assistant',
@@ -94,14 +103,11 @@ serve(async (req: Request) => {
       }
     }
 
-    // Always append the current user argument as the final message
-    // (it may already be in history — deduplicate by checking last entry)
     const lastMsg = conversationMessages[conversationMessages.length - 1];
     if (!lastMsg || lastMsg.role !== 'user' || lastMsg.content !== userArg) {
       conversationMessages.push({ role: 'user', content: userArg });
     }
 
-    // Add round context as a system injection if we're in middle/final rounds
     let roundHint = '';
     if (round === totalRounds) {
       roundHint = ' [FINAL ROUND — deliver your knockout closing argument]';
@@ -117,7 +123,6 @@ serve(async (req: Request) => {
       };
     }
 
-    // Call Groq
     const groqRes = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
@@ -127,7 +132,7 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        temperature: 0.85,      // Hot takes energy — a little unpredictable
+        temperature: 0.85,
         top_p: 0.9,
         messages: [
           { role: 'system', content: buildSystemPrompt(topic, totalRounds) },
@@ -141,7 +146,7 @@ serve(async (req: Request) => {
       console.error('[ai-sparring] Groq API error:', groqRes.status, errText);
       return new Response(
         JSON.stringify({ error: 'Groq API error', status: groqRes.status }),
-        { status: 502, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -151,20 +156,20 @@ serve(async (req: Request) => {
     if (!response) {
       return new Response(
         JSON.stringify({ error: 'Empty response from Groq' }),
-        { status: 502, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
       JSON.stringify({ response }),
-      { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (err) {
     console.error('[ai-sparring] Unexpected error:', err);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });
