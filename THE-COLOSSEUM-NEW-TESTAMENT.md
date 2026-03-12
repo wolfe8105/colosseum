@@ -1,12 +1,12 @@
 # THE COLOSSEUM — NEW TESTAMENT
 ### The Living Document — Read Every Session
-### Last Updated: Session 72 (March 11, 2026)
+### Last Updated: Session 75 (March 12, 2026)
 
 > **Read this every session. No exceptions.**
 > Session handoffs go in the chat message, not this file.
 >
 > **Other bible docs (repo, read when relevant):**
-> - `THE-COLOSSEUM-OLD-TESTAMENT.md` — All session build logs (1-72), 502+ item inventory, revenue model, B2B data play, growth strategy
+> - `THE-COLOSSEUM-OLD-TESTAMENT.md` — All session build logs (1-75), 502+ item inventory, revenue model, B2B data play, growth strategy
 > - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 158+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
 > - `THE-COLOSSEUM-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, exclusivity framework, buyer list
 > - `THE-COLOSSEUM-PRODUCT-VISION.md` — Psychology framework, visual game layer, sound-off solution, ad placement, gamification
@@ -118,7 +118,7 @@
 
 1. **Money pipe connected** — Stripe Checkout live (sandbox), Edge Functions deployed, webhooks listening. Still sandbox mode.
 2. **Single-player → multiplayer (in progress)** — follows, modals, predictions, rivals, arena, 4 debate modes, AI sparring, guest access. Needs real users.
-3. **No audience** — Bot army deployed, DRY_RUN=false, live. Bluesky posting. Lemmy posting. Reddit pending API approval. Discord deferred.
+3. **No audience** — Bot army deployed, DRY_RUN=false, live. Bluesky posting. Lemmy disabled (banned everywhere). Reddit pending API approval. Discord deferred.
 
 ---
 
@@ -230,7 +230,7 @@ Privacy Policy live. Terms of Service live (WHHW LLC). AI content labeling deplo
 - Actual monthly cost: $6-16/mo
 - Bot army LIVE (DRY_RUN=false).
 - All bot links → colosseum-f30.pages.dev (mirror), not Vercel app.
-- Platforms: Bluesky (live, L2 posting), Lemmy (live, L2+L3 posting), Reddit (pending API), Discord (deferred).
+- Platforms: Bluesky (live, L2 posting), Lemmy (disabled — banned everywhere, all communities removed), Reddit (pending API), Discord (deferred).
 - Groq TPD cap (100k tokens/day free tier) hits daily — falls back to templates.
 
 ---
@@ -254,6 +254,7 @@ Privacy Policy live. Terms of Service live (WHHW LLC). AI content labeling deplo
 - ⏳ Build next thing based on what real users do
 
 ## Known Bugs / Tech Debt
+- ⏳ Delete stray `7e3d9f0c-75bf-4397-a5f0-7261544c2ad3.html` from GitHub (old auto-debate test page)
 - ⏳ Domain purchase blocking legal emails and mirror URL
 - ⏳ DMCA agent not registered ($6)
 - ⏳ Stripe Edge Function templates use old imports (not urgent, deploy when Stripe goes live)
@@ -264,7 +265,6 @@ Privacy Policy live. Terms of Service live (WHHW LLC). AI content labeling deplo
 
 ## Bot Army Remaining
 - ⏳ Reddit API approval → update .env → enable Reddit legs
-- ⏳ Lemmy community check (March 11) — if nfl@lemmy.world bans → disable Lemmy, focus Bluesky. If survived → swap in fresh communities.
 - ⏳ Optional: Twitter/X developer account
 
 ---
@@ -273,7 +273,7 @@ Privacy Policy live. Terms of Service live (WHHW LLC). AI content labeling deplo
 
 These are the things that bite hardest. Full details in the Land Mine Map.
 
-- **guard_profile_columns trigger** only guards `level` and `xp` — silently reverts direct UPDATEs on those two columns. All other profile columns (token_balance, streak_freezes, login_streak, elo_rating, etc.) are freely updatable by SECURITY DEFINER RPCs. **LM-001 was corrected in Session 72.**
+- **guard_profile_columns trigger** (`guard_profile_update()`) reverts 19 protected columns to OLD values for non-service-role callers: elo_rating, wins, losses, draws, current_streak, best_streak, debates_completed, level, xp, token_balance, subscription_tier, stripe_customer_id, stripe_subscription_id, trust_score, profile_depth_pct, is_minor, created_at, streak_freezes, login_streak. SECURITY DEFINER RPCs bypass this (they run as service_role). **Updated Session 75 to add streak_freezes + login_streak. Previous NT incorrectly said "only guards level and xp" — corrected.**
 - **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client
 - **Supabase dashboard is schema source of truth** — verify column names before assuming
 - **`navigator.locks` orphan bug** — Supabase JS client can hang `getSession()` indefinitely. noOpLock mock must load before Supabase CDN.
@@ -290,4 +290,4 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 
 ---
 
-*For all session build logs (1-72), the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map.*
+*For all session build logs (1-75), the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map.*
