@@ -1,6 +1,6 @@
 # THE COLOSSEUM — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 61 (March 8, 2026) — Public profile page land mines (serverless function, OG tags, RLS dependency)
+### Last Updated: Session 78 (March 12, 2026) — guard_profile_columns updated (streak_freezes), Lemmy dead, content-first bot strategy, Bluesky image posting
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -29,14 +29,16 @@ FIX: The correct way to handle it
 ```
 DECISION: BEFORE UPDATE trigger on profiles table (colosseum-rls-hardened.sql)
 PROTECTS: Prevents any authenticated client from directly modifying protected columns
-PROTECTED COLUMNS (ACTUAL — verified Session 72): level, xp
-  ONLY these two columns are guarded. All other columns (elo_rating, wins, losses,
-  token_balance, streak_freezes, login_streak, subscription_tier, etc.) are NOT
+PROTECTED COLUMNS (ACTUAL — verified Session 77): level, xp, streak_freezes
+  These three columns are guarded. All other columns (elo_rating, wins, losses,
+  token_balance, login_streak, subscription_tier, etc.) are NOT
   protected by this trigger. They are instead protected by RLS + SECURITY DEFINER RPCs.
-PREVIOUS DOCUMENTATION ERROR: Sessions 16-71 listed many more columns as protected.
-  The actual trigger function body (prosrc) only contains:
+PREVIOUS STATE: Sessions 16-71 documentation listed many more columns as protected.
+  Session 72 verified only level + xp. Session 77 added streak_freezes.
+  The actual trigger function body (prosrc) now contains:
     NEW.level := OLD.level;
     NEW.xp := OLD.xp;
+    NEW.streak_freezes := OLD.streak_freezes;
 BITES YOU WHEN: You assume token_balance or other columns are trigger-protected and
   skip proper RLS/RPC validation. They aren't — only level and xp revert on direct UPDATE.
 BYPASS CONDITION: Only bypasses if current_setting('role') = 'postgres' OR 'service_role'.
@@ -44,7 +46,7 @@ FIX: Disable trigger → UPDATE → re-enable (all in one block):
   ALTER TABLE profiles DISABLE TRIGGER guard_profile_columns;
   UPDATE profiles SET level = 5 WHERE id = 'UUID';
   ALTER TABLE profiles ENABLE TRIGGER guard_profile_columns;
-SESSIONS: Built Session 16/17, burned us Session 29, corrected Session 72
+SESSIONS: Built Session 16/17, burned us Session 29, corrected Session 72, streak_freezes added Session 77
 ```
 
 ---
@@ -1450,9 +1452,9 @@ CORRECTION (Session 72): Previously documented that guard_profile_columns()
 ACTUAL PROTECTION: Mod stats are protected by RLS (no direct client UPDATE
   on profiles) + SECURITY DEFINER RPCs (score_moderator, rule_on_reference).
 BITES YOU WHEN: You assume the trigger protects mod stats and skip RPC validation.
-NOTE: If the trigger was expanded in Session 33 and later reverted, the
-  revert was undocumented. The current state is: only level + xp are guarded.
-SESSION: 33, corrected 72.
+NOTE: Session 77 updated the trigger to add streak_freezes, so the trigger
+  now guards level + xp + streak_freezes. Mod stats remain unprotected by trigger.
+SESSION: 33, corrected 72, updated 77.
 ```
 
 ---
@@ -2221,7 +2223,10 @@ RULE: When adding a new platform, update THREE places:
   1. Config object (credentials, limits)
   2. flags block in bot-config.js
   3. formatFlags() in bot-engine.js
-SESSION: 58.
+NOTE (Session 77): This exact pattern recurred with the content-first Bluesky
+  image posting upgrade. LEG2_BLUESKY_ENABLED=true in .env and ecosystem.config.js,
+  but startup banner omits L2-Bluesky and zero posts fire. Same root cause suspected.
+SESSION: 58, recurred 77.
 ```
 
 ---
@@ -2370,16 +2375,98 @@ SESSION: 72.
 
 ---
 
-## LM-161: streak_freezes column is NOT trigger-protected
+## LM-161: streak_freezes column IS now trigger-protected (Session 77)
 ```
-DECISION (Session 72): streak_freezes lives on profiles table but is NOT
-  protected by guard_profile_columns trigger (which only guards level and xp).
-  This is by design — claim_daily_login() and claim_milestone() update it
-  directly via SECURITY DEFINER RPCs.
-BITES YOU WHEN: You assume it's safe from client-side manipulation. It IS
-  safe because RLS prevents direct client UPDATEs to profiles (only
-  SECURITY DEFINER RPCs can write). But if RLS is ever loosened, streak_freezes
-  would be freely editable.
-RELATED: LM-001 (corrected Session 72) — trigger only guards level + xp.
-SESSION: 72.
+DECISION (Session 77): streak_freezes was added to guard_profile_columns trigger
+  alongside level and xp. Previously (Session 72) it was NOT protected.
+PROTECTS: Prevents client-side manipulation of streak freeze balance.
+  Also protected by RLS (no direct client UPDATE) + SECURITY DEFINER RPCs
+  (claim_daily_login, claim_milestone).
+BITES YOU WHEN: You assume the old documentation (Session 72) that said
+  streak_freezes was unprotected. It IS now guarded by the trigger.
+RELATED: LM-001 (updated Session 77) — trigger now guards level + xp + streak_freezes.
+SESSION: 72 (created unprotected), 77 (added to trigger).
+```
+
+---
+
+# SECTION 20: CONTENT-FIRST BOT STRATEGY + LEMMY DEATH (Session 77)
+
+---
+
+## LM-162: Text+link bot posts are dead — content-first or get buried
+```
+DECISION (Session 77): Old-school bot strategy (text blurb + bare URL) is
+  confirmed ineffective on modern platforms. Bluesky specifically suppresses
+  promotional link-only posts in algorithmic feeds. Same pattern on Reddit,
+  Discord, and most social platforms circa 2025-2026.
+PROTECTS: Bot army effectiveness and account survival.
+BITES YOU WHEN: You revert to text+link posting, add a new platform with
+  the old pattern, or skip image generation to "save time."
+SYMPTOM: Posts get zero engagement. Accounts get suppressed or shadowbanned.
+  Bot army runs, logs show success, zero traffic arrives.
+FIX: All bot posts must be content-first: native image (ESPN-style share
+  card) as the primary content, with link in secondary position (reply,
+  alt text, or card embed). card-generator.js produces PNG share cards
+  server-side using the canvas npm package.
+RULE: Every new platform leg must include image posting from day one.
+  Text-only posting is the fallback, not the default.
+SESSION: 77.
+```
+
+---
+
+## LM-163: card-generator.js requires `canvas` npm package on VPS
+```
+DECISION (Session 77): Server-side share card generation uses the `canvas`
+  npm package (node-canvas) to port colosseum-cards.js to Node.js.
+PROTECTS: Bot army can generate ESPN-style debate result PNGs without a browser.
+BITES YOU WHEN: VPS rebuild or npm clean install forgets to install canvas.
+  canvas has native dependencies (Cairo, Pango) — `npm install canvas` must
+  succeed with no build errors.
+SYMPTOM: card-generator.js throws "Cannot find module 'canvas'" or
+  native compilation errors during install.
+FIX: On Ubuntu 24.04: sudo apt-get install build-essential libcairo2-dev
+  libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+  Then: npm install canvas
+  File location: /opt/colosseum/bot-army/colosseum-bot-army/lib/card-generator.js
+SESSION: 77.
+```
+
+---
+
+## LM-164: Lemmy is dead — files deleted, code commented out, .env disabled
+```
+DECISION (Session 77): Lemmy platform fully disabled after community bans
+  and posting failures. Both poster files deleted from VPS.
+  LEG2_LEMMY_ENABLED=false in .env. Lemmy code commented out in bot-engine.js.
+PROTECTS: Clean bot army state — no dead code paths firing errors.
+BITES YOU WHEN: Someone re-enables Lemmy flags without restoring the files.
+  bot-engine.js will try to require deleted modules → crash loop.
+  Also: ecosystem.config.js still has Lemmy env vars (cleanup pending).
+SYMPTOM: PM2 crash loop with MODULE_NOT_FOUND for leg2-lemmy-poster or
+  leg3-lemmy-poster.
+FIX: If re-enabling Lemmy in the future, must recreate the poster files
+  AND uncomment the code in bot-engine.js AND update .env.
+  For now: Lemmy is dead. Focus on Bluesky + Reddit.
+SESSION: 77.
+```
+
+---
+
+## LM-165: Mirror debate content is template text, not real AI arguments
+```
+LESSON (Session 77 guest walkthrough): Auto-debate pages on the mirror
+  show template/placeholder text instead of actual AI-generated arguments.
+  Titles truncated with "?". Only 1 total vote across all debates, 3 profiles.
+BITES YOU WHEN: Bot army links drive traffic to mirror debate pages.
+  Users see empty/template debates and bounce immediately.
+  The rage-click funnel requires real, provocative AI arguments to work.
+SYMPTOM: Mirror debate pages show generic text. No compelling content.
+  Zero engagement from bot-referred visitors.
+FIX: Mirror generator must pull actual AI debate arguments from Supabase
+  (auto_debates table — check for side_a_arguments, side_b_arguments columns
+  or equivalent). Verify columns with SELECT * FROM auto_debates LIMIT 1
+  before assuming column names (LM-091).
+SESSION: 77.
 ```
