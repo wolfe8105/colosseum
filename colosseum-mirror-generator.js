@@ -9,6 +9,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SIGNUP_URL = process.env.SIGNUP_URL || 'https://colosseum-six.vercel.app/colosseum-plinko.html';
+const APP_BASE_URL = process.env.APP_BASE_URL || 'https://colosseum-six.vercel.app';
 const MIRROR_DOMAIN = process.env.MIRROR_DOMAIN || 'https://colosseum-f30.pages.dev';
 const CLOUDFLARE_PROJECT = process.env.CLOUDFLARE_PROJECT || 'colosseum';
 const DEPLOY_ENABLED = process.env.DEPLOY_ENABLED === 'true';
@@ -202,11 +203,13 @@ function navBar(active) {
   return html;
 }
 
-function ctaBanner(text) {
+function ctaBanner(text, url) {
+  const href = url || SIGNUP_URL;
+  const label = url ? 'Vote Now — Free' : 'Sign Up Free';
   return `
 <div class="cta-banner">
   <p>${esc(text || 'Ready to join the fight?')}</p>
-  <a href="${SIGNUP_URL}" class="btn">Sign Up Free</a>
+  <a href="${href}" class="btn">${label}</a>
 </div>`;
 }
 
@@ -374,7 +377,7 @@ function buildDebatePage(d) {
 </div>`;
 
   // CTA — vote / disagree
-  html += ctaBanner(`Think ${esc(loserLabel)} was robbed? Sign up and cast your vote.`);
+  html += ctaBanner(`Think ${esc(loserLabel)} was robbed? Cast your vote — no signup required.`, `${APP_BASE_URL}/colosseum-auto-debate.html?id=${d.id}`);
   html += '</div>';
   html += pageFooter();
   return html;
