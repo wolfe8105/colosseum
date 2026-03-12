@@ -151,7 +151,6 @@ const LEMMY_COMMUNITIES = [
   { name: 'ask@lemmy.world',              category: 'general' },
 
   // Debate/opinion focused
-  { name: 'changemyview@lemmy.ml',        category: 'politics' },
   { name: 'unpopularopinion@lemmy.world', category: 'general' },
 
   // Sports — open discussion
