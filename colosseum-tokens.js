@@ -129,9 +129,9 @@ window.ColosseumTokens = (function () {
     el.className = 'milestone-toast';
 
     let rewardText = '';
-    if (tokens > 0) rewardText = `+${tokens} 🪙 tokens`;
-    if (freezes > 0) rewardText = `+${freezes} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
-    if (tokens > 0 && freezes > 0) rewardText = `+${tokens} 🪙 + ${freezes} ❄️`;
+    if (tokens > 0) rewardText = `+${Number(tokens)} 🪙 tokens`;
+    if (freezes > 0) rewardText = `+${Number(freezes)} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
+    if (tokens > 0 && freezes > 0) rewardText = `+${Number(tokens)} 🪙 + ${Number(freezes)} ❄️`;
 
     el.innerHTML = `
       <span class="mt-icon">${icon || '🏆'}</span>

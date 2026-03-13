@@ -912,7 +912,7 @@ async function submitCreateGroup() {
 
 // ── URL PARAM: open group directly ────────────────────────
 const urlGroup = new URLSearchParams(window.location.search).get('group');
-if (urlGroup) {
+if (urlGroup && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(urlGroup)) {
   ColosseumAuth.ready.then(() => openGroup(urlGroup));
 }
 </script>

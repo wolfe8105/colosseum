@@ -20,17 +20,7 @@ window.ColosseumLeaderboard = (() => {
   let myRank = null;
   let isLoading = false;
 
-  // --- BUG 2 FIX: Local OWASP 5-char entity encoder ---
-  // Replaces broken inline fallback that matched " but didn't map it (→ "undefined")
-  function escHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#x27;'
-    })[c]);
-  }
+  const escHtml = ColosseumConfig.escapeHTML;
 
   const PLACEHOLDER_DATA = [
     { rank: 1, user: 'SHARPMIND', elo: 1847, wins: 142, losses: 38, streak: 12, level: 24, tier: 'champion' },

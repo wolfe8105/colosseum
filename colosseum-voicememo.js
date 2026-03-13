@@ -466,8 +466,8 @@ window.ColosseumVoiceMemo = (() => {
         <button class="vm-close" onclick="ColosseumVoiceMemo.cancelRecording()">✕</button>
       </div>
 
-      ${context.replyTo ? `<div class="vm-context">Replying to <strong>@${context.replyTo}</strong>: "${truncate(context.replyText, 60)}"</div>` : ''}
-      ${context.topic ? `<div class="vm-context">Topic: <strong>${truncate(context.topic, 80)}</strong></div>` : ''}
+      ${context.replyTo ? `<div class="vm-context">Replying to <strong>@${ColosseumConfig.escapeHTML(context.replyTo)}</strong>: "${ColosseumConfig.escapeHTML(truncate(context.replyText, 60))}"</div>` : ''}
+      ${context.topic ? `<div class="vm-context">Topic: <strong>${ColosseumConfig.escapeHTML(truncate(context.topic, 80))}</strong></div>` : ''}
 
       <div class="vm-waveform-box">
         <canvas id="vm-waveform" width="300" height="48"></canvas>
@@ -701,14 +701,15 @@ window.ColosseumVoiceMemo = (() => {
     const id = 'vmp-' + Math.random().toString(36).slice(2, 8);
     const min = Math.floor(duration / 60);
     const sec = String(duration % 60).padStart(2, '0');
+    const safeUrl = ColosseumConfig.escapeHTML(voiceUrl);
 
     return `
-      <div class="vm-inline-player" style="
+      <div class="vm-inline-player" data-player-id="${id}" style="
         display:flex;align-items:center;gap:10px;
         background:#132240;border:1px solid rgba(212,168,67,0.12);
         border-radius:10px;padding:10px 12px;margin-top:8px;
       ">
-        <button onclick="ColosseumVoiceMemo.playInline('${id}')" style="
+        <button data-action="play-inline" data-player="${id}" style="
           width:40px;height:40px;border-radius:50%;
           background:#d4a843;border:none;color:#0a1628;
           font-size:16px;cursor:pointer;display:flex;
@@ -719,7 +720,7 @@ window.ColosseumVoiceMemo = (() => {
           <div style="font-size:11px;color:#a0a8b8;letter-spacing:0.5px;">🎤 VOICE TAKE</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#f0f0f0;letter-spacing:1px;">${min}:${sec}</div>
         </div>
-        <audio id="${id}" src="${voiceUrl}" preload="metadata" style="display:none;"></audio>
+        <audio id="${id}" src="${safeUrl}" preload="metadata" style="display:none;"></audio>
       </div>
     `;
   }
@@ -774,6 +775,14 @@ window.ColosseumVoiceMemo = (() => {
     return true; // Default enabled if no config
   }
 
+
+  // ========================
+  // DELEGATED LISTENER for inline player buttons
+  // ========================
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="play-inline"]');
+    if (btn) playInline(btn.dataset.player);
+  });
 
   // ========================
   // PUBLIC API

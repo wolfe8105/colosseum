@@ -109,11 +109,7 @@ window.ColosseumArena = (() => {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  function sanitize(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
+  const sanitize = (s) => ColosseumConfig.escapeHTML(s);
 
   // ========== BROWSER HISTORY (back button support) ==========
   // Pattern from web: push on overlay open, history.back() on close-by-user.
@@ -580,7 +576,7 @@ window.ColosseumArena = (() => {
         <span>${sanitize(d.debater_a_name || 'Side A')}</span>
         <span class="vs">VS</span>
         <span>${sanitize(d.debater_b_name || 'Side B')}</span>
-        ${d.score_a != null ? `<span class="arena-card-score">${d.score_a}–${d.score_b}</span>` : ''}
+        ${d.score_a != null ? `<span class="arena-card-score">${Number(d.score_a)}–${Number(d.score_b)}</span>` : ''}
       </div>
       <div class="arena-card-action"><button class="arena-card-btn">${action}</button></div>
     </div>`;
@@ -595,7 +591,7 @@ window.ColosseumArena = (() => {
         <span>${sanitize(d.side_a_label)}</span>
         <span class="vs">VS</span>
         <span>${sanitize(d.side_b_label)}</span>
-        <span class="arena-card-score">${d.score_a}–${d.score_b}</span>
+        <span class="arena-card-score">${Number(d.score_a)}–${Number(d.score_b)}</span>
       </div>
       <div class="arena-card-action"><button class="arena-card-btn">VIEW VERDICT</button></div>
     </div>`;
@@ -617,7 +613,7 @@ window.ColosseumArena = (() => {
         <div class="arena-card-topic">${p.topic}</div>
         <div class="arena-card-vs">
           <span>${p.a}</span><span class="vs">VS</span><span>${p.b}</span>
-          <span class="arena-card-score">${p.sa}–${p.sb}</span>
+          <span class="arena-card-score">${Number(p.sa)}–${Number(p.sb)}</span>
         </div>
       </div>
     `).join('');
@@ -1088,7 +1084,7 @@ window.ColosseumArena = (() => {
           <div class="arena-debater-avatar">${myInitial}</div>
           <div class="arena-debater-info">
             <div class="arena-debater-name">${sanitize(myName)}</div>
-            <div class="arena-debater-elo">${myElo} ELO <span style="color:#D4A843;margin-left:6px;font-size:11px;">🪙 ${profile?.token_balance || 0}</span></div>
+            <div class="arena-debater-elo">${Number(myElo)} ELO <span style="color:#D4A843;margin-left:6px;font-size:11px;">🪙 ${Number(profile?.token_balance) || 0}</span></div>
           </div>
         </div>
         <div class="arena-vs-text">VS</div>
@@ -1096,7 +1092,7 @@ window.ColosseumArena = (() => {
           <div class="arena-debater-avatar ${isAI ? 'ai-avatar' : ''}">${isAI ? '🤖' : oppInitial}</div>
           <div class="arena-debater-info" style="text-align:right;">
             <div class="arena-debater-name">${sanitize(debate.opponentName)}</div>
-            <div class="arena-debater-elo">${debate.opponentElo} ELO</div>
+            <div class="arena-debater-elo">${Number(debate.opponentElo)} ELO</div>
           </div>
         </div>
       </div>
@@ -1639,9 +1635,17 @@ window.ColosseumArena = (() => {
       ColosseumWebRTC.leaveDebate();
     }
 
-    // Generate scores (placeholder scoring)
-    const scoreA = 60 + Math.floor(Math.random() * 30);
-    const scoreB = 60 + Math.floor(Math.random() * 30);
+    // Generate scores — random only for AI sparring/placeholder; draw for real matches
+    let scoreA, scoreB;
+    if (debate.mode === 'ai' || !debate.opponentId) {
+      // AI sparring — random scoring is fine
+      scoreA = 60 + Math.floor(Math.random() * 30);
+      scoreB = 60 + Math.floor(Math.random() * 30);
+    } else {
+      // Real match — equal scores until proper scoring exists
+      scoreA = 70;
+      scoreB = 70;
+    }
     const winner = scoreA >= scoreB ? 'a' : 'b';
     const didWin = winner === debate.role;
 
@@ -1698,12 +1702,12 @@ window.ColosseumArena = (() => {
       <div class="arena-post-score">
         <div class="arena-post-side">
           <div class="arena-post-side-label">${sanitize(myName)}</div>
-          <div class="arena-post-side-score ${debate.role === winner ? 'winner' : 'loser'}">${debate.role === 'a' ? scoreA : scoreB}</div>
+          <div class="arena-post-side-score ${debate.role === winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreA : scoreB)}</div>
         </div>
         <div class="arena-post-divider">—</div>
         <div class="arena-post-side">
           <div class="arena-post-side-label">${sanitize(debate.opponentName)}</div>
-          <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${debate.role === 'a' ? scoreB : scoreA}</div>
+          <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreB : scoreA)}</div>
         </div>
       </div>
       <!-- TODO: E144 Add as Rival + E145/E149 Opponent Avatar → Profile
@@ -1894,6 +1898,10 @@ window.ColosseumArena = (() => {
         clearInterval(_rulingCountdownTimer);
         _rulingCountdownTimer = null;
         overlay.remove();
+        // Auto-allow: call the RPC so evidence is marked allowed in the database
+        if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.ruleOnReference) {
+          ColosseumAuth.ruleOnReference(ref.id, 'allowed', 'Auto-allowed (moderator timeout)').catch(() => {});
+        }
       }
     }, 1000);
 

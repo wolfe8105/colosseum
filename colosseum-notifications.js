@@ -19,16 +19,7 @@ window.ColosseumNotifications = (() => {
   let pollInterval = null;
   let panelOpen = false;
 
-  // BUG 1+2 FIX: Local OWASP 5-char entity encoder for all user data in innerHTML
-  function escHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#x27;'
-    })[c]);
-  }
+  const escHtml = ColosseumConfig.escapeHTML;
 
   const TYPES = {
     challenge: { icon: '⚔️', label: 'Challenge' },
@@ -278,9 +269,9 @@ window.ColosseumNotifications = (() => {
     }
   }
 
-  // --- Auto-init ---
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  // --- Auto-init (waits for auth ready) ---
+  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.ready) {
+    ColosseumAuth.ready.then(() => init());
   } else {
     setTimeout(init, 100);
   }

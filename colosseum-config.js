@@ -22,10 +22,6 @@ window.ColosseumConfig = (() => {
     contender_monthly:  'price_1T5THJPuHT2VlOoCYoDarYU5',
     champion_monthly:   'price_1T5THwPuHT2VlOoCQ6TQRBlN',
     creator_monthly:    'price_1T5TIDPuHT2VlOoCyuKuiBmx',
-    tokens_50:          'price_1T5TIoPuHT2VlOoCgsNvdHdl',
-    tokens_250:         'price_1T5TJ9PuHT2VlOoCahIFWQud',
-    tokens_600:         'price_1T5TJXPuHT2VlOoCmk8lPXDF',
-    tokens_1800:        'price_1T5TJxPuHT2VlOoCI55lrhHp',
   };
 
   const STRIPE_FUNCTION_URL = 'https://faomczmipsccwbhpivmp.supabase.co/functions/v1/create-checkout-session';
@@ -59,12 +55,6 @@ window.ColosseumConfig = (() => {
 
   // ========== TOKEN ECONOMY (Items 14.2.4) ==========
   const TOKENS = {
-    packages: [
-      { id: 'tokens_50',   amount: 50,   price: 0.99 },
-      { id: 'tokens_250',  amount: 250,  price: 3.99 },
-      { id: 'tokens_600',  amount: 600,  price: 7.99 },
-      { id: 'tokens_1800', amount: 1800, price: 19.99 },
-    ],
     earning: {
       dailyLogin: 1,
       challenge: 3,
@@ -107,10 +97,6 @@ window.ColosseumConfig = (() => {
     arena: true,              // SESSION 24: Full arena — lobby, matchmaking, 4 debate modes
     aiSparring: true,  // SESSION 64 FIX: was false, NT confirms AI Sparring is live
     recording: false,
-    pushNotifications: false,
-    dms: false,
-    teams: false,
-    tournaments: false,
   };
 
   // ========== TOPIC SECTIONS (Items 8.4, 14.6.7) ==========
@@ -125,13 +111,15 @@ window.ColosseumConfig = (() => {
   ];
 
   // ========== XSS PROTECTION ==========
-  // Use this whenever rendering user-supplied text into innerHTML / template literals.
-  // The textContent round-trip is the same pattern used in colosseum-arena.js sanitize().
+  // OWASP 5-char mapping. Use whenever rendering user-supplied text into innerHTML / template literals.
   function escapeHTML(str) {
     if (str == null) return '';
-    const d = document.createElement('div');
-    d.textContent = String(str);
-    return d.innerHTML;
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   // ========== GLOBAL TOAST — SESSION 60 ==========
@@ -139,7 +127,15 @@ window.ColosseumConfig = (() => {
   // Usage: ColosseumConfig.showToast('Message', 'success')
   // Types: 'success' (gold), 'error' (red), 'info' (neutral)
   let _toastTimeout = null;
+  let _toastKeyframeInjected = false;
   function showToast(msg, type = 'info') {
+    // Inject keyframe on first call (only defined in index.html CSS)
+    if (!_toastKeyframeInjected) {
+      const ks = document.createElement('style');
+      ks.textContent = '@keyframes coloToastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+      document.head.appendChild(ks);
+      _toastKeyframeInjected = true;
+    }
     // Remove any existing toast
     const old = document.getElementById('colo-toast');
     if (old) old.remove();
@@ -199,7 +195,7 @@ window.ColosseumConfig = (() => {
     const status = err.status || 0;
 
     // Rate limit
-    if (msg.includes('rate') || msg.includes('too many') || code === '429' || status === 429) {
+    if (msg.includes('rate') || msg.includes('too many') || String(code) === '429' || status === 429) {
       return 'Easy there, gladiator. Try again in a few seconds.';
     }
 

@@ -384,6 +384,13 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   const params = new URLSearchParams(window.location.search);
   const debateId = params.get('id');
 
+  // SECURITY: Validate UUID format before using in query
+  if (debateId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(debateId)) {
+    app.innerHTML = '<div style="text-align:center;padding:40px;color:#cc2936;font-size:16px;">Invalid debate link.</div>';
+    loading.style.display = 'none';
+    return;
+  }
+
   if (!debateId) {
     // No ID — fetch latest debate and redirect silently
     (async () => {
@@ -679,7 +686,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   // ---- Helpers ----
   function escHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function getCatIcon(cat) {

@@ -666,7 +666,11 @@ document.getElementById('delete-modal').addEventListener('click', (e) => {
 });
 document.getElementById('delete-confirm').addEventListener('click', async () => {
   if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.deleteAccount && !isPlaceholder) {
-    await ColosseumAuth.deleteAccount();
+    const result = await ColosseumAuth.deleteAccount();
+    if (result?.error) {
+      if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Delete failed — try again', 'error');
+      return;
+    }
   }
   localStorage.clear();
   window.location.href = 'colosseum-plinko.html';
