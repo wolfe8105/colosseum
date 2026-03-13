@@ -314,6 +314,7 @@ window.ColosseumArena = (() => {
       .arena-post-score { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
       .arena-post-side { text-align: center; }
       .arena-post-side-label { font-size: 11px; color: var(--white-dim); letter-spacing: 1px; margin-bottom: 4px; }
+      .arena-clickable-opp { color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
       .arena-post-side-score { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
       .arena-post-side-score.winner { color: var(--gold); }
       .arena-post-side-score.loser { color: var(--white-dim); }
@@ -975,6 +976,7 @@ window.ColosseumArena = (() => {
         round: 1,
         totalRounds: 3,
         opponentName: data.opponent_name || 'Opponent',
+        opponentId: data.opponent_id || null,
         opponentElo: data.opponent_elo || 1200,
         ranked: selectedRanked,
         messages: [],
@@ -1706,14 +1708,14 @@ window.ColosseumArena = (() => {
         </div>
         <div class="arena-post-divider">—</div>
         <div class="arena-post-side">
-          <div class="arena-post-side-label">${sanitize(debate.opponentName)}</div>
+          <div class="arena-post-side-label${debate.opponentId ? ' arena-clickable-opp' : ''}" ${debate.opponentId ? `data-opp-id="${sanitize(debate.opponentId)}"` : ''}>${sanitize(debate.opponentName)}</div>
           <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreB : scoreA)}</div>
         </div>
       </div>
-      <!-- TODO: E144 Add as Rival + E145/E149 Opponent Avatar → Profile
-           Blocked: debate object has opponentName/opponentElo but no opponentId.
-           Needs check_queue_status RPC to return opponent_id so we can call
-           ColosseumAuth.declareRival(opponentId) and showUserProfile(opponentId). -->
+      ${debate.opponentId && debate.mode !== 'ai' ? `
+      <div class="arena-post-actions" style="margin-bottom:0">
+        <button class="arena-post-btn secondary" id="arena-add-rival">⚔️ ADD RIVAL</button>
+      </div>` : ''}
       <div class="arena-post-actions">
         <button class="arena-post-btn primary" id="arena-rematch">⚔️ REMATCH</button>
         <button class="arena-post-btn secondary" id="arena-share-result">🔗 SHARE</button>
@@ -1751,6 +1753,35 @@ window.ColosseumArena = (() => {
       }
     });
     document.getElementById('arena-back-to-lobby')?.addEventListener('click', renderLobby);
+
+    // E144: Add as Rival
+    document.getElementById('arena-add-rival')?.addEventListener('click', async () => {
+      if (!debate.opponentId) return;
+      const btn = document.getElementById('arena-add-rival');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Adding...'; }
+      try {
+        if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.declareRival) {
+          const result = await ColosseumAuth.declareRival(debate.opponentId);
+          if (result && !result.error) {
+            if (btn) btn.textContent = '✅ RIVAL ADDED';
+            if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Rival declared!', 'success');
+          } else {
+            if (btn) { btn.textContent = '⚔️ ADD RIVAL'; btn.disabled = false; }
+            if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Could not add rival', 'error');
+          }
+        }
+      } catch (e) {
+        if (btn) { btn.textContent = '⚔️ ADD RIVAL'; btn.disabled = false; }
+      }
+    });
+
+    // E145/E149: Tap opponent name → profile modal
+    post.querySelector('.arena-clickable-opp')?.addEventListener('click', () => {
+      if (!debate.opponentId) return;
+      if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.showUserProfile) {
+        ColosseumAuth.showUserProfile(debate.opponentId);
+      }
+    });
   }
 
   // ========== SESSION 39: MODERATOR UI ==========

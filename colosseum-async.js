@@ -577,7 +577,9 @@ window.ColosseumAsync = (() => {
           return;
         }
 
-        if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent!', 'success');
+        if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent! Entering the arena...', 'success');
+        // E83: Navigate to arena → AI sparring with the challenged topic
+        _enterArenaWithTopic(take.text);
       } catch (e) {
         console.error('create_challenge exception:', e);
         take.challenges--;
@@ -585,8 +587,21 @@ window.ColosseumAsync = (() => {
         if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Challenge failed — try again', 'error');
       }
     } else {
-      if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent!', 'success');
+      if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent! Entering the arena...', 'success');
+      _enterArenaWithTopic(take.text);
     }
+  }
+
+  // E83: After challenge, navigate to arena and start AI sparring with the topic
+  function _enterArenaWithTopic(topic) {
+    setTimeout(() => {
+      // navigateTo is global on index.html — switches to arena screen
+      if (typeof navigateTo === 'function') navigateTo('arena');
+      // Start AI sparring with the challenged topic
+      if (typeof ColosseumArena !== 'undefined' && ColosseumArena.enterQueue) {
+        ColosseumArena.enterQueue('ai', topic);
+      }
+    }, 800); // Brief delay so the success toast is visible
   }
 
   // --- Post Composer ---
