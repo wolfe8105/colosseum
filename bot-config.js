@@ -65,21 +65,6 @@ const config = {
     channelCooldownMs: 600_000,
   },
 
-  // --- Lemmy ---
-  // Bot account must be marked as a bot in account settings.
-  // Bio must include owner contact info (lemmy.world requirement).
-  // Start with DRY_RUN=true, verify logs look correct, then set LEG2_LEMMY_ENABLED=true.
-  lemmy: {
-    enabled: process.env.LEG2_LEMMY_ENABLED === 'true' || process.env.LEG3_LEMMY_POST_ENABLED === 'true',
-    instance: process.env.LEMMY_INSTANCE || 'lemmy.world',   // just the domain, no https://
-    username: process.env.LEMMY_USERNAME,
-    password: process.env.LEMMY_PASSWORD,
-    // Max posts per community per day — stay under 2 to avoid spam flags
-    maxPostsPerCommunityPerDay: parseInt(process.env.LEMMY_MAX_POSTS_PER_COMMUNITY, 10) || 2,
-    // Total posts across all communities per day
-    maxPostsPerDay: parseInt(process.env.LEMMY_MAX_POSTS_PER_DAY, 10) || 4,
-  },
-
   // --- Proxy ---
   proxy: {
     url: process.env.PROXY_URL === 'NONE' ? null : process.env.PROXY_URL,
@@ -125,8 +110,6 @@ const config = {
     leg3AutoDebate: process.env.LEG3_AUTO_DEBATE_ENABLED === 'true',
     leg3RedditPost: process.env.LEG3_REDDIT_POST_ENABLED === 'true',
     leg3TwitterPost: process.env.LEG3_TWITTER_POST_ENABLED === 'true',
-    leg2Lemmy: process.env.LEG2_LEMMY_ENABLED === 'true',
-    leg3LemmyPost: process.env.LEG3_LEMMY_POST_ENABLED === 'true',
   },
 
   // --- Operational ---
@@ -190,14 +173,6 @@ function validateConfig() {
 
   if (config.flags.leg1Discord) {
     required.push(['DISCORD_BOT_TOKEN', config.discord.botToken]);
-  }
-
-  // Lemmy credentials required if either Lemmy leg is enabled
-  if (config.flags.leg2Lemmy || config.flags.leg3LemmyPost) {
-    required.push(
-      ['LEMMY_USERNAME', config.lemmy.username],
-      ['LEMMY_PASSWORD', config.lemmy.password],
-    );
   }
 
   // Leg 3 needs Reddit creds if posting auto-debates to Reddit

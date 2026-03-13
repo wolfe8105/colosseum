@@ -509,7 +509,9 @@ function getReturnTo() {
   const dest = params.get('returnTo');
   // SECURITY: Only allow relative paths starting with / (not //)
   // Blocks protocol-relative (//evil.com), javascript:, data:, etc.
-  if (dest && dest.startsWith('/') && !dest.startsWith('//')) return dest;
+  // SESSION 64 FIX: Also block backslash — Chrome/Firefox normalize \ to /
+  // so /\evil.com becomes //evil.com (protocol-relative → external redirect)
+  if (dest && dest.startsWith('/') && !dest.startsWith('//') && !dest.includes('\\')) return dest;
   return 'index.html';
 }
 

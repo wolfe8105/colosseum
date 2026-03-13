@@ -38,7 +38,6 @@ const ColosseumScoring = (() => {
 
   async function createDebate({ topic, category = 'general', format = 'standard', opponentId = null, side = 'a' }) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] createDebate:', topic);
       return { success: true, debateId: 'placeholder-' + Date.now() };
     }
 
@@ -56,7 +55,6 @@ const ColosseumScoring = (() => {
 
   async function joinDebate(debateId) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] joinDebate:', debateId);
       return { success: true, debateId, status: 'matched' };
     }
 
@@ -70,7 +68,6 @@ const ColosseumScoring = (() => {
 
   async function startDebate(debateId) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] startDebate:', debateId);
       return { success: true, status: 'live' };
     }
 
@@ -84,7 +81,6 @@ const ColosseumScoring = (() => {
 
   async function advanceRound(debateId) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] advanceRound:', debateId);
       return { success: true, status: 'live', round: 2 };
     }
 
@@ -98,7 +94,6 @@ const ColosseumScoring = (() => {
 
   async function finalizeDebate(debateId) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] finalizeDebate:', debateId);
       return {
         success: true,
         winner: 'a',
@@ -126,7 +121,6 @@ const ColosseumScoring = (() => {
 
   async function castVote(debateId, votedFor, round = null) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] castVote:', debateId, votedFor);
       return { success: true, votes_a: 5, votes_b: 3, your_vote: votedFor };
     }
 
@@ -147,7 +141,6 @@ const ColosseumScoring = (() => {
 
   async function placePrediction(debateId, predictedWinnerId, amount) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] placePrediction:', debateId, amount);
       return { success: true, amount, new_balance: 50 - amount };
     }
 
@@ -168,7 +161,6 @@ const ColosseumScoring = (() => {
 
   async function getLiveDebates(category = null, limit = 10) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] getLiveDebates');
       return [];
     }
 
@@ -183,7 +175,6 @@ const ColosseumScoring = (() => {
 
   async function getLeaderboard(sortBy = 'elo', limit = 50, offset = 0) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] getLeaderboard');
       return [];
     }
 

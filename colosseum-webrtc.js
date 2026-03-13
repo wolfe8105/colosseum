@@ -116,7 +116,6 @@ const ColosseumWebRTC = (() => {
   function setupSignaling(debateId) {
     const supabase = getSupabase();
     if (!supabase) {
-      console.log('[PLACEHOLDER] Signaling not available');
       return;
     }
 
@@ -344,7 +343,6 @@ const ColosseumWebRTC = (() => {
     debateState.totalRounds = MAX_ROUNDS;
 
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] joinDebate:', debateId, role);
       fire('placeholderMode', {
         message: 'WebRTC running in placeholder mode. Connect Supabase to go live.'
       });
@@ -412,7 +410,6 @@ const ColosseumWebRTC = (() => {
 
   function spectateDebate(debateId) {
     if (isPlaceholder()) {
-      console.log('[PLACEHOLDER] spectateDebate:', debateId);
       return;
     }
 

@@ -371,7 +371,7 @@ const existingVote = localStorage.getItem(voteKey);
 
 // --- Update OG meta dynamically (client-side — limited, but updates document.title) ---
 const totalVotes = debate.yesVotes + debate.noVotes;
-const yesPct = Math.round((debate.yesVotes / totalVotes) * 100);
+const yesPct = totalVotes ? Math.round((debate.yesVotes / totalVotes) * 100) : 50;
 document.title = debate.topic + ' — The Colosseum';
 
 // --- Render ---

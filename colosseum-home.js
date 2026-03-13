@@ -239,7 +239,6 @@ const ColosseumHome = (() => {
     // In production, calls ColosseumScoring.placePrediction()
     if (typeof ColosseumScoring !== 'undefined' && ColosseumScoring.placePrediction) {
       // ColosseumScoring.placePrediction(d.id, pickA ? 'a' : 'b', amount);
-      console.log('[Prediction]', d.topic, winner, amount);
     }
   }
 
@@ -488,8 +487,6 @@ const ColosseumHome = (() => {
   function showToast(msg) {
     if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
       ColosseumConfig.showToast(msg, 'info');
-    } else {
-      console.log('[ColosseumHome toast]', msg);
     }
   }
 

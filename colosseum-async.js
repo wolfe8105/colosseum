@@ -10,6 +10,7 @@
 // SESSION 3-FIXES: Bug fixes — reaction/challenge counts from DB,
 //   react debounce, challenge RPC wired, postTake rollback,
 //   XSS fixes in renderRivals + _renderPredictionCard.
+// SESSION CODE-REVIEW: Replaced all inline onclick with data-* + delegation.
 // ============================================================
 
 window.ColosseumAsync = (() => {
@@ -20,6 +21,9 @@ window.ColosseumAsync = (() => {
 
   // FIX #3: Debounce lock for react toggle (LM-015)
   const reactingIds = new Set();
+
+  // Shared escape — canonical source is ColosseumConfig
+  const esc = ColosseumConfig?.escapeHTML || (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
 
   // --- Placeholder Data ---
   const PLACEHOLDER_TAKES = {
@@ -49,6 +53,9 @@ window.ColosseumAsync = (() => {
       PLACEHOLDER_TAKES[t.section].push(t);
     }
   });
+
+  // Store current challenge take id for modal submission
+  let _pendingChallengeId = null;
 
   function init() {
     hotTakes = [...PLACEHOLDER_TAKES.all];
@@ -138,11 +145,56 @@ window.ColosseumAsync = (() => {
     }
   }
 
+  // --- Delegated event handler for hot takes feed ---
+  function _wireTakeDelegation(container) {
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'react') react(btn.dataset.id);
+      else if (action === 'challenge') challenge(btn.dataset.id);
+      else if (action === 'share') ColosseumShare?.shareTake?.(btn.dataset.id, btn.dataset.text);
+      else if (action === 'profile') ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+    });
+  }
+
+  // --- Delegated event handler for predictions feed ---
+  function _wirePredictionDelegation(container) {
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'predict') {
+        placePrediction(btn.dataset.id, btn.dataset.pick);
+      }
+    });
+  }
+
+  // --- Delegated event handler for rivals feed ---
+  function _wireRivalDelegation(container) {
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'profile') ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+      else if (btn.dataset.action === 'accept-rival') {
+        ColosseumAuth?.respondRival?.(btn.dataset.id, true).then(() => refreshRivals());
+      }
+    });
+  }
+
+  // Track which containers have delegation wired
+  const _wiredContainers = new WeakSet();
+
   // --- Load Hot Takes ---
   function loadHotTakes(category = 'all') {
     currentFilter = category;
     const container = document.getElementById('hot-takes-feed');
     if (!container) return;
+
+    // Wire delegation once per container
+    if (!_wiredContainers.has(container)) {
+      _wireTakeDelegation(container);
+      _wiredContainers.add(container);
+    }
 
     const takes = category === 'all' ? hotTakes : hotTakes.filter(t => t.section === category);
 
@@ -159,47 +211,49 @@ window.ColosseumAsync = (() => {
   }
 
   function _renderTake(t) {
-    const esc = ColosseumConfig?.escapeHTML || (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
     const userClickable = t.user_id && t.user_id !== ColosseumAuth?.currentUser?.id;
-    const userAttr = userClickable ? `onclick="ColosseumAuth?.showUserProfile?.('${t.user_id}')" style="cursor:pointer;"` : '';
     const safeUser = esc(t.user);
     const safeInitial = esc((t.user || '?')[0]);
     const safeText = esc(t.text);
+    const safeId = esc(t.id);
+    const safeUserId = esc(t.user_id);
+
+    const profileAttr = userClickable ? `data-action="profile" data-user-id="${safeUserId}" style="cursor:pointer;"` : '';
 
     return `
-      <div class="hot-take-card" data-id="${t.id}" style="
+      <div class="hot-take-card" data-id="${safeId}" style="
         background:#132240;border:1px solid rgba(255,255,255,0.06);border-radius:12px;
         padding:14px;margin-bottom:10px;
       ">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div ${userAttr} style="width:32px;height:32px;border-radius:50%;background:#1a2d4a;border:2px solid #d4a843;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#d4a843;${userClickable ? 'cursor:pointer;' : ''}">
+          <div ${profileAttr} style="width:32px;height:32px;border-radius:50%;background:#1a2d4a;border:2px solid #d4a843;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#d4a843;${userClickable ? 'cursor:pointer;' : ''}">
             ${safeInitial}
           </div>
           <div>
-            <span ${userAttr} style="font-weight:700;font-size:13px;color:#f0f0f0;${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
-            <span style="font-size:11px;color:#d4a843;margin-left:6px;">🪙 ${t.tokens || 0}</span>
+            <span ${profileAttr} style="font-weight:700;font-size:13px;color:#f0f0f0;${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
+            <span style="font-size:11px;color:#d4a843;margin-left:6px;">🪙 ${Number(t.tokens || 0)}</span>
           </div>
-          <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${t.time}</div>
+          <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
         </div>
-        
+
         <div style="font-size:14px;line-height:1.5;color:#f0f0f0;margin-bottom:12px;">${safeText}</div>
-        
+
         <div style="display:flex;align-items:center;gap:12px;">
-          <button onclick="ColosseumAsync.react('${t.id}')" style="
+          <button data-action="react" data-id="${safeId}" style="
             display:flex;align-items:center;gap:4px;background:${t.userReacted ? 'rgba(204,41,54,0.15)' : 'rgba(255,255,255,0.05)'};
             border:1px solid ${t.userReacted ? 'rgba(204,41,54,0.3)' : 'rgba(255,255,255,0.08)'};
             color:${t.userReacted ? '#cc2936' : '#a0a8b8'};
             padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
-          ">🔥 ${t.reactions}</button>
-          
-          <button onclick="ColosseumAsync.challenge('${t.id}')" style="
+          ">🔥 ${Number(t.reactions)}</button>
+
+          <button data-action="challenge" data-id="${safeId}" style="
             display:flex;align-items:center;gap:4px;
             background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);
             color:#cc2936;padding:6px 12px;border-radius:20px;
             font-size:12px;font-weight:700;cursor:pointer;
-          ">⚔️ BET. (${t.challenges})</button>
-          
-          <button onclick="ColosseumShare?.shareTake?.('${t.id}','${encodeURIComponent(t.text)}')" style="
+          ">⚔️ BET. (${Number(t.challenges)})</button>
+
+          <button data-action="share" data-id="${safeId}" data-text="${esc(t.text)}" style="
             display:flex;align-items:center;gap:4px;
             background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
             color:#a0a8b8;padding:6px 12px;border-radius:20px;
@@ -212,6 +266,13 @@ window.ColosseumAsync = (() => {
   // --- SESSION 23: Render Prediction Cards ---
   function renderPredictions(container) {
     if (!container) return;
+
+    // Wire delegation once per container
+    if (!_wiredContainers.has(container)) {
+      _wirePredictionDelegation(container);
+      _wiredContainers.add(container);
+    }
+
     if (!predictions.length) {
       container.innerHTML = `<div style="text-align:center;padding:20px;color:#6a7a90;font-size:13px;">No active predictions yet.</div>`;
       return;
@@ -224,45 +285,45 @@ window.ColosseumAsync = (() => {
 
   // FIX #7: XSS — escape p.topic, p.p1, p.p2
   function _renderPredictionCard(p) {
-    const esc = ColosseumConfig?.escapeHTML || (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
     const safeTopic = esc(p.topic);
     const safeP1 = esc(p.p1);
     const safeP2 = esc(p.p2);
+    const safeDebateId = esc(p.debate_id);
     const isLive = p.status === 'live' || p.status === 'in_progress';
     return `
       <div style="background:#132240;border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           ${isLive ? '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cc2936;font-weight:600;letter-spacing:1px;"><span style="width:6px;height:6px;background:#cc2936;border-radius:50%;animation:livePulse 1.5s ease-in-out infinite;"></span>LIVE</span>' : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">UPCOMING</span>'}
-          <span style="font-size:11px;color:#6a7a90;">${p.total} predictions</span>
+          <span style="font-size:11px;color:#6a7a90;">${Number(p.total)} predictions</span>
         </div>
-        
+
         <div style="font-family:'Cinzel',serif;font-size:14px;color:#f0f0f0;margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
-        
+
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <button onclick="ColosseumAsync.placePrediction('${p.debate_id}','a')" style="
+          <button data-action="predict" data-id="${safeDebateId}" data-pick="a" style="
             flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
             background:${p.user_pick === 'a' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
             border:1px solid ${p.user_pick === 'a' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
           ">
             <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP1}</div>
-            <div style="font-size:11px;color:#6a7a90;">ELO ${p.p1_elo}</div>
+            <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p1_elo)}</div>
           </button>
           <div style="display:flex;align-items:center;font-family:'Cinzel',serif;font-size:12px;color:#cc2936;letter-spacing:1px;">VS</div>
-          <button onclick="ColosseumAsync.placePrediction('${p.debate_id}','b')" style="
+          <button data-action="predict" data-id="${safeDebateId}" data-pick="b" style="
             flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
             background:${p.user_pick === 'b' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
             border:1px solid ${p.user_pick === 'b' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
           ">
             <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP2}</div>
-            <div style="font-size:11px;color:#6a7a90;">ELO ${p.p2_elo}</div>
+            <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p2_elo)}</div>
           </button>
         </div>
-        
+
         <div style="position:relative;height:24px;background:rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${p.pct_a}%;background:linear-gradient(90deg,rgba(212,168,67,0.3),rgba(212,168,67,0.15));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
+          <div style="position:absolute;left:0;top:0;height:100%;width:${Number(p.pct_a)}%;background:linear-gradient(90deg,rgba(212,168,67,0.3),rgba(212,168,67,0.15));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
-            <span style="color:#d4a843;">${p.pct_a}%</span>
-            <span style="color:#a0a8b8;">${p.pct_b}%</span>
+            <span style="color:#d4a843;">${Number(p.pct_a)}%</span>
+            <span style="color:#a0a8b8;">${Number(p.pct_b)}%</span>
           </div>
         </div>
       </div>`;
@@ -281,12 +342,14 @@ window.ColosseumAsync = (() => {
     const oldPick = pred.user_pick;
     pred.user_pick = side;
 
-    // Recalc percentages optimistically
+    // Recalc percentages optimistically — calculate count BEFORE incrementing total
     if (!oldPick) {
+      const countA = Math.round(pred.total * pred.pct_a / 100);
+      const countB = pred.total - countA;
       pred.total++;
-      if (side === 'a') pred.pct_a = Math.round(((pred.total * pred.pct_a / 100 + 1) / pred.total) * 100);
-      else pred.pct_b = Math.round(((pred.total * pred.pct_b / 100 + 1) / pred.total) * 100);
-      pred.pct_a = Math.min(99, Math.max(1, pred.pct_a));
+      const newCountA = countA + (side === 'a' ? 1 : 0);
+      const newCountB = countB + (side === 'b' ? 1 : 0);
+      pred.pct_a = Math.min(99, Math.max(1, Math.round((newCountA / pred.total) * 100)));
       pred.pct_b = 100 - pred.pct_a;
     }
 
@@ -306,28 +369,33 @@ window.ColosseumAsync = (() => {
           console.error('place_prediction error:', error);
           pred.user_pick = oldPick;
           if (predContainer) renderPredictions(predContainer);
-        } else {
-          // Session 72: Token earn for prediction
-          if (typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimPrediction(debateId);
+          return;
         }
+
+        // Session 72: Token earn for prediction
+        if (typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimPrediction(debateId);
       } catch (e) {
         console.error('place_prediction exception:', e);
       }
     }
 
-    // Toast
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#d4a843;color:#0a1628;padding:10px 20px;border-radius:8px;font-weight:700;z-index:9999;font-size:13px;';
-    toast.textContent = `🔮 Predicted ${side === 'a' ? pred.p1 : pred.p2} wins!`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+    // Toast — only on success
+    if (ColosseumConfig?.showToast) {
+      ColosseumConfig.showToast(`🔮 Predicted ${side === 'a' ? pred.p1 : pred.p2} wins!`, 'success');
+    }
   }
 
   // --- SESSION 23: Render Rivals Section ---
   // FIX #6: XSS — escape all user-sourced strings
   async function renderRivals(container) {
     if (!container) return;
-    const esc = ColosseumConfig?.escapeHTML || (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+
+    // Wire delegation once per container
+    if (!_wiredContainers.has(container)) {
+      _wireRivalDelegation(container);
+      _wiredContainers.add(container);
+    }
+
     const rivals = await ColosseumAuth?.getMyRivals?.() || [];
 
     if (!rivals.length) {
@@ -344,19 +412,21 @@ window.ColosseumAsync = (() => {
       ${rivals.map(r => {
         const safeName = esc((r.rival_display_name || r.rival_username || 'Unknown').toUpperCase());
         const safeInitial = esc((r.rival_display_name || r.rival_username || '?')[0].toUpperCase());
+        const safeRivalId = esc(r.rival_id);
+        const safeId = esc(r.id);
         return `
         <div style="background:#132240;border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-          <div onclick="ColosseumAuth?.showUserProfile?.('${r.rival_id}')" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">
+          <div data-action="profile" data-user-id="${safeRivalId}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">
             ${safeInitial}
           </div>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;color:#f0f0f0;">${safeName}</div>
-            <div style="font-size:11px;color:#6a7a90;">ELO ${r.rival_elo || 1200} · ${r.rival_wins || 0}W-${r.rival_losses || 0}L</div>
+            <div style="font-size:11px;color:#6a7a90;">ELO ${Number(r.rival_elo || 1200)} · ${Number(r.rival_wins || 0)}W-${Number(r.rival_losses || 0)}L</div>
           </div>
           <div style="text-align:right;">
             ${r.status === 'pending'
               ? (r.direction === 'received'
-                ? `<button onclick="ColosseumAuth?.respondRival?.('${r.id}',true).then(()=>ColosseumAsync.refreshRivals())" style="padding:6px 12px;background:#cc2936;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
+                ? `<button data-action="accept-rival" data-id="${safeId}" style="padding:6px 12px;background:#cc2936;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
                 : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">PENDING</span>')
               : '<span style="font-size:11px;color:#cc2936;font-weight:700;letter-spacing:1px;">⚔️ ACTIVE</span>'}
           </div>
@@ -422,9 +492,11 @@ window.ColosseumAsync = (() => {
 
   function _showChallengeModal(take) {
     document.getElementById('challenge-modal')?.remove();
-    const esc = ColosseumConfig?.escapeHTML || (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
     const safeUser = esc(take.user);
     const safeText = esc(take.text);
+
+    // Store for submission via delegation
+    _pendingChallengeId = take.id;
 
     const modal = document.createElement('div');
     modal.id = 'challenge-modal';
@@ -434,31 +506,40 @@ window.ColosseumAsync = (() => {
         <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
         <div style="font-family:'Cinzel',serif;font-size:22px;letter-spacing:2px;color:#cc2936;text-align:center;margin-bottom:4px;">⚔️ CHALLENGE</div>
         <div style="color:#a0a8b8;text-align:center;font-size:13px;margin-bottom:16px;">You disagree with ${safeUser}?</div>
-        
+
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:16px;">
           <div style="font-size:13px;color:#f0f0f0;line-height:1.4;">"${safeText}"</div>
-          <div style="font-size:11px;color:#6a7a90;margin-top:6px;">— ${safeUser} (ELO ${take.elo})</div>
+          <div style="font-size:11px;color:#6a7a90;margin-top:6px;">— ${safeUser} (ELO ${Number(take.elo)})</div>
         </div>
-        
+
         <textarea id="challenge-response" placeholder="Your counter-argument..." style="
           width:100%;background:#1a2d4a;border:1px solid rgba(255,255,255,0.1);border-radius:10px;
           color:#f0f0f0;padding:12px;font-size:14px;resize:none;height:80px;
           font-family:'Barlow Condensed',sans-serif;margin-bottom:12px;box-sizing:border-box;
         "></textarea>
-        
+
         <div style="display:flex;gap:8px;">
-          <button onclick="document.getElementById('challenge-modal')?.remove()" style="
+          <button data-action="cancel-challenge" style="
             flex:1;padding:12px;background:#1a2d4a;color:#a0a8b8;border:1px solid rgba(255,255,255,0.1);
             border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;
           ">CANCEL</button>
-          <button onclick="ColosseumAsync._submitChallenge('${take.id}')" style="
+          <button data-action="submit-challenge" style="
             flex:1;padding:12px;background:#cc2936;color:#fff;border:none;
             border-radius:10px;font-family:'Cinzel',serif;font-size:16px;
             letter-spacing:2px;cursor:pointer;
           ">⚔️ BET.</button>
         </div>
       </div>`;
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    // Delegated event handling for modal buttons
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) { modal.remove(); return; }
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'cancel-challenge') modal.remove();
+      else if (btn.dataset.action === 'submit-challenge') _submitChallenge(_pendingChallengeId);
+    });
+
     document.body.appendChild(modal);
   }
 
@@ -490,24 +571,21 @@ window.ColosseumAsync = (() => {
 
         if (error) {
           console.error('create_challenge error:', error);
-          // Rollback
           take.challenges--;
           loadHotTakes(currentFilter);
-          _showToast('Challenge failed — try again', '#cc2936');
+          if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Challenge failed — try again', 'error');
           return;
         }
 
-        // Success toast
-        _showToast('⚔️ Challenge sent!', '#cc2936');
+        if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent!', 'success');
       } catch (e) {
         console.error('create_challenge exception:', e);
         take.challenges--;
         loadHotTakes(currentFilter);
-        _showToast('Challenge failed — try again', '#cc2936');
+        if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Challenge failed — try again', 'error');
       }
     } else {
-      // Placeholder mode — just show toast
-      _showToast('⚔️ Challenge sent!', '#cc2936');
+      if (ColosseumConfig?.showToast) ColosseumConfig.showToast('⚔️ Challenge sent!', 'success');
     }
   }
 
@@ -522,7 +600,7 @@ window.ColosseumAsync = (() => {
         " maxlength="280"></textarea>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div id="take-char-count" style="font-size:11px;color:#6a7a90;">0 / 280</div>
-          <button onclick="ColosseumAsync.postTake()" style="
+          <button data-action="post-take" style="
             background:#cc2936;color:#fff;border:none;border-radius:8px;
             padding:8px 20px;font-family:'Cinzel',serif;font-size:14px;
             letter-spacing:1px;cursor:pointer;
@@ -574,20 +652,18 @@ window.ColosseumAsync = (() => {
 
         if (error) {
           console.error('create_hot_take error:', error);
-          // Rollback: restore snapshot, re-render, show error
           hotTakes = snapshot;
           loadHotTakes(currentFilter);
-          _showToast('Post failed — try again', '#cc2936');
+          if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Post failed — try again', 'error');
         } else if (data?.id) {
           newTake.id = data.id;
-          // Session 71: Token earn
           if (typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimHotTake(data.id);
         }
       } catch (e) {
         console.error('create_hot_take exception:', e);
         hotTakes = snapshot;
         loadHotTakes(currentFilter);
-        _showToast('Post failed — try again', '#cc2936');
+        if (ColosseumConfig?.showToast) ColosseumConfig.showToast('Post failed — try again', 'error');
       }
     }
   }
@@ -605,20 +681,18 @@ window.ColosseumAsync = (() => {
     return days + 'd';
   }
 
-  function _showToast(msg, bg) {
-    const toast = document.createElement('div');
-    toast.style.cssText = `position:fixed;top:80px;left:50%;transform:translateX(-50%);background:${bg || '#cc2936'};color:#fff;padding:12px 24px;border-radius:8px;font-weight:700;z-index:9999;font-size:14px;`;
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
-
   // --- Init ---
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+
+  // Wire post-take button delegation on the composer container
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="post-take"]');
+    if (btn) postTake();
+  });
 
   return {
     loadHotTakes,

@@ -26,6 +26,9 @@
 
 window.ColosseumAuth = (() => {
 
+  // UUID validator — used before all RPC calls that take user IDs
+  const isUUID = (s) => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
   let supabase = null;
   let currentUser = null;
   let currentProfile = null;
@@ -95,7 +98,9 @@ window.ColosseumAuth = (() => {
             currentUser = session.user;
             // Dispatch profile load OUTSIDE callback to avoid deadlock
             setTimeout(() => {
-              _loadProfile(session.user.id).then(() => _resolveReady());
+              _loadProfile(session.user.id)
+                .then(() => _resolveReady())
+                .catch(e => { console.error('ColosseumAuth: profile load failed, continuing as partial session', e); _resolveReady(); });
             }, 0);
           } else {
             // Not logged in — resolve ready immediately
@@ -186,7 +191,6 @@ window.ColosseumAuth = (() => {
   // --- Sign Up (Item 14.4.1.1) ---
   async function signUp({ email, password, username, displayName, dob }) {
     if (isPlaceholderMode) {
-      console.log('[Placeholder] signUp called:', email);
       return { success: true, placeholder: true };
     }
 
@@ -218,7 +222,6 @@ window.ColosseumAuth = (() => {
   // --- Log In (Item 14.4.1.1) ---
   async function logIn({ email, password }) {
     if (isPlaceholderMode) {
-      console.log('[Placeholder] logIn called:', email);
       return { success: true, placeholder: true };
     }
 
@@ -237,7 +240,6 @@ window.ColosseumAuth = (() => {
   // Defaults to current page URL so OAuth always returns to the page that initiated it.
   async function oauthLogin(provider, redirectTo) {
     if (isPlaceholderMode) {
-      console.log('[Placeholder] OAuth called:', provider);
       return { success: true, placeholder: true };
     }
 
@@ -256,7 +258,6 @@ window.ColosseumAuth = (() => {
   // --- Log Out ---
   async function logOut() {
     if (isPlaceholderMode) {
-      console.log('[Placeholder] logOut called');
       return { success: true };
     }
 
@@ -371,6 +372,7 @@ window.ColosseumAuth = (() => {
   // --- Follow System (SESSION 17: migrated to RPC) ---
   // SESSION 64 BUG 3 FIX: supabase.rpc() → safeRpc() for 401 recovery.
   async function followUser(targetUserId) {
+    if (!isUUID(targetUserId)) return { success: false, error: 'Invalid user ID' };
     if (isPlaceholderMode) return { success: true };
 
     try {
@@ -385,6 +387,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function unfollowUser(targetUserId) {
+    if (!isUUID(targetUserId)) return { success: false, error: 'Invalid user ID' };
     if (isPlaceholderMode) return { success: true };
 
     try {
@@ -444,6 +447,7 @@ window.ColosseumAuth = (() => {
   // --- SESSION 23: Public Profile Lookup ---
   // SESSION 64 BUG 3 FIX: supabase.rpc() → safeRpc() for 401 recovery.
   async function getPublicProfile(userId) {
+    if (!isUUID(userId)) return null;
     if (isPlaceholderMode) {
       return {
         id: userId, username: 'gladiator', display_name: 'Gladiator',
@@ -466,6 +470,7 @@ window.ColosseumAuth = (() => {
   // --- SESSION 23: Rivals ---
   // SESSION 64 BUG 3 FIX: supabase.rpc() → safeRpc() for 401 recovery.
   async function declareRival(targetId, message) {
+    if (!isUUID(targetId)) return { success: false, error: 'Invalid user ID' };
     if (isPlaceholderMode) return { success: true };
     try {
       const { data, error } = await safeRpc('declare_rival', {
@@ -510,7 +515,7 @@ window.ColosseumAuth = (() => {
   // SESSION 64 BUG 5 FIX: Rival error shows friendly message, not raw server error.
   // SESSION 64 BUG 6 FIX: initial char is now escaped before innerHTML injection.
   async function showUserProfile(userId) {
-    if (!userId || userId === currentUser?.id) return; // Don't show modal for self
+    if (!userId || !isUUID(userId) || userId === currentUser?.id) return; // Don't show modal for self or invalid IDs
 
     // Remove existing modal
     document.getElementById('user-profile-modal')?.remove();
@@ -551,19 +556,19 @@ window.ColosseumAuth = (() => {
 
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:#d4a843;">${profile.elo_rating || 1200}</div>
+          <div style="font-family:'Cinzel',serif;font-size:18px;color:#d4a843;">${Number(profile.elo_rating) || 1200}</div>
           <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">ELO</div>
         </div>
         <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${profile.wins || 0}-${profile.losses || 0}</div>
+          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.wins) || 0}-${Number(profile.losses) || 0}</div>
           <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">W-L</div>
         </div>
         <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${profile.followers || 0}</div>
+          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.followers) || 0}</div>
           <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWERS</div>
         </div>
         <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${profile.following || 0}</div>
+          <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.following) || 0}</div>
           <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWING</div>
         </div>
       </div>
