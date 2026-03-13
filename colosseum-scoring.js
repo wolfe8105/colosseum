@@ -42,7 +42,7 @@ const ColosseumScoring = (() => {
       return { success: true, debateId: 'placeholder-' + Date.now() };
     }
 
-    const { data, error } = await getClient().rpc('create_debate', {
+    const { data, error } = await ColosseumAuth.safeRpc('create_debate', {
       p_topic: topic,
       p_category: category,
       p_format: format,
@@ -60,7 +60,7 @@ const ColosseumScoring = (() => {
       return { success: true, debateId, status: 'matched' };
     }
 
-    const { data, error } = await getClient().rpc('join_debate', {
+    const { data, error } = await ColosseumAuth.safeRpc('join_debate', {
       p_debate_id: debateId
     });
 
@@ -74,7 +74,7 @@ const ColosseumScoring = (() => {
       return { success: true, status: 'live' };
     }
 
-    const { data, error } = await getClient().rpc('start_debate', {
+    const { data, error } = await ColosseumAuth.safeRpc('start_debate', {
       p_debate_id: debateId
     });
 
@@ -88,7 +88,7 @@ const ColosseumScoring = (() => {
       return { success: true, status: 'live', round: 2 };
     }
 
-    const { data, error } = await getClient().rpc('advance_round', {
+    const { data, error } = await ColosseumAuth.safeRpc('advance_round', {
       p_debate_id: debateId
     });
 
@@ -111,7 +111,7 @@ const ColosseumScoring = (() => {
       };
     }
 
-    const { data, error } = await getClient().rpc('finalize_debate', {
+    const { data, error } = await ColosseumAuth.safeRpc('finalize_debate', {
       p_debate_id: debateId
     });
 
@@ -130,7 +130,7 @@ const ColosseumScoring = (() => {
       return { success: true, votes_a: 5, votes_b: 3, your_vote: votedFor };
     }
 
-    const { data, error } = await getClient().rpc('cast_vote', {
+    const { data, error } = await ColosseumAuth.safeRpc('cast_vote', {
       p_debate_id: debateId,
       p_voted_for: votedFor,
       p_round: round
@@ -151,7 +151,7 @@ const ColosseumScoring = (() => {
       return { success: true, amount, new_balance: 50 - amount };
     }
 
-    const { data, error } = await getClient().rpc('place_prediction', {
+    const { data, error } = await ColosseumAuth.safeRpc('place_prediction', {
       p_debate_id: debateId,
       p_predicted_winner: predictedWinnerId,
       p_amount: amount
@@ -172,7 +172,7 @@ const ColosseumScoring = (() => {
       return [];
     }
 
-    const { data, error } = await getClient().rpc('get_live_debates', {
+    const { data, error } = await ColosseumAuth.safeRpc('get_live_debates', {
       p_category: category,
       p_limit: limit
     });
@@ -187,7 +187,7 @@ const ColosseumScoring = (() => {
       return [];
     }
 
-    const { data, error } = await getClient().rpc('get_leaderboard', {
+    const { data, error } = await ColosseumAuth.safeRpc('get_leaderboard', {
       p_sort_by: sortBy,
       p_limit: limit,
       p_offset: offset
