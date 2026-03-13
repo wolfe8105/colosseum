@@ -456,6 +456,8 @@ body {
   </div>
 
   <button class="join-btn join" id="join-btn" onclick="toggleMembership()">JOIN GROUP</button>
+  <!-- TODO: E211 Post Hot Take (group-scoped) — needs post UI + create_hot_take RPC with section=groupId
+       TODO: E212/E215 Group vs Group (GvG) — entire feature unbuilt, needs new RPCs + opponent picker -->
 
   <div class="tabs detail-tabs" id="detail-tabs">
     <button class="tab-btn active" onclick="switchDetailTab('hot-takes')">Hot Takes</button>
@@ -793,7 +795,9 @@ async function loadGroupMembers(groupId) {
       const role = m.role || 'member';
       const roleBadge = role !== 'member'
         ? `<span class="my-role-badge ${esc(role)}">${esc(role.toUpperCase())}</span>` : '';
-      return `<div class="member-row">
+      const memberId = m.user_id || m.id || '';
+      const clickAttr = memberId ? `onclick="ColosseumAuth?.showUserProfile?.('${esc(memberId)}')" style="cursor:pointer;"` : '';
+      return `<div class="member-row" ${clickAttr}>
         <div class="member-avatar">
           ${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="">` : '⚔️'}
         </div>

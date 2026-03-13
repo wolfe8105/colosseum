@@ -1100,6 +1100,8 @@ window.ColosseumArena = (() => {
           </div>
         </div>
       </div>
+      <!-- TODO: E131 Share Live Debate Link — needs spectator flow (E153/E155/E156) wired first
+           so shared links have a destination page for viewers. -->
       <div class="arena-spectator-bar"><span class="eye">👁️</span> <span id="arena-spectator-count">0</span> watching</div>
       <div class="arena-messages" id="arena-messages"></div>
       <div class="arena-input-area" id="arena-input-area"></div>
@@ -1704,6 +1706,10 @@ window.ColosseumArena = (() => {
           <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${debate.role === 'a' ? scoreB : scoreA}</div>
         </div>
       </div>
+      <!-- TODO: E144 Add as Rival + E145/E149 Opponent Avatar → Profile
+           Blocked: debate object has opponentName/opponentElo but no opponentId.
+           Needs check_queue_status RPC to return opponent_id so we can call
+           ColosseumAuth.declareRival(opponentId) and showUserProfile(opponentId). -->
       <div class="arena-post-actions">
         <button class="arena-post-btn primary" id="arena-rematch">⚔️ REMATCH</button>
         <button class="arena-post-btn secondary" id="arena-share-result">🔗 SHARE</button>
@@ -1722,8 +1728,8 @@ window.ColosseumArena = (() => {
       enterQueue(debate.mode, debate.topic);
     });
     document.getElementById('arena-share-result')?.addEventListener('click', () => {
-      if (typeof ColosseumShare !== 'undefined' && ColosseumShare.shareDebateResult) {
-        ColosseumShare.shareDebateResult({
+      if (typeof ColosseumShare !== 'undefined' && ColosseumShare.shareResult) {
+        ColosseumShare.shareResult({
           debateId: debate.id,
           topic: debate.topic,
           winner: didWin ? myName : debate.opponentName,
