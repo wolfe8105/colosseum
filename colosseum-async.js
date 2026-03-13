@@ -121,7 +121,7 @@ window.ColosseumAsync = (() => {
     if (!ColosseumAuth?.supabase || ColosseumAuth.isPlaceholderMode) return;
 
     try {
-      const { data, error } = await ColosseumAuth.supabase.rpc('get_hot_predictions', { p_limit: 10 });
+      const { data, error } = await ColosseumAuth.safeRpc('get_hot_predictions', { p_limit: 10 });
       if (error) throw error;
 
       if (data && data.length > 0) {
@@ -360,7 +360,7 @@ window.ColosseumAsync = (() => {
     // Server call
     if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
       try {
-        const { data, error } = await ColosseumAuth.supabase.rpc('place_prediction', {
+        const { data, error } = await ColosseumAuth.safeRpc('place_prediction', {
           p_debate_id: debateId,
           p_predicted_winner: side
         });
@@ -455,7 +455,7 @@ window.ColosseumAsync = (() => {
 
     if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
       try {
-        const { data, error } = await ColosseumAuth.supabase.rpc('react_hot_take', {
+        const { data, error } = await ColosseumAuth.safeRpc('react_hot_take', {
           p_hot_take_id: takeId,
           p_reaction_type: 'fire'
         });
@@ -563,7 +563,7 @@ window.ColosseumAsync = (() => {
     // Server call
     if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
       try {
-        const { data, error } = await ColosseumAuth.supabase.rpc('create_challenge', {
+        const { data, error } = await ColosseumAuth.safeRpc('create_challenge', {
           p_hot_take_id: takeId,
           p_counter_argument: text,
           p_topic: take.text
@@ -645,7 +645,7 @@ window.ColosseumAsync = (() => {
 
     if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
       try {
-        const { data, error } = await ColosseumAuth.supabase.rpc('create_hot_take', {
+        const { data, error } = await ColosseumAuth.safeRpc('create_hot_take', {
           p_content: text,
           p_section: section
         });

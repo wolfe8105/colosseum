@@ -642,8 +642,7 @@ window.ColosseumVoiceMemo = (() => {
 
     // Create async voice take entry via RPC (SESSION 17: migrated)
     if (!isPlaceholder()) {
-      const supabase = getSupabase();
-      const { data, error } = await supabase.rpc('create_voice_take', {
+      const { data, error } = await ColosseumAuth.safeRpc('create_voice_take', {
         p_section: context.section || 'trending',
         p_voice_memo_url: url,
         p_voice_memo_path: path,

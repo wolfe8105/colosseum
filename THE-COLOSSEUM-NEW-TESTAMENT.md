@@ -1,5 +1,5 @@
 # THE COLOSSEUM — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 78 (March 12, 2026)
+### Last Updated: Session 91 (March 13, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -7,7 +7,7 @@
 >
 > **Other bible docs (repo, read when relevant):**
 > - `THE-COLOSSEUM-OLD-TESTAMENT.md` — All session build logs (1-62), 502+ item inventory, revenue model, B2B data play, growth strategy
-> - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 165+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
+> - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 168+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
 > - `THE-COLOSSEUM-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, exclusivity framework, buyer list
 > - `THE-COLOSSEUM-PRODUCT-VISION.md` — Psychology framework, visual game layer, sound-off solution, ad placement, gamification
 > - `THE-COLOSSEUM-TEST-WALKTHROUGH.md` — 54-scenario journey walkthrough
@@ -33,6 +33,7 @@
 - No personal network, no social media accounts
 - Android phone, ~1 hour free per day, ~$100/month budget
 - **All growth must be fully automated with zero human involvement**
+- **Pat switches between multiple computers** — file downloads from Claude may land on different machines. Never trust SCP delivered the right file; verify content on VPS after every transfer.
 
 ---
 
@@ -42,6 +43,7 @@
 - **Slow down, suggest, wait** — present 2-4 options, Pat picks
 - **Small chunks with downloads** — work in pieces, pause, ask what's next
 - **Full file replacement over patches** — always produce complete files, never diffs
+- **Prefer VPS sed for bot files** — SCP from Downloads is unreliable (LM-152, LM-166). Use sed to patch VPS files directly when possible.
 - **Verify before claiming done** — confirm it's actually there
 - **Zero founder marketing time** — all growth is bot-driven
 - **Keep it simple** — plain steps, one thing at a time, no jargon
@@ -86,7 +88,7 @@
 
 1. **Money pipe connected** — Stripe Checkout live (sandbox), Edge Functions deployed, webhooks listening. Still sandbox mode.
 2. **Single-player → multiplayer (in progress)** — follows, modals, predictions, rivals, arena, 4 debate modes, AI sparring, guest access. Needs real users.
-3. **No audience** — Bot army deployed, DRY_RUN=false. Bluesky image posting built but NOT FIRING (flag mismatch in bot-config.js). Lemmy DEAD (files deleted, disabled). Reddit pending API approval (submitted March 4). Discord deferred.
+3. **No audience** — Bot army deployed, DRY_RUN=false. Bluesky L2 flag fixed and posting (text-only confirmed March 12; image posting v2 on VPS, awaiting verification after Session 91 config fix). Lemmy DEAD (files deleted, flags removed, config block removed). Reddit pending API approval (submitted March 4). Discord deferred.
 
 ---
 
@@ -106,6 +108,8 @@
 
 ## Infrastructure Summary
 Supabase (faomczmipsccwbhpivmp): 34 tables, RLS hardened, 42+ server functions, sanitization, rate limits, 9 analytics views, 3 security views, 20 RPCs wired to log_event(). Token system Phase 3 complete (milestones, streak freezes, token display, gold coin animation). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, 1 serverless function (profile pages). Stripe sandbox: 7 products, Edge Functions, webhooks. Auth working end-to-end. Resend SMTP configured. Security audit FULLY COMPLETE (Sessions A-D). Bot army deployed to VPS (DigitalOcean $6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false LIVE. Content-first upgrade: ESPN-style share card generation (card-generator.js) + Bluesky image posting (leg2-bluesky-poster.js v2). Mirror generator live (5-min cron, 41 pages/build, deploys to colosseum-f30.pages.dev). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI fully built. Reference/evidence system live. Analytics layer live. Funnel analytics live. Legal docs live (Privacy Policy + Terms). Groups feature live. Ranked/Casual mode live. Public profile pages live. OWASP audit complete (7/10 STRONG). SRI hashes on 6 HTML files. Edge Functions hardened (Deno.serve, CORS allowlist).
+
+**IMPORTANT: bot-config.js on VPS is authoritative, NOT the GitHub version.** The VPS copy has a `bluesky: { ... }` config block added by setup-bluesky.js that does not exist in the GitHub version. Uploading bot-config.js from GitHub to VPS will break Bluesky posting (LM-166).
 
 ## Core JS Modules (all use window.X global pattern)
 | File | Purpose |
@@ -149,6 +153,7 @@ Supabase (faomczmipsccwbhpivmp): 34 tables, RLS hardened, 42+ server functions, 
 ## VPS Bot Files (not on GitHub):
 - card-generator.js — Server-side ESPN share card PNG generator (canvas npm)
 - leg2-bluesky-poster.js (v2) — Image-first Bluesky posting with uploadBlob()
+- bot-engine.js — Main orchestrator, cron scheduling, pipeline execution
 
 ## Legal Compliance
 Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA agent NOT registered. Legal emails NOT created (need domain).
@@ -186,8 +191,12 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - Combined daily reach: ~6,000-40,000+ impressions
 - Actual monthly cost: $6-16/mo
 - Bot army LIVE (DRY_RUN=false).
-- All bot links → colosseum-f30.pages.dev (mirror), not Vercel app.
-- Platforms: Bluesky (image posting built, NOT FIRING — flag mismatch), Lemmy (DEAD — files deleted, disabled), Reddit (pending API approval since March 4), Discord (deferred).
+- All bot links → colosseum-f30.pages.dev (mirror), not Vercel app. APP_BASE_URL fixed Session 91.
+- **Platforms:**
+  - **Bluesky:** L2 flag fixed (Session 90), config block + flags block fixed (Session 91). Image poster v2 on VPS. **Awaiting verification** that image posts actually fire on next pipeline cycle.
+  - **Lemmy:** DEAD. Files deleted, flags removed from bot-config.js, config block removed. .env values set to false. Commented out in bot-engine.js.
+  - **Reddit:** Pending API approval (submitted March 4, 9+ days).
+  - **Discord:** Deferred until real users.
 - Groq TPD cap (100k tokens/day free tier) hits daily — falls back to templates.
 
 ---
@@ -197,18 +206,20 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 ## Pending Human Actions
 - ⏳ Register DMCA agent at copyright.gov ($6)
 - ⏳ Purchase domain thecolosseum.app (blocks legal emails + mirror URL)
-- ⏳ Reddit API approval — check email, update .env, enable Reddit legs (submitted March 4, 8+ days)
+- ⏳ Reddit API approval — check email, update .env, enable Reddit legs (submitted March 4, 9+ days)
 - ⏳ Invite Discord bot to servers (deferred until real users)
 - ⏳ Rename `package_1.json` → `package.json` on GitHub
-- ⏳ Upload updated bible files to GitHub
+- ⏳ Upload updated bible files to GitHub (NT, LM)
+- ⏳ Upload fixed bot-config.js to GitHub (sync VPS version back to repo)
 
 ## Next Build Priorities
-- 🔴 Fix L2-Bluesky flag — trace through bot-config.js to find why LEG2_BLUESKY_ENABLED isn't registering (LM-149 pattern)
-- ⏳ Clean ecosystem.config.js — remove Lemmy references
+- 🔴 **Verify Bluesky image posts** — run `pm2 logs --lines 40 --nostream | grep -iE "bluesky|image|card|upload"` after next pipeline cycle. If errors, debug image poster v2.
+- ⏳ Unwired edges needing SQL (E131, E144/E145/E149, E211, E212/E215, E279/E280)
 - ⏳ Finish guest walkthrough — started Session 77, found template text in debate content, truncated titles, zero real votes
 - ⏳ Mirror analytics — mirror pages have zero tracking, completely blind on traffic
 - ⏳ Mirror debate content — currently all template text, not real AI arguments
 - ⏳ Voice memo UX + keyboard handling (needs real device test)
+- ⏳ Clean ecosystem.config.js — remove Lemmy references
 - ⏳ Watch what happens — monitor via bot_stats_24h + auto_debate_stats + event_log + `pm2 logs`
 
 ## Known Bugs / Tech Debt
@@ -219,9 +230,10 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ⏳ 3 older RLS policies still have {public} scope (low priority)
 - ⏳ safeRpc() not yet backfilled into all modules
 - ⏳ bot-engine.js not in repo (VPS-only, backup exists)
+- ⏳ bot-config.js on GitHub is stale (missing bluesky block, still has Lemmy) — VPS is authoritative
 
 ## Bot Army Remaining
-- 🔴 Fix L2-Bluesky flag mismatch in bot-config.js → image posts start flowing
+- 🔴 Verify Bluesky image posts fire on next cycle
 - ⏳ Reddit API approval → update .env → enable Reddit legs
 - ⏳ Optional: Twitter/X developer account
 
@@ -231,6 +243,7 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 
 These are the things that bite hardest. Full details in the Land Mine Map.
 
+- **bot-config.js on VPS ≠ GitHub** (LM-166). The VPS copy has a `bluesky: {}` config block added by setup-bluesky.js. GitHub version does not. Uploading from GitHub overwrites it and breaks Bluesky. **VPS is authoritative for bot-config.js.** When patching, use `sed` directly on VPS instead of SCP.
 - **guard_profile_columns trigger** protects level, xp, streak_freezes (updated Session 77). Silently reverts direct UPDATEs on these columns. Disable trigger before updating, re-enable after.
 - **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client
 - **Supabase dashboard is schema source of truth** — verify column names before assuming
@@ -247,6 +260,7 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 - **Windows download cache** can cause stale scp uploads — re-output with unique filename if needed
 - **Bot platform wiring requires THREE updates** (LM-149): config object + flags block in bot-config.js + formatFlags() in bot-engine.js. Missing any one = silent failure.
 - **VPS file copies**: always use `\cp` (backslash prefix) to bypass `cp -i` alias. Always verify with grep after copy.
+- **SCP from multiple machines is unreliable** (LM-167): Pat switches computers. SCP may deliver stale files from a different machine's Downloads. Always verify content on VPS with `grep` after transfer. Prefer `sed` patches over SCP for bot files.
 
 ---
 

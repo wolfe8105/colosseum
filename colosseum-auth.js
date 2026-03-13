@@ -552,6 +552,7 @@ window.ColosseumAuth = (() => {
         <div style="font-family:'Cinzel',serif;font-size:18px;letter-spacing:2px;color:#f0f0f0;">${safeName}</div>
         <div style="font-size:11px;color:#b8922e;letter-spacing:2px;margin-top:4px;">${tierLabel}</div>
         ${safeBio ? `<div style="font-size:13px;color:#a0a8b8;margin-top:8px;line-height:1.4;">${safeBio}</div>` : ''}
+        ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:#d4a843;text-decoration:none;">View full profile →</a>` : ''}
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:16px;">

@@ -188,7 +188,7 @@ window.ColosseumNotifications = (() => {
 
       // Server-side mark read via RPC
       if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
-        ColosseumAuth.supabase.rpc('mark_notifications_read', {
+        ColosseumAuth.safeRpc('mark_notifications_read', {
           p_notification_ids: [id]
         }).then(({ error }) => {
           if (error) console.error('mark_notifications_read error:', error);
@@ -205,7 +205,7 @@ window.ColosseumNotifications = (() => {
 
     // Server-side mark all read via RPC (null = all unread)
     if (ColosseumAuth?.supabase && !ColosseumAuth.isPlaceholderMode) {
-      ColosseumAuth.supabase.rpc('mark_notifications_read', {
+      ColosseumAuth.safeRpc('mark_notifications_read', {
         p_notification_ids: null
       }).then(({ error }) => {
         if (error) console.error('mark_notifications_read (all) error:', error);

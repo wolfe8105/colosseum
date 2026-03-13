@@ -297,8 +297,8 @@ window.ColosseumLeaderboard = (() => {
 
       // BUG 2 FIX: Use local escHtml() instead of broken inline fallback
       return `
-        <div style="
-          display:flex;align-items:center;gap:10px;padding:12px;
+        <div onclick="ColosseumAuth?.showUserProfile?.('${escHtml(p.id)}')" style="
+          display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
           background:${p.rank <= 3 ? 'rgba(212,168,67,0.04)' : 'transparent'};
           border-bottom:1px solid rgba(255,255,255,0.03);
         ">
