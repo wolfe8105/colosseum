@@ -1722,8 +1722,8 @@ window.ColosseumArena = (() => {
       enterQueue(debate.mode, debate.topic);
     });
     document.getElementById('arena-share-result')?.addEventListener('click', () => {
-      if (typeof ColosseumShare !== 'undefined' && ColosseumShare.shareDebateResult) {
-        ColosseumShare.shareDebateResult({
+      if (typeof ColosseumShare !== 'undefined' && ColosseumShare.shareResult) {
+        ColosseumShare.shareResult({
           debateId: debate.id,
           topic: debate.topic,
           winner: didWin ? myName : debate.opponentName,

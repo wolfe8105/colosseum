@@ -199,7 +199,7 @@ window.ColosseumAsync = (() => {
             font-size:12px;font-weight:700;cursor:pointer;
           ">⚔️ BET. (${t.challenges})</button>
           
-          <button onclick="ColosseumShare?.shareTake?.('${t.id}','${encodeURIComponent(t.text)}')" style="
+          <button onclick="ColosseumShare?.shareTake?.('${t.id}','${encodeURIComponent(t.text).replace(/'/g, '%27')}')" style="
             display:flex;align-items:center;gap:4px;
             background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
             color:#a0a8b8;padding:6px 12px;border-radius:20px;
