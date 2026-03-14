@@ -43,15 +43,15 @@ CREATE TABLE IF NOT EXISTS debate_messages (
 CREATE INDEX IF NOT EXISTS idx_messages_debate
   ON debate_messages (debate_id, round, side);
 
--- Live / text / voice user-vs-user debates
+-- Live / text / voice user-vs-user debates (canonical table after Session 101 consolidation)
 CREATE TABLE IF NOT EXISTS arena_debates (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   debater_a uuid REFERENCES profiles(id) NOT NULL,
   debater_b uuid REFERENCES profiles(id),
-  mode text NOT NULL CHECK (mode IN ('live', 'voicememo', 'text', 'ai')),
+  mode text NOT NULL CHECK (mode IN ('live', 'voicememo', 'text', 'ai', 'standard', 'crossfire', 'qa_prep')),
   category text,
   topic text NOT NULL,
-  status text DEFAULT 'pending' CHECK (status IN ('pending', 'live', 'round_break', 'voting', 'complete', 'cancelled')),
+  status text DEFAULT 'pending' CHECK (status IN ('pending', 'live', 'round_break', 'voting', 'complete', 'cancelled', 'waiting', 'matched', 'completed', 'canceled')),
   current_round int DEFAULT 0,
   total_rounds int DEFAULT 3,
   winner text CHECK (winner IN ('a', 'b', 'draw', NULL)),
@@ -60,6 +60,16 @@ CREATE TABLE IF NOT EXISTS arena_debates (
   spectator_count int DEFAULT 0,
   vote_count_a int DEFAULT 0,
   vote_count_b int DEFAULT 0,
+  -- Columns merged from legacy debates table (Session 101)
+  format text DEFAULT 'standard' CHECK (format IN ('standard', 'crossfire', 'qa_prep')),
+  elo_change_a int,
+  elo_change_b int,
+  recording_url text,
+  transcript jsonb,
+  moderator_id uuid REFERENCES profiles(id),
+  moderator_type text DEFAULT 'none' CHECK (moderator_type IN ('none', 'ai', 'human')),
+  is_paused boolean DEFAULT false,
+  paused_at timestamptz,
   created_at timestamptz DEFAULT now(),
   started_at timestamptz,
   ended_at timestamptz

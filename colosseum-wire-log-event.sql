@@ -236,7 +236,7 @@ BEGIN
   END IF;
 
   -- Check debate is eligible
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
   IF NOT FOUND OR v_debate.status NOT IN ('waiting', 'matched', 'live') THEN
     RAISE EXCEPTION 'Debate not accepting predictions';
   END IF;
@@ -309,7 +309,7 @@ DECLARE
   v_xp_draw INTEGER := 15;
 BEGIN
   -- Lock the debate row
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id FOR UPDATE;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -352,11 +352,11 @@ BEGIN
   );
 
   -- Update debate record
-  UPDATE public.debates SET
+  UPDATE arena_debates SET
     status = 'completed',
-    winner_id = v_winner_id,
-    votes_a = v_votes_a,
-    votes_b = v_votes_b,
+    winner = v_winner,
+    vote_count_a = v_votes_a,
+    vote_count_b = v_votes_b,
     elo_change_a = v_elo.change_a,
     elo_change_b = v_elo.change_b,
     ended_at = now(),
@@ -484,7 +484,7 @@ DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
 BEGIN
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
 
   IF v_debate.status != 'live' THEN
     RAISE EXCEPTION 'Debate is not live';
@@ -495,7 +495,7 @@ BEGIN
 
   IF v_debate.current_round >= v_debate.total_rounds THEN
     -- Move to voting phase
-    UPDATE public.debates
+    UPDATE arena_debates
     SET status = 'voting', updated_at = now()
     WHERE id = p_debate_id;
 
@@ -514,7 +514,7 @@ BEGIN
 
     RETURN json_build_object('success', true, 'status', 'voting', 'round', v_debate.current_round);
   ELSE
-    UPDATE public.debates
+    UPDATE arena_debates
     SET current_round = current_round + 1, updated_at = now()
     WHERE id = p_debate_id;
 
@@ -795,7 +795,7 @@ BEGIN
   END IF;
 
   -- Lock debate row
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id FOR UPDATE;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -850,7 +850,7 @@ BEGIN
   );
 
   -- Pause the debate
-  UPDATE public.debates
+  UPDATE arena_debates
   SET is_paused = true, paused_at = now(), updated_at = now()
   WHERE id = p_debate_id;
 
@@ -913,7 +913,7 @@ BEGIN
   END IF;
 
   -- Get debate
-  SELECT * INTO v_debate FROM public.debates WHERE id = v_ref.debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = v_ref.debate_id;
 
   -- Auth check: must be the debate's moderator (or AI/auto bypass)
   IF p_ruled_by_type = 'human' THEN
@@ -935,7 +935,7 @@ BEGIN
   WHERE id = p_reference_id;
 
   -- Unpause debate
-  UPDATE public.debates
+  UPDATE arena_debates
   SET is_paused = false, paused_at = NULL, updated_at = now()
   WHERE id = v_ref.debate_id;
 
@@ -984,7 +984,7 @@ BEGIN
   FOR v_ref IN
     SELECT dr.id AS ref_id, dr.debate_id
     FROM public.debate_references dr
-    JOIN public.debates d ON d.id = dr.debate_id
+    JOIN arena_debates d ON d.id = dr.debate_id
     WHERE dr.ruling = 'pending'
       AND d.is_paused = true
       AND d.paused_at < now() - interval '60 seconds'
@@ -996,7 +996,7 @@ BEGIN
       ruled_at = now()
     WHERE id = v_ref.ref_id;
 
-    UPDATE public.debates SET
+    UPDATE arena_debates SET
       is_paused = false, paused_at = NULL, updated_at = now()
     WHERE id = v_ref.debate_id;
 
@@ -1035,7 +1035,7 @@ DECLARE
   v_total_count INTEGER;
   v_new_approval NUMERIC;
 BEGIN
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -1126,7 +1126,7 @@ DECLARE
   v_debate RECORD;
   v_mod RECORD;
 BEGIN
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id FOR UPDATE;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -1140,7 +1140,7 @@ BEGIN
 
   IF p_moderator_type = 'ai' THEN
     -- AI moderator: no user ID needed
-    UPDATE public.debates SET
+    UPDATE arena_debates SET
       moderator_type = 'ai',
       updated_at = now()
     WHERE id = p_debate_id;
@@ -1188,7 +1188,7 @@ BEGIN
   END IF;
 
   -- Assign the moderator
-  UPDATE public.debates SET
+  UPDATE arena_debates SET
     moderator_id = v_mod.id,
     moderator_type = 'human',
     updated_at = now()

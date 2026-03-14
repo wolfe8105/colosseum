@@ -97,8 +97,8 @@ const ColosseumScoring = (() => {
       return {
         success: true,
         winner: 'a',
-        votes_a: 7,
-        votes_b: 3,
+        vote_count_a: 7,
+        vote_count_b: 3,
         elo_change_a: 16,
         elo_change_b: -16,
         new_elo_a: 1216,
@@ -121,7 +121,7 @@ const ColosseumScoring = (() => {
 
   async function castVote(debateId, votedFor, round = null) {
     if (isPlaceholder()) {
-      return { success: true, votes_a: 5, votes_b: 3, your_vote: votedFor };
+      return { success: true, vote_count_a: 5, vote_count_b: 3, your_vote: votedFor };
     }
 
     const { data, error } = await ColosseumAuth.safeRpc('cast_vote', {
@@ -192,8 +192,8 @@ const ColosseumScoring = (() => {
     if (isPlaceholder()) return null;
 
     const { data, error } = await getClient()
-      .from('debates')
-      .select('*, debater_a_profile:profiles!debates_debater_a_fkey(*), debater_b_profile:profiles!debates_debater_b_fkey(*)')
+      .from('arena_debates')
+      .select('*, debater_a_profile:profiles!arena_debates_debater_a_fkey(*), debater_b_profile:profiles!arena_debates_debater_b_fkey(*)')
       .eq('id', debateId)
       .single();
 
@@ -212,7 +212,7 @@ const ColosseumScoring = (() => {
     const safeId = validateUUID(userId);
 
     const { data, error } = await getClient()
-      .from('debates')
+      .from('arena_debates')
       .select('*')
       .or(`debater_a.eq.${safeId},debater_b.eq.${safeId}`)
       .order('created_at', { ascending: false })

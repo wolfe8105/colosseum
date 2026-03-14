@@ -180,15 +180,15 @@ SELECT
   ad.category,
   ad.side_a_label,
   ad.side_b_label,
-  ad.votes_a,
-  ad.votes_b,
+  ad.vote_count_a,
+  ad.vote_count_b,
   ad.vote_count,
   CASE WHEN ad.vote_count > 0
-    THEN ROUND(ad.votes_a::NUMERIC / ad.vote_count * 100, 1)
+    THEN ROUND(ad.vote_count_a::NUMERIC / ad.vote_count * 100, 1)
     ELSE 50.0
   END AS lean_pct_a,
   CASE WHEN ad.vote_count > 0
-    THEN ROUND(ad.votes_b::NUMERIC / ad.vote_count * 100, 1)
+    THEN ROUND(ad.vote_count_b::NUMERIC / ad.vote_count * 100, 1)
     ELSE 50.0
   END AS lean_pct_b,
   ad.winner,
@@ -355,7 +355,7 @@ SELECT
   -- Category distribution
   jsonb_agg(DISTINCT d.category) FILTER (WHERE d.category IS NOT NULL) AS categories_used_in
 FROM public.debate_references dr
-JOIN public.debates d ON d.id = dr.debate_id
+JOIN arena_debates d ON d.id = dr.debate_id
 GROUP BY 1
 HAVING COUNT(*) >= 2
 ORDER BY times_cited DESC;

@@ -13,13 +13,13 @@
 -- ========================
 -- 1. ADD MODERATOR COLUMNS TO DEBATES
 -- ========================
-ALTER TABLE public.debates
+ALTER TABLE arena_debates
   ADD COLUMN IF NOT EXISTS moderator_id UUID REFERENCES public.profiles(id),
   ADD COLUMN IF NOT EXISTS moderator_type TEXT DEFAULT 'none' CHECK (moderator_type IN ('none','ai','human')),
   ADD COLUMN IF NOT EXISTS is_paused BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS paused_at TIMESTAMPTZ;
 
-CREATE INDEX IF NOT EXISTS idx_debates_moderator ON public.debates(moderator_id) WHERE moderator_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_debates_moderator ON arena_debates(moderator_id) WHERE moderator_id IS NOT NULL;
 
 
 -- ========================
@@ -77,7 +77,7 @@ $$;
 -- ========================
 CREATE TABLE IF NOT EXISTS public.debate_references (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  debate_id UUID NOT NULL REFERENCES public.debates(id) ON DELETE CASCADE,
+  debate_id UUID NOT NULL REFERENCES arena_debates(id) ON DELETE CASCADE,
   submitted_by UUID NOT NULL REFERENCES public.profiles(id),
   round_number INTEGER NOT NULL,
 
@@ -126,7 +126,7 @@ CREATE POLICY "References updated by server" ON public.debate_references
 -- ========================
 CREATE TABLE IF NOT EXISTS public.moderator_scores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  debate_id UUID NOT NULL REFERENCES public.debates(id) ON DELETE CASCADE,
+  debate_id UUID NOT NULL REFERENCES arena_debates(id) ON DELETE CASCADE,
   moderator_id UUID NOT NULL REFERENCES public.profiles(id),
   scorer_id UUID NOT NULL REFERENCES public.profiles(id),
   scorer_role TEXT NOT NULL CHECK (scorer_role IN ('debater','spectator')),
@@ -195,7 +195,7 @@ BEGIN
   END IF;
 
   -- Lock debate row
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id FOR UPDATE;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -250,7 +250,7 @@ BEGIN
   );
 
   -- Pause the debate
-  UPDATE public.debates
+  UPDATE arena_debates
   SET is_paused = true, paused_at = now(), updated_at = now()
   WHERE id = p_debate_id;
 
@@ -299,7 +299,7 @@ BEGIN
   END IF;
 
   -- Get debate
-  SELECT * INTO v_debate FROM public.debates WHERE id = v_ref.debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = v_ref.debate_id;
 
   -- Auth check: must be the debate's moderator (or AI/auto bypass)
   IF p_ruled_by_type = 'human' THEN
@@ -321,7 +321,7 @@ BEGIN
   WHERE id = p_reference_id;
 
   -- Unpause debate
-  UPDATE public.debates
+  UPDATE arena_debates
   SET is_paused = false, paused_at = NULL, updated_at = now()
   WHERE id = v_ref.debate_id;
 
@@ -357,7 +357,7 @@ BEGIN
   FOR v_ref IN
     SELECT dr.id, dr.debate_id
     FROM public.debate_references dr
-    JOIN public.debates d ON d.id = dr.debate_id
+    JOIN arena_debates d ON d.id = dr.debate_id
     WHERE dr.ruling = 'pending'
       AND d.is_paused = true
       AND dr.submitted_at < now() - interval '60 seconds'
@@ -371,7 +371,7 @@ BEGIN
     WHERE id = v_ref.id;
 
     -- Unpause debate
-    UPDATE public.debates
+    UPDATE arena_debates
     SET is_paused = false, paused_at = NULL, updated_at = now()
     WHERE id = v_ref.debate_id;
 
@@ -402,7 +402,7 @@ DECLARE
   v_total_count INTEGER;
   v_new_approval NUMERIC;
 BEGIN
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -480,7 +480,7 @@ DECLARE
   v_debate RECORD;
   v_mod RECORD;
 BEGIN
-  SELECT * INTO v_debate FROM public.debates WHERE id = p_debate_id FOR UPDATE;
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
@@ -494,7 +494,7 @@ BEGIN
 
   IF p_moderator_type = 'ai' THEN
     -- AI moderator: no user ID needed
-    UPDATE public.debates SET
+    UPDATE arena_debates SET
       moderator_type = 'ai',
       updated_at = now()
     WHERE id = p_debate_id;
@@ -531,7 +531,7 @@ BEGIN
     END IF;
   END IF;
 
-  UPDATE public.debates SET
+  UPDATE arena_debates SET
     moderator_id = v_mod.id,
     moderator_type = 'human',
     updated_at = now()
