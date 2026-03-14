@@ -494,11 +494,11 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
       AI-Generated Debate — Not Real People
     </div>`;
 
-    // Matchup bar
+    // Matchup bar — side labels link to main app filtered by category (AI debates have no real user profiles)
     html += `<div class="matchup-bar fade-up">
-      <div class="matchup-side side-a">${escHtml(d.side_a_label)}</div>
+      <a href="/?cat=${encodeURIComponent(d.category)}" class="matchup-side side-a" style="text-decoration:none;color:inherit;cursor:pointer;">${escHtml(d.side_a_label)}</a>
       <div class="matchup-vs">VS</div>
-      <div class="matchup-side side-b">${escHtml(d.side_b_label)}</div>
+      <a href="/?cat=${encodeURIComponent(d.category)}" class="matchup-side side-b" style="text-decoration:none;color:inherit;cursor:pointer;">${escHtml(d.side_b_label)}</a>
     </div>`;
 
     // Rounds

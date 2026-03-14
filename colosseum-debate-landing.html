@@ -479,7 +479,7 @@ function render() {
     html += `<div class="takes-list">`;
     debate.takes.forEach(t => {
       html += `<div class="take-card">
-        <div class="take-author">@${escHtml(t.author)}</div>
+        <a href="/u/${encodeURIComponent(t.author)}" class="take-author" style="text-decoration:none;color:inherit;cursor:pointer;">@${escHtml(t.author)}</a>
         <div class="take-text">${escHtml(t.text)}</div>
         <div class="take-reactions"><span>🔥 ${Number(t.fire)||0}</span><span>⚔️ ${Number(t.swords)||0}</span></div>
       </div>`;
