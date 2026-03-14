@@ -65,7 +65,7 @@ This DB trigger silently reverts direct UPDATEs on 21 protected columns (elo_rat
 | `colosseum-cards.js` | Canvas share card generator |
 | `colosseum-webrtc.js` | WebRTC audio via Supabase Realtime |
 | `colosseum-voicememo.js` | Voice memo mode |
-| `colosseum-analytics.js` | Funnel analytics: visitor UUID, page_view, UTM |
+| `colosseum-analytics.js` | Funnel analytics: visitor UUID, page_view, UTM. **Uses raw `fetch()` to RPC endpoint instead of `safeRpc()` — intentional, analytics fires before auth init. Exception to the safeRpc rule.** |
 | `colosseum-home.js` | Home screen logic |
 | `colosseum-paywall.js` | Paywall gating logic |
 | `colosseum-staking.js` | Token staking system |
@@ -122,6 +122,13 @@ No build system. Serve the root directory with any static file server. The app n
 - `THE-COLOSSEUM-WAR-PLAN.md` — 5-phase strategy, open decisions
 - `THE-COLOSSEUM-PRODUCT-VISION.md` — psychology framework, gamification design
 - `THE-COLOSSEUM-IDEAS-MASTER-MAP.docx` — raw inventory of every unbuilt idea, organized by structural impact
+
+## Server-ready RPCs (no client wiring yet)
+
+These RPCs exist on the Supabase server (created in Session 109) but have no client-side calls yet:
+- `buy_power_up` — purchase a power-up with tokens
+- `equip_power_up` — equip a power-up for a debate
+- `get_my_power_ups` — fetch user's power-up inventory and equipped loadout
 
 ## Cloudflare / Deployment Notes
 

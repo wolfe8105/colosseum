@@ -405,55 +405,6 @@ const ColosseumWebRTC = (() => {
 
 
   // ========================
-  // SPECTATOR MODE
-  // ========================
-
-  function spectateDebate(debateId) {
-    if (isPlaceholder()) {
-      return;
-    }
-
-    const supabase = getSupabase();
-    const channelName = 'debate-spectate-' + debateId;
-
-    // Spectators listen on a separate broadcast channel
-    // Debaters push state updates here
-    const spectatorChannel = supabase.channel(channelName);
-
-    spectatorChannel.on('broadcast', { event: 'state' }, (payload) => {
-      fire('spectatorUpdate', payload.payload);
-    });
-
-    spectatorChannel.subscribe();
-
-    return {
-      channel: spectatorChannel,
-      leave: () => spectatorChannel.unsubscribe()
-    };
-  }
-
-  // Debater broadcasts state to spectators
-  function broadcastToSpectators(data) {
-    if (!debateState.debateId || isPlaceholder()) return;
-
-    const supabase = getSupabase();
-    const channelName = 'debate-spectate-' + debateState.debateId;
-    const channel = supabase.channel(channelName);
-
-    channel.send({
-      type: 'broadcast',
-      event: 'state',
-      payload: {
-        round: debateState.round,
-        timeLeft: debateState.timeLeft,
-        status: debateState.status,
-        ...data
-      }
-    });
-  }
-
-
-  // ========================
   // EVENT SYSTEM
   // ========================
 
@@ -528,10 +479,6 @@ const ColosseumWebRTC = (() => {
     requestMic,
     toggleMute,
     getAudioLevel,
-
-    // Spectator
-    spectateDebate,
-    broadcastToSpectators,
 
     // Visualization
     createWaveform,

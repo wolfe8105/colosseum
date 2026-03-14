@@ -33,89 +33,6 @@ const ColosseumScoring = (() => {
 
 
   // ========================
-  // DEBATES
-  // ========================
-
-  async function createDebate({ topic, category = 'general', format = 'standard', opponentId = null, side = 'a' }) {
-    if (isPlaceholder()) {
-      return { success: true, debateId: 'placeholder-' + Date.now() };
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('create_debate', {
-      p_topic: topic,
-      p_category: category,
-      p_format: format,
-      p_opponent_id: opponentId,
-      p_side: side
-    });
-
-    if (error) throw new Error(error.message);
-    return { success: true, debateId: data };
-  }
-
-  async function joinDebate(debateId) {
-    if (isPlaceholder()) {
-      return { success: true, debateId, status: 'matched' };
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('join_debate', {
-      p_debate_id: debateId
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  }
-
-  async function startDebate(debateId) {
-    if (isPlaceholder()) {
-      return { success: true, status: 'live' };
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('start_debate', {
-      p_debate_id: debateId
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  }
-
-  async function advanceRound(debateId) {
-    if (isPlaceholder()) {
-      return { success: true, status: 'live', round: 2 };
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('advance_round', {
-      p_debate_id: debateId
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  }
-
-  async function finalizeDebate(debateId) {
-    if (isPlaceholder()) {
-      return {
-        success: true,
-        winner: 'a',
-        vote_count_a: 7,
-        vote_count_b: 3,
-        elo_change_a: 16,
-        elo_change_b: -16,
-        new_elo_a: 1216,
-        new_elo_b: 1184
-      };
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('finalize_debate', {
-      p_debate_id: debateId
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  }
-
-
-  // ========================
   // VOTING (server-side only)
   // ========================
 
@@ -156,98 +73,15 @@ const ColosseumScoring = (() => {
 
 
   // ========================
-  // QUERIES
-  // ========================
-
-  async function getLiveDebates(category = null, limit = 10) {
-    if (isPlaceholder()) {
-      return [];
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('get_live_debates', {
-      p_category: category,
-      p_limit: limit
-    });
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  }
-
-  async function getLeaderboard(sortBy = 'elo', limit = 50, offset = 0) {
-    if (isPlaceholder()) {
-      return [];
-    }
-
-    const { data, error } = await ColosseumAuth.safeRpc('get_leaderboard', {
-      p_sort_by: sortBy,
-      p_limit: limit,
-      p_offset: offset
-    });
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  }
-
-  async function getDebate(debateId) {
-    if (isPlaceholder()) return null;
-
-    const safeId = validateUUID(debateId);
-
-    const { data, error } = await getClient()
-      .from('arena_debates')
-      .select('*, debater_a_profile:profiles!arena_debates_debater_a_fkey(*), debater_b_profile:profiles!arena_debates_debater_b_fkey(*)')
-      .eq('id', safeId)
-      .single();
-
-    if (error) throw new Error(error.message);
-    return data;
-  }
-
-  async function getMyDebates(limit = 20) {
-    if (isPlaceholder()) return [];
-
-    const userId = ColosseumAuth?.currentUser?.id;
-    if (!userId) return [];
-
-    // BUG 1 FIX: Validate UUID before interpolating into .or() PostgREST filter
-    // .or() uses raw PostgREST syntax — unvalidated input is a filter injection vector
-    const safeId = validateUUID(userId);
-
-    const { data, error } = await getClient()
-      .from('arena_debates')
-      .select('*')
-      .or(`debater_a.eq.${safeId},debater_b.eq.${safeId}`)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  }
-
-
-  // ========================
   // PUBLIC API
   // ========================
 
   return {
-    // Debate lifecycle
-    createDebate,
-    joinDebate,
-    startDebate,
-    advanceRound,
-    finalizeDebate,
-
     // Voting
     castVote,
 
     // Predictions
     placePrediction,
-
-    // Queries
-    getLiveDebates,
-    getLeaderboard,
-    getDebate,
-    getMyDebates
   };
 
 })();

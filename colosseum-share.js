@@ -39,16 +39,6 @@ window.ColosseumShare = (() => {
     _share({ title: 'Join The Colosseum', text, url });
   }
 
-  // --- Challenge Link (Item 14.5.3.5) ---
-  function challengeLink({ topic, section }) {
-    const userId = ColosseumAuth?.currentUser?.id || 'demo';
-    const username = ColosseumAuth?.currentProfile?.username || 'debater';
-    // BUG 2 FIX: URL-encode username in query param
-    const url = `${_getBaseUrl()}/challenge?from=${encodeURIComponent(username)}&topic=${encodeURIComponent(topic || '')}&section=${encodeURIComponent(section || 'trending')}`;
-    const text = `⚔️ ${username.toUpperCase()} challenges you to a debate!\n"${topic}"\n\nAccept: ${url}`;
-    _share({ title: 'Challenge — The Colosseum', text, url });
-  }
-
   // --- Share Hot Take ---
   function shareTake(takeId, takeText) {
     const url = `${_getBaseUrl()}/take/${encodeURIComponent(takeId)}`;
@@ -199,7 +189,6 @@ window.ColosseumShare = (() => {
     shareResult,
     shareProfile,
     inviteFriend,
-    challengeLink,
     shareTake,
     showPostDebatePrompt,
     handleDeepLink,

@@ -307,24 +307,11 @@ window.ColosseumCards = (() => {
     downloadCard(opts);
   }
 
-  /**
-   * Generate all 4 sizes and return array of {size, canvas, label}.
-   * @param {Object} opts - Same as generateCard (size is overridden per output)
-   */
-  function generateAllSizes(opts) {
-    return Object.entries(SIZES).map(([key, info]) => ({
-      size: key,
-      label: info.label,
-      canvas: generateCard({ ...opts, size: key }),
-    }));
-  }
-
   // Public API
   return {
     generateCard,
     downloadCard,
     shareCard,
-    generateAllSizes,
     SIZES,
   };
 
