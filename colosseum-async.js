@@ -85,6 +85,7 @@ window.ColosseumAsync = (() => {
         hotTakes = data.map(t => ({
           id: t.id,
           user_id: t.user_id,
+          username: t.profiles?.username || '',
           user: (t.profiles?.username || 'ANON').toUpperCase(),
           elo: t.profiles?.elo_rating || 1200,
           tokens: t.profiles?.token_balance || 0,
@@ -154,7 +155,10 @@ window.ColosseumAsync = (() => {
       if (action === 'react') react(btn.dataset.id);
       else if (action === 'challenge') challenge(btn.dataset.id);
       else if (action === 'share') ColosseumShare?.shareTake?.(btn.dataset.id, btn.dataset.text);
-      else if (action === 'profile') ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+      else if (action === 'profile') {
+        if (btn.dataset.username) window.location.href = '/u/' + encodeURIComponent(btn.dataset.username);
+        else ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+      }
     });
   }
 
@@ -174,7 +178,10 @@ window.ColosseumAsync = (() => {
     container.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
-      if (btn.dataset.action === 'profile') ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+      if (btn.dataset.action === 'profile') {
+        if (btn.dataset.username) window.location.href = '/u/' + encodeURIComponent(btn.dataset.username);
+        else ColosseumAuth?.showUserProfile?.(btn.dataset.userId);
+      }
       else if (btn.dataset.action === 'accept-rival') {
         ColosseumAuth?.respondRival?.(btn.dataset.id, true).then(() => refreshRivals());
       }
@@ -217,8 +224,9 @@ window.ColosseumAsync = (() => {
     const safeText = esc(t.text);
     const safeId = esc(t.id);
     const safeUserId = esc(t.user_id);
+    const safeUsername = esc(t.username || '');
 
-    const profileAttr = userClickable ? `data-action="profile" data-user-id="${safeUserId}" style="cursor:pointer;"` : '';
+    const profileAttr = userClickable ? `data-action="profile" data-user-id="${safeUserId}" data-username="${safeUsername}" style="cursor:pointer;"` : '';
 
     return `
       <div class="hot-take-card" data-id="${safeId}" style="
@@ -413,10 +421,11 @@ window.ColosseumAsync = (() => {
         const safeName = esc((r.rival_display_name || r.rival_username || 'Unknown').toUpperCase());
         const safeInitial = esc((r.rival_display_name || r.rival_username || '?')[0].toUpperCase());
         const safeRivalId = esc(r.rival_id);
+        const safeRivalUsername = esc(r.rival_username || '');
         const safeId = esc(r.id);
         return `
         <div style="background:#132240;border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-          <div data-action="profile" data-user-id="${safeRivalId}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">
+          <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">
             ${safeInitial}
           </div>
           <div style="flex:1;">

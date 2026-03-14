@@ -795,8 +795,8 @@ async function loadGroupMembers(groupId) {
       const role = m.role || 'member';
       const roleBadge = role !== 'member'
         ? `<span class="my-role-badge ${esc(role)}">${esc(role.toUpperCase())}</span>` : '';
-      const memberId = m.user_id || m.id || '';
-      const clickAttr = memberId ? `onclick="ColosseumAuth?.showUserProfile?.('${esc(memberId)}')" style="cursor:pointer;"` : '';
+      const memberUsername = m.username || '';
+      const clickAttr = memberUsername ? `data-username="${esc(memberUsername)}" style="cursor:pointer;"` : '';
       return `<div class="member-row" ${clickAttr}>
         <div class="member-avatar">
           ${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="">` : '⚔️'}
@@ -808,6 +808,14 @@ async function loadGroupMembers(groupId) {
         <div class="member-role">${roleBadge}</div>
       </div>`;
     }).join('');
+
+    // Wire profile navigation via delegation
+    document.getElementById('detail-members-list').addEventListener('click', (e) => {
+      const row = e.target.closest('[data-username]');
+      if (row && row.dataset.username) {
+        window.location.href = '/u/' + encodeURIComponent(row.dataset.username);
+      }
+    });
   } catch (e) {
     document.getElementById('detail-members-list').innerHTML = renderEmpty('⚠️', 'Could not load members', '');
   }

@@ -59,6 +59,7 @@ window.ColosseumLeaderboard = (() => {
         liveData = data.map((p, i) => ({
           rank: i + 1,
           id: p.id,
+          username: p.username || '',
           user: (p.username || p.display_name || 'ANON').toUpperCase(),
           elo: Number(p.elo_rating) || 1200,
           wins: Number(p.wins) || 0,
@@ -268,6 +269,17 @@ window.ColosseumLeaderboard = (() => {
         </div>
       </div>
     `;
+
+    // Wire profile navigation via event delegation
+    const lbList = document.getElementById('lb-list');
+    if (lbList) {
+      lbList.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-username]');
+        if (row && row.dataset.username) {
+          window.location.href = '/u/' + encodeURIComponent(row.dataset.username);
+        }
+      });
+    }
   }
 
   function _renderList() {
@@ -296,8 +308,9 @@ window.ColosseumLeaderboard = (() => {
       }[p.tier] || 'rgba(255,255,255,0.15)';
 
       // BUG 2 FIX: Use local escHtml() instead of broken inline fallback
+      const safeUsername = escHtml(p.username || '');
       return `
-        <div onclick="ColosseumAuth?.showUserProfile?.('${escHtml(p.id)}')" style="
+        <div data-username="${safeUsername}" style="
           display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
           background:${p.rank <= 3 ? 'rgba(212,168,67,0.04)' : 'transparent'};
           border-bottom:1px solid rgba(255,255,255,0.03);
