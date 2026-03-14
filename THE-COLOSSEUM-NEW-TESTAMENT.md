@@ -254,7 +254,7 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 These are the things that bite hardest. Full details in the Land Mine Map.
 
 - **Single canonical debate table: `arena_debates`** — legacy `debates` table eliminated in Session 101. All debate RPCs use `arena_debates` only.
-- **guard_profile_columns trigger** protects level, xp, streak_freezes (updated Session 77). Silently reverts direct UPDATEs on these columns. Disable trigger before updating, re-enable after.
+- **guard_profile_columns trigger** protects 21 columns: elo_rating, wins, losses, draws, current_streak, best_streak, debates_completed, level, xp, token_balance, subscription_tier, stripe_customer_id, stripe_subscription_id, trust_score, profile_depth_pct, is_minor, created_at, mod_rating, mod_debates_total, mod_rulings_total, mod_approval_pct. Silently reverts direct UPDATEs on these columns for non-service roles. Disable trigger before manual updates, re-enable after.
 - **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client
 - **Supabase dashboard is schema source of truth** — verify column names before assuming
 - **`navigator.locks` orphan bug** — Supabase JS client can hang `getSession()` indefinitely. noOpLock mock must load before Supabase CDN.

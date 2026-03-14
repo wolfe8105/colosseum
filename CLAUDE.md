@@ -37,7 +37,7 @@ All `.or()` filters that interpolate user IDs must validate UUID format before i
 Every polling interval must be clearable. Expose a `destroy()` function so pages can clean up on navigation.
 
 ### `guard_profile_columns` trigger
-This DB trigger silently reverts direct UPDATEs on `level`, `xp`, and `streak_freezes` columns. If you need to update these, disable the trigger first, update, re-enable. All normal updates go through RPCs.
+This DB trigger silently reverts direct UPDATEs on 21 protected columns (elo_rating, wins, losses, draws, current_streak, best_streak, debates_completed, level, xp, token_balance, subscription_tier, stripe_customer_id, stripe_subscription_id, trust_score, profile_depth_pct, is_minor, created_at, mod_rating, mod_debates_total, mod_rulings_total, mod_approval_pct) for non-service roles. If you need to update these, disable the trigger first, update, re-enable. All normal updates go through RPCs.
 
 ## Auth Pattern
 
