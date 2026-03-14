@@ -710,6 +710,10 @@ else{appInit().catch(e=>console.error('appInit error:',e));}
 const urlParams=new URLSearchParams(window.location.search);
 if(urlParams.get('payment')==='success'){ColosseumConfig.showToast('✅ Payment successful!','success');window.history.replaceState({},'',window.location.pathname);}
 if(urlParams.get('payment')==='canceled'){ColosseumConfig.showToast('Payment canceled.','info');window.history.replaceState({},'',window.location.pathname);}
+
+// --- SESSION 107: Auto-open category overlay from ?cat= query param ---
+const catParam=urlParams.get('cat');
+if(catParam){const matchedCat=CATEGORIES.find(c=>c.id===catParam);if(matchedCat){openCategory(matchedCat);window.history.replaceState({},'',window.location.pathname);}}
 </script>
 <div class="colosseum-legal-footer">
   <a href="colosseum-privacy.html">Privacy Policy</a>

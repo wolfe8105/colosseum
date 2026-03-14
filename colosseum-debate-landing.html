@@ -361,6 +361,16 @@ let voteCounted = false;
 
 const container = document.getElementById('main-container');
 
+// --- SESSION 107: Fingerprint for anonymous vote dedup ---
+function getFingerprint() {
+  let fp = localStorage.getItem('col_fp');
+  if (!fp) {
+    fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
+    localStorage.setItem('col_fp', fp);
+  }
+  return fp;
+}
+
 // --- Parse URL params ---
 const params = new URLSearchParams(window.location.search);
 const topicSlug = params.get('topic') || 'mahomes-vs-allen';
@@ -400,7 +410,7 @@ function render() {
   let html = '';
 
   // Category pill
-  html += `<a href="https://colosseum-six.vercel.app" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escHtml(debate.catIcon)}</span>${escHtml(debate.catLabel)}</a>`;
+  html += `<a href="https://colosseum-six.vercel.app?cat=${encodeURIComponent(debate.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escHtml(debate.catIcon)}</span>${escHtml(debate.catLabel)}</a>`;
 
   // Main debate card
   html += `<div class="debate-card">`;
@@ -517,7 +527,7 @@ function render() {
   container.innerHTML = html;
 }
 
-// --- Cast Vote (optimistic render + backend sync) ---
+// --- Cast Vote (optimistic render + backend sync, SESSION 107: + fingerprint dedup) ---
 function castVote(side) {
   // 1. Record in localStorage immediately
   localStorage.setItem(voteKey, side);
@@ -527,8 +537,8 @@ function castVote(side) {
   spawnConfetti();
   render();
 
-  // 3. Fire backend RPC (non-blocking)
-  sb.rpc('cast_landing_vote', { p_topic: topicSlug, p_side: side })
+  // 3. Fire backend RPC (non-blocking, SESSION 107: added p_fingerprint)
+  sb.rpc('cast_landing_vote', { p_topic: topicSlug, p_side: side, p_fingerprint: getFingerprint() })
     .then(({ data, error }) => {
       if (error) {
         console.warn('Landing vote RPC error:', error.message);

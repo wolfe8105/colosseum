@@ -479,7 +479,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     // Badges
     html += `<div class="fade-up" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
       <span class="ai-badge">⚔️ AI DEBATE</span>
-      <a href="/" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;">${getCatIcon(d.category)} ${escHtml(d.category || 'general')}</a>
+      <a href="/?cat=${encodeURIComponent(d.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;">${getCatIcon(d.category)} ${escHtml(d.category || 'general')}</a>
     </div>`;
 
     // Topic
