@@ -12,7 +12,6 @@
 > - `THE-COLOSSEUM-PRODUCT-VISION.md` — Psychology framework, visual game layer, sound-off solution, ad placement, gamification
 > - `THE-COLOSSEUM-TEST-WALKTHROUGH.md` — 54-scenario journey walkthrough
 > - `THE-COLOSSEUM-IDEAS-MASTER-MAP.docx` — Raw inventory of every unbuilt idea, organized by structural impact (Session 100)
-> - `DEBATE-TABLE-CONSOLIDATION-PLAN.md` — 12-step plan to eliminate legacy `debates` table (Session 101, delete when done)
 
 ---
 
@@ -221,7 +220,7 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ⏳ Upload updated bible files to GitHub
 
 ## Next Build Priorities
-- 🔴 **Debate table consolidation (Session 101)** — eliminate legacy `debates` table, single canonical table `arena_debates`. See `DEBATE-TABLE-CONSOLIDATION-PLAN.md`.
+- ✅ **Debate table consolidation (Session 101)** — completed. Single canonical table: `arena_debates`. Legacy `debates` table eliminated.
 - ⏳ Monitor Leg 1 Bluesky — check `pm2 logs` for `[LEG1][BLUESKY]` entries, watch follower count on `wolfe8105.bsky.social`
 - ⏳ Check Cloudflare Web Analytics in 3-5 days — first real visits should appear once Leg 1 builds followers
 - ⏳ Groq fallback quality — decision: live with template fallback for now (Session 97)
@@ -254,6 +253,7 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 
 These are the things that bite hardest. Full details in the Land Mine Map.
 
+- **Single canonical debate table: `arena_debates`** — legacy `debates` table eliminated in Session 101. All debate RPCs use `arena_debates` only.
 - **guard_profile_columns trigger** protects level, xp, streak_freezes (updated Session 77). Silently reverts direct UPDATEs on these columns. Disable trigger before updating, re-enable after.
 - **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client
 - **Supabase dashboard is schema source of truth** — verify column names before assuming
@@ -396,10 +396,7 @@ Full codebase audit via Claude Code CLI. 120+ issues found across 43 files. 29 c
 3. Verify Vercel deploy works
 4. Pat runs SQL Step 12 (DROP TABLE)
 
-**Post-success NT updates:**
-- Remove "Two parallel debate systems" note from Section 12
-- Replace with "Single canonical debate table: `arena_debates`"
-- Delete `DEBATE-TABLE-CONSOLIDATION-PLAN.md` from repo
+**Status:** Complete. Legacy `debates` table dropped. All post-success NT updates applied (Session 102).
 
 ---
 
