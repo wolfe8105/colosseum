@@ -10,7 +10,7 @@
  *          power-up shop (future)
  */
 
-const ColoseumTiers = (() => {
+const ColosseumTiers = (() => {
   'use strict';
 
   // ── Tier definitions ──────────────────────────────────────
@@ -259,4 +259,4 @@ const ColoseumTiers = (() => {
 })();
 
 // Make available globally
-window.ColosseumTiers = ColoseumTiers;
+window.ColosseumTiers = ColosseumTiers;

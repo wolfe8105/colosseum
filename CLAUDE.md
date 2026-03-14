@@ -67,6 +67,9 @@ This DB trigger silently reverts direct UPDATEs on 21 protected columns (elo_rat
 | `colosseum-voicememo.js` | Voice memo mode |
 | `colosseum-analytics.js` | Funnel analytics: visitor UUID, page_view, UTM |
 | `colosseum-home.js` | Home screen logic |
+| `colosseum-paywall.js` | Paywall gating logic |
+| `colosseum-staking.js` | Token staking system |
+| `colosseum-tiers.js` | Questionnaire tier lookup, badge rendering, progress calculation |
 
 ### HTML Pages
 All at repo root. Key pages: `index.html` (home), `colosseum-login.html`, `colosseum-plinko.html` (signup gate), `colosseum-auto-debate.html` (ungated AI debates), `colosseum-debate-landing.html` (ungated landing), `colosseum-profile-depth.html` (12 sections, 147 questions), `colosseum-groups.html`, `colosseum-settings.html`.

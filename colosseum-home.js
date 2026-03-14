@@ -452,9 +452,8 @@ const ColosseumHome = (() => {
   // --- Placeholder Actions ---
 
   function watchDebate(section) {
-    const debate = PLACEHOLDER_LIVE.find(d => d.section === section) || PLACEHOLDER_LIVE[0];
-    if (debate && typeof ColosseumArena !== 'undefined' && ColosseumArena.spectate) {
-      ColosseumArena.spectate(debate);
+    if (typeof navigateTo === 'function') {
+      navigateTo('arena');
     } else {
       showToast('⚔️ Joining live debate...');
     }

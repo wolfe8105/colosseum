@@ -191,10 +191,12 @@ const ColosseumScoring = (() => {
   async function getDebate(debateId) {
     if (isPlaceholder()) return null;
 
+    const safeId = validateUUID(debateId);
+
     const { data, error } = await getClient()
       .from('arena_debates')
       .select('*, debater_a_profile:profiles!arena_debates_debater_a_fkey(*), debater_b_profile:profiles!arena_debates_debater_b_fkey(*)')
-      .eq('id', debateId)
+      .eq('id', safeId)
       .single();
 
     if (error) throw new Error(error.message);

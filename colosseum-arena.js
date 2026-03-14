@@ -495,7 +495,7 @@ window.ColosseumArena = (() => {
         <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0 4px;">
           <span style="color:#D4A843;font-weight:700;font-size:15px;">🪙 <span data-token-balance>${typeof ColosseumTokens !== 'undefined' && ColosseumTokens.balance != null ? ColosseumTokens.balance.toLocaleString() : '0'}</span> tokens</span>
           <span style="color:#a0a8b8;font-size:13px;">|</span>
-          <span style="color:#5b8abf;font-size:13px;">🔥 ${currentProfile()?.login_streak || 0}-day streak</span>
+          <span style="color:#5b8abf;font-size:13px;">🔥 ${Number(currentProfile()?.login_streak) || 0}-day streak</span>
         </div>
         <button class="arena-enter-btn" id="arena-enter-btn">
           <span class="btn-pulse"></span> ENTER THE ARENA
@@ -1178,7 +1178,7 @@ window.ColosseumArena = (() => {
 
     if (!isPlaceholder()) {
       try {
-        const { data, error } = await safeRpc('create_ai_debate', { p_topic: chosenTopic });
+        const { data, error } = await safeRpc('create_ai_debate', { p_category: 'general', p_topic: chosenTopic });
         if (!error && data) debateId = data.debate_id;
       } catch (e) {
         console.warn('[Arena] AI debate creation failed, using local mode:', e);
@@ -1245,6 +1245,8 @@ window.ColosseumArena = (() => {
       </div>
       <!-- TODO: E131 Share Live Debate Link — needs spectator flow (E153/E155/E156) wired first
            so shared links have a destination page for viewers. -->
+      <div id="staking-panel-container"></div>
+      <div id="powerup-loadout-container"></div>
       <div class="arena-spectator-bar"><span class="eye">👁️</span> <span id="arena-spectator-count">0</span> watching</div>
       <div class="arena-messages" id="arena-messages"></div>
       <div class="arena-input-area" id="arena-input-area"></div>
@@ -1268,6 +1270,66 @@ window.ColosseumArena = (() => {
         modBar.innerHTML = `<span class="mod-icon">⚖️</span> Moderator: ${sanitize(debate.moderatorName)}`;
         vsBar.parentNode.insertBefore(modBar, vsBar.nextSibling);
       }
+    }
+
+    // SESSION 109: Load staking panel
+    if (typeof ColosseumStaking !== 'undefined' && debate.id && !debate.id.startsWith('placeholder-')) {
+      (async () => {
+        try {
+          const poolData = await ColosseumStaking.getPool(debate.id);
+          const stakingContainer = document.getElementById('staking-panel-container');
+          if (stakingContainer) {
+            const sideALabel = sanitize(myName);
+            const sideBLabel = sanitize(debate.opponentName);
+            stakingContainer.innerHTML = ColosseumStaking.renderStakingPanel(
+              debate.id, sideALabel, sideBLabel, poolData,
+              profile?.questions_answered || 0
+            );
+            ColosseumStaking.wireStakingPanel(debate.id, (result) => {
+              // After stake placed, refresh the panel to show updated pool
+              ColosseumStaking.getPool(debate.id).then(updated => {
+                if (stakingContainer) {
+                  stakingContainer.innerHTML = ColosseumStaking.renderStakingPanel(
+                    debate.id, sideALabel, sideBLabel, updated,
+                    profile?.questions_answered || 0
+                  );
+                }
+              });
+            });
+          }
+        } catch (e) {
+          console.warn('[Arena] Staking panel load error:', e);
+        }
+      })();
+    }
+
+    // SESSION 109: Load power-up loadout
+    if (typeof ColosseumPowerUps !== 'undefined' && debate.id && !debate.id.startsWith('placeholder-')) {
+      (async () => {
+        try {
+          const data = await ColosseumPowerUps.getMyPowerUps(debate.id);
+          const loadoutContainer = document.getElementById('powerup-loadout-container');
+          if (loadoutContainer && data) {
+            loadoutContainer.innerHTML = ColosseumPowerUps.renderLoadout(
+              data.inventory, data.equipped,
+              profile?.questions_answered || 0, debate.id
+            );
+            ColosseumPowerUps.wireLoadout(debate.id, async () => {
+              // After equip/unequip, refresh the loadout display
+              const refreshed = await ColosseumPowerUps.getMyPowerUps(debate.id);
+              if (loadoutContainer && refreshed) {
+                loadoutContainer.innerHTML = ColosseumPowerUps.renderLoadout(
+                  refreshed.inventory, refreshed.equipped,
+                  profile?.questions_answered || 0, debate.id
+                );
+                ColosseumPowerUps.wireLoadout(debate.id);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('[Arena] Power-up loadout load error:', e);
+        }
+      })();
     }
 
     // Render mode-specific controls
@@ -1845,6 +1907,7 @@ window.ColosseumArena = (() => {
         const { data: result, error } = await safeRpc('update_arena_debate', {
           p_debate_id: debate.id,
           p_status: 'complete',
+          p_current_round: debate.round || 1,
           p_winner: winner,
           p_score_a: scoreA,
           p_score_b: scoreB,
@@ -1855,6 +1918,14 @@ window.ColosseumArena = (() => {
         }
       } catch (e) {
         console.warn('[Arena] Finalize error:', e);
+      }
+      // SESSION 109: Settle stakes — distribute winnings
+      if (typeof ColosseumStaking !== 'undefined') {
+        try {
+          await ColosseumStaking.settleStakes(debate.id, winner);
+        } catch (e) {
+          console.warn('[Arena] Stake settlement error:', e);
+        }
       }
       // Session 71: Token earn for debate completion
       if (typeof ColosseumTokens !== 'undefined') {

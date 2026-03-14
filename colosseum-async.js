@@ -370,7 +370,8 @@ window.ColosseumAsync = (() => {
       try {
         const { data, error } = await ColosseumAuth.safeRpc('place_prediction', {
           p_debate_id: debateId,
-          p_predicted_winner: side
+          p_predicted_winner: side,
+          p_amount: 0
         });
 
         if (error) {

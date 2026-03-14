@@ -47,11 +47,11 @@ window.ColosseumLeaderboard = (() => {
                     : currentTab === 'wins' ? 'wins'
                     : 'current_streak';
 
-      const { data, error } = await sb
-        .from('profiles_public')
-        .select('id, username, display_name, avatar_url, elo_rating, wins, losses, current_streak, best_streak, level, subscription_tier, debates_completed')
-        .order(sortCol, { ascending: false })
-        .limit(50);
+      const { data, error } = await ColosseumAuth.safeRpc('get_leaderboard', {
+        p_sort_by: sortCol,
+        p_limit: 50,
+        p_offset: 0
+      });
 
       if (error || !data || data.length === 0) {
         liveData = null;

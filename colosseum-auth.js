@@ -670,9 +670,8 @@ window.ColosseumAuth = (() => {
     try {
       const { data, error } = await safeRpc('submit_reference', {
         p_debate_id: debateId,
-        p_url: url || null,
-        p_description: description || null,
-        p_supports_side: supportsSide || null,
+        p_content: url || null,
+        p_reference_type: description || null,
       });
       if (error) throw error;
       return data;
