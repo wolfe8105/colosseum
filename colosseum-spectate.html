@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a2d4a">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Live Debate — The Colosseum">
+<meta property="og:description" content="Watch the debate live and cast your vote. Pick a side.">
+<meta property="og:image" content="https://colosseum-six.vercel.app/og-card-default.png">
+<meta property="og:url" content="https://colosseum-six.vercel.app/colosseum-spectate.html">
+<meta property="og:site_name" content="The Colosseum">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Live Debate — The Colosseum">
+<meta name="twitter:description" content="Watch the debate live and cast your vote.">
+<meta name="twitter:image" content="https://colosseum-six.vercel.app/og-card-default.png">
+
+<title>Spectate — The Colosseum</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-1:#1a2d4a;--bg-2:#2d5a8e;--bg-3:#5b8abf;--bg-4:#7aa3d4;--bg-5:#3d5a80;
+  --navy:#0a1628;--navy-light:#132240;--navy-mid:#1a2d4a;
+  --card-bg:rgba(10,17,40,0.6);--card-border:rgba(255,255,255,0.22);
+  --red:#cc2936;--red-hover:#e63946;--gold:#d4a843;--gold-dim:#b8922e;
+  --white:#f0f0f0;--white-dim:#a0a8b8;--success:#2ecc71;--error:#e74c3c;
+  --font-display:'Cinzel',serif;--font-body:'Barlow Condensed',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+  --side-a:#5b8abf;--side-b:#cc2936;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-body);color:var(--white);min-height:100dvh;
+  background:var(--bg-1);overflow-y:auto;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 0 calc(80px + var(--safe-bottom));
+}
+body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg,#1a2d4a 0%,#2d5a8e 25%,#5b8abf 50%,#7aa3d4 70%,#3d5a80 100%);z-index:-2}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(212,168,67,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(204,41,54,0.04) 0%,transparent 50%);z-index:-1}
+
+/* TOP BAR */
+.top-bar{
+  width:100%;padding:calc(12px + var(--safe-top)) 16px 12px;
+  background:rgba(10,17,40,0.5);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.top-bar-left{display:flex;align-items:center;gap:12px;}
+.back-btn{background:none;border:none;color:var(--white-dim);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;}
+.back-btn:active{opacity:0.6;}
+.logo{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase;text-decoration:none}
+.logo .the{font-weight:400;color:var(--white-dim);font-size:11px;letter-spacing:4px;display:block;line-height:1;margin-bottom:-2px}
+.join-btn{
+  padding:8px 18px;border-radius:20px;border:1px solid var(--gold-dim);
+  background:rgba(212,168,67,0.1);color:var(--gold);
+  font-family:var(--font-body);font-size:14px;font-weight:600;letter-spacing:1px;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.join-btn:active{background:rgba(212,168,67,0.2);transform:scale(0.96)}
+
+/* CONTAINER */
+.container{width:100%;max-width:520px;padding:0 16px;display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+
+/* LOADING */
+.loading{text-align:center;padding:60px 20px;color:var(--white-dim);font-size:16px}
+.loading .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.error-state{text-align:center;padding:60px 20px;color:var(--error);font-size:16px}
+
+/* STATUS BADGE */
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+}
+.status-badge.live{background:rgba(204,41,54,0.15);border:1px solid rgba(204,41,54,0.3);color:#e63946;}
+.status-badge.live .dot{width:8px;height:8px;border-radius:50%;background:#e63946;animation:pulse-dot 1.5s ease infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+.status-badge.complete{background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.25);color:var(--gold);}
+.status-badge.voting{background:rgba(91,138,191,0.12);border:1px solid rgba(91,138,191,0.25);color:var(--side-a);}
+.mode-badge{
+  display:inline-flex;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:1px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--white-dim);
+}
+
+/* TOPIC */
+.topic-card{
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;
+  padding:20px;text-align:center;
+}
+.topic-text{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:1px;line-height:1.3;color:var(--white);}
+
+/* VS BAR */
+.vs-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;
+  padding:14px 16px;
+}
+.vs-debater{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.vs-debater.right{flex-direction:row-reverse;text-align:right;}
+.vs-avatar{
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:16px;flex-shrink:0;
+}
+.vs-avatar.side-a{background:rgba(91,138,191,0.2);border:2px solid var(--side-a);color:var(--side-a);}
+.vs-avatar.side-b{background:rgba(204,41,54,0.2);border:2px solid var(--side-b);color:var(--side-b);}
+.vs-avatar.emoji{font-size:24px;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);}
+.vs-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vs-elo{font-size:12px;color:var(--white-dim);}
+.vs-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold);letter-spacing:2px;flex-shrink:0;}
+
+/* SPECTATOR + ROUND BAR */
+.info-bar{
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  font-size:12px;color:var(--white-dim);padding:4px 0;
+}
+.info-bar .eye{font-size:14px;}
+
+/* MODERATOR BAR */
+.mod-bar{
+  text-align:center;font-size:12px;color:var(--gold-dim);padding:4px 0;
+}
+
+/* MESSAGE STREAM */
+.messages{
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;
+  padding:12px;min-height:200px;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;gap:8px;
+}
+.msg{padding:10px 14px;border-radius:12px;max-width:85%;word-break:break-word;}
+.msg.side-a{background:rgba(91,138,191,0.1);border:1px solid rgba(91,138,191,0.18);align-self:flex-start;}
+.msg.side-b{background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.18);align-self:flex-end;}
+.msg.system{align-self:center;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.12);color:var(--gold-dim);font-size:12px;text-align:center;max-width:95%;}
+.msg .msg-name{font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:3px;}
+.msg.side-a .msg-name{color:var(--side-a);}
+.msg.side-b .msg-name{color:var(--side-b);}
+.msg .msg-text{font-size:14px;color:var(--white);line-height:1.4;}
+.msg .msg-round{font-size:10px;color:var(--white-dim);margin-top:4px;}
+.msg-empty{text-align:center;color:var(--white-dim);font-size:13px;padding:24px 0;}
+
+.round-divider{
+  text-align:center;font-size:10px;letter-spacing:2px;color:var(--gold-dim);
+  padding:8px 0 4px;text-transform:uppercase;
+}
+
+/* LIVE POLLING INDICATOR */
+.live-indicator{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:11px;color:var(--white-dim);padding:6px 0;
+}
+.live-indicator .pulse{width:6px;height:6px;border-radius:50%;background:#e63946;animation:pulse-dot 1.5s ease infinite;}
+
+/* SCORE */
+.scoreboard{
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;
+  padding:16px;text-align:center;
+}
+.score-label{font-size:10px;letter-spacing:3px;color:var(--gold-dim);margin-bottom:10px;text-transform:uppercase;}
+.score-row{display:flex;align-items:center;justify-content:center;gap:12px;font-size:28px;font-weight:700;font-family:var(--font-display);}
+.score-side{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.score-side .score-name{font-size:12px;font-weight:600;letter-spacing:1px;color:var(--white-dim);font-family:var(--font-body);}
+.score-side.winner .score-name{color:var(--gold);}
+.score-dash{color:var(--white-dim);font-size:20px;}
+
+/* VOTE */
+.vote-section{
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;
+  padding:20px;text-align:center;
+}
+.vote-headline{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:4px;}
+.vote-sub{font-size:13px;color:var(--white-dim);margin-bottom:14px;}
+.vote-row{display:flex;gap:10px;}
+.vote-btn{
+  flex:1;padding:14px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.04);color:var(--white);font-family:var(--font-body);
+  font-size:15px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all 0.2s;
+}
+.vote-btn:active{transform:scale(0.97);}
+.vote-btn.va:hover,.vote-btn.va.selected{border-color:var(--side-a);background:rgba(91,138,191,0.12);color:var(--side-a);}
+.vote-btn.vb:hover,.vote-btn.vb.selected{border-color:var(--side-b);background:rgba(204,41,54,0.12);color:var(--side-b);}
+.vote-btn.voted{pointer-events:none;opacity:0.6;}
+.vote-btn.voted.selected{opacity:1;}
+
+/* VOTE BAR */
+.vote-results{margin-top:14px;display:none;}
+.vote-results.show{display:block;}
+.vote-bar-track{display:flex;height:28px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.05);}
+.vote-bar-fill{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:1px;transition:width 0.5s ease;}
+.vote-bar-fill.a-fill{background:rgba(91,138,191,0.3);color:var(--side-a);}
+.vote-bar-fill.b-fill{background:rgba(204,41,54,0.3);color:var(--side-b);}
+.vote-count{font-size:12px;color:var(--white-dim);margin-top:6px;}
+
+/* CTA */
+.cta-banner{
+  background:linear-gradient(135deg,rgba(212,168,67,0.08) 0%,rgba(204,41,54,0.06) 100%);
+  border:1px solid rgba(212,168,67,0.2);border-radius:16px;
+  padding:24px 20px;text-align:center;
+}
+.cta-headline{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:6px;}
+.cta-sub{font-size:13px;color:var(--white-dim);margin-bottom:14px;line-height:1.4;}
+.cta-btn{
+  display:inline-block;padding:12px 28px;border-radius:24px;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dim) 100%);
+  color:var(--navy);font-family:var(--font-body);font-size:14px;font-weight:700;
+  letter-spacing:2px;text-decoration:none;text-transform:uppercase;
+}
+.cta-btn:active{transform:scale(0.96);}
+
+/* SHARE BAR */
+.share-bar{display:flex;gap:8px;justify-content:center;padding:4px 0;}
+.share-btn{
+  padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);color:var(--white-dim);font-family:var(--font-body);
+  font-size:13px;cursor:pointer;
+}
+.share-btn:active{background:rgba(255,255,255,0.1);}
+
+/* FOOTER */
+.footer{text-align:center;font-size:11px;color:var(--white-dim);padding:20px 0 10px;line-height:1.6;}
+.footer a{color:var(--gold-dim);text-decoration:none;}
+
+/* FADE-IN */
+.fade-up{animation:fadeUp 0.4s ease forwards;opacity:0;transform:translateY(12px);}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-left">
+    <button class="back-btn" id="back-btn" aria-label="Back">←</button>
+    <a href="/" class="logo"><span class="the">THE</span>COLOSSEUM</a>
+  </div>
+  <a href="/colosseum-plinko.html" class="join-btn" id="join-btn">JOIN</a>
+</div>
+
+<div class="container" id="app">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Loading debate...
+  </div>
+</div>
+
+<!-- Scripts: same load order as auto-debate page -->
+<script src="colosseum-locks-fix.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.98.0" integrity="sha384-Sm2s7OXxsAMTyJ4iIyRBgVpeGUvMPk2lRQnnZhE78Wej7oggIoolKt+SCt0XJbUB" crossorigin="anonymous"></script>
+<script src="colosseum-config.js"></script>
+<script src="colosseum-auth.js"></script>
+<script src="colosseum-tokens.js"></script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- Init Supabase ----
+  const cfg = window.ColosseumConfig || {};
+  const sb = window.supabase.createClient(
+    cfg.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co',
+    cfg.SUPABASE_ANON_KEY || 'PASTE_YOUR_ANON_KEY_HERE'
+  );
+
+  const app = document.getElementById('app');
+  const loading = document.getElementById('loading');
+  let pollTimer = null;
+  let lastMessageTime = null; // track newest message for efficient polling
+  let debateData = null;
+
+  // ---- Back button ----
+  document.getElementById('back-btn').addEventListener('click', () => {
+    if (document.referrer && document.referrer.includes(location.host)) {
+      history.back();
+    } else {
+      window.location.href = '/';
+    }
+  });
+
+  // ---- Hide JOIN button if logged in ----
+  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentUser) {
+    const joinBtn = document.getElementById('join-btn');
+    if (joinBtn) joinBtn.style.display = 'none';
+  }
+
+  // ---- Get debate ID from URL ----
+  const params = new URLSearchParams(window.location.search);
+  const debateId = params.get('id');
+
+  // SECURITY: Validate UUID format (prevent filter injection)
+  if (debateId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(debateId)) {
+    app.innerHTML = '<div class="error-state">Invalid debate link.</div>';
+    loading.style.display = 'none';
+    return;
+  }
+
+  if (!debateId) {
+    app.innerHTML = '<div class="error-state">No debate ID provided.<br><a href="/" style="color:var(--gold);">Back to Home</a></div>';
+    loading.style.display = 'none';
+    return;
+  }
+
+  // ---- Helpers ----
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function parseAvatar(avatarUrl, fallbackName) {
+    if (avatarUrl && avatarUrl.startsWith('emoji:')) {
+      return { type: 'emoji', value: avatarUrl.replace('emoji:', '') };
+    }
+    return { type: 'initial', value: (fallbackName || '?')[0].toUpperCase() };
+  }
+
+  function renderAvatar(avatarUrl, name, sideClass) {
+    const av = parseAvatar(avatarUrl, name);
+    if (av.type === 'emoji') {
+      return '<div class="vs-avatar emoji">' + av.value + '</div>';
+    }
+    return '<div class="vs-avatar ' + sideClass + '">' + escHtml(av.value) + '</div>';
+  }
+
+  function modeLabel(mode) {
+    const map = { live: '🎙️ LIVE AUDIO', voicememo: '🎤 VOICE MEMO', text: '⌨️ TEXT', ai: '🤖 AI SPARRING' };
+    return map[mode] || mode?.toUpperCase() || 'DEBATE';
+  }
+
+  function statusBadge(status) {
+    if (status === 'live') return '<span class="status-badge live"><span class="dot"></span> LIVE</span>';
+    if (status === 'complete' || status === 'completed') return '<span class="status-badge complete">COMPLETE</span>';
+    if (status === 'voting') return '<span class="status-badge voting">VOTING</span>';
+    return '<span class="status-badge complete">' + escHtml(status?.toUpperCase() || 'UNKNOWN') + '</span>';
+  }
+
+  // ---- Load debate ----
+  async function loadDebate() {
+    try {
+      const { data, error } = await sb.rpc('get_arena_debate_spectator', { p_debate_id: debateId });
+
+      if (error || !data) {
+        showError('Debate not found or has been removed.');
+        return;
+      }
+
+      debateData = data;
+
+      // Update page title
+      document.title = (data.topic || 'Debate') + ' — The Colosseum';
+
+      // Bump spectator count (fire-and-forget)
+      sb.rpc('bump_spectator_count', { p_debate_id: debateId }).catch(() => {});
+
+      // Log view event (non-blocking)
+      try { sb.rpc('log_event', { p_event_type: 'spectate_view', p_metadata: { debate_id: debateId, topic: data.topic || null } }); } catch(e) {}
+
+      // Load messages
+      const { data: messages } = await sb.rpc('get_debate_messages', { p_debate_id: debateId });
+
+      renderSpectateView(data, messages || []);
+
+      // Start polling if debate is live
+      if (data.status === 'live' || data.status === 'pending' || data.status === 'round_break') {
+        startPolling();
+      }
+    } catch (err) {
+      console.error('[Spectate] Load error:', err);
+      showError('Failed to load debate. Please try again.');
+    }
+  }
+
+  function showError(msg) {
+    loading.style.display = 'none';
+    app.innerHTML = '<div class="error-state">' + escHtml(msg) + '<br><a href="/" style="color:var(--gold);margin-top:12px;display:inline-block;">Back to Home</a></div>';
+  }
+
+  // ---- Render ----
+  function renderSpectateView(d, messages) {
+    loading.style.display = 'none';
+    let html = '';
+
+    // Status + mode badges
+    html += '<div class="fade-up" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;justify-content:center;">';
+    html += statusBadge(d.status);
+    html += '<span class="mode-badge">' + modeLabel(d.mode) + '</span>';
+    html += '</div>';
+
+    // Topic
+    html += '<div class="topic-card fade-up"><div class="topic-text">' + escHtml(d.topic) + '</div></div>';
+
+    // VS bar
+    html += '<div class="vs-bar fade-up">';
+    html += '<div class="vs-debater">';
+    html += renderAvatar(d.debater_a_avatar, d.debater_a_name, 'side-a');
+    html += '<div><div class="vs-name">' + escHtml(d.debater_a_name) + '</div>';
+    html += '<div class="vs-elo">' + Number(d.debater_a_elo) + ' ELO</div></div>';
+    html += '</div>';
+    html += '<div class="vs-text">VS</div>';
+    html += '<div class="vs-debater right">';
+    html += renderAvatar(d.debater_b_avatar, d.debater_b_name, 'side-b');
+    html += '<div><div class="vs-name">' + escHtml(d.debater_b_name) + '</div>';
+    html += '<div class="vs-elo">' + Number(d.debater_b_elo) + ' ELO</div></div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Moderator bar
+    if (d.moderator_type && d.moderator_type !== 'none') {
+      const modLabel = d.moderator_type === 'ai' ? 'AI Moderator' : 'Human Moderator';
+      html += '<div class="mod-bar fade-up">⚖️ Moderated by ' + escHtml(modLabel) + '</div>';
+    }
+
+    // Info bar: spectators + round
+    html += '<div class="info-bar fade-up">';
+    html += '<span><span class="eye">👁️</span> <span id="spectator-count">' + (Number(d.spectator_count) || 1) + '</span> watching</span>';
+    if (d.current_round && d.total_rounds) {
+      html += '<span>·</span>';
+      html += '<span>Round ' + Number(d.current_round) + '/' + Number(d.total_rounds) + '</span>';
+    }
+    html += '</div>';
+
+    // Live polling indicator
+    if (d.status === 'live' || d.status === 'pending' || d.status === 'round_break') {
+      html += '<div class="live-indicator fade-up"><span class="pulse"></span> Auto-updating every 5s</div>';
+    }
+
+    // Message stream
+    html += '<div class="messages fade-up" id="messages">';
+    if (messages.length === 0) {
+      html += '<div class="msg-empty">No messages yet. The debate is getting started...</div>';
+    } else {
+      html += renderMessages(messages, d);
+    }
+    html += '</div>';
+
+    // Scoreboard (if complete)
+    if ((d.status === 'complete' || d.status === 'completed') && d.score_a != null) {
+      const winnerSide = d.winner;
+      html += '<div class="scoreboard fade-up">';
+      html += '<div class="score-label">FINAL SCORE</div>';
+      html += '<div class="score-row">';
+      html += '<div class="score-side ' + (winnerSide === 'a' ? 'winner' : '') + '">';
+      html += '<span class="score-name">' + escHtml(d.debater_a_name) + '</span>';
+      html += '<span>' + Number(d.score_a) + '</span></div>';
+      html += '<span class="score-dash">—</span>';
+      html += '<div class="score-side ' + (winnerSide === 'b' ? 'winner' : '') + '">';
+      html += '<span class="score-name">' + escHtml(d.debater_b_name) + '</span>';
+      html += '<span>' + Number(d.score_b) + '</span></div>';
+      html += '</div></div>';
+    }
+
+    // Vote section
+    html += '<div class="vote-section fade-up" id="vote-section">';
+    html += '<div class="vote-headline">WHO\'S WINNING?</div>';
+    html += '<div class="vote-sub">Cast your vote. One vote per debate.</div>';
+    html += '<div class="vote-row">';
+    html += '<button class="vote-btn va" id="vote-a">' + escHtml(d.debater_a_name) + '</button>';
+    html += '<button class="vote-btn vb" id="vote-b">' + escHtml(d.debater_b_name) + '</button>';
+    html += '</div>';
+    html += '<div class="vote-results" id="vote-results">';
+    html += '<div class="vote-bar-track"><div class="vote-bar-fill a-fill" id="bar-a" style="width:50%">50%</div><div class="vote-bar-fill b-fill" id="bar-b" style="width:50%">50%</div></div>';
+    html += '<div class="vote-count" id="vote-count"></div>';
+    html += '</div></div>';
+
+    // Share bar
+    html += '<div class="share-bar fade-up">';
+    html += '<button class="share-btn" id="share-copy">📋 Copy Link</button>';
+    html += '<button class="share-btn" id="share-x">𝕏 Share</button>';
+    html += '<button class="share-btn" id="share-native">↗ Share</button>';
+    html += '</div>';
+
+    // CTA
+    html += '<div class="cta-banner fade-up">';
+    html += '<div class="cta-headline">THINK YOU COULD DO BETTER?</div>';
+    html += '<div class="cta-sub">Join The Colosseum and debate it yourself. Challenge anyone. Build your record.</div>';
+    html += '<a href="/colosseum-plinko.html" class="cta-btn">ENTER THE ARENA</a>';
+    html += '</div>';
+
+    // Footer
+    html += '<div class="footer fade-up">Live debate on <a href="/">The Colosseum</a> · <a href="/colosseum-terms.html">Terms</a></div>';
+
+    app.innerHTML = html;
+
+    // Wire vote buttons
+    wireVoteButtons(d);
+    wireShareButtons(d);
+
+    // Show existing vote results if votes exist
+    if ((d.vote_count_a || 0) + (d.vote_count_b || 0) > 0) {
+      updateVoteBar(d.vote_count_a || 0, d.vote_count_b || 0);
+    }
+  }
+
+  function renderMessages(messages, d) {
+    let html = '';
+    let lastRound = 0;
+
+    for (const m of messages) {
+      // Round divider
+      if (m.round && m.round !== lastRound) {
+        html += '<div class="round-divider">— Round ' + Number(m.round) + ' —</div>';
+        lastRound = m.round;
+      }
+
+      const side = m.side || 'a';
+      const isAI = m.is_ai;
+      const name = isAI ? '🤖 AI'
+        : side === 'a' ? (d.debater_a_name || 'Side A')
+        : (d.debater_b_name || 'Side B');
+
+      html += '<div class="msg side-' + escHtml(side) + '">';
+      html += '<div class="msg-name">' + escHtml(name) + '</div>';
+      html += '<div class="msg-text">' + escHtml(m.content) + '</div>';
+      html += '<div class="msg-round">Round ' + Number(m.round) + '</div>';
+      html += '</div>';
+
+      // Track latest message time for polling
+      if (m.created_at && (!lastMessageTime || m.created_at > lastMessageTime)) {
+        lastMessageTime = m.created_at;
+      }
+    }
+    return html;
+  }
+
+  // ---- Polling (live debates) ----
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        // Re-fetch debate status
+        const { data: freshDebate } = await sb.rpc('get_arena_debate_spectator', { p_debate_id: debateId });
+        if (!freshDebate) return;
+
+        // Update spectator count
+        const countEl = document.getElementById('spectator-count');
+        if (countEl) countEl.textContent = Number(freshDebate.spectator_count) || 1;
+
+        // Update vote counts
+        if (freshDebate.vote_count_a || freshDebate.vote_count_b) {
+          updateVoteBar(freshDebate.vote_count_a || 0, freshDebate.vote_count_b || 0);
+        }
+
+        // Fetch new messages
+        const { data: allMessages } = await sb.rpc('get_debate_messages', { p_debate_id: debateId });
+        if (allMessages && allMessages.length > 0) {
+          const messagesEl = document.getElementById('messages');
+          if (messagesEl) {
+            const currentCount = messagesEl.querySelectorAll('.msg:not(.msg-empty)').length;
+            if (allMessages.length > currentCount) {
+              // New messages — re-render stream
+              messagesEl.innerHTML = renderMessages(allMessages, freshDebate);
+              messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+            }
+          }
+        }
+
+        // Stop polling if debate ended
+        if (freshDebate.status === 'complete' || freshDebate.status === 'completed' || freshDebate.status === 'cancelled' || freshDebate.status === 'canceled') {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          // Reload to show final scoreboard
+          debateData = freshDebate;
+          const { data: finalMsgs } = await sb.rpc('get_debate_messages', { p_debate_id: debateId });
+          renderSpectateView(freshDebate, finalMsgs || []);
+        }
+      } catch (err) {
+        console.warn('[Spectate] Poll error:', err);
+      }
+    }, 5000);
+  }
+
+  // ---- Voting ----
+  function wireVoteButtons(d) {
+    const btnA = document.getElementById('vote-a');
+    const btnB = document.getElementById('vote-b');
+    if (!btnA || !btnB) return;
+
+    btnA.addEventListener('click', () => castVote('a', d));
+    btnB.addEventListener('click', () => castVote('b', d));
+  }
+
+  async function castVote(side, d) {
+    const btnA = document.getElementById('vote-a');
+    const btnB = document.getElementById('vote-b');
+
+    // Optimistic UI
+    btnA.classList.add('voted');
+    btnB.classList.add('voted');
+    if (side === 'a') btnA.classList.add('selected');
+    if (side === 'b') btnB.classList.add('selected');
+
+    try {
+      const { data, error } = await sb.rpc('vote_arena_debate', {
+        p_debate_id: debateId,
+        p_vote: side,
+      });
+
+      if (error) {
+        console.warn('[Spectate] Vote error:', error.message);
+      }
+
+      // Re-fetch updated counts
+      const { data: fresh } = await sb.rpc('get_arena_debate_spectator', { p_debate_id: debateId });
+      if (fresh) {
+        updateVoteBar(fresh.vote_count_a || 0, fresh.vote_count_b || 0);
+      } else {
+        // Optimistic fallback
+        const va = (d.vote_count_a || 0) + (side === 'a' ? 1 : 0);
+        const vb = (d.vote_count_b || 0) + (side === 'b' ? 1 : 0);
+        updateVoteBar(va, vb);
+      }
+
+      // Token earn (logged-in users)
+      if (typeof ColosseumTokens !== 'undefined') {
+        ColosseumTokens.claimVote(debateId);
+      }
+    } catch (err) {
+      // Offline fallback
+      const va = (d.vote_count_a || 0) + (side === 'a' ? 1 : 0);
+      const vb = (d.vote_count_b || 0) + (side === 'b' ? 1 : 0);
+      updateVoteBar(va, vb);
+    }
+  }
+
+  function updateVoteBar(va, vb) {
+    const results = document.getElementById('vote-results');
+    const barA = document.getElementById('bar-a');
+    const barB = document.getElementById('bar-b');
+    const countEl = document.getElementById('vote-count');
+    if (!results) return;
+
+    results.classList.add('show');
+    const total = va + vb || 1;
+    const pctA = Math.round((va / total) * 100);
+    const pctB = 100 - pctA;
+
+    if (barA) { barA.style.width = pctA + '%'; barA.textContent = pctA + '%'; }
+    if (barB) { barB.style.width = pctB + '%'; barB.textContent = pctB + '%'; }
+    if (countEl) countEl.textContent = total + ' vote' + (total !== 1 ? 's' : '');
+  }
+
+  // ---- Sharing ----
+  function wireShareButtons(d) {
+    const url = window.location.href;
+    const text = '⚔️ ' + (d.topic || 'Live Debate') + ' — Watch on The Colosseum';
+
+    document.getElementById('share-copy')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('share-copy');
+        if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
+      }).catch(() => {});
+    });
+
+    document.getElementById('share-x')?.addEventListener('click', () => {
+      window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
+    });
+
+    document.getElementById('share-native')?.addEventListener('click', () => {
+      if (navigator.share) {
+        navigator.share({ title: d.topic || 'Live Debate', text: text, url: url }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url).catch(() => {});
+      }
+    });
+  }
+
+  // ---- Cleanup on unload ----
+  window.addEventListener('beforeunload', () => {
+    if (pollTimer) clearInterval(pollTimer);
+  });
+
+  // ---- Go ----
+  loadDebate();
+})();
+</script>
+
+<script src="colosseum-analytics.js" defer></script>
+</body>
+</html>
