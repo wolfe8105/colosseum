@@ -1203,7 +1203,7 @@ window.ColosseumArena = (() => {
       }
     }
 
-    enterRoom({
+    showPreDebate({
       id: debateId,
       topic: chosenTopic,
       role: 'a',
