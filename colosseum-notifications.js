@@ -10,6 +10,10 @@
 //   - BUG 1 (MEDIUM): n.id unescaped in data-id HTML attribute — attribute breakout
 //   - BUG 2 (MEDIUM): n.time unescaped in innerHTML
 //   - BUG 3 (LOW): No destroy() method — polling setInterval runs forever (memory leak)
+// SESSION 120: Orange Dot Integration
+//   - 4 new types: stake_won, stake_lost, power_up, tier_up
+//   - Fixed n.time bug — table has created_at, not time. Added _timeAgo() formatter.
+//   - Added Economy filter button for staking/power-up/tier notifications
 // ============================================================
 
 window.ColosseumNotifications = (() => {
@@ -29,7 +33,34 @@ window.ColosseumNotifications = (() => {
     follow: { icon: '👤', label: 'New Follower' },
     reaction: { icon: '🔥', label: 'Reaction' },
     system: { icon: '📢', label: 'System' },
+    stake_won: { icon: '🪙', label: 'Stake Won' },
+    stake_lost: { icon: '💸', label: 'Stake Lost' },
+    power_up: { icon: '⚡', label: 'Power-Up' },
+    tier_up: { icon: '🏅', label: 'Tier Up' },
   };
+
+  // Economy filter matches these types
+  const ECONOMY_TYPES = new Set(['stake_won', 'stake_lost', 'power_up', 'tier_up']);
+
+  // --- Relative time formatter ---
+  function _timeAgo(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const now = Date.now();
+      const then = new Date(dateStr).getTime();
+      const diffSec = Math.floor((now - then) / 1000);
+      if (diffSec < 60) return 'just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return diffMin + 'm ago';
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return diffHr + 'h ago';
+      const diffDay = Math.floor(diffHr / 24);
+      if (diffDay < 30) return diffDay + 'd ago';
+      return Math.floor(diffDay / 30) + 'mo ago';
+    } catch (e) {
+      return '';
+    }
+  }
 
   function init() {
     _createPanel();
@@ -50,8 +81,10 @@ window.ColosseumNotifications = (() => {
       { id: '1', type: 'challenge', title: 'IRONMIND challenged you', body: '"LeBron is NOT the GOAT" — accept?', time: '2m ago', read: false },
       { id: '2', type: 'reaction', title: '🔥 Your hot take is on fire', body: '247 reactions on "NBA play-in is the best thing..."', time: '15m ago', read: false },
       { id: '3', type: 'result', title: 'Debate result: YOU WON', body: 'vs FACTCHECKER — ELO +18 (now 1,218)', time: '1h ago', read: false },
-      { id: '4', type: 'follow', title: 'SHARPSHOOTER followed you', body: 'ELO 1,654 — 42 wins', time: '2h ago', read: true },
-      { id: '5', type: 'system', title: 'Welcome to The Colosseum', body: 'Post a hot take, watch a debate, or start one.', time: '1d ago', read: true },
+      { id: '4', type: 'stake_won', title: '🪙 Stake Won!', body: 'You won 45 tokens on "Is crypto dead?"', time: '3h ago', read: false },
+      { id: '5', type: 'tier_up', title: '🏅 Tier Up!', body: 'You reached Spectator+! New perks unlocked.', time: '4h ago', read: false },
+      { id: '6', type: 'follow', title: 'SHARPSHOOTER followed you', body: 'ELO 1,654 — 42 wins', time: '5h ago', read: true },
+      { id: '7', type: 'system', title: 'Welcome to The Colosseum', body: 'Post a hot take, watch a debate, or start one.', time: '1d ago', read: true },
     ];
   }
 
@@ -87,6 +120,7 @@ window.ColosseumNotifications = (() => {
           <button class="notif-filter" data-filter="challenge" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚔️ Challenges</button>
           <button class="notif-filter" data-filter="result" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🏆 Results</button>
           <button class="notif-filter" data-filter="reaction" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🔥 Reactions</button>
+          <button class="notif-filter" data-filter="economy" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🪙 Economy</button>
         </div>
         <div id="notif-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:8px 0;"></div>
       </div>
@@ -117,7 +151,14 @@ window.ColosseumNotifications = (() => {
     const list = document.getElementById('notif-list');
     if (!list) return;
 
-    const filtered = filter === 'all' ? notifications : notifications.filter(n => n.type === filter);
+    let filtered;
+    if (filter === 'all') {
+      filtered = notifications;
+    } else if (filter === 'economy') {
+      filtered = notifications.filter(n => ECONOMY_TYPES.has(n.type));
+    } else {
+      filtered = notifications.filter(n => n.type === filter);
+    }
 
     if (filtered.length === 0) {
       list.innerHTML = `
@@ -131,6 +172,8 @@ window.ColosseumNotifications = (() => {
     list.innerHTML = filtered.map(n => {
       const typeInfo = TYPES[n.type] || TYPES.system;
       const unreadDot = !n.read ? '<div style="width:8px;height:8px;background:#cc2936;border-radius:50%;flex-shrink:0;"></div>' : '';
+      // SESSION 120: Use created_at with _timeAgo(), fall back to n.time for placeholders
+      const displayTime = n.created_at ? _timeAgo(n.created_at) : (n.time || '');
       // BUG 1+2 FIX: Escape ALL user-sourced values including id and time
       return `
         <div class="notif-item" data-id="${escHtml(n.id)}" style="
@@ -142,7 +185,7 @@ window.ColosseumNotifications = (() => {
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:13px;color:#f0f0f0;margin-bottom:2px;">${escHtml(n.title)}</div>
             <div style="font-size:12px;color:#a0a8b8;line-height:1.4;">${escHtml(n.body)}</div>
-            <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escHtml(n.time)}</div>
+            <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escHtml(displayTime)}</div>
           </div>
           ${unreadDot}
         </div>`;
