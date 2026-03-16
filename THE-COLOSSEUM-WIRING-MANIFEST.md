@@ -271,6 +271,171 @@ Communication:
 
 ---
 
+## 3.3 POWER-UP SYSTEM
+
+### Tables
+- power_ups: Catalog of 4 power-ups (2x Multiplier, Silence, Shield, Reveal). id, name, description, cost, type.
+- user_power_ups: User inventory. user_id, power_up_id, quantity. Purchased from shop.
+- debate_power_ups: Equipped for a specific debate. user_id, debate_id, power_up_id, activated (boolean), activated_at (timestamp).
+
+### buy_power_up(p_power_up_id, p_quantity) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Purchase a power-up from shop, deduct token_balance
+- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('buy_power_up', {...})
+- EXPECTS: auth.uid() valid, sufficient token_balance, valid power_up_id
+- COLUMN: Uses `token_balance` (NOT `tokens` — LM-174 fix)
+- BLAST RADIUS: If column name wrong, RPC fails with "column does not exist". Silent purchase failure.
+- LAND MINES: LM-174 (token_balance not tokens)
+
+### equip_power_up(p_debate_id, p_power_up_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Move a power-up from inventory into debate loadout
+- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('equip_power_up', {...})
+- EXPECTS: User owns the power-up (user_power_ups.quantity > 0), debate exists, slot available per tier
+- INSERTS INTO: debate_power_ups with activated=false, activated_at=NULL
+- BLAST RADIUS: Low — equip is reversible pre-debate.
+
+### activate_power_up(p_debate_power_up_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Fire a power-up during active debate
+- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('activate_power_up', {...})
+- EXPECTS: debate_power_ups row exists with activated=false, activated_at IS NULL
+- SETS: activated = true AND activated_at = now() (BOTH — LM-176 fix)
+- BLAST RADIUS: If only activated_at set without activated=true, frontend shows power-up as still available after use.
+- LAND MINES: LM-176 (must set both boolean AND timestamp)
+
+### get_my_power_ups(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Returns user's equipped power-ups for a debate with activation state
+- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('get_my_power_ups', {...})
+- READS: debate_power_ups.activated boolean to show UI state
+- BLAST RADIUS: Low — read-only.
+
+### Power-Up Types
+- 2x Multiplier: Passive. Doubles staking payout on win. No activation button.
+- Silence: Active. Mutes opponent for 10 seconds. Tap to activate during debate.
+- Shield: Active. Blocks one reference challenge. Tap to activate.
+- Reveal: Active. Shows opponent's equipped loadout. Tap to activate.
+
+### Power-Up Frontend State (colosseum-powerups.js)
+- DEFINED IN: colosseum-powerups.js (IIFE, no global — called from arena.js)
+- DEPENDS ON: ColosseumAuth.safeRpc (LM-185 — must use full path, not bare safeRpc)
+- STATE: activatedPowerUps Set, shieldActive flag, silenceTimer ref
+- CLEANUP: All state cleared in renderLobby() and endCurrentDebate()
+- RENDERS: Shop screen, equip screen (pre-debate loadout), in-debate activation bar
+- BLAST RADIUS: If state not cleaned up, power-ups carry over between debates.
+
+---
+
+## 3.4 DEBATE ROOM WIRING
+
+### showPreDebate(debateId) (JS Function)
+- DEFINED IN: colosseum-arena.js
+- PURPOSE: Renders pre-debate screen between matchmaking/creation and room entry
+- DOES:
+  1. Loads staking panel via colosseum-staking.js → renderStakingPanel()
+  2. Loads power-up loadout via colosseum-powerups.js → renderLoadout()
+  3. Shows ENTER BATTLE button → wired to enterRoom()
+- BLAST RADIUS: This is the gate between creation and combat. If bypassed, no staking window exists.
+
+### AI Sparring Round Loop
+- DEFINED IN: colosseum-arena.js (inside enterRoom flow)
+- FLOW:
+  1. enterRoom() sets status to 'live' via update_arena_debate RPC
+  2. First AI response fetched from Groq via ai-sparring Edge Function
+  3. User types response → addMessage() renders in stream
+  4. advanceRound() increments round counter
+  5. When round >= totalRounds → 1.5s delay → endCurrentDebate()
+- EDGE FUNCTION: ai-sparring (Supabase Edge Function, Deno.serve)
+  - Uses Groq Llama 3.3 70B (not 3.1 — decommissioned)
+  - Populist personality, full conversation memory, round-aware
+  - GROQ_API_KEY stored as Supabase secret
+- ROUND TIMER: startLiveRoundTimer() → counts down ROUND_DURATION (120s) → calls advanceRound()
+- BLAST RADIUS: If Edge Function fails, AI never responds. Debate hangs. No timeout/fallback currently.
+
+### endCurrentDebate() (JS Function)
+- DEFINED IN: colosseum-arena.js
+- PURPOSE: Terminates debate, generates scores, triggers settlement, renders post-debate
+- DOES:
+  1. Sets view = 'postDebate', clears roundTimer
+  2. Cleans up WebRTC (if live audio mode)
+  3. Generates scores (scoreA, scoreB — currently random 60-90 range)
+  4. Determines winner ('a' or 'b' — higher score)
+  5. Calls update_arena_debate RPC: p_status='complete', p_winner, p_score_a, p_score_b
+  6. Calls settle_stakes(debate.id, winner) for staking payout
+  7. Claims debate tokens via ColosseumTokens
+  8. Cleans up power-up state (activatedPowerUps, shieldActive, silenceTimer)
+  9. Renders post-debate screen (verdict, scores, rematch/share/lobby buttons)
+- BLAST RADIUS: WIDE — this is where money moves. settle_stakes pays out tokens. If scores are wrong, wrong person wins. If RPC fails silently, tokens stuck in pool forever.
+- LAND MINES: LM-175 (settle_stakes was joining on pool_id not debate_id — fixed Session 118)
+
+### Post-Debate Screen
+- DEFINED IN: colosseum-arena.js (rendered inside endCurrentDebate)
+- SHOWS: Win/loss verdict, score display, opponent info
+- BUTTONS:
+  - Rematch → enterQueue(debate.mode, debate.topic) — re-enters general queue, does NOT preserve opponent
+  - Share Result → ColosseumShare.shareDebateResult() — NOTE: share.js exports shareResult not shareDebateResult (known bug, fallback to navigator.share)
+  - Back to Lobby → renderLobby()
+  - Transcript → opens bottom sheet with full message history (Session 113)
+  - Add Rival → wired Session 97 (E144/E145/E149), degrades gracefully when opponentId null
+- BLAST RADIUS: Low — display only. But if settle_stakes already failed, the post-debate screen shows a result that doesn't match the token reality.
+
+---
+
+## 3.5 SPECTATOR SYSTEM
+
+### colosseum-spectate.html (Standalone Page)
+- DEFINED IN: colosseum-spectate.html (Session 114)
+- PURPOSE: Watch a live or completed debate without participating
+- LOADS: auth.js, config.js — uses ColosseumAuth.safeRpc for RPCs
+- ROUTING: Arena lobby feed cards with data-link attribute → navigate to this page (arena debates) or auto-debate page (auto debates)
+
+### get_arena_debate_spectator(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Fetch debate + both participant profiles (names, elo, avatars) for spectator view
+- CALLED FROM: colosseum-spectate.html on load
+- EXPECTS: Valid debate ID
+- RETURNS: Debate data + joined profile data for both sides
+- BLAST RADIUS: Low — read-only. If profiles missing, names show as fallback.
+
+### bump_spectator_count(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Increment spectator count on arena_debates
+- CALLED FROM: colosseum-spectate.html on load
+- BLAST RADIUS: Low — counter only. But visible to debaters if they check.
+
+### vote_arena_debate(p_debate_id, p_side) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Spectator votes for side A or B
+- CALLED FROM: colosseum-spectate.html vote buttons
+- BLAST RADIUS: Low — advisory votes, don't affect scoring directly.
+
+### Spectator Features (Sessions 114-115)
+- Message stream with round dividers, auto-polling (5-second interval for live debates)
+- Spectator chat (Session 115) — live chat sidebar for spectators
+- Audience pulse gauge (Session 115) — real-time sentiment visual showing which side is winning
+- Share buttons, CTA for non-users
+- LAND MINE: Arena lobby feed cards — only auto-debate cards have data-link set. User debate "SPECTATE" button renders but clicking does nothing (partially unwired).
+
+---
+
+## 3.6 SCORING SYSTEM
+
+### colosseum-scoring.js
+- DEFINED IN: colosseum-scoring.js (window.ColosseumScoring)
+- PURPOSE: Elo calculation, XP awards, level progression
+- READS: profiles table (SELECT only — no writes from this module)
+- BLAST RADIUS: Low in isolation — display calculations. But Elo values feed into Ranked mode matchmaking.
+- NOTE: Elo only moves in Ranked mode. Casual = Elo frozen.
+
+### Score Generation (Current State)
+- IN endCurrentDebate(): scoreA and scoreB are random (60 + Math.floor(Math.random() * 30))
+- Winner = higher score
+- THIS IS PLACEHOLDER SCORING — not skill-based. Will need replacement before real competitive play.
+- AI moderator Edge Function (ai-moderator) exists for more nuanced scoring but is not wired into the main flow.
+
+---
+
 # SECTION 4: WIRING MANIFEST — SOCIAL LAYER
 
 ## 4.1 HOT TAKES
@@ -373,6 +538,43 @@ Communication:
 8. Page renders
 ```
 
+## FLOW 4: AI Debate Room Lifecycle (Full Detail)
+```
+1. User on pre-debate screen → showPreDebate(debateId)
+2. Staking panel loads → renderStakingPanel() [colosseum-staking.js]
+3. Power-up loadout loads → renderLoadout() [colosseum-powerups.js]
+4. User optionally stakes tokens → place_stake RPC (status must be 'pending')
+5. User optionally equips power-ups → equip_power_up RPC
+6. User clicks ENTER BATTLE → enterRoom(debateId)
+7. enterRoom() calls update_arena_debate({p_status: 'live'}) → status flips
+8. AI sparring: first AI response fetched from Groq via ai-sparring Edge Function
+9. User types response → addMessage() → advanceRound()
+10. Round timer (120s) auto-advances if user doesn't respond
+11. User may activate power-ups mid-debate → activate_power_up RPC
+12. When round >= totalRounds → 1.5s delay → endCurrentDebate()
+13. endCurrentDebate(): generates scores (random 60-90), picks winner
+14. update_arena_debate RPC: p_status='complete', p_winner, p_score_a, p_score_b
+15. settle_stakes(debate.id, winner) → parimutuel payout via award_tokens
+16. Token claim via ColosseumTokens
+17. Power-up state cleanup (activatedPowerUps, shieldActive, silenceTimer)
+18. Post-debate screen renders (verdict, buttons: Rematch/Share/Lobby/Transcript)
+19. Notifications created: stake_won or stake_lost in bell
+```
+
+## FLOW 5: Spectator Journey
+```
+1. User on arena lobby → sees active/recent debate cards
+2. Card has data-link → click navigates to colosseum-spectate.html?id=<debate_id>
+3. Page loads → get_arena_debate_spectator RPC (fetches debate + profiles)
+4. bump_spectator_count RPC (increments viewer counter)
+5. Message stream renders with round dividers
+6. If debate is live → 5-second polling for new messages
+7. Vote buttons → vote_arena_debate RPC (side A or B)
+8. Spectator chat sidebar (if enabled)
+9. Audience pulse gauge shows real-time sentiment
+10. CTA for non-users → links to Plinko signup
+```
+
 ---
 
 # SECTION 7: CONTRACTS (Always / Never Rules)
@@ -389,6 +591,10 @@ Communication:
 - Use `check_rate_limit()` in any RPC that creates content or performs a significant action
 - Await `ColosseumAuth.ready` before rendering auth-gated content
 - Keep `noOpLock: true` in Supabase createClient auth config
+- Set BOTH `activated = true` AND `activated_at = now()` when activating power-ups — never one without the other
+- Clean up power-up state (activatedPowerUps, shieldActive, silenceTimer) in both `renderLobby()` and `endCurrentDebate()`
+- Use `token_balance` as the column name in all RPCs — never `tokens` (LM-174)
+- Join stakes on `debate_id` — never `pool_id` (LM-175)
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -399,6 +605,8 @@ Communication:
 - Assume the drawio edge map is current — use THIS document instead
 - Modify tier thresholds in only one place — client (colosseum-tiers.js) AND server RPCs must match
 - Use `history.back()` in forward navigation — replaceState only
+- Set `activated_at` without also setting `activated = true` — frontend reads the boolean
+- Reference column `tokens` in any RPC — the column is `token_balance`
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -437,17 +645,19 @@ Communication:
 | Session | Entries Changed | What Happened |
 |---------|----------------|---------------|
 | 122 | Initial draft | Defense layer, arena basics, flows, contracts |
+| 122 | Arena expansion | Power-ups (4 RPCs + tables + state), debate room wiring (showPreDebate, AI round loop, endCurrentDebate full trace), spectator system (3 RPCs + page), scoring, 2 new flows |
 
 ---
 
 > **GAPS IN THIS DRAFT (to fill as we touch them):**
-> - Groups RPCs (create_group, join_group, create_group_challenge, etc.)
+> - Groups RPCs (create_group, join_group, create_group_challenge, respond, resolve)
 > - Moderator RPCs (set_moderator_mode, submit_evidence, etc.)
-> - Spectator system (get_arena_debate_spectator, bump_spectator_count)
-> - Edge Functions (ai-sparring, ai-moderator, stripe-checkout, stripe-webhook)
+> - Edge Functions detail (ai-sparring params, ai-moderator, stripe-checkout, stripe-webhook)
 > - Profile CRUD RPCs (update_profile_section, soft_delete_account, etc.)
-> - Predictions system (place_prediction, resolve_predictions)
+> - Predictions system (place_prediction, create_prediction_question, resolve_predictions)
 > - Achievement system (scan_achievements)
 > - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic)
-> - Analytics layer (log_event, daily_snapshots)
+> - Analytics layer (log_event, daily_snapshots, 9 views)
+> - Payments layer (Stripe products, checkout flow, webhook handling)
 > - Full HTML page → JS module loading order for each page
+> - Bot army leg-by-leg detail (which RPCs each leg calls on the backend)
