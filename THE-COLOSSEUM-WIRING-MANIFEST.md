@@ -445,17 +445,193 @@ Communication:
 - CALLED FROM: colosseum-async.js → postTake()
 - VALIDATES: auth, rate limit, sanitize_text on body, category enum
 - TOKEN GATE: 25 tokens required
+- TRIGGERS: claim_action_tokens (p_action: 'hot_take') on success
 - BLAST RADIUS: If rate limit breaks, spam floods the feed. If sanitize skipped, XSS in feed.
 
 ### react_hot_take(p_take_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Toggle fire reaction (add/remove in one RPC)
 - CALLED FROM: colosseum-async.js → toggle handler
-- BLAST RADIUS: Low — self-contained toggle. But token claim fires only on add (data.reacted===true).
+- TRIGGERS: claim_action_tokens (p_action: 'reaction') only on ADD (data.reacted===true), not on remove
+- BLAST RADIUS: Low — self-contained toggle.
+
+### Challenge Flow (Hot Take → Arena)
+- DEFINED IN: colosseum-async.js → _showChallengeModal()
+- FLOW: User taps ⚔️ BET button on a hot take → modal with counter-argument textarea → creates challenge record → challenge→arena wiring (Session 97, E83)
+- TOKEN GATE: 50 tokens required for challenge
+- BLAST RADIUS: Creates DB record only. Does not auto-navigate to arena. Opponent must accept.
 
 ---
 
-## 4.2 NOTIFICATIONS
+## 4.2 PREDICTIONS SYSTEM
+
+### Debate-Linked Predictions
+- DEFINED IN: colosseum-async.js → placePrediction()
+- PURPOSE: Side bet on an existing arena debate outcome
+- FLOW: Predictions tab → vote buttons (side a/b) → place_prediction RPC → optimistic UI
+- TOKEN GATE: 100 tokens to place prediction
+- AUTH GATE: Must be logged in
+- TRIGGERS: claim_action_tokens (p_action: 'prediction') on success
+
+### Standalone Predictions (Session 113)
+
+### prediction_questions (Table)
+- DEFINED IN: Supabase (Session 113)
+- COLUMNS: id, creator_id, topic, side_a_label, side_b_label, category, status (open/closed/resolved), resolved_winner (a/b/null), picks_a, picks_b, created_at, resolved_at
+- RLS: SELECT open to all. INSERT only own rows. Writes via SECURITY DEFINER RPCs.
+
+### prediction_picks (Table)
+- DEFINED IN: Supabase (Session 113)
+- COLUMNS: id, question_id, user_id, pick (a/b), created_at
+- UNIQUE CONSTRAINT: (question_id, user_id) — one pick per user per question
+- SUPPORTS SIDE-SWITCHING: User can change pick; counts adjust both sides.
+
+### create_prediction_question(p_topic, p_side_a_label, p_side_b_label, p_category) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-async.js → openCreatePredictionForm() → submit handler
+- VALIDATES: auth, rate limit (10/hr), sanitize_text on all inputs, topic 10-200 chars, labels 1-50 chars
+- BLAST RADIUS: Low — creates a question. If rate limit breaks, prediction spam.
+
+### get_prediction_questions() (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-async.js → fetchStandaloneQuestions()
+- RETURNS: Open prediction questions sorted by recency
+- BLAST RADIUS: Low — read-only.
+
+### pick_prediction(p_question_id, p_pick) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-async.js → pickStandaloneQuestion()
+- VALIDATES: auth, rate limit (30/hr), question must be open, pick must be 'a' or 'b'
+- SIDE-SWITCH: If user already picked, swaps side and adjusts both pick counts atomically
+- BLAST RADIUS: Low. But if pick counts drift from actual picks rows, UI shows wrong percentages.
+
+---
+
+## 4.3 GROUPS SYSTEM
+
+### colosseum-groups.html (Standalone Page)
+- DEFINED IN: colosseum-groups.html (Session 49, expanded Session 105/116)
+- ROUTE: /groups via vercel.json
+- TABS: Discover, My Groups, Rankings (3 tabs in lobby view)
+- GROUP DETAIL VIEW: Shows header, members, hot takes, challenges
+
+### create_group(p_name, p_description, p_category, p_is_public, p_avatar_emoji) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-groups.html → submitCreateGroup()
+- VALIDATES: auth, name min 2 chars, sanitize_text
+- AUTO-OPENS: On success, calls openGroup(result.group_id)
+- BLAST RADIUS: Low — creates group, user becomes owner.
+
+### join_group(p_group_id) / leave_group(p_group_id) (RPCs)
+- DEFINED IN: Supabase RPCs (SECURITY DEFINER)
+- CALLED FROM: colosseum-groups.html → toggleMembership()
+- AUTH GATE: Unauthenticated → plinko redirect with returnTo param
+- OWNER PROTECTION: Owner cannot leave (button disabled, "YOU OWN THIS GROUP")
+- BLAST RADIUS: Low — membership toggle. Adjusts member count display optimistically.
+
+### get_group_details(p_group_id) / get_group_members(p_group_id, p_limit) / get_my_groups() / get_group_leaderboard() (RPCs)
+- DEFINED IN: Supabase RPCs (SECURITY DEFINER)
+- CALLED FROM: colosseum-groups.html (various tab/detail loaders)
+- BLAST RADIUS: Low — all read-only.
+
+### Group Hot Takes (Session 105)
+- GROUP DETAIL has a hot take composer for group-scoped takes
+- Takes stored in hot_takes table with section = groupId
+- loadGroupHotTakes() reads and displays them
+- BLAST RADIUS: Low — uses existing hot_takes infrastructure.
+
+### Group vs Group Challenges (Session 116)
+
+### group_challenges (Table)
+- DEFINED IN: Supabase (Session 116)
+- STATUS FLOW: pending → accepted/declined/expired → live → completed
+- AUTO-EXPIRY: 48 hours for pending challenges
+- SELF-PREVENTION: Group cannot challenge itself
+
+### create_group_challenge(p_challenger_group_id, p_defender_group_id, p_topic, p_category, p_format) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-groups.html → GvG challenge modal
+- VALIDATES: auth, rate limit (3 pending/group), duplicate detection, self-challenge prevention
+- FORMAT: 1v1, 3v3, or 5v5
+- BLAST RADIUS: Creates challenge record. Does not start debate.
+
+### respond_to_group_challenge(p_challenge_id, p_response) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-groups.html → accept/decline buttons via data-* attributes + event delegation
+- EXPECTS: Defender-only (auth check), challenge not expired, response = 'accepted' or 'declined'
+- BLAST RADIUS: If accepted, challenge transitions to matchable state. If logic allows non-defender to respond, challenges can be hijacked.
+
+### resolve_group_challenge(p_challenge_id, p_winner_group_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER, admin-only)
+- PURPOSE: End challenge, calculate Group Elo changes
+- BLAST RADIUS: Moves Group Elo. If called with wrong winner, wrong group gets Elo boost.
+
+### get_group_challenges(p_group_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Priority-sorted challenge list for a group
+- BLAST RADIUS: Low — read-only.
+
+---
+
+## 4.4 PROFILE SYSTEM
+
+### colosseum-auth.js Profile Methods (via window.ColosseumAuth)
+- updateProfile(updates) — Updates display_name, avatar_url, bio, username via safeRpc('update_profile', {...})
+  - Only safe fields: display_name, avatar_url, bio, username
+  - Updates local currentProfile cache after success
+- getProfile() — Returns cached currentProfile
+- showUserProfile(userId) — Opens modal showing another user's profile (elo, wins, bio, follow/rival buttons)
+- deleteAccount() — Calls safeRpc('soft_delete_account') → clears local state → signs out
+
+### update_profile_section(p_section, p_answers) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Save profile depth questionnaire answers for a section
+- CALLED FROM: colosseum-profile-depth.html → saveSection()
+- VALIDATES: auth, sanitize_text on answers
+- BLAST RADIUS: Low — writes to profile_depth_answers. But saveSection also calls increment_questions_answered which affects tier.
+
+### soft_delete_account() (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Mark account as deleted (soft delete, data retained)
+- CALLED FROM: colosseum-settings.html → deleteAccount flow (type "DELETE" to confirm)
+- BLAST RADIUS: User loses access. Data preserved for legal retention.
+
+### Avatar System (Session 113)
+- FORMAT: avatar_url stores either a URL or 'emoji:⚔️' format
+- PARSING: parseEmojiAvatar(avatarUrl) → returns emoji string or null
+- PICKER: 20 emoji options in bottom sheet on profile page
+- RENDERED IN: Profile screen, nav bar avatar, showUserProfile modal, public /u/username page (api/profile.js), hot takes feed (async.js)
+- BLAST RADIUS: If emoji format changes, every avatar render point breaks. 6+ locations parse this format.
+
+### Bio System (Session 113)
+- 500 character limit, inline edit on profile page
+- Saved via updateProfile({ bio }) → update_profile RPC
+- Displayed via textContent (XSS-safe) in profile, _escHtml() in innerHTML contexts
+
+---
+
+## 4.5 FOLLOWS & RIVALS
+
+### follow_user(p_target_id) / unfollow_user(p_target_id) (RPCs)
+- DEFINED IN: Supabase RPCs (SECURITY DEFINER)
+- CALLED FROM: colosseum-auth.js → followUser() / unfollowUser() → safeRpc
+- UI: Follow button in showUserProfile() modal, follower/following lists on profile page
+- BLAST RADIUS: Low — social graph edges. No token implications.
+
+### declare_rival(p_target_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: colosseum-auth.js → declareRival() → used in showUserProfile modal and post-debate screen
+- UI: ⚔️ RIVAL button. One-directional (you declare, they don't have to accept).
+- BLAST RADIUS: Low — creates social graph edge. Feeds rival display in async.js.
+
+### Followers/Following List (Session 113)
+- Tap follower/following count on profile → bottom sheet with list
+- Each row: initial avatar, name, elo. Tap → showUserProfile(userId)
+- Uses existing getFollowers()/getFollowing() methods
+
+---
+
+## 4.6 NOTIFICATIONS
 
 ### ColosseumNotifications (Global)
 - DEFINED IN: colosseum-notifications.js (window.ColosseumNotifications)
@@ -463,6 +639,20 @@ Communication:
 - CATEGORIES: challenge, stake_won, stake_lost, follow, rival, group, system
 - mark_notifications_read RPC: Bulk mark via ColosseumAuth.safeRpc()
 - BLAST RADIUS: If polling breaks, users never see notifications. Bell stays stale.
+- CREATED BY: Various RPCs server-side (settle_stakes creates stake_won/stake_lost, follow_user creates follow notification, etc.)
+
+---
+
+## 4.7 LEADERBOARD
+
+### colosseum-leaderboard.js (window.ColosseumLeaderboard)
+- DEFINED IN: colosseum-leaderboard.js
+- TABS: Elo, Wins, Streak
+- TIME FILTERS: All time, This week, Today
+- MY RANK: Shows current user's position
+- DATA: Reads from profiles via ColosseumAuth.safeRpc (leaderboard query RPCs)
+- ROW CLICKS: data-username delegation → showUserProfile()
+- BLAST RADIUS: Low — display only. But if Elo values are wrong in profiles, leaderboard is wrong.
 
 ---
 
@@ -575,6 +765,42 @@ Communication:
 10. CTA for non-users → links to Plinko signup
 ```
 
+## FLOW 6: Group vs Group Challenge
+```
+1. User in group detail → taps GvG Challenge button (member-only)
+2. Challenge modal opens → opponent search (350ms debounce), topic input, category, format pills (1v1/3v3/5v5)
+3. Submit → create_group_challenge RPC (rate limited 3 pending/group, duplicate detection)
+4. Challenge record created → status 'pending'
+5. Defender group sees challenge in "Challenges" tab → get_group_challenges RPC
+6. Defender accepts → respond_to_group_challenge({p_response: 'accepted'})
+7. Challenge status → 'accepted' (matchable)
+8. [FUTURE: matching into actual debates not fully wired]
+9. Admin resolves → resolve_group_challenge → Group Elo updated
+10. If no response in 48 hours → auto-expired
+```
+
+## FLOW 7: Hot Take → Challenge → Arena
+```
+1. User reads hot take in feed (index.html → category overlay)
+2. Taps ⚔️ BET button → _showChallengeModal() [colosseum-async.js]
+3. Writes counter-argument → submit → create_challenge RPC (50 token gate)
+4. Challenge record created (DB only — no auto-navigation)
+5. Opponent receives notification (challenge category)
+6. Opponent accepts → challenge transitions → enters arena queue
+7. [E83 wiring, Session 97 — challenge→arena path]
+```
+
+## FLOW 8: Standalone Prediction Creation
+```
+1. User on index.html → category overlay → Predictions tab
+2. Taps ➕ CREATE button → openCreatePredictionForm() bottom sheet
+3. Fills topic (10-200 chars), side A label, side B label, category
+4. Submit → create_prediction_question RPC (rate limited 10/hr)
+5. New prediction appears in list → fetchStandaloneQuestions()
+6. Other users pick sides → pick_prediction RPC (rate limited 30/hr)
+7. Pick counts update optimistically + server-confirmed
+```
+
 ---
 
 # SECTION 7: CONTRACTS (Always / Never Rules)
@@ -595,6 +821,8 @@ Communication:
 - Clean up power-up state (activatedPowerUps, shieldActive, silenceTimer) in both `renderLobby()` and `endCurrentDebate()`
 - Use `token_balance` as the column name in all RPCs — never `tokens` (LM-174)
 - Join stakes on `debate_id` — never `pool_id` (LM-175)
+- Parse avatar_url for 'emoji:' prefix before rendering — 6+ locations render avatars
+- Use `sanitize_text()` on all user text in RPCs: hot take body, prediction topic/labels, group name/description, bio, challenge counter-argument
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -607,6 +835,8 @@ Communication:
 - Use `history.back()` in forward navigation — replaceState only
 - Set `activated_at` without also setting `activated = true` — frontend reads the boolean
 - Reference column `tokens` in any RPC — the column is `token_balance`
+- Allow non-defender to respond to a group challenge — defender-only check required
+- Render user-provided text via innerHTML without escaping — use textContent or _escHtml()
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -646,18 +876,17 @@ Communication:
 |---------|----------------|---------------|
 | 122 | Initial draft | Defense layer, arena basics, flows, contracts |
 | 122 | Arena expansion | Power-ups (4 RPCs + tables + state), debate room wiring (showPreDebate, AI round loop, endCurrentDebate full trace), spectator system (3 RPCs + page), scoring, 2 new flows |
+| 122 | Social expansion | Predictions (2 tables, 3 RPCs, standalone + debate-linked), Groups (7 RPCs, GvG challenges with status flow), Profile CRUD (update, delete, avatar, bio), Follows/Rivals (3 RPCs), Leaderboard, Notifications detail, 3 new flows |
 
 ---
 
 > **GAPS IN THIS DRAFT (to fill as we touch them):**
-> - Groups RPCs (create_group, join_group, create_group_challenge, respond, resolve)
-> - Moderator RPCs (set_moderator_mode, submit_evidence, etc.)
-> - Edge Functions detail (ai-sparring params, ai-moderator, stripe-checkout, stripe-webhook)
-> - Profile CRUD RPCs (update_profile_section, soft_delete_account, etc.)
-> - Predictions system (place_prediction, create_prediction_question, resolve_predictions)
-> - Achievement system (scan_achievements)
-> - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic)
-> - Analytics layer (log_event, daily_snapshots, 9 views)
-> - Payments layer (Stripe products, checkout flow, webhook handling)
+> - Edge Functions detail (ai-sparring params/personality, ai-moderator scoring logic, stripe-checkout, stripe-webhook)
+> - Moderator RPCs (set_moderator_mode, submit_evidence, ruling panel flow)
+> - Achievement system (scan_achievements, 25 conditions)
+> - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic, 45 items)
+> - Analytics layer (log_event, daily_snapshots, 9 views, 20 RPCs wired to log_event)
+> - Payments layer (Stripe products, checkout flow, webhook handling, Edge Function detail)
 > - Full HTML page → JS module loading order for each page
 > - Bot army leg-by-leg detail (which RPCs each leg calls on the backend)
+> - Landing page vote system (landing_votes, cast_landing_vote, get_landing_vote_counts, fingerprint dedup)
