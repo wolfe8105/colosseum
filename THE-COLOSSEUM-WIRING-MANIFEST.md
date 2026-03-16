@@ -1061,6 +1061,194 @@ Communication:
 
 ---
 
+# SECTION 6B: PAGE LOAD MAP (HTML → JS Module Loading Order)
+
+> Every page follows the same head pattern: Supabase CDN → config.js → auth.js → page-specific modules.
+> SRI hashes pin supabase-js to @2.98.0 on 6 pages. Must regenerate when upgrading.
+> Auth gate: pages that require login check ColosseumAuth.ready → if no session → redirect to Plinko.
+
+## index.html (Home — Spoke Carousel)
+```
+HEAD SCRIPTS (blocking):
+  1. @supabase/supabase-js@2.98.0 (CDN, SRI hash)
+  2. colosseum-config.js (credentials, flags, escHtml, showToast)
+  3. colosseum-auth.js (ColosseumAuth global)
+
+BODY SCRIPTS (defer/end):
+  4. colosseum-tokens.js (ColosseumTokens — milestones, streaks, claims)
+  5. colosseum-notifications.js (ColosseumNotifications — bell polling)
+  6. colosseum-async.js (ColosseumAsync — hot takes, predictions, challenges)
+  7. colosseum-leaderboard.js (ColosseumLeaderboard)
+  8. colosseum-share.js (ColosseumShare)
+  9. colosseum-analytics.js (auto page_view)
+
+INIT:
+  await ColosseumAuth.ready → if no session → redirect to Plinko
+  appInit() → renders spoke carousel, wires category overlays, pull-to-refresh
+  Carousel counts loaded via inline ColosseumAuth.safeRpc()
+
+AUTH GATE: YES — redirects to Plinko if not logged in
+```
+
+## colosseum-arena.html (Arena)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio (Supabase CDN, config, auth)
+
+BODY SCRIPTS:
+  4. colosseum-tokens.js
+  5. colosseum-tiers.js (getTier, renderTierBadge — display only)
+  6. colosseum-staking.js (IIFE — renderStakingPanel, placeStake)
+  7. colosseum-powerups.js (IIFE — shop, equip, activate)
+  8. colosseum-arena.js (ColosseumArena — lobby, modes, debate room, pre-debate)
+  9. colosseum-analytics.js
+
+INIT:
+  await ColosseumAuth.ready → renderLobby()
+  Arena.js orchestrates staking.js and powerups.js calls
+
+AUTH GATE: YES
+DEPENDS ON: staking.js and powerups.js MUST use ColosseumAuth.safeRpc (LM-185)
+```
+
+## colosseum-groups.html (Groups)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+  (groups logic is INLINE in the HTML, not a separate .js module)
+
+INIT:
+  Uses ColosseumAuth for RPC calls (was broken pre-Session 67 — used createClient directly)
+  Tabs: Discover, My Groups, Rankings
+  Group detail view loads on openGroup()
+  URL param support: ?group=UUID opens group directly
+
+AUTH GATE: NO — loads for guests. Auth-gated actions (create, join) redirect to Plinko.
+```
+
+## colosseum-settings.html (Settings)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+
+INIT:
+  await ColosseumAuth.ready → loads settings toggles, account management, bio edit
+  Delete account flow: type "DELETE" → soft_delete_account RPC
+
+AUTH GATE: YES
+```
+
+## colosseum-profile-depth.html (Questionnaire)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-tiers.js (tier banner rendering)
+  5. colosseum-analytics.js
+
+INIT:
+  await ColosseumAuth.ready → loads 12 sections, renders tier banner
+  saveSection() → counts new answers → increment_questions_answered RPC → updates tier live
+  Migration sync on load: if server questions_answered=0 but localStorage has answers, one-time catch-up
+
+AUTH GATE: YES
+LAND MINES: LM-172 (tier thresholds), LM-173 (double-counting prevention)
+```
+
+## colosseum-plinko.html (Signup Gate)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+
+INIT:
+  4-step signup: Step 1 OAuth (Google/Apple/email) → Step 2 Age Gate → Step 3 Username → Step 4 Done
+  On successful auth → redirects to index.html (or returnTo param)
+
+AUTH GATE: NO — this IS the auth gate. Logged-in users skip to home.
+```
+
+## colosseum-login.html (Login)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+
+INIT:
+  OAuth dominant (Google, Apple). Email collapsed behind toggle.
+  Password reset modal.
+  On success → redirect to returnTo or index.html
+
+AUTH GATE: NO
+```
+
+## colosseum-spectate.html (Spectator View)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+
+INIT:
+  Reads debate ID from URL params
+  get_arena_debate_spectator RPC → loads debate + profiles
+  bump_spectator_count RPC → increments viewer count
+  5-second polling for live debates
+
+AUTH GATE: NO — spectating is open to all
+```
+
+## colosseum-auto-debate.html (AI vs AI Debate Page)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-tokens.js (claimVote on voting)
+  5. colosseum-analytics.js
+
+INIT:
+  Auto-fetches latest debate ID if none in URL (Session 68 fix)
+  Loads auto_debate data from Supabase
+  Renders rounds, scorecard, judge's take
+  Voting via cast_auto_debate_vote RPC (ungated)
+  More Debates discovery section (E279/E280, Session 97)
+
+AUTH GATE: NO — ungated voting, rage-click funnel
+```
+
+## colosseum-debate-landing.html (Landing Page)
+```
+HEAD SCRIPTS:
+  1-3. Same head trio
+
+BODY SCRIPTS:
+  4. colosseum-analytics.js
+
+INIT:
+  Hardcoded DEBATES object with demo topics
+  Vote buttons → cast_landing_vote RPC (anon, fingerprint dedup)
+  get_landing_vote_counts RPC → real vote counts (falls back to placeholders)
+  Category pills link to /?cat=slug
+  downloadCard() for share card generation
+
+AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
+```
+
+---
+
 # SECTION 7: CONTRACTS (Always / Never Rules)
 
 ## ALWAYS
@@ -1089,6 +1277,8 @@ Communication:
 - Verify file content on VPS with grep after any SCP transfer — stale files from wrong machine are common (LM-167)
 - Patch bot-config.js on VPS first, verify, then optionally push to GitHub — VPS is authoritative (LM-166)
 - Use `--branch=production` for Cloudflare Pages wrangler deploys — `--branch=main` routes to Preview
+- Load scripts in order: Supabase CDN → config.js → auth.js → page-specific modules. Never reorder.
+- Keep SRI hashes on Supabase CDN script tags — pins to @2.98.0. Regenerate if upgrading SDK version.
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -1110,6 +1300,8 @@ Communication:
 - Edit the mirror generator copy in the bot-army directory — the live copy is at /opt/colosseum/ (not bot-army)
 - Put platform flags in ecosystem.config.js env block — .env is the single source of truth (Session 94)
 - Trust SCP success messages — always grep for unique content after transfer (LM-167)
+- Load page-specific modules before auth.js — auth.js must resolve .ready before anything else runs
+- Render auth-gated content before ColosseumAuth.ready resolves — use await, never setTimeout
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -1169,6 +1361,7 @@ Communication:
 | 122 | Social expansion | Predictions (2 tables, 3 RPCs, standalone + debate-linked), Groups (7 RPCs, GvG challenges with status flow), Profile CRUD (update, delete, avatar, bio), Follows/Rivals (3 RPCs), Leaderboard, Notifications detail, 3 new flows |
 | 122 | Payments + Edge Functions | Stripe checkout/webhook Edge Functions (template status, idempotency, HMAC), payments.js, paywall.js, ai-sparring + ai-moderator Edge Functions, Groq model note |
 | 122 | Growth layer | Bot army leg-by-leg (Leg 1 reactive, Leg 2 proactive, Leg 3 rage engine), all VPS files mapped, mirror generator, analytics (log_event, 9 views, daily_snapshots, funnel tracking), landing page votes, category classifier |
+| 122 | Page load map | All 9 HTML pages: script loading order, init sequence, auth gate status, key dependencies. Head trio pattern documented. |
 
 ---
 
@@ -1176,6 +1369,5 @@ Communication:
 > - Moderator RPCs (set_moderator_mode, submit_evidence, ruling panel flow)
 > - Achievement system (scan_achievements, 25 conditions)
 > - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic, 45 items)
-> - Full HTML page → JS module loading order for each page
 > - WebRTC/Realtime wiring (colosseum-webrtc.js, voice memo mode)
 > - Auto-debate staking (auto_debate_stakes table, 4 RPCs — Session 99)
