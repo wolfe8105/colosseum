@@ -742,20 +742,199 @@ Communication:
 ### Service Role Client
 - DEFINED IN: /opt/colosseum/bot-army/colosseum-bot-army/supabase-client.js (VPS)
 - USES: service_role key (bypasses RLS entirely)
+- PROVIDES: createHotTake(), logBotAction(), CATEGORY_TO_SLUG mapping
+- CATEGORY_TO_SLUG: Handles mismatch between bot categories and mirror slugs (e.g., `couples` → `couples-court`)
 - BLAST RADIUS: If this key leaks, attacker has full DB access. Key is in .env on VPS only.
 - NOT IN REPO: VPS-only file
+- LAND MINES: LM-166 (VPS is authoritative, GitHub is stale)
 
 ### bot-engine.js (Orchestrator)
 - DEFINED IN: VPS only (/opt/colosseum/bot-army/colosseum-bot-army/)
 - PURPOSE: PM2-managed cron scheduler. Runs leg1, leg2, leg3 cycles.
 - CONSUMES: bot-config.js for flags, env vars for credentials
+- REQUIRES: leg2-news-scanner, leg2-debate-creator, leg2-bluesky-poster, leg3-auto-debate, ai-generator
+- STATS: Logs daily summary via bot_stats_24h view. Tracks autoDebates count per day.
 - BLAST RADIUS: If this crashes, all automated content stops. PM2 auto-restarts.
 
 ### bot-config.js
 - DEFINED IN: BOTH repo root AND VPS
 - PURPOSE: Env loader, validator, platform flags, timing config
 - CRITICAL: maxPerDay default is 3 (matched to .env). Bluesky config section + flags + credential validation.
-- LAND MINES: LM-149 (repo and VPS copies must stay in sync)
+- FLAGS BLOCK: leg1Bluesky, leg2Bluesky, leg3BlueskyPost (active). leg2Reddit, leg3Reddit (pending API). Discord hardcoded false.
+- LAND MINES: LM-149 (repo and VPS copies must stay in sync), LM-166 (VPS authoritative), LM-167 (SCP stale files)
+
+### ecosystem.config.js
+- DEFINED IN: VPS only (/opt/colosseum/bot-army/colosseum-bot-army/)
+- PURPOSE: PM2 process config. Daily restart at 4am via cron_restart.
+- CRITICAL: env block was stripped of all platform flags (Session 94). `.env` is the single source of truth for flags. If flags reappear in ecosystem.config.js, they override `.env`.
+- LAND MINES: LM-149 (env block overrides .env)
+
+---
+
+## 5.2 LEG 1 — REACTIVE (Reply Guy)
+
+### leg1-bluesky.js
+- DEFINED IN: VPS only
+- PURPOSE: Finds trending argument posts on Bluesky, replies with opinionated take + link to mirror
+- FREQUENCY: 10 replies/day
+- STATUS: ENABLED (Session 98). Only audience-building mechanism running.
+- WRITES TO: bot_activity table via logBotAction()
+- LINKS TO: colosseum-f30.pages.dev (mirror)
+- BLAST RADIUS: If account banned, sole organic growth channel dies. Content guardrails needed (LM in NT).
+
+### Other Leg 1 Files (inactive)
+- leg1-reddit.js: 13 subreddits targeted. DISABLED — pending API approval since March 4.
+- leg1-twitter.js: DISABLED — needs Basic API ($100/mo).
+- leg1-discord.js: DISABLED — hardcoded false in bot-config.js (Session 111).
+
+---
+
+## 5.3 LEG 2 — PROACTIVE (Content Creation)
+
+### leg2-news-scanner.js
+- DEFINED IN: VPS only
+- PURPOSE: Fetches 7 RSS feeds, scores headlines by debate-worthiness, returns ranked list
+- CALLED FROM: bot-engine.js (Leg 2 cycle AND Leg 3 cycle — shared scanner)
+- RETURNS: Array of { title, link, source, category, score }
+- BLAST RADIUS: If RSS feeds change URLs or go down, no fresh headlines. Bot creates nothing.
+
+### ai-generator.js
+- DEFINED IN: VPS only
+- PURPOSE: Sends headline to Groq → gets hot take text OR full auto-debate content
+- MODEL: Groq Llama 3.3 70B Versatile (100k tokens/day free tier)
+- FALLBACK: When Groq quota exceeded, falls back to 10 diverse headline-aware templates (125 combos per side, Session 95)
+- ALSO PROVIDES: fallbackAutoDebateSetup() for Leg 3 template content
+- BLAST RADIUS: If Groq key invalid, all AI-generated content falls back to templates. Quality degrades but doesn't stop.
+
+### category-classifier.js
+- DEFINED IN: VPS only (lib/)
+- PURPOSE: Keyword-based headline → category router. Replaces hardcoded `category: 'general'`.
+- USES: Word-boundary regex for short keywords (≤4 chars) to prevent false positives
+- CALLED FROM: ai-generator.js line 1 via require
+- BLAST RADIUS: If classifier wrong, content lands in wrong mirror category page. Not fatal but reduces relevance.
+
+### leg2-debate-creator.js
+- DEFINED IN: VPS only
+- PURPOSE: Full pipeline: headline → AI topic → hot take → Supabase insert → shareable URL
+- FLOW: headline → generateHotTake() → createHotTake() via service_role → returns { id, url }
+- WRITES TO: hot_takes table via supabase-client.js (service_role, bypasses RLS)
+- LINKS: URL built from config.app.baseUrl → should point to mirror (colosseum-f30.pages.dev)
+- BLAST RADIUS: If baseUrl wrong, all bot posts link to wrong domain. LM-168.
+- LAND MINES: LM-168 (APP_BASE_URL must be mirror, not Vercel)
+
+### leg2-bluesky-poster.js (v2)
+- DEFINED IN: VPS only
+- PURPOSE: Posts ESPN-style share card image + link to Bluesky
+- FLOW: card-generator.js creates PNG → uploadBlob() to Bluesky → creates post with embedded image
+- DEPENDS ON: config.bluesky block in bot-config.js (handle, appPassword, maxPostsPerDay)
+- BLAST RADIUS: If config.bluesky missing, crash with "Cannot read properties of undefined (reading 'maxPostsPerDay')". Debates created in Supabase but never posted. Silent failure except one error log line.
+- LAND MINES: LM-149, LM-166 (bluesky config only exists on VPS version of bot-config.js)
+
+### card-generator.js
+- DEFINED IN: VPS only
+- PURPOSE: Server-side ESPN-style share card PNG generation using canvas npm package
+- CALLED FROM: leg2-bluesky-poster.js, leg3 pipeline
+- BLAST RADIUS: If canvas npm fails to install (native dependency), no images generated. Posts go text-only.
+
+---
+
+## 5.4 LEG 3 — RAGE ENGINE (Auto-Debates)
+
+### leg3-auto-debate.js
+- DEFINED IN: VPS only
+- PURPOSE: Full AI-vs-AI debate pipeline: headline → setup → 3 rounds → lopsided score → save → rage hook
+- FREQUENCY: 3/day (reduced from 6 in Session 94 to stay within Groq free tier)
+- SCORING: 40% landslide, 45% clear, 15% split — AI deliberately picks the unpopular winner (controversial scoring IS the marketing)
+- WRITES TO: auto_debates + auto_debate_votes tables via service_role
+- URL: Built from config.app.mirrorUrl → individual debate page (/debate/{id}.html)
+- TRIGGERS: card-generator → leg2-bluesky-poster (image post), mirror-generator picks up on next 5-min cycle
+- BLAST RADIUS: If pipeline fails mid-debate, partial data in Supabase. No cleanup mechanism.
+
+---
+
+## 5.5 MIRROR GENERATOR
+
+### colosseum-mirror-generator.js
+- DEFINED IN: /opt/colosseum/colosseum-mirror-generator.js (NOT inside bot-army dir — LM in NT)
+- PURPOSE: Static site generator. Reads debates/hot takes from Supabase, generates pure HTML pages, deploys to Cloudflare Pages.
+- SCHEDULE: 5-minute cron. Sources /opt/colosseum/mirror.env for credentials.
+- DEPLOYS TO: colosseum-f30.pages.dev via wrangler (must use --branch=production for production)
+- OUTPUT: 50+ pages per build. Home, category pages (/category/sports.html etc), individual debate pages (/debate/{id}.html)
+- INCLUDES: Cloudflare Web Analytics beacon (Session 96), colosseum-analytics.js script tag (Session 94)
+- USES: Supabase anon key (not service_role) for reads
+- BLAST RADIUS: If cron fails, mirror goes stale. Bot posts link to pages that exist but have old content. If mirror.env has wrong credentials, builds fail silently.
+- LAND MINES: File is NOT in bot-army dir. Updating the bot-army copy does nothing. Cron runs from /opt/colosseum/.
+
+---
+
+# SECTION 5B: WIRING MANIFEST — ANALYTICS LAYER
+
+## 5B.1 FUNNEL ANALYTICS
+
+### colosseum-analytics.js (window.ColosseumAnalytics)
+- DEFINED IN: colosseum-analytics.js (auto-executes on load)
+- PURPOSE: Funnel tracking for both mirror and app
+- AUTO-FIRES: page_view event on every page load
+- CAPTURES: Visitor UUID (generated + stored in localStorage), referrer, UTM params (source, medium, campaign), page URL
+- SIGNUP DETECTION: Fires signup event when auth state transitions from anonymous to authenticated
+- USES: Supabase anon client (direct, not ColosseumAuth — this module loads independently)
+- INCLUDED ON: All 9 app HTML pages + all mirror pages (via mirror generator script tag)
+- BLAST RADIUS: If this script fails to load, zero analytics. If Supabase anon key wrong, events silently fail.
+
+### log_event(p_event_type, p_metadata) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Universal event logger. Writes to event_log table.
+- CALLED FROM:
+  - colosseum-analytics.js (page_view, signup)
+  - 20+ other RPCs internally (wired Session 34) — every significant server action logs an event
+- BLAST RADIUS: Low — event logging. If it breaks, analytics go dark but no user-facing features fail.
+
+### event_log (Table)
+- DEFINED IN: Supabase
+- PURPOSE: Central event store. All user and system events.
+- COLUMNS: id, user_id (nullable for anon), event_type, metadata (JSONB), created_at
+- QUERIED BY: 9 analytics views, daily_snapshots cron
+
+### Analytics Views (9 total)
+- DEFINED IN: Supabase (created Session 33)
+- PURPOSE: Pre-computed analytics queries over event_log
+- INCLUDES: daily active users, event counts by type, signup funnel, referrer breakdown, etc.
+- QUERIED BY: Admin/monitoring only. Not user-facing.
+
+### daily_snapshots
+- DEFINED IN: Supabase (scheduled function or manual)
+- PURPOSE: Aggregates daily stats from event_log into snapshot table
+- BLAST RADIUS: Low — historical record. If missed, gap in daily data.
+
+### bot_stats_24h (View)
+- DEFINED IN: Supabase
+- PURPOSE: Bot activity summary over last 24 hours (leg1/leg2/leg3 counts, auto_debate counts)
+- QUERIED BY: bot-engine.js daily summary log, monitoring
+
+### auto_debate_stats (View)
+- DEFINED IN: Supabase
+- PURPOSE: Auto-debate pipeline metrics (created, posted, vote counts)
+- QUERIED BY: monitoring
+
+## 5B.2 LANDING PAGE VOTES
+
+### landing_votes (Table)
+- DEFINED IN: Supabase (Session 107)
+- PURPOSE: Persist anonymous votes on colosseum-debate-landing.html
+- COLUMNS: id, topic_slug, side, fingerprint, created_at
+- UNIQUE INDEX: (topic_slug, fingerprint) — one vote per fingerprint per topic
+- RLS: Enabled with zero policies (RPC-only access)
+
+### cast_landing_vote(p_topic_slug, p_side, p_fingerprint) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER, granted to anon role)
+- PURPOSE: Record anonymous vote with fingerprint dedup
+- PATTERN: INSERT ON CONFLICT — duplicate fingerprint silently ignored
+- BLAST RADIUS: Low — anonymous votes. If fingerprinting breaks, one person can vote multiple times.
+
+### get_landing_vote_counts(p_topic_slug) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER, granted to anon role)
+- RETURNS: Vote counts per side for a topic
+- FALLBACK: colosseum-debate-landing.html falls back to hardcoded placeholders if no real votes exist
 
 ---
 
@@ -905,6 +1084,11 @@ Communication:
 - Use `req.text()` (not `req.json()`) in Stripe webhook Edge Function — preserves raw body for HMAC verification
 - Verify Stripe webhook signature before processing any event — never trust unverified webhook payloads
 - Use Groq model `llama-3.3-70b-versatile` — the 3.1 version is decommissioned
+- Set APP_BASE_URL to mirror domain (colosseum-f30.pages.dev) not Vercel — all bot links go to mirror
+- Use `\cp` (backslash prefix) for file copies on VPS — bypasses `cp -i` alias
+- Verify file content on VPS with grep after any SCP transfer — stale files from wrong machine are common (LM-167)
+- Patch bot-config.js on VPS first, verify, then optionally push to GitHub — VPS is authoritative (LM-166)
+- Use `--branch=production` for Cloudflare Pages wrangler deploys — `--branch=main` routes to Preview
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -922,6 +1106,10 @@ Communication:
 - Put Stripe secret key or Groq API key in client-side code — secrets live in Supabase Edge Function secrets only
 - Use `req.json()` in Stripe webhook handler — it destroys the raw body needed for HMAC signature verification
 - Deploy Stripe Edge Functions without updating old imports first (known tech debt in NT)
+- Upload bot-config.js from GitHub to VPS without verifying bluesky block exists — GitHub version is stale (LM-166)
+- Edit the mirror generator copy in the bot-army directory — the live copy is at /opt/colosseum/ (not bot-army)
+- Put platform flags in ecosystem.config.js env block — .env is the single source of truth (Session 94)
+- Trust SCP success messages — always grep for unique content after transfer (LM-167)
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -930,6 +1118,8 @@ Communication:
 - Any change to the auth init sequence
 - Any change to the status flow (pending → lobby → matched → live → completed)
 - Any new Edge Function deployment
+- Any change to bot posting frequency or platform flags
+- Any change to APP_BASE_URL or mirror domain
 
 ---
 
@@ -956,6 +1146,17 @@ Communication:
 | ai-moderator (Edge Func) | Arena | AI scoring/ruling generation | GROQ_API_KEY secret |
 | stripe-checkout (Edge Func) | Payments | Creates Stripe Checkout sessions | STRIPE_SECRET_KEY secret |
 | stripe-webhook (Edge Func) | Payments | Processes Stripe webhook events | STRIPE_WEBHOOK_SECRET secret |
+| bot-engine.js (VPS) | Bot Army | PM2 orchestrator, leg1/2/3 cron cycles | bot-config.js, all leg files |
+| bot-config.js | Bot Army | Env loader, flags, platform config | .env (VPS authoritative, LM-166) |
+| leg2-news-scanner.js (VPS) | Bot Army | RSS headline scanner, 7 feeds | None |
+| leg2-debate-creator.js (VPS) | Bot Army | Headline → hot take → Supabase → URL | ai-generator, supabase-client |
+| leg2-bluesky-poster.js (VPS) | Bot Army | Image post to Bluesky | card-generator, config.bluesky |
+| leg3-auto-debate.js (VPS) | Bot Army | Full AI debate pipeline → rage bait | ai-generator, supabase-client |
+| ai-generator.js (VPS) | Bot Army | Groq AI content + template fallback | GROQ_API_KEY |
+| card-generator.js (VPS) | Bot Army | ESPN-style PNG share cards | canvas npm |
+| category-classifier.js (VPS) | Bot Army | Headline → category routing | None |
+| supabase-client.js (VPS) | Bot Army | Service role client + CATEGORY_TO_SLUG | SUPABASE_SERVICE_KEY |
+| mirror-generator.js (VPS) | Growth | Static site generator → Cloudflare Pages | mirror.env, wrangler |
 
 ---
 
@@ -967,6 +1168,7 @@ Communication:
 | 122 | Arena expansion | Power-ups (4 RPCs + tables + state), debate room wiring (showPreDebate, AI round loop, endCurrentDebate full trace), spectator system (3 RPCs + page), scoring, 2 new flows |
 | 122 | Social expansion | Predictions (2 tables, 3 RPCs, standalone + debate-linked), Groups (7 RPCs, GvG challenges with status flow), Profile CRUD (update, delete, avatar, bio), Follows/Rivals (3 RPCs), Leaderboard, Notifications detail, 3 new flows |
 | 122 | Payments + Edge Functions | Stripe checkout/webhook Edge Functions (template status, idempotency, HMAC), payments.js, paywall.js, ai-sparring + ai-moderator Edge Functions, Groq model note |
+| 122 | Growth layer | Bot army leg-by-leg (Leg 1 reactive, Leg 2 proactive, Leg 3 rage engine), all VPS files mapped, mirror generator, analytics (log_event, 9 views, daily_snapshots, funnel tracking), landing page votes, category classifier |
 
 ---
 
@@ -974,7 +1176,6 @@ Communication:
 > - Moderator RPCs (set_moderator_mode, submit_evidence, ruling panel flow)
 > - Achievement system (scan_achievements, 25 conditions)
 > - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic, 45 items)
-> - Analytics layer (log_event, daily_snapshots, 9 views, 20 RPCs wired to log_event)
 > - Full HTML page → JS module loading order for each page
-> - Bot army leg-by-leg detail (which RPCs each leg calls on the backend)
-> - Landing page vote system (landing_votes, cast_landing_vote, get_landing_vote_counts, fingerprint dedup)
+> - WebRTC/Realtime wiring (colosseum-webrtc.js, voice memo mode)
+> - Auto-debate staking (auto_debate_stakes table, 4 RPCs — Session 99)
