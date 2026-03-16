@@ -656,6 +656,85 @@ Communication:
 
 ---
 
+# SECTION 4B: WIRING MANIFEST — PAYMENTS LAYER
+
+## 4B.1 STRIPE INTEGRATION
+
+### Current Status
+- MODE: Sandbox (not live). Deploy for real when Stripe goes live.
+- PRODUCTS: 3 subscription tiers (Contender $9.99/mo, Champion $19.99/mo, Creator $29.99/mo) + 4 token packs (50/$0.99, 250/$3.99, 600/$7.99, 1500/$14.99)
+- NOTE: Token packs are in the UI but tokens are currently earned-only, never purchased. Revenue model pivoted to B2B data licensing. Consumer purchases may reactivate later.
+
+### colosseum-payments.js (window.ColosseumPayments)
+- DEFINED IN: colosseum-payments.js
+- PURPOSE: Client-side module. Redirects to Stripe-hosted checkout. No payment logic on client — ever.
+- PROVIDES: .subscribe(tier, billing), .buyTokens(packId)
+- FLOW: User clicks UPGRADE/BUY → JS calls Edge Function → Edge Function creates Stripe Checkout session → user redirected to Stripe-hosted page → Stripe handles payment → webhook fires back
+- DEPENDS ON: ColosseumAuth (needs user ID for checkout session)
+- BLAST RADIUS: If Edge Function down, checkout fails silently. User sees nothing happen.
+
+### colosseum-paywall.js (window.ColosseumPaywall)
+- DEFINED IN: colosseum-paywall.js
+- PURPOSE: 4 contextual paywall variants. gate() helper checks if user can access a feature.
+- PROVIDES: .gate(feature) → returns true (allowed) or shows paywall modal (blocked)
+- CALLED FROM: Various modules before gated actions
+- BLAST RADIUS: Low — display/gating only. If gate logic wrong, users see paywall when they shouldn't (or don't when they should).
+
+## 4B.2 EDGE FUNCTIONS (STRIPE)
+
+### stripe-checkout (Supabase Edge Function)
+- DEFINED IN: Supabase Edge Functions (Deno.serve)
+- PURPOSE: Creates Stripe Checkout session server-side
+- EXPECTS: User ID, product type (subscription/token pack), tier/billing info
+- RETURNS: Stripe Checkout URL for redirect
+- SECURITY: CORS allowlist (Vercel domain only). Stripe secret key lives in Supabase secrets — never in client code.
+- STATUS: Template only — NOT deployed. Deploy when activating Stripe for real users.
+- LAND MINES: Templates use old imports (noted in NT Known Bugs). Must update imports before deploy.
+
+### stripe-webhook (Supabase Edge Function)
+- DEFINED IN: Supabase Edge Functions (Deno.serve)
+- PURPOSE: Receives Stripe webhook events, processes payments
+- SECURITY:
+  - Raw body via req.text() for HMAC signature verification (not req.json() — destroys signature)
+  - Idempotency via stripe_processed_events table (INSERT ON CONFLICT DO NOTHING) — prevents double-processing
+  - Webhook signing secret stored in Supabase secrets
+- HANDLES 4 EVENT TYPES:
+  1. checkout.session.completed → activates subscription OR credits tokens
+  2. invoice.paid → renews subscription (extends period)
+  3. invoice.payment_failed → flags account for grace period
+  4. customer.subscription.deleted → downgrades to free tier
+- WRITES TO: profiles (subscription fields), token_balance (via award_tokens), payments table (transaction log)
+- STATUS: Template only — NOT deployed.
+- BLAST RADIUS: CRITICAL when live. If webhook fails, user pays but gets nothing. If idempotency breaks, double-credit. If signature verification removed, fake payments possible.
+- LAND MINES: req.text() not req.json() for HMAC. Session 48 hardened this specifically.
+
+### stripe_processed_events (Table)
+- DEFINED IN: Supabase (Migration 21, Session 48)
+- PURPOSE: Idempotency guard. Stores processed Stripe event IDs.
+- PATTERN: INSERT ON CONFLICT DO NOTHING — if event already processed, skip silently
+- BLAST RADIUS: If this table is cleared or dropped, all historical events could reprocess on retry.
+
+## 4B.3 EDGE FUNCTIONS (AI)
+
+### ai-sparring (Supabase Edge Function)
+- DEFINED IN: Supabase Edge Functions (Deno.serve)
+- PURPOSE: Proxy between frontend and Groq API for AI debate opponent
+- MODEL: Groq Llama 3.3 70B Versatile (NOT 3.1 — decommissioned)
+- PERSONALITY: Populist, full conversation memory, round-aware
+- CALLED FROM: colosseum-arena.js during AI sparring rounds
+- SECURITY: CORS allowlist (Vercel domain only). GROQ_API_KEY in Supabase secrets.
+- BLAST RADIUS: If Groq key invalid or quota exceeded, AI never responds. Debate hangs with no fallback.
+- NOTE: Groq free tier 100k tokens/day. Bot army also consumes from this quota.
+
+### ai-moderator (Supabase Edge Function)
+- DEFINED IN: Supabase Edge Functions (Deno.serve)
+- PURPOSE: AI-powered debate scoring and ruling generation
+- CALLED FROM: Moderator UI panel (colosseum-arena.js moderator flow)
+- STATUS: Deployed but NOT wired into main scoring flow. endCurrentDebate() uses random scoring, not this.
+- BLAST RADIUS: Low currently — it's an optional tool, not in the critical path.
+
+---
+
 # SECTION 5: WIRING MANIFEST — BOT ARMY LAYER
 
 ## 5.1 BOT ARCHITECTURE
@@ -823,6 +902,9 @@ Communication:
 - Join stakes on `debate_id` — never `pool_id` (LM-175)
 - Parse avatar_url for 'emoji:' prefix before rendering — 6+ locations render avatars
 - Use `sanitize_text()` on all user text in RPCs: hot take body, prediction topic/labels, group name/description, bio, challenge counter-argument
+- Use `req.text()` (not `req.json()`) in Stripe webhook Edge Function — preserves raw body for HMAC verification
+- Verify Stripe webhook signature before processing any event — never trust unverified webhook payloads
+- Use Groq model `llama-3.3-70b-versatile` — the 3.1 version is decommissioned
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -837,6 +919,9 @@ Communication:
 - Reference column `tokens` in any RPC — the column is `token_balance`
 - Allow non-defender to respond to a group challenge — defender-only check required
 - Render user-provided text via innerHTML without escaping — use textContent or _escHtml()
+- Put Stripe secret key or Groq API key in client-side code — secrets live in Supabase Edge Function secrets only
+- Use `req.json()` in Stripe webhook handler — it destroys the raw body needed for HMAC signature verification
+- Deploy Stripe Edge Functions without updating old imports first (known tech debt in NT)
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -862,11 +947,15 @@ Communication:
 | colosseum-async.js | Social | window.ColosseumAsync (hot takes, predictions, challenges) | auth.js, tokens.js |
 | colosseum-notifications.js | Social | window.ColosseumNotifications | auth.js |
 | colosseum-leaderboard.js | Social | window.ColosseumLeaderboard | auth.js |
-| colosseum-payments.js | Payments | window.ColosseumPayments | auth.js, Stripe SDK |
+| colosseum-payments.js | Payments | window.ColosseumPayments (.subscribe, .buyTokens) | auth.js, Stripe SDK |
 | colosseum-paywall.js | Payments | window.ColosseumPaywall (.gate) | auth.js |
 | colosseum-share.js | Growth | window.ColosseumShare | config.js |
 | colosseum-cards.js | Growth | window.ColosseumCards (canvas share card gen) | None |
 | colosseum-analytics.js | Growth | window.ColosseumAnalytics (page_view, events) | Supabase anon client |
+| ai-sparring (Edge Func) | Arena | Groq proxy for AI debate opponent | GROQ_API_KEY secret |
+| ai-moderator (Edge Func) | Arena | AI scoring/ruling generation | GROQ_API_KEY secret |
+| stripe-checkout (Edge Func) | Payments | Creates Stripe Checkout sessions | STRIPE_SECRET_KEY secret |
+| stripe-webhook (Edge Func) | Payments | Processes Stripe webhook events | STRIPE_WEBHOOK_SECRET secret |
 
 ---
 
@@ -877,16 +966,15 @@ Communication:
 | 122 | Initial draft | Defense layer, arena basics, flows, contracts |
 | 122 | Arena expansion | Power-ups (4 RPCs + tables + state), debate room wiring (showPreDebate, AI round loop, endCurrentDebate full trace), spectator system (3 RPCs + page), scoring, 2 new flows |
 | 122 | Social expansion | Predictions (2 tables, 3 RPCs, standalone + debate-linked), Groups (7 RPCs, GvG challenges with status flow), Profile CRUD (update, delete, avatar, bio), Follows/Rivals (3 RPCs), Leaderboard, Notifications detail, 3 new flows |
+| 122 | Payments + Edge Functions | Stripe checkout/webhook Edge Functions (template status, idempotency, HMAC), payments.js, paywall.js, ai-sparring + ai-moderator Edge Functions, Groq model note |
 
 ---
 
 > **GAPS IN THIS DRAFT (to fill as we touch them):**
-> - Edge Functions detail (ai-sparring params/personality, ai-moderator scoring logic, stripe-checkout, stripe-webhook)
 > - Moderator RPCs (set_moderator_mode, submit_evidence, ruling panel flow)
 > - Achievement system (scan_achievements, 25 conditions)
 > - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic, 45 items)
 > - Analytics layer (log_event, daily_snapshots, 9 views, 20 RPCs wired to log_event)
-> - Payments layer (Stripe products, checkout flow, webhook handling, Edge Function detail)
 > - Full HTML page → JS module loading order for each page
 > - Bot army leg-by-leg detail (which RPCs each leg calls on the backend)
 > - Landing page vote system (landing_votes, cast_landing_vote, get_landing_vote_counts, fingerprint dedup)
