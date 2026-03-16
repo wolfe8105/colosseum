@@ -1922,14 +1922,7 @@ window.ColosseumArena = (() => {
       } catch (e) {
         console.warn('[Arena] Finalize error:', e);
       }
-      // SESSION 109: Settle stakes — distribute winnings
-      if (typeof ColosseumStaking !== 'undefined') {
-        try {
-          await ColosseumStaking.settleStakes(debate.id, winner);
-        } catch (e) {
-          console.warn('[Arena] Stake settlement error:', e);
-        }
-      }
+     
       // Session 71: Token earn for debate completion
       if (typeof ColosseumTokens !== 'undefined') {
         if (debate.mode === 'ai') {
