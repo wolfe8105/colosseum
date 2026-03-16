@@ -436,6 +436,97 @@ Communication:
 
 ---
 
+## 3.7 MODERATOR SYSTEM
+
+### Moderator Toggle (Session 39)
+- DEFINED IN: colosseum-settings.html (moderator toggle in settings)
+- RPCs (4, Session 39): set_moderator_mode, submit_evidence, rule_on_reference, get_moderator_scores
+- All SECURITY DEFINER, all via ColosseumAuth.safeRpc
+
+### set_moderator_mode(p_enabled) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Toggle whether user acts as moderator in debates
+- CALLED FROM: colosseum-settings.html moderator toggle
+- BLAST RADIUS: Low — user preference flag.
+
+### submit_evidence(p_debate_id, p_reference_url, p_claim, p_supports_side) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Submit a reference/evidence during a debate
+- CALLED FROM: colosseum-arena.js → evidence form in moderator panel
+- VALIDATES: auth, sanitize_url on reference, sanitize_text on claim
+- WRITES TO: debate_references table (6 RPCs total for reference system, Session 33)
+- BLAST RADIUS: If sanitize_url bypassed, malicious URLs stored in DB.
+
+### rule_on_reference(p_reference_id, p_ruling, p_reason) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Moderator allows or denies a submitted reference
+- CALLED FROM: colosseum-arena.js → ruling panel (allow/deny buttons)
+- AUTO-ALLOW: 60-second countdown timer. If moderator doesn't rule, reference auto-allowed.
+- AI RULING: ai-moderator Edge Function can auto-generate ruling (optional, not in main flow)
+- BLAST RADIUS: Low per ruling. But if auto-allow timer leaks (LM from Session 63 — fixed), overlay floats.
+
+### Moderator Scoring (Post-Debate)
+- 100-point system: 50 from debaters (25 each, happy/not-happy binary) + 50 from fans (1-50 scale, averaged)
+- CALLED FROM: Post-debate screen moderator rating UI
+- WRITES TO: moderator_scores table via get_moderator_scores/submit rating RPCs
+
+---
+
+## 3.8 WEBRTC / VOICE MEMO
+
+### colosseum-webrtc.js (window.ColosseumWebRTC)
+- DEFINED IN: colosseum-webrtc.js
+- PURPOSE: WebRTC audio for live debate mode
+- USES: Supabase Realtime channels for signaling (no separate signaling server)
+- PROVIDES: .joinDebate(debateId, role), .leaveDebate(), .toggleMute(), .createWaveform()
+- EVENTS: micReady, connected, disconnected, muteChanged, tick, debateEnd
+- AUDIO CONFIG: echoCancellation, noiseSuppression, autoGainControl, sampleRate 48000
+- ICE SERVERS: Google STUN + configured TURN server
+- WIRED INTO: colosseum-arena.js → initLiveAudio() (called in enterRoom for live audio mode)
+- CLEANUP: ColosseumWebRTC.leaveDebate() called in endCurrentDebate()
+- BLAST RADIUS: If mic permissions denied, audio fails silently (shows error message). If Realtime channel fails, signaling breaks — no peer connection established.
+- NOTE: Live audio mode is built but not heavily tested with real users. AI Sparring uses text, not audio.
+
+### colosseum-voicememo.js (window.ColosseumVoiceMemo)
+- DEFINED IN: colosseum-voicememo.js
+- PURPOSE: Record and send voice memos in async voice debate mode
+- PROVIDES: Voice recording, playback, send via RPC
+- WIRED INTO: colosseum-arena.js → wireVoiceMemoControls() (record/cancel/send buttons)
+- BLAST RADIUS: Low — async mode. If recording fails, user can retry.
+
+---
+
+## 3.9 AUTO-DEBATE STAKING (Session 99)
+
+### auto_debate_stakes (Table)
+- DEFINED IN: Supabase (Session 99)
+- PURPOSE: Token staking on auto-debate (AI vs AI) outcomes
+- SEPARATE FROM: arena stakes (stakes/stake_pools tables). Auto-debates use their own table.
+
+### place_auto_debate_stake(p_debate_id, p_amount, p_predicted_winner) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Stake tokens on an auto-debate outcome
+- CALLED FROM: colosseum-auto-debate.html staking UI
+- EXPECTS: Valid auto_debate ID, sufficient token_balance
+- STATUS: Backend live. Frontend staking UI on auto-debate page.
+
+### get_auto_debate_stakes(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Get current stake totals for an auto-debate
+- BLAST RADIUS: Low — read-only.
+
+### resolve_auto_debate_stakes(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Settle auto-debate stakes after debate completes
+- BLAST RADIUS: Same as settle_stakes — if called twice, double payout.
+
+### settle_auto_debate_stakes(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Parimutuel payout for auto-debate stakes
+- NOTE: 4 RPCs total for auto-debate staking system (Session 99)
+
+---
+
 # SECTION 4: WIRING MANIFEST — SOCIAL LAYER
 
 ## 4.1 HOT TAKES
@@ -653,6 +744,82 @@ Communication:
 - DATA: Reads from profiles via ColosseumAuth.safeRpc (leaderboard query RPCs)
 - ROW CLICKS: data-username delegation → showUserProfile()
 - BLAST RADIUS: Low — display only. But if Elo values are wrong in profiles, leaderboard is wrong.
+
+---
+
+## 4.8 ACHIEVEMENT / MILESTONE SYSTEM
+
+### colosseum-tokens.js Milestone Subsystem
+- DEFINED IN: colosseum-tokens.js (within ColosseumTokens module)
+- 13 ONE-TIME MILESTONES:
+  - first_hot_take (25 tokens), first_debate (50), first_vote (10), first_reaction (5)
+  - first_ai_sparring (15), first_prediction (10)
+  - profile_3_sections (30), profile_6_sections (75), profile_12_sections (150)
+  - verified_gladiator (100)
+  - streak_7 (+1 streak freeze), streak_30 (+3 freezes), streak_100 (+5 freezes)
+- DEDUP: Via token_earn_log table. milestoneClaimed Set in JS prevents duplicate RPC calls per session.
+- ANIMATION: Gold coin fly-up on token earn, milestone unlock toast (big reveal) on milestones
+
+### claim_milestone(p_milestone_key) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER, Session 72)
+- PURPOSE: Award one-time milestone reward (tokens and/or streak freezes)
+- CALLED FROM: colosseum-tokens.js → claimMilestone(key)
+- DEDUP: Checks token_earn_log for existing claim. Returns "Already claimed" if duplicate.
+- BLAST RADIUS: If dedup breaks, users claim milestones multiple times → token inflation.
+
+### get_my_milestones() (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER, Session 72)
+- PURPOSE: Returns list of claimed milestone keys + streak freeze count
+- CALLED FROM: colosseum-tokens.js → _loadMilestones() on init
+- BLAST RADIUS: Low — read-only. But if it returns wrong list, milestones re-fire (caught by server dedup).
+
+### Streak Freeze Mechanic
+- COLUMN: profiles.streak_freezes (integer, NOT trigger-protected — relies on RPC-only access)
+- EARNED AT: Streak milestones (7-day = 1 freeze, 30-day = 3, 100-day = 5)
+- CONSUMED BY: claim_daily_login RPC — if user missed exactly 1 day and has freezes, auto-consumes one, preserves streak
+- BLAST RADIUS: If freeze count wrong, user loses streak when they shouldn't (or keeps it when they shouldn't).
+
+### Profile Milestone Checks
+- CALLED FROM: colosseum-profile-depth.html → after saveSection() succeeds
+- checkProfileMilestones() checks section count against 3/6/12 thresholds
+- BLAST RADIUS: Low — awards tokens for completing profile sections.
+
+---
+
+## 4.9 COSMETICS SHOP
+
+### cosmetics (Table)
+- DEFINED IN: Supabase (seeded in schema-production.sql)
+- 45 ITEMS: 15 borders, 15 badges, 15 effects
+- RARITY: common, rare, legendary
+- PRICE RANGE: 30-1000 tokens
+- COLUMNS: id, name, description, type (border/badge/effect), rarity, price_tokens, css_class, sort_order
+
+### user_cosmetics (Table)
+- DEFINED IN: Supabase
+- PURPOSE: Tracks which cosmetics a user owns and has equipped
+- COLUMNS: user_id, cosmetic_id, equipped (boolean), purchased_at
+
+### purchase_cosmetic(p_cosmetic_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Buy a cosmetic with tokens
+- EXPECTS: auth, sufficient token_balance, cosmetic exists, not already owned
+- DEBITS: token_balance by cosmetic price
+- BLAST RADIUS: If price lookup wrong, user overpays or underpays. If ownership check bypassed, duplicate purchase.
+
+### equip_cosmetic(p_cosmetic_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Equip an owned cosmetic (activate its visual effect)
+- EXPECTS: User owns the cosmetic
+- UNEQUIP: Equipping in same category auto-unequips previous (one border, one badge, one effect active at a time)
+- BLAST RADIUS: Low — visual only. If equip without ownership, visual appears but shouldn't.
+
+### Shop UI
+- DEFINED IN: index.html shop screen (inline JS, not a separate module)
+- TABS: Borders, Badges, Effects
+- SHOWS: Token balance, owned indicator on purchased items, buy buttons
+- ALSO SHOWS: Coaching booking (150 tokens), Moderator booking (75 tokens)
+- BLAST RADIUS: Low — display + purchase actions. Token balance visible here feeds from same profiles.token_balance.
 
 ---
 
@@ -1326,6 +1493,10 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | colosseum-staking.js | Arena | IIFE (no global) — called from arena.js | auth.js (ColosseumAuth.safeRpc) |
 | colosseum-powerups.js | Arena | IIFE (no global) — called from arena.js | auth.js (ColosseumAuth.safeRpc) |
 | colosseum-arena.js | Arena | window.ColosseumArena (lobby, matchmaking, debate room, pre-debate) | auth.js, staking.js, powerups.js, tokens.js |
+| colosseum-webrtc.js | Arena | window.ColosseumWebRTC (live audio via Supabase Realtime) | Supabase Realtime |
+| colosseum-voicememo.js | Arena | window.ColosseumVoiceMemo (async voice recording) | None |
+| colosseum-scoring.js | Arena | window.ColosseumScoring (Elo, XP, leveling — SELECT only) | None |
+| colosseum-home.js | Foundation | Home screen logic (legacy, superseded by inline carousel) | auth.js |
 | colosseum-async.js | Social | window.ColosseumAsync (hot takes, predictions, challenges) | auth.js, tokens.js |
 | colosseum-notifications.js | Social | window.ColosseumNotifications | auth.js |
 | colosseum-leaderboard.js | Social | window.ColosseumLeaderboard | auth.js |
@@ -1349,6 +1520,11 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | category-classifier.js (VPS) | Bot Army | Headline → category routing | None |
 | supabase-client.js (VPS) | Bot Army | Service role client + CATEGORY_TO_SLUG | SUPABASE_SERVICE_KEY |
 | mirror-generator.js (VPS) | Growth | Static site generator → Cloudflare Pages | mirror.env, wrangler |
+| colosseum-spectate.html | Arena | Standalone spectator view page | auth.js, config.js |
+| colosseum-auto-debate.html | Growth | AI vs AI debate page, ungated voting | auth.js, tokens.js |
+| colosseum-debate-landing.html | Growth | Landing page, anonymous votes, fingerprint dedup | auth.js (anon RPCs) |
+| colosseum-plinko.html | Defense | 4-step signup gate | auth.js, config.js |
+| colosseum-groups.html | Social | Groups discover/detail/challenges (inline JS) | auth.js, config.js |
 
 ---
 
@@ -1362,12 +1538,9 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 122 | Payments + Edge Functions | Stripe checkout/webhook Edge Functions (template status, idempotency, HMAC), payments.js, paywall.js, ai-sparring + ai-moderator Edge Functions, Groq model note |
 | 122 | Growth layer | Bot army leg-by-leg (Leg 1 reactive, Leg 2 proactive, Leg 3 rage engine), all VPS files mapped, mirror generator, analytics (log_event, 9 views, daily_snapshots, funnel tracking), landing page votes, category classifier |
 | 122 | Page load map | All 9 HTML pages: script loading order, init sequence, auth gate status, key dependencies. Head trio pattern documented. |
+| 122 | Final gaps filled | Moderator system (4 RPCs, ruling panel, auto-allow timer, scoring), WebRTC/voice memo, auto-debate staking (4 RPCs), achievements/milestones (13 milestones, streak freeze, 2 RPCs), cosmetics shop (45 items, 2 RPCs, 2 tables). ALL SECTIONS COMPLETE. |
 
 ---
 
-> **GAPS IN THIS DRAFT (to fill as we touch them):**
-> - Moderator RPCs (set_moderator_mode, submit_evidence, ruling panel flow)
-> - Achievement system (scan_achievements, 25 conditions)
-> - Cosmetics shop RPCs (purchase_cosmetic, equip_cosmetic, 45 items)
-> - WebRTC/Realtime wiring (colosseum-webrtc.js, voice memo mode)
-> - Auto-debate staking (auto_debate_stakes table, 4 RPCs — Session 99)
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build.
+> Future additions: As new features are built, add entries here. Update affected entries at end of each session.
