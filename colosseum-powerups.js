@@ -20,7 +20,7 @@ const ColosseumPowerUps = (() => {
 
   // ── Buy a power-up ────────────────────────────────────────
   async function buy(powerUpId, quantity = 1) {
-    const result = await safeRpc('buy_power_up', {
+    const result = await ColosseumAuth.safeRpc('buy_power_up', {
       p_power_up_id: powerUpId,
       p_quantity: quantity
     });
@@ -30,7 +30,7 @@ const ColosseumPowerUps = (() => {
 
   // ── Equip a power-up for a debate ─────────────────────────
   async function equip(debateId, powerUpId, slotNumber) {
-    const result = await safeRpc('equip_power_up', {
+    const result = await ColosseumAuth.safeRpc('equip_power_up', {
       p_debate_id: debateId,
       p_power_up_id: powerUpId,
       p_slot_number: slotNumber
@@ -43,7 +43,7 @@ const ColosseumPowerUps = (() => {
   async function getMyPowerUps(debateId = null) {
     const params = {};
     if (debateId) params.p_debate_id = debateId;
-    const result = await safeRpc('get_my_power_ups', params);
+    const result = await ColosseumAuth.safeRpc('get_my_power_ups', params);
     if (result.error) return { success: false, inventory: [], equipped: [], questions_answered: 0 };
     return result.data || { success: false, inventory: [], equipped: [], questions_answered: 0 };
   }
@@ -251,7 +251,7 @@ const ColosseumPowerUps = (() => {
 
   // ── Activate a power-up during debate ─────────────────────
   async function activate(debateId, powerUpId) {
-    const result = await safeRpc('activate_power_up', {
+    const result = await ColosseumAuth.safeRpc('activate_power_up', {
       p_debate_id: debateId,
       p_power_up_id: powerUpId
     });
@@ -261,7 +261,7 @@ const ColosseumPowerUps = (() => {
 
   // ── Reveal: fetch opponent's equipped power-ups ─────────
   async function getOpponentPowerUps(debateId) {
-    const result = await safeRpc('get_opponent_power_ups', {
+    const result = await ColosseumAuth.safeRpc('get_opponent_power_ups', {
       p_debate_id: debateId
     });
     if (result.error) return { success: false, equipped: [] };

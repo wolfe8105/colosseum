@@ -16,7 +16,7 @@ const ColosseumStaking = (() => {
       return { success: false, error: 'Missing required fields' };
     }
 
-    const result = await safeRpc('place_stake', {
+    const result = await ColosseumAuth.safeRpc('place_stake', {
       p_debate_id: debateId,
       p_side: side,
       p_amount: parseInt(amount, 10)
@@ -31,7 +31,7 @@ const ColosseumStaking = (() => {
 
   // ── Get pool state ────────────────────────────────────────
   async function getPool(debateId) {
-    const result = await safeRpc('get_stake_pool', {
+    const result = await ColosseumAuth.safeRpc('get_stake_pool', {
       p_debate_id: debateId
     });
 
@@ -53,7 +53,7 @@ const ColosseumStaking = (() => {
       params.p_multiplier = multiplier;
     }
 
-    const result = await safeRpc('settle_stakes', params);
+    const result = await ColosseumAuth.safeRpc('settle_stakes', params);
 
     if (result.error) {
       console.error('[Staking] settle error:', result.error);
