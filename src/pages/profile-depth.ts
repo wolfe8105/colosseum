@@ -1,0 +1,656 @@
+/**
+ * THE COLOSSEUM — Profile Depth Engine (TypeScript)
+ *
+ * Extracted from colosseum-profile-depth.html inline script.
+ * 12 sections, 39+ questions, tier system integration, discount waterfall.
+ *
+ * Migration: Session 128 (Phase 4)
+ */
+
+// ============================================================
+// TYPE DEFINITIONS
+// ============================================================
+
+interface QuestionBase {
+  id: string;
+  label: string;
+}
+
+interface InputQuestion extends QuestionBase {
+  type: 'input';
+  placeholder?: string;
+}
+
+interface ChipsQuestion extends QuestionBase {
+  type: 'chips';
+  options: string[];
+  multi?: boolean;
+  max?: number;
+}
+
+interface SliderQuestion extends QuestionBase {
+  type: 'slider';
+  min: number;
+  max: number;
+  labels: [string, string];
+}
+
+interface SelectQuestion extends QuestionBase {
+  type: 'select';
+  options: string[];
+}
+
+type Question = InputQuestion | ChipsQuestion | SliderQuestion | SelectQuestion;
+
+interface SectionReward {
+  type: 'discount' | 'badge' | 'cosmetic' | 'feature';
+  text: string;
+}
+
+interface Section {
+  id: string;
+  icon: string;
+  name: string;
+  reward: SectionReward;
+  questions: Question[];
+}
+
+type AnswerValue = string | number | string[];
+type Answers = Record<string, AnswerValue>;
+
+// ============================================================
+// ESCAPE HTML (SESSION 64 — OWASP mandatory)
+// ============================================================
+
+function escHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ============================================================
+// SECTIONS DATA
+// ============================================================
+
+const SECTIONS: Section[] = [
+  {
+    id: 'basics', icon: '👤', name: 'THE BASICS',
+    reward: { type: 'discount', text: '$1 off subscription' },
+    questions: [
+      { id: 'b1', label: 'What should people call you?', type: 'input', placeholder: 'Display name' },
+      { id: 'b2', label: 'Where are you from?', type: 'input', placeholder: 'City, State' },
+      { id: 'b3', label: 'Gender', type: 'chips', options: ['Male', 'Female', 'Non-binary', 'Prefer not to say'] },
+      { id: 'b4', label: 'Age range', type: 'chips', options: ['16-18', '19-24', '25-34', '35-44', '45-54', '55+'] },
+    ]
+  },
+  {
+    id: 'politics', icon: '🏛️', name: 'POLITICS',
+    reward: { type: 'badge', text: 'Unlock "Policy Wonk" badge' },
+    questions: [
+      { id: 'p1', label: 'Where do you lean politically?', type: 'slider', min: 1, max: 10, labels: ['Far Left', 'Far Right'] },
+      { id: 'p2', label: 'Top 3 political issues you care about', type: 'chips', multi: true, max: 3, options: ['Economy', 'Immigration', 'Healthcare', 'Climate', 'Education', 'Foreign Policy', 'Gun Rights', 'Social Justice', 'Tax Reform', 'Housing'] },
+      { id: 'p3', label: 'How often do you discuss politics?', type: 'chips', options: ['Daily', 'Weekly', 'Monthly', 'Rarely'] },
+    ]
+  },
+  {
+    id: 'sports', icon: '🏟️', name: 'SPORTS',
+    reward: { type: 'cosmetic', text: 'Unlock "Arena Glow" profile effect' },
+    questions: [
+      { id: 's1', label: 'Favorite sports (pick up to 3)', type: 'chips', multi: true, max: 3, options: ['NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'MMA/UFC', 'Boxing', 'College FB', 'College BB', 'Tennis', 'Golf', 'F1'] },
+      { id: 's2', label: 'Hottest take you believe about sports?', type: 'input', placeholder: 'e.g. MJ > LeBron, no debate' },
+      { id: 's3', label: 'How deep is your sports knowledge?', type: 'slider', min: 1, max: 10, labels: ['Casual', 'Stat Nerd'] },
+    ]
+  },
+  {
+    id: 'entertainment', icon: '🎬', name: 'ENTERTAINMENT',
+    reward: { type: 'badge', text: 'Unlock "Critic" badge' },
+    questions: [
+      { id: 'e1', label: 'What do you watch/consume most?', type: 'chips', multi: true, max: 3, options: ['Movies', 'TV Series', 'YouTube', 'Podcasts', 'Anime', 'Reality TV', 'Documentaries', 'Live Sports'] },
+      { id: 'e2', label: 'Most overrated movie or show?', type: 'input', placeholder: 'Name it...' },
+      { id: 'e3', label: 'Music genre that defines you', type: 'chips', options: ['Hip Hop', 'Rock', 'Pop', 'Country', 'R&B', 'EDM', 'Jazz', 'Latin', 'Classical', 'Metal'] },
+    ]
+  },
+  {
+    id: 'debate_style', icon: '⚔️', name: 'DEBATE STYLE',
+    reward: { type: 'discount', text: '$1.50 off subscription' },
+    questions: [
+      { id: 'd1', label: 'How do you argue?', type: 'chips', options: ['Facts & data', 'Emotion & passion', 'Humor & wit', 'Experience & stories'] },
+      { id: 'd2', label: 'When you lose an argument, you...', type: 'chips', options: ['Accept it gracefully', 'Double down', 'Change the subject', 'Research more'] },
+      { id: 'd3', label: 'Debate experience level', type: 'slider', min: 1, max: 10, labels: ['First timer', 'Veteran'] },
+    ]
+  },
+  {
+    id: 'opinions', icon: '🔥', name: 'HOT OPINIONS',
+    reward: { type: 'cosmetic', text: 'Unlock "Flame Border" profile frame' },
+    questions: [
+      { id: 'o1', label: 'AI will replace most jobs by 2035', type: 'slider', min: 1, max: 10, labels: ['Disagree', 'Agree'] },
+      { id: 'o2', label: 'Social media does more harm than good', type: 'slider', min: 1, max: 10, labels: ['Disagree', 'Agree'] },
+      { id: 'o3', label: 'College is still worth the cost', type: 'slider', min: 1, max: 10, labels: ['Disagree', 'Agree'] },
+      { id: 'o4', label: 'What hill will you die on?', type: 'input', placeholder: 'Your #1 unpopular opinion' },
+    ]
+  },
+  {
+    id: 'values', icon: '⚖️', name: 'VALUES',
+    reward: { type: 'discount', text: '$1.50 off subscription' },
+    questions: [
+      { id: 'v1', label: 'Freedom vs Security — where do you land?', type: 'slider', min: 1, max: 10, labels: ['Freedom', 'Security'] },
+      { id: 'v2', label: 'Tradition vs Progress', type: 'slider', min: 1, max: 10, labels: ['Tradition', 'Progress'] },
+      { id: 'v3', label: 'Individual vs Collective', type: 'slider', min: 1, max: 10, labels: ['Individual', 'Collective'] },
+    ]
+  },
+  {
+    id: 'media', icon: '📱', name: 'MEDIA DIET',
+    reward: { type: 'badge', text: 'Unlock "Informed" badge' },
+    questions: [
+      { id: 'm1', label: 'Where do you get your news?', type: 'chips', multi: true, max: 3, options: ['TV News', 'Twitter/X', 'Reddit', 'Podcasts', 'Newspapers', 'YouTube', 'TikTok', 'Word of mouth'] },
+      { id: 'm2', label: 'Daily screen time (hours)', type: 'slider', min: 1, max: 12, labels: ['1hr', '12hr'] },
+      { id: 'm3', label: 'Do you trust mainstream media?', type: 'slider', min: 1, max: 10, labels: ['Not at all', 'Completely'] },
+    ]
+  },
+  {
+    id: 'lifestyle', icon: '🏠', name: 'LIFESTYLE',
+    reward: { type: 'discount', text: '$2 off subscription' },
+    questions: [
+      { id: 'l1', label: 'Education level', type: 'select', options: ['High school', 'Some college', 'Associate', 'Bachelor', 'Master', 'Doctorate', 'Trade school', 'Self-taught'] },
+      { id: 'l2', label: 'What field do you work in?', type: 'input', placeholder: 'e.g. Tech, Healthcare, Student...' },
+      { id: 'l3', label: 'Urban, suburban, or rural?', type: 'chips', options: ['Urban', 'Suburban', 'Rural'] },
+    ]
+  },
+  {
+    id: 'competition', icon: '🏆', name: 'COMPETITIVE',
+    reward: { type: 'cosmetic', text: 'Unlock "Gold Crown" icon' },
+    questions: [
+      { id: 'c1', label: 'How competitive are you?', type: 'slider', min: 1, max: 10, labels: ['Chill', 'Win at all costs'] },
+      { id: 'c2', label: 'Winning matters more than...', type: 'chips', options: ['Being liked', 'Being right', 'Having fun', 'Nothing — winning IS the point'] },
+      { id: 'c3', label: 'Best debate style', type: 'chips', options: ['Let the facts speak', 'Quick wit', 'Stats & receipts', 'Read the room'] },
+    ]
+  },
+  {
+    id: 'social', icon: '🤝', name: 'SOCIAL',
+    reward: { type: 'feature', text: 'Unlock custom bio' },
+    questions: [
+      { id: 'x1', label: 'How did you hear about The Colosseum?', type: 'chips', options: ['Friend', 'Social media', 'Search', 'Ad', 'Podcast', 'Other'] },
+      { id: 'x2', label: 'Would you refer friends?', type: 'chips', options: ['Already did', 'Definitely', 'Maybe', 'Probably not'] },
+      { id: 'x3', label: 'What would make this app essential?', type: 'input', placeholder: 'One feature that would hook you...' },
+    ]
+  },
+  {
+    id: 'identity', icon: '🎭', name: 'IDENTITY',
+    reward: { type: 'discount', text: '$3 off — final discount! Down to $0.49' },
+    questions: [
+      { id: 'i1', label: 'Describe yourself in 3 words', type: 'input', placeholder: 'e.g. stubborn, funny, relentless' },
+      { id: 'i2', label: 'Your debate walkout song would be...', type: 'input', placeholder: 'Name the track' },
+      { id: 'i3', label: 'If you could debate anyone alive, who?', type: 'input', placeholder: 'Name them' },
+      { id: 'i4', label: 'Why did you really download this app?', type: 'chips', options: ['Prove my point', 'Hear other sides', 'Entertainment', 'Get sharper', 'Talk my talk'] },
+    ]
+  }
+];
+
+// ============================================================
+// DISCOUNT WATERFALL
+// ============================================================
+
+const BASE_PRICE = 14.99;
+const MIN_PRICE = 0.49;
+const STEP = (BASE_PRICE - MIN_PRICE) / SECTIONS.length;
+
+// ============================================================
+// STATE
+// ============================================================
+
+/** SESSION 64: Validate localStorage data */
+function sanitizeAnswers(raw: unknown): Answers {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const clean: Answers = Object.create(null);
+  const validIds = new Set<string>();
+  SECTIONS.forEach(s => s.questions.forEach(q => validIds.add(q.id)));
+  for (const key of Object.keys(raw as Record<string, unknown>)) {
+    if (!validIds.has(key)) continue;
+    const v = (raw as Record<string, unknown>)[key];
+    if (typeof v === 'string' && v.length <= 500) clean[key] = v;
+    else if (typeof v === 'number' && isFinite(v)) clean[key] = v;
+    else if (Array.isArray(v) && v.length <= 20 && v.every((i: unknown) => typeof i === 'string' && (i as string).length <= 200)) clean[key] = v as string[];
+  }
+  return clean;
+}
+
+function sanitizeCompleted(raw: unknown): Set<string> {
+  if (!Array.isArray(raw)) return new Set();
+  const validIds = new Set(SECTIONS.map(s => s.id));
+  return new Set(raw.filter((id: unknown) => typeof id === 'string' && validIds.has(id as string)) as string[]);
+}
+
+const answers: Answers = sanitizeAnswers(JSON.parse(localStorage.getItem('colosseum_profile_depth') || '{}'));
+const completedSections = sanitizeCompleted(JSON.parse(localStorage.getItem('colosseum_depth_complete') || '[]'));
+let activeSection: string | null = null;
+
+// Session 117: Tier system state
+let serverQuestionsAnswered = 0;
+const previouslyAnsweredIds = new Set<string>();
+
+// ============================================================
+// TIER INTEGRATION (colosseum-tiers.js globals)
+// ============================================================
+
+// These functions are loaded as globals from colosseum-tiers.js <script> tag
+const getTier = (window as unknown as Record<string, unknown>).getTier as
+  ((qa: number) => { maxStake: number; slots: number; name: string }) | undefined;
+const getNextTier = (window as unknown as Record<string, unknown>).getNextTier as
+  ((qa: number) => { questionsNeeded: number; name: string } | null) | undefined;
+const renderTierBadge = (window as unknown as Record<string, unknown>).renderTierBadge as
+  ((qa: number) => string) | undefined;
+const renderTierProgress = (window as unknown as Record<string, unknown>).renderTierProgress as
+  ((qa: number) => string) | undefined;
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function hasAnswer(val: AnswerValue | undefined): boolean {
+  if (val === undefined || val === '' || val === null) return false;
+  if (Array.isArray(val) && val.length === 0) return false;
+  return true;
+}
+
+function snapshotAnswered(): void {
+  previouslyAnsweredIds.clear();
+  SECTIONS.forEach(s => {
+    s.questions.forEach(q => {
+      if (hasAnswer(answers[q.id])) previouslyAnsweredIds.add(q.id);
+    });
+  });
+}
+
+function renderTierBannerUI(qa: number): void {
+  if (!getTier) return;
+  const banner = document.getElementById('tier-banner');
+  if (!banner) return;
+
+  const tier = getTier(qa);
+  const next = getNextTier ? getNextTier(qa) : null;
+
+  const perkText = tier.maxStake > 0
+    ? 'Max stake: <span>' + (tier.maxStake === Infinity ? 'Unlimited' : tier.maxStake + ' tokens') + '</span>' +
+      (tier.slots > 0 ? ' · Power-up slots: <span>' + tier.slots + '</span>' : '')
+    : 'Answer ' + (next ? next.questionsNeeded : '10') + ' more questions to unlock token staking';
+
+  banner.innerHTML =
+    '<div class="tier-header">' +
+      '<div class="tier-header-left">' +
+        '<span class="tier-rank-label">RANK:</span>' +
+        (renderTierBadge ? renderTierBadge(qa) : '') +
+      '</div>' +
+    '</div>' +
+    (next
+      ? '<div class="tier-unlock-hint">' +
+          '<strong>' + escHtml(String(next.questionsNeeded)) + '</strong> more questions to unlock <strong>' + escHtml(next.name) + '</strong>' +
+        '</div>'
+      : '') +
+    (renderTierProgress ? renderTierProgress(qa) : '') +
+    '<div class="tier-perks">' + perkText + '</div>';
+
+  banner.style.display = 'block';
+}
+
+function calcPrice(): string {
+  return Math.max(MIN_PRICE, BASE_PRICE - (completedSections.size * STEP)).toFixed(2);
+}
+
+function updateDiscount(): void {
+  const count = completedSections.size;
+  const priceEl = document.getElementById('discount-price');
+  if (priceEl) priceEl.innerHTML = `$${calcPrice()}<span style="font-size:14px;color:var(--white-dim);">/mo</span>`;
+  const fill = document.getElementById('discount-fill') as HTMLElement | null;
+  if (fill) fill.style.width = ((count / SECTIONS.length) * 100) + '%';
+  const pct = document.getElementById('discount-pct');
+  if (pct) pct.textContent = `${count} of ${SECTIONS.length} sections complete`;
+}
+
+function ringSVG(pct: number): string {
+  const circumference = 2 * Math.PI * 9;
+  const offset = circumference - (pct / 100) * circumference;
+  return `<svg><circle class="ring-bg" cx="11" cy="11" r="9"/><circle class="ring-fill" cx="11" cy="11" r="9" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/></svg>`;
+}
+
+function sectionPct(section: Section): number {
+  const total = section.questions.length;
+  let answered = 0;
+  section.questions.forEach(q => { if (hasAnswer(answers[q.id])) answered++; });
+  return Math.round((answered / total) * 100);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function renderGrid(): void {
+  const grid = document.getElementById('section-grid');
+  if (!grid) return;
+
+  grid.innerHTML = SECTIONS.map(s => {
+    const done = completedSections.has(s.id);
+    const pct = sectionPct(s);
+    const isActive = activeSection === s.id;
+    return `
+      <div class="section-tile ${done ? 'complete' : ''} ${isActive ? 'active-section' : ''}" data-section="${escHtml(s.id)}">
+        ${done ? '<span class="section-check">✅</span>' : `<div class="section-ring">${ringSVG(pct)}</div>`}
+        <div class="section-icon">${escHtml(s.icon)}</div>
+        <div class="section-name">${escHtml(s.name)}</div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.section-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const sectionId = (tile as HTMLElement).dataset.section;
+      if (sectionId) openSection(sectionId);
+    });
+  });
+}
+
+function renderQuestion(q: Question): string {
+  const val = answers[q.id];
+
+  if (q.type === 'input') {
+    return `
+      <div class="question-card">
+        <div class="question-label">${escHtml(q.label)}</div>
+        <input class="q-input" data-qid="${escHtml(q.id)}" type="text" placeholder="${escHtml(q.placeholder ?? '')}" value="${escHtml((val as string) ?? '')}" maxlength="500">
+      </div>`;
+  }
+
+  if (q.type === 'chips') {
+    const selected: string[] = q.multi ? (Array.isArray(val) ? val : []) : (val ? [val as string] : []);
+    return `
+      <div class="question-card">
+        <div class="question-label">${escHtml(q.label)}${q.max ? ` (max ${q.max})` : ''}</div>
+        <div class="chip-group" data-qid="${escHtml(q.id)}" data-multi="${!!q.multi}" data-max="${q.max ?? 99}">
+          ${q.options.map(o => `<div class="chip ${selected.includes(o) ? 'selected' : ''}" data-val="${escHtml(o)}">${escHtml(o)}</div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  if (q.type === 'slider') {
+    const current = val !== undefined ? Number(val) : Math.round((q.min + q.max) / 2);
+    return `
+      <div class="question-card">
+        <div class="question-label">${escHtml(q.label)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--white-dim);margin-bottom:4px;">
+          <span>${escHtml(q.labels[0])}</span><span>${escHtml(q.labels[1])}</span>
+        </div>
+        <div class="slider-row">
+          <input class="q-slider" data-qid="${escHtml(q.id)}" type="range" min="${q.min}" max="${q.max}" value="${current}">
+          <span class="slider-val" id="slider-val-${escHtml(q.id)}">${current}</span>
+        </div>
+      </div>`;
+  }
+
+  if (q.type === 'select') {
+    return `
+      <div class="question-card">
+        <div class="question-label">${escHtml(q.label)}</div>
+        <select class="q-select" data-qid="${escHtml(q.id)}">
+          <option value="" disabled ${!val ? 'selected' : ''}>Choose one...</option>
+          ${q.options.map(o => `<option value="${escHtml(o)}" ${val === o ? 'selected' : ''}>${escHtml(o)}</option>`).join('')}
+        </select>
+      </div>`;
+  }
+
+  return '';
+}
+
+// ============================================================
+// SECTION INTERACTION
+// ============================================================
+
+function openSection(sectionId: string): void {
+  activeSection = sectionId;
+  const section = SECTIONS.find(s => s.id === sectionId);
+  if (!section) return;
+
+  const panel = document.getElementById('question-panel');
+  if (!panel) return;
+  panel.classList.add('open');
+
+  panel.innerHTML = `
+    <div class="panel-header">
+      <div class="panel-title">${escHtml(section.icon)} ${escHtml(section.name)}</div>
+      <div class="panel-reward">🎁 ${escHtml(section.reward.text)}</div>
+    </div>
+    ${section.questions.map(q => renderQuestion(q)).join('')}
+    <button class="save-section-btn" id="save-section-btn">SAVE & UNLOCK REWARD</button>
+  `;
+
+  wireQuestions();
+  document.getElementById('save-section-btn')?.addEventListener('click', () => saveSection(section));
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  renderGrid();
+}
+
+function wireQuestions(): void {
+  // Inputs
+  document.querySelectorAll<HTMLInputElement>('.q-input').forEach(el => {
+    el.addEventListener('input', () => {
+      const qid = el.dataset.qid;
+      if (qid) answers[qid] = el.value;
+    });
+  });
+
+  // Chips
+  document.querySelectorAll<HTMLElement>('.chip-group').forEach(group => {
+    const isMulti = group.dataset.multi === 'true';
+    const max = parseInt(group.dataset.max ?? '99') || 99;
+    group.querySelectorAll<HTMLElement>('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const qid = group.dataset.qid;
+        const val = chip.dataset.val;
+        if (!qid || !val) return;
+        if (isMulti) {
+          let arr = Array.isArray(answers[qid]) ? [...(answers[qid] as string[])] : [];
+          if (arr.includes(val)) {
+            arr = arr.filter(v => v !== val);
+            chip.classList.remove('selected');
+          } else if (arr.length < max) {
+            arr.push(val);
+            chip.classList.add('selected');
+          }
+          answers[qid] = arr;
+        } else {
+          group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          answers[qid] = val;
+        }
+      });
+    });
+  });
+
+  // Sliders
+  document.querySelectorAll<HTMLInputElement>('.q-slider').forEach(el => {
+    el.addEventListener('input', () => {
+      const qid = el.dataset.qid;
+      if (!qid) return;
+      answers[qid] = parseInt(el.value);
+      const label = document.getElementById('slider-val-' + qid);
+      if (label) label.textContent = el.value;
+    });
+  });
+
+  // Selects
+  document.querySelectorAll<HTMLSelectElement>('.q-select').forEach(el => {
+    el.addEventListener('change', () => {
+      const qid = el.dataset.qid;
+      if (qid) answers[qid] = el.value;
+    });
+  });
+}
+
+// ============================================================
+// SAVE SECTION
+// ============================================================
+
+async function saveSection(section: Section): Promise<void> {
+  let allAnswered = true;
+  section.questions.forEach(q => {
+    if (!hasAnswer(answers[q.id])) allAnswered = false;
+  });
+
+  // Save to localStorage
+  localStorage.setItem('colosseum_profile_depth', JSON.stringify(answers));
+
+  if (allAnswered) {
+    completedSections.add(section.id);
+    localStorage.setItem('colosseum_depth_complete', JSON.stringify([...completedSections]));
+
+    // Session 72: Token milestone check
+    const tokens = window.ColosseumTokens as unknown as Record<string, unknown> | undefined;
+    const checkProfileMilestones = tokens?.checkProfileMilestones as ((count: number) => void) | undefined;
+    if (checkProfileMilestones) checkProfileMilestones(completedSections.size);
+
+    showReward(section.reward);
+  }
+
+  // Save to Supabase
+  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
+  const config = window.ColosseumConfig as unknown as Record<string, unknown> | undefined;
+  const isPlaceholder = !!(config as unknown as Record<string, unknown>)?.placeholderMode;
+
+  if (auth?.currentUser && !isPlaceholder) {
+    try {
+      const sectionAnswers: Record<string, AnswerValue> = {};
+      section.questions.forEach(q => {
+        if (answers[q.id] !== undefined) sectionAnswers[q.id] = answers[q.id];
+      });
+
+      const safeRpc = auth.safeRpc as ((fn: string, args: Record<string, unknown>) => Promise<{ data?: Record<string, unknown> | null; error?: { message: string } | null }>) | undefined;
+      const rpcFn = safeRpc ?? ((fn: string, args: Record<string, unknown>) => {
+        const sb = auth.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data?: unknown; error?: unknown }> };
+        return sb.rpc(fn, args);
+      });
+
+      const { error } = await rpcFn('save_profile_depth', {
+        p_section_id: section.id,
+        p_answers: sectionAnswers,
+      });
+      if (error) console.error('save_profile_depth error:', error);
+
+      // Session 117: Increment questions_answered for newly answered questions
+      let newCount = 0;
+      section.questions.forEach(q => {
+        if (hasAnswer(answers[q.id]) && !previouslyAnsweredIds.has(q.id)) {
+          newCount++;
+          previouslyAnsweredIds.add(q.id);
+        }
+      });
+
+      if (newCount > 0) {
+        const incResult = await rpcFn('increment_questions_answered', { p_count: newCount });
+        const incData = incResult as { data?: { ok?: boolean; questions_answered?: number } | null; error?: unknown };
+        if (incData.error) {
+          console.error('increment_questions_answered error:', incData.error);
+        } else if (incData.data?.ok) {
+          serverQuestionsAnswered = incData.data.questions_answered ?? serverQuestionsAnswered;
+          renderTierBannerUI(serverQuestionsAnswered);
+        }
+      }
+    } catch (e) {
+      console.error('save_profile_depth exception:', e);
+    }
+  }
+
+  updateDiscount();
+  renderGrid();
+
+  if (allAnswered) {
+    setTimeout(() => {
+      document.getElementById('question-panel')?.classList.remove('open');
+      activeSection = null;
+      renderGrid();
+    }, 2000);
+  }
+}
+
+// ============================================================
+// REWARD TOAST
+// ============================================================
+
+function showReward(reward: SectionReward): void {
+  const icons: Record<string, string> = { discount: '💰', badge: '🛡️', cosmetic: '✨', feature: '🔓' };
+  const iconEl = document.getElementById('reward-icon');
+  if (iconEl) iconEl.textContent = icons[reward.type] ?? '🏆';
+  const textEl = document.getElementById('reward-text');
+  if (textEl) textEl.textContent = 'SECTION COMPLETE';
+  const descEl = document.getElementById('reward-desc');
+  if (descEl) descEl.textContent = reward.text;
+
+  const toast = document.getElementById('reward-toast');
+  if (toast) {
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
+  const config = window.ColosseumConfig as unknown as Record<string, unknown> | undefined;
+  const isPlaceholder = !!(config as unknown as Record<string, unknown>)?.placeholderMode;
+
+  // SESSION 32: Members Zone auth gate
+  const ready = auth?.ready as Promise<void> | undefined;
+  if (ready) {
+    await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
+  }
+  if (!auth || (!auth.currentUser && !(auth as Record<string, unknown>).isPlaceholderMode)) {
+    window.location.href = 'colosseum-plinko.html';
+    return;
+  }
+
+  snapshotAnswered();
+  renderGrid();
+  updateDiscount();
+
+  // Session 117: Fetch questions_answered and render tier banner
+  if (auth.currentUser && !isPlaceholder) {
+    try {
+      const sb = auth.supabase as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { single: () => Promise<{ data: { questions_answered?: number } | null; error: unknown }> } } } } | undefined;
+      const user = auth.currentUser as { id: string };
+
+      if (sb) {
+        const { data: profile, error } = await sb
+          .from('profiles')
+          .select('questions_answered')
+          .eq('id', user.id)
+          .single();
+
+        if (!error && profile) {
+          serverQuestionsAnswered = profile.questions_answered ?? 0;
+
+          // Migration sync: if server is 0 but user has local answers, catch up
+          if (serverQuestionsAnswered === 0 && previouslyAnsweredIds.size > 0) {
+            const safeRpc = auth.safeRpc as ((fn: string, args: Record<string, unknown>) => Promise<{ data?: { ok?: boolean; questions_answered?: number } | null; error?: unknown }>) | undefined;
+            const rpcFn = safeRpc ?? ((fn: string, args: Record<string, unknown>) => {
+              const client = auth.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> };
+              return client.rpc(fn, args);
+            });
+            const syncResult = await rpcFn('increment_questions_answered', { p_count: previouslyAnsweredIds.size });
+            const syncData = syncResult as { data?: { ok?: boolean; questions_answered?: number } | null };
+            if (syncData.data?.ok) {
+              serverQuestionsAnswered = syncData.data.questions_answered ?? serverQuestionsAnswered;
+            }
+          }
+
+          renderTierBannerUI(serverQuestionsAnswered);
+        }
+      }
+    } catch (e) {
+      console.error('Tier fetch error:', e);
+    }
+  }
+});
