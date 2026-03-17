@@ -27,10 +27,12 @@
  *   - ColosseumPaywall → src/paywall.ts
  *   - ColosseumWebRTC → src/webrtc.ts
  *   - ColosseumVoiceMemo → src/voicememo.ts
+ *   - ColosseumArena → src/arena.ts
+ *   - ColosseumAsync → src/async.ts
  *
  * REMAINING:
- *   - ColosseumArena → colosseum-arena.js (122K, biggest file)
- *   - ColosseumAsync → colosseum-async.js (47K, second biggest)
+ *   NONE — All 16 frontend modules migrated. Phase 3 COMPLETE.
+ *   Phase 4 (HTML page inline script extraction) is next.
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
