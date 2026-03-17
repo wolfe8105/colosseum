@@ -7,71 +7,68 @@
  * migration is complete.
  *
  * Source of truth: THE-COLOSSEUM-WIRING-MANIFEST.md Section 8 (Source Map)
+ *
+ * MIGRATED (Session 126):
+ *   - ColosseumConfig → src/config.ts (types re-exported below for window global)
+ *   - ColosseumAuth → src/auth.ts (types re-exported below for window global)
  */
 
-import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { ColosseumConfig } from '../config.ts';
+import type { SafeRpcResult, Profile, AuthResult, ProfileUpdate, AuthListener } from '../auth.ts';
 
 // --- Supabase Client ---
 
 /** Created in colosseum-auth.js via createClient() with noOpLock config */
 declare const supabase: SupabaseClient;
 
-// --- ColosseumConfig (colosseum-config.js) ---
+// --- ColosseumConfig (colosseum-config.js → src/config.ts) ---
+// Full type defined in src/config.ts. Window global matches that shape.
 
-interface ColosseumConfigGlobal {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  stripePublicKey: string;
-  app: {
-    baseUrl: string;
-    name: string;
-  };
-  features: Record<string, boolean>;
-  escHtml: (str: string) => string;
-  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
-  friendlyError: (error: unknown) => string;
-}
-
-// --- ColosseumAuth (colosseum-auth.js) ---
-
-interface SafeRpcResult<T = unknown> {
-  data: T | null;
-  error: { message: string; code?: string } | null;
-}
+// --- ColosseumAuth (colosseum-auth.js → src/auth.ts) ---
+// Full types defined in src/auth.ts.
 
 interface ColosseumAuthGlobal {
+  readonly currentUser: User | null;
+  readonly currentProfile: Profile | null;
+  readonly isPlaceholderMode: boolean;
+  readonly supabase: SupabaseClient | null;
   ready: Promise<void>;
+  init: () => void;
+  signUp: (params: { email: string; password: string; username: string; displayName: string; dob: string }) => Promise<AuthResult>;
+  logIn: (params: { email: string; password: string }) => Promise<AuthResult>;
+  oauthLogin: (provider: string, redirectTo?: string) => Promise<AuthResult>;
+  logOut: () => Promise<AuthResult>;
+  resetPassword: (email: string) => Promise<AuthResult>;
+  updatePassword: (newPassword: string) => Promise<AuthResult>;
+  updateProfile: (updates: ProfileUpdate) => Promise<AuthResult>;
+  deleteAccount: () => Promise<AuthResult>;
+  followUser: (targetId: string) => Promise<AuthResult>;
+  unfollowUser: (targetId: string) => Promise<AuthResult>;
+  getFollowers: (userId: string) => Promise<AuthResult>;
+  getFollowing: (userId: string) => Promise<AuthResult>;
+  getFollowCounts: (userId: string) => Promise<{ followers: number; following: number }>;
+  getPublicProfile: (userId: string) => Promise<unknown>;
+  declareRival: (targetId: string, message?: string) => Promise<AuthResult>;
+  respondRival: (rivalId: string, accept: boolean) => Promise<AuthResult>;
+  getMyRivals: () => Promise<unknown[]>;
+  showUserProfile: (userId: string) => Promise<void>;
+  toggleModerator: (enabled: boolean) => Promise<AuthResult>;
+  toggleModAvailable: (available: boolean) => Promise<AuthResult>;
+  submitReference: (debateId: string, url: string | null, description: string | null, supportsSide?: string) => Promise<AuthResult>;
+  ruleOnReference: (referenceId: string, ruling: string, reason: string | null, ruledByType?: string) => Promise<AuthResult>;
+  scoreModerator: (debateId: string, score: number) => Promise<AuthResult>;
+  assignModerator: (debateId: string, moderatorId: string | null, moderatorType?: string) => Promise<AuthResult>;
+  getAvailableModerators: (excludeIds?: string[]) => Promise<unknown[]>;
+  getDebateReferences: (debateId: string) => Promise<unknown[]>;
   safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-  getUser: () => User | null;
-  getProfile: () => ColosseumProfile | null;
-  signIn: (provider: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<ColosseumProfile>) => Promise<SafeRpcResult>;
-  showUserProfile: (userId: string) => void;
-  followUser: (targetId: string) => Promise<SafeRpcResult>;
-  unfollowUser: (targetId: string) => Promise<SafeRpcResult>;
-  declareRival: (targetId: string) => Promise<SafeRpcResult>;
-  deleteAccount: () => Promise<void>;
+  requireAuth: (actionLabel?: string) => boolean;
+  onChange: (fn: AuthListener) => void;
+  _notify: (user: User | null, profile: Profile | null) => void;
 }
 
-/** Matches profiles table - will be replaced by database.ts auto-generated type */
-interface ColosseumProfile {
-  id: string;
-  display_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  elo_rating: number;
-  token_balance: number;
-  level: number;
-  xp: number;
-  streak_freezes: number;
-  questions_answered: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  [key: string]: unknown;
-}
+/** Re-export Profile type so it's available to non-migrated .ts consumers */
+type ColosseumProfile = Profile;
 
 // --- ColosseumTokens (colosseum-tokens.js) ---
 
@@ -199,7 +196,7 @@ interface ColosseumAnalyticsGlobal {
 
 declare global {
   interface Window {
-    ColosseumConfig: ColosseumConfigGlobal;
+    ColosseumConfig: ColosseumConfig;
     ColosseumAuth: ColosseumAuthGlobal;
     ColosseumTokens: ColosseumTokensGlobal;
     ColosseumTiers: ColosseumTiersGlobal;
