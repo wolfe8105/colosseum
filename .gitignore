@@ -7,6 +7,15 @@ node_modules/
 *.log
 logs/
 
+# Build output (Vite)
+dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+.vite/
+
 # OS
 .DS_Store
 Thumbs.db
