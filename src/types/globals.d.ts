@@ -11,6 +11,26 @@
  * MIGRATED (Session 126):
  *   - ColosseumConfig → src/config.ts (types re-exported below for window global)
  *   - ColosseumAuth → src/auth.ts (types re-exported below for window global)
+ *   - ColosseumTiers → src/tiers.ts
+ *   - ColosseumTokens → src/tokens.ts
+ *   - colosseum-staking.js (IIFE) → src/staking.ts
+ *   - colosseum-powerups.js (IIFE) → src/powerups.ts
+ *
+ * MIGRATED (Session 127):
+ *   - ColosseumScoring → src/scoring.ts
+ *   - ColosseumNotifications → src/notifications.ts
+ *   - ColosseumLeaderboard → src/leaderboard.ts
+ *   - ColosseumShare → src/share.ts
+ *   - ColosseumCards → src/cards.ts
+ *   - ColosseumAnalytics → src/analytics.ts
+ *   - ColosseumPayments → src/payments.ts
+ *   - ColosseumPaywall → src/paywall.ts
+ *   - ColosseumWebRTC → src/webrtc.ts
+ *   - ColosseumVoiceMemo → src/voicememo.ts
+ *
+ * REMAINING:
+ *   - ColosseumArena → colosseum-arena.js (122K, biggest file)
+ *   - ColosseumAsync → colosseum-async.js (47K, second biggest)
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
