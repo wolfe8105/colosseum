@@ -445,25 +445,7 @@
   © 2026 The Colosseum · WHHW LLC
 </div>
 
-<script>
-function showTab(tab) {
-  document.querySelectorAll('.legal-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.legal-tab').forEach(t => t.classList.remove('active'));
-
-  const page = document.getElementById('page-' + tab);
-  if (page) page.classList.add('active');
-
-  const tabs = document.querySelectorAll('.legal-tab');
-  const tabMap = { tos: 0, privacy: 1, community: 2 };
-  if (tabs[tabMap[tab]]) tabs[tabMap[tab]].classList.add('active');
-
-  window.scrollTo(0, 0);
-}
-
-// Handle hash navigation
-if (window.location.hash === '#privacy') showTab('privacy');
-if (window.location.hash === '#community') showTab('community');
-</script>
+<script type="module" src="/src/pages/terms.ts"></script>
 <div class="colosseum-legal-footer">
   <a href="colosseum-privacy.html">Privacy Policy</a>
   <span class="footer-sep">|</span>
