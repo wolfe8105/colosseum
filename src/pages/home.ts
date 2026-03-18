@@ -275,6 +275,7 @@ function navigateTo(screenId: string){
   }
 }
 document.querySelectorAll('.bottom-nav-btn').forEach(btn=>{btn.addEventListener('click',()=>navigateTo(btn.dataset.screen));});
+(window as any).navigateTo = navigateTo;
 
 // --- User Dropdown ---
 const avatarBtn=document.getElementById('user-avatar-btn');
