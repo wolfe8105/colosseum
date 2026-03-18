@@ -102,7 +102,7 @@ const ColosseumPowerUps = (() => {
 
     if (maxSlots === 0) {
       const next = ColosseumTiers.getNextTier(questionsAnswered || 0);
-      const remaining = next ? next.minQuestions - (questionsAnswered || 0) : 0;
+      const remaining = next ? next.questionsNeeded : 0;
       return `
         <div class="powerup-loadout" style="
           background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;

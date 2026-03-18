@@ -1218,7 +1218,7 @@ window.ColosseumArena = (() => {
       round: 1,
       totalRounds: 3,
       opponentName: 'AI Sparring Bot',
-      opponentElo: '???',
+      opponentElo: 1200,
       ranked: false,
       messages: [],
     });
