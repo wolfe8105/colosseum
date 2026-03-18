@@ -293,6 +293,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     <div class="profile-link-list">
       <a href="colosseum-profile-depth.html" class="profile-link"><span class="link-label">📊 Complete Your Profile</span><span class="link-arrow">→</span></a>
       <a href="colosseum-settings.html" class="profile-link"><span class="link-label">⚙️ Settings</span><span class="link-arrow">→</span></a>
+      <div class="profile-link" onclick="window.location.href='colosseum-arena.html?shop=1'"><span class="link-label">⚡ Power-Up Shop</span><span class="link-arrow">→</span></div>
       <div class="profile-link" onclick="navigateTo('shop')"><span class="link-label">🛒 Cosmetics Shop</span><span class="link-arrow">→</span></div>
       <div class="profile-link" onclick="ColosseumShare?.shareProfile?.({userId:ColosseumAuth?.currentUser?.id,username:ColosseumAuth?.currentProfile?.username,displayName:ColosseumAuth?.currentProfile?.display_name,elo:ColosseumAuth?.currentProfile?.elo_rating,wins:ColosseumAuth?.currentProfile?.wins,losses:ColosseumAuth?.currentProfile?.losses,streak:ColosseumAuth?.currentProfile?.current_streak})"><span class="link-label">🔗 Share Profile</span><span class="link-arrow">→</span></div>
       <div class="profile-link" onclick="ColosseumShare?.inviteFriend?.()"><span class="link-label">📨 Invite a Friend</span><span class="link-arrow">→</span></div>

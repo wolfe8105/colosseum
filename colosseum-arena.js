@@ -515,6 +515,14 @@ window.ColosseumArena = (() => {
         <button class="arena-enter-btn" id="arena-enter-btn">
           <span class="btn-pulse"></span> ENTER THE ARENA
         </button>
+        <button id="arena-powerup-shop-btn" style="
+          display:inline-flex;align-items:center;gap:8px;
+          margin-top:10px;padding:10px 24px;
+          border-radius:30px;border:1px solid rgba(212,168,67,0.4);
+          background:rgba(212,168,67,0.08);
+          color:#D4AF37;font-family:'Barlow Condensed',sans-serif;
+          font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;
+        ">⚡ POWER-UP SHOP</button>
       </div>
       <div class="arena-section" id="arena-live-section">
         <div class="arena-section-title"><span class="section-dot live-dot"></span> LIVE NOW</div>
@@ -537,6 +545,7 @@ window.ColosseumArena = (() => {
 
     // Wire enter button
     document.getElementById('arena-enter-btn')?.addEventListener('click', showRankedPicker);
+    document.getElementById('arena-powerup-shop-btn')?.addEventListener('click', showPowerUpShop);
 
     // Wire challenge CTA — navigate to home carousel
     document.getElementById('arena-challenge-cta')?.addEventListener('click', () => {
@@ -661,6 +670,57 @@ window.ColosseumArena = (() => {
         </div>
       </div>
     `).join('');
+  }
+
+  // ========== POWER-UP SHOP ==========
+  function showPowerUpShop() {
+    if (!currentUser() && !isPlaceholder()) {
+      window.location.href = 'colosseum-plinko.html';
+      return;
+    }
+    view = 'powerUpShop';
+    pushArenaState('powerUpShop');
+    const tokenBalance = Number(currentProfile()?.token_balance) || 0;
+    const shopHtml = typeof ColosseumPowerUps !== 'undefined'
+      ? ColosseumPowerUps.renderShop(tokenBalance)
+      : '<div style="color:#999;font-family:\'Barlow\',sans-serif;padding:20px;">Power-up shop unavailable.</div>';
+
+    screenEl.innerHTML = `
+      <div style="padding:16px;padding-bottom:80px;max-width:480px;margin:0 auto;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <button id="powerup-shop-back" style="
+            background:none;border:none;color:#D4AF37;
+            font-family:'Barlow Condensed',sans-serif;font-size:14px;
+            font-weight:600;cursor:pointer;letter-spacing:1px;padding:0;
+          ">← BACK</button>
+        </div>
+        ${shopHtml}
+      </div>
+    `;
+
+    document.getElementById('powerup-shop-back')?.addEventListener('click', () => {
+      renderLobby();
+    });
+
+    // Wire buy buttons
+    document.querySelectorAll('.powerup-buy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (typeof ColosseumPowerUps === 'undefined') return;
+        const id = btn.dataset.id;
+        const cost = Number(btn.dataset.cost);
+        btn.disabled = true;
+        btn.textContent = '...';
+        const result = await ColosseumPowerUps.buy(id, 1);
+        if (result.success) {
+          showToast(`Power-up purchased! 🎉`);
+          showPowerUpShop(); // re-render with updated balance
+        } else {
+          showToast(result.error || 'Purchase failed');
+          btn.disabled = false;
+          btn.textContent = `${cost} 🪙`;
+        }
+      });
+    });
   }
 
   // ========== MODE SELECT ==========
@@ -2493,6 +2553,10 @@ window.ColosseumArena = (() => {
       return;
     }
     renderLobby();
+    // Auto-open power-up shop if ?shop=1 in URL
+    if (new URLSearchParams(window.location.search).get('shop') === '1') {
+      showPowerUpShop();
+    }
   }
 
   // Auto-init when DOM is ready
