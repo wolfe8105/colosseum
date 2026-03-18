@@ -1,5 +1,5 @@
 # THE COLOSSEUM — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 118 (March 16, 2026)
+### Last Updated: Session 129 (March 17, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -7,7 +7,9 @@
 >
 > **Other bible docs (repo, read when relevant):**
 > - `THE-COLOSSEUM-OLD-TESTAMENT.md` — All session build logs (1-62), 502+ item inventory, revenue model, B2B data play, growth strategy
-> - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 176+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
+> - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 185+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
+> - `THE-COLOSSEUM-WIRING-MANIFEST.md` — Full C4-style architecture model. Every RPC, global, flow mapped with CALLED FROM, EXPECTS, BLAST RADIUS. Search any function name to find everything that touches it. (Session 122)
+> - `TYPESCRIPT-MIGRATION-PLAN.md` — 6-phase migration plan: vanilla JS → TypeScript + Vite + proper imports. Phases 0-4 complete. (Session 122)
 > - `THE-COLOSSEUM-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, exclusivity framework, buyer list
 > - `THE-COLOSSEUM-PRODUCT-VISION.md` — Psychology framework, visual game layer, sound-off solution, ad placement, gamification
 > - `THE-COLOSSEUM-WAR-PLAN.md` — 5-phase strategy, shelved ideas, open decisions
@@ -109,7 +111,7 @@
 # 7. WHAT ACTUALLY EXISTS
 
 ## Infrastructure Summary
-Supabase (faomczmipsccwbhpivmp): 36 tables, RLS hardened, 48+ server functions, sanitization, rate limits, 9 analytics views, 3 security views, 20 RPCs wired to log_event(). Token system Phase 3 complete (milestones, streak freezes, token display, gold coin animation). Token staking + power-up systems fully built (Phases 1-5, Sessions 109-110/117-118): 5 tables (stakes, stake_pools, power_ups, user_power_ups, debate_power_ups), 7 RPCs, parimutuel pool model, tier-gated staking caps, 4 power-ups. Landing page vote persistence live (landing_votes + fingerprint dedup + 2 anon RPCs, Session 107). Auto-debate staking backend live (auto_debate_stakes + 4 RPCs, Session 99). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, 1 serverless function (profile pages). Stripe sandbox: 7 products, Edge Functions, webhooks. Auth working end-to-end. Resend SMTP configured. Security audit FULLY COMPLETE (Sessions A-D + Session 92 Claude Code audit: 120+ issues found across 43 files, 29 critical fixes shipped). Bot army deployed to VPS (DigitalOcean $6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false LIVE. Content-first upgrade: ESPN-style share card generation (card-generator.js) + Bluesky image posting LIVE (leg2-bluesky-poster.js v2, verified Session 92). Mirror generator live (5-min cron, 50+ pages/build, deploys to colosseum-f30.pages.dev, Cloudflare Web Analytics on all pages Session 96, mirror generator path fixed Session 96). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI fully built. Reference/evidence system live. Analytics layer live. Funnel analytics live (mirror + app). Legal docs live (Privacy Policy + Terms). Groups feature live (including group hot take composer, Session 105). Ranked/Casual mode live. Public profile pages live. OWASP audit complete (7/10 STRONG). SRI hashes on 6 HTML files. Edge Functions hardened (Deno.serve, CORS allowlist). Draw.io dead end audit: all 5 flagged dead ends resolved (Sessions 102-107).
+Supabase (faomczmipsccwbhpivmp): 36 tables, RLS hardened, 48+ server functions, sanitization, rate limits, 9 analytics views, 3 security views, 20 RPCs wired to log_event(). Token system Phase 3 complete (milestones, streak freezes, token display, gold coin animation). Token staking + power-up systems fully built (Phases 1-5, Sessions 109-110/117-118): 5 tables (stakes, stake_pools, power_ups, user_power_ups, debate_power_ups), 7 RPCs, parimutuel pool model, tier-gated staking caps, 4 power-ups. Landing page vote persistence live (landing_votes + fingerprint dedup + 2 anon RPCs, Session 107). Auto-debate staking backend live (auto_debate_stakes + 4 RPCs, Session 99). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, 1 serverless function (profile pages). Stripe sandbox: 7 products, Edge Functions, webhooks. Auth working end-to-end. Resend SMTP configured. Security audit FULLY COMPLETE (Sessions A-D + Session 92 Claude Code audit: 120+ issues found across 43 files, 29 critical fixes shipped). Bot army deployed to VPS (DigitalOcean $6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false LIVE. Content-first upgrade: ESPN-style share card generation (card-generator.js) + Bluesky image posting LIVE (leg2-bluesky-poster.js v2, verified Session 92). Mirror generator live (5-min cron, 50+ pages/build, deploys to colosseum-f30.pages.dev, Cloudflare Web Analytics on all pages Session 96, mirror generator path fixed Session 96). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI fully built. Reference/evidence system live. Analytics layer live. Funnel analytics live (mirror + app). Legal docs live (Privacy Policy + Terms). Groups feature live (including group hot take composer, Session 105). Ranked/Casual mode live. Public profile pages live. OWASP audit complete (7/10 STRONG). SRI hashes on 6 HTML files. Edge Functions hardened (Deno.serve, CORS allowlist). Draw.io dead end audit: all 5 flagged dead ends resolved (Sessions 102-107). **TypeScript migration Phases 0-4 complete (Sessions 125-128):** 30 `.ts` files in `src/` (16 module mirrors + 10 page modules + 2 type files + vite config + tsconfig). Strict mode, all compile clean. Original `.js` files untouched — TS files activate when Vite build step is enabled. Phase 5 (bot army) and Phase 6 (tests + cleanup) remain.
 
 ## Toolchain
 | Tool | Purpose |
@@ -230,13 +232,22 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ⏳ **PII scrub** — hardcoded email, name, user ID throughout codebase. Must move to env vars before repo goes public or any real users arrive.
 - ⏳ **Content guardrails** — extreme debate framings ("Republicans VS Nazis") risk Bluesky account bans. AI generator needs topic filtering.
 
-### Tier 2 — Active Build (Token Staking)
+### Tier 2 — Active Build (Token Staking — COMPLETE)
 - ✅ **Phase 1: Questionnaire Tier Foundation** (Session 117) — questions_answered column, guard trigger, increment RPC, tier utility, profile-depth UI
 - ✅ **Phase 2: Staking Backend** (Session 109, bugs fixed Session 118) — stakes/stake_pools tables, place_stake/get_stake_pool/settle_stakes RPCs, wired into debate completion flow
 - ✅ **Phase 3: Staking Frontend** (Session 109) — pre-debate staking panel, confirmation dialog, live pool updates, results notification in post-debate
 - ✅ **Phase 4: Power-Up Backend** (Session 109, bug fixed Session 118) — power_ups/user_power_ups/debate_power_ups tables, buy/equip/activate/get_my RPCs
 - ✅ **Phase 5: Power-Up Frontend** (Session 110) — shop screen, equip screen, in-debate buttons, visual effects
 - ⏳ **Phase 6: Polish & Balance** — economy audit, price tuning, Orange Dot integration, bot content templates
+
+### Tier 2B — Active Build (TypeScript Migration)
+- ✅ **Phase 0: Build Infrastructure** (Session 125) — package.json, tsconfig.json, vite.config.ts, database.ts, globals.d.ts
+- ✅ **Phase 1: Foundation Modules** (Session 126) — src/config.ts, src/auth.ts (typed safeRpc<T>)
+- ✅ **Phase 2: Defense Modules** (Session 126) — src/tiers.ts, src/tokens.ts, src/staking.ts, src/powerups.ts
+- ✅ **Phase 3: All Remaining Modules** (Session 127) — 12 modules: arena, async, scoring, notifications, leaderboard, share, cards, analytics, payments, paywall, webrtc, voicememo
+- ✅ **Phase 4: HTML Inline Script Extraction** (Session 128) — 10 pages extracted into src/pages/*.ts modules
+- ⏳ **Phase 5: Bot Army** — Migrate VPS code from CommonJS to TypeScript
+- ⏳ **Phase 6: Tests + Cleanup** — Vitest, remove window global bridges, delete globals.d.ts
 
 ### Tier 3 — Future Features (See Ideas Master Map)
 - Reference Arsenal system
@@ -251,6 +262,10 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ⏳ Edge Function CORS allowlist missing mirror domain (OK since mirror is pure HTML)
 - ⏳ 3 older RLS policies still have {public} scope (low priority)
 - ⏳ VPS-only bot files not in repo: bot-engine.js, ai-generator.js, supabase-client.js, card-generator.js, category-classifier.js (backups exist on VPS)
+- ⏳ Power-ups shop shows "Answer NaN more questions" (tier display bug — cosmetic)
+- ⏳ AI bot profile shows "NaN ELO" (missing elo_rating on bot profile row — cosmetic)
+- ⏳ Slider questions in profile-depth don't record without a touch event (needs input event listener — cosmetic)
+- ⏳ 3 heavy page modules (spectate.ts, groups.ts, home.ts) have `any` annotations — need full typing pass
 
 ## Monitoring
 - Leg 1 Bluesky — `pm2 logs` for `[LEG1][BLUESKY]`, watch follower count on `wolfe8105.bsky.social`
@@ -296,12 +311,19 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 - **Bluesky handle is `wolfe8105.bsky.social`** — display name "The Colosseum". Profile search API shows 0 posts (Bluesky counter bug) but posts exist in the feed. Account had 0 followers as of Session 98.
 - **Category classifier** — `lib/category-classifier.js` on VPS. Uses word-boundary regex for short keywords (≤4 chars) to prevent false positives like "social" matching "cia". Wired into `ai-generator.js` line 1 via require, replaces hardcoded `category: 'general'` in `fallbackAutoDebateSetup()`.
 - **Landing page vote persistence (Session 107)** — `landing_votes` table (id, topic_slug, side, fingerprint, created_at) with unique index on (topic_slug, fingerprint) for dedup. RLS enabled, no policies (RPC-only). Two SECURITY DEFINER RPCs: `cast_landing_vote(p_topic_slug, p_side, p_fingerprint)` and `get_landing_vote_counts(p_topic_slug)`. Both granted to `anon` role. Uses `getFingerprint()` from Session 103 for anonymous dedup. Fallback to hardcoded placeholders for topics with no real votes.
-- **Token staking & power-up plan (Session 108, Phase 1 complete Session 117)** — Full implementation plan in `TOKEN-STAKING-POWERUP-PLAN.docx`. Phase 1 (questionnaire tier foundation) complete: `questions_answered` column on profiles, `guard_profile_columns` updated to protect it, `increment_questions_answered` RPC, `colosseum-tiers.js` client-side tier utility, tier badge + progress bar wired into `colosseum-profile-depth.html`. 5 tiers (Unranked/Spectator+/Contender/Gladiator/Champion/Legend) at 0/10/25/50/75/100 questions. Current questionnaire has 39 questions (max Tier 2). Phase 2 (staking backend) next.
+- **Token staking & power-up plan — ALL PHASES COMPLETE** (Sessions 108-110/117-118, bugs fixed 123-124). All 5 tables, 7 RPCs, frontend wiring, settlement tested end-to-end. Phase 6 (polish/balance) remains.
+- **`token_earn_log` column is `earn_type` not `action`** (LM-179). Milestones stored as `'milestone:key_name'` pattern with NULL `reference_id` (reference_id is UUID, can't hold text keys). Session 124 fix.
+- **PostgREST 404s on untyped record returns** (LM-180). RPCs that return `record` must use `RETURNS TABLE(...)` instead. PostgREST won't expose untyped record functions even with correct permissions.
+- **`settle_stakes` requires `stake_pools.winner` column** (LM-177). Column was missing — added Session 123.
+- **`claim_action_tokens` log_event must use named parameters** (LM-178). Positional args don't match function signature.
+- **Arena popstate: replaceState for forward, history.back for back** (LM-183). Arrow function wrapping required: `() => fn()` not `fn` (click Event passes as truthy boolean param). Session 121 rewrite.
+- **AI debates must be created as `'pending'` not `'live'`** (LM-184). Flip to 'live' happens in `enterRoom()` only. If created as 'live', `place_stake` breaks (status not in allowed set).
+- **IIFE modules must use `ColosseumAuth.safeRpc()` not bare `safeRpc()`** (LM-185). `safeRpc` doesn't exist at window scope. TypeScript migration eliminates this class of bug via proper imports.
 
 
 ---
 
-# SESSION BUILD LOGS (Sessions 108-117)
+# SESSION BUILD LOGS (Sessions 108-128)
 
 > Sessions 92-107 moved to Old Testament during Session 117 consolidation.
 
@@ -471,3 +493,107 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 
 **No new files. No files changed. SQL-only fixes (4 RPCs patched in Supabase).**
 
+---
+
+> Sessions 119-120: Not in project chat record. May have been informal or non-build sessions.
+
+# 24. SESSION 121 — ARENA NAVIGATION FIX + STAKING TEST START
+
+**Goal:** Fix arena popstate bugs, fix AI debate status for staking, begin staking end-to-end test.
+
+1. **Popstate rewrite (LM-183).** Removed `_skipNextPop` boolean (caused race conditions with dual overlays). New pattern: forward navigation uses `replaceState`, back/cancel uses `history.back()`. `closeRankedPicker(forward)` and `closeModeSelect(forward)` both use this pattern. Arrow function wrapping required on event listeners: `() => fn()` not `fn` (click Event passes as truthy boolean param).
+2. **AI debate status fix (LM-184).** `create_ai_debate` RPC was inserting debates as `'live'`. Changed to `'pending'`. Flip to `'live'` happens in `enterRoom()` only. This unblocks `place_stake` which requires status IN ('pending','lobby','matched').
+3. **Staking test started.** Pre-debate screen renders, staking panel renders, stake placed (tokens deducted 55→50), debate plays through. Settlement not yet tested.
+4. **Three cosmetic bugs found (not fixed).** Power-ups "Answer NaN more questions", AI bot "NaN ELO", slider questions don't record without touch event.
+5. **Wiring Manifest initial draft** — defense layer (auth, tokens, staking, tiers, RLS pattern) + arena basics + 2 flows.
+
+**Files changed:** `colosseum-arena.js` (GitHub), `create_ai_debate` RPC (Supabase)
+
+---
+
+# 25. SESSION 122 — WIRING MANIFEST COMPLETE + TYPESCRIPT MIGRATION PLAN
+
+**Goal:** Complete the Wiring Manifest, plan TypeScript migration.
+
+1. **Wiring Manifest completed** — 1,546 lines. All 8 sections: Containers, Defense, Arena (power-ups, debate room, spectator, scoring, moderator, WebRTC), Social (hot takes, predictions, groups, profiles, follows/rivals, notifications, leaderboard, achievements, cosmetics), Payments (Stripe Edge Functions, paywall), Bot Army (all 3 legs, mirror generator), Analytics, Page Load Map (all 9 HTML pages), Contracts (Always/Never/Ask Pat First rules), Source Map. Validated by tracing AI Sparring end-to-end in one shot.
+2. **TypeScript Migration Plan written** — 6-phase plan: Phase 0 (build infra) → Phase 1 (config+auth) → Phase 2 (defense) → Phase 3 (arena+social) → Phase 4 (HTML extraction) → Phase 5 (bot army) → Phase 6 (tests+cleanup). ~16 sessions estimated.
+3. **Five-runtime technical debt identified.** Frontend (vanilla JS IIFEs), Backend (PL/pgSQL — correct), Edge Functions (Deno TS — correct), Bot Army (Node CommonJS), Vercel (Node CommonJS). Frontend is the big migration job.
+
+**New files:** `THE-COLOSSEUM-WIRING-MANIFEST.md`, `TYPESCRIPT-MIGRATION-PLAN.md` (both uploaded to GitHub repo)
+
+---
+
+# 26. SESSION 123 — STAKING END-TO-END TEST (5 BUGS FIXED)
+
+**Goal:** Complete staking end-to-end test.
+
+1. **Double settle_stakes call (LM-182).** `endCurrentDebate()` called `ColosseumStaking.settleStakes()` twice — once from Session 109 (no multiplier) and once from Session 110 (with multiplier). Deleted the Session 109 block.
+2. **stake_pools.winner column missing (LM-177).** `settle_stakes` RPC wrote `winner` to `stake_pools` but column didn't exist. Added via ALTER TABLE.
+3. **claim_action_tokens dead table reference.** `ai_sparring` validation case did `UNION ALL SELECT 1 FROM public.debates` — eliminated Session 101. Removed.
+4. **claim_action_tokens log_event signature mismatch (LM-178).** Positional args in wrong order. Fixed to named parameters.
+5. **End-to-end staking test PASSED.** Place stake ✅, AI debate plays through ✅, settlement fires ✅, post-debate shows "-5 TOKENS" on loss ✅, token balance correct after refresh ✅, idempotency guard works ✅.
+
+**Files changed:** `colosseum-arena.js` (GitHub), `settle_stakes`/`claim_action_tokens` RPCs (Supabase), `stake_pools` table (Supabase)
+
+---
+
+# 27. SESSION 124 — 3 RPC BUGS FIXED (CONSOLE CLEAN)
+
+**Goal:** Fix remaining console errors from Session 123.
+
+1. **`get_my_milestones` + `claim_milestone` — column "action" does not exist (LM-179).** Both RPCs referenced nonexistent `action` column on `token_earn_log`. Actual column is `earn_type`. Second bug: `claim_milestone` tried to store text milestone keys in `reference_id` (UUID type). Fixed: milestone key stored in `earn_type` as `'milestone:first_hot_take'` pattern, `reference_id` set to NULL.
+2. **`get_category_counts` 404 (LM-180, LM-181).** Two bugs: (a) returned bare `record` type — PostgREST 404s on untyped record functions. Fixed to `RETURNS TABLE(...)`. (b) Queried legacy `public.debates` table. Fixed to `arena_debates` with correct status values. This was the last `debates` table holdout.
+
+**Console status:** Clean (only expected Stripe sandbox error + favicon 404 remain).
+
+**No files changed on GitHub. SQL-only fixes (3 RPCs patched in Supabase).**
+
+---
+
+# 28. SESSION 125 — TYPESCRIPT MIGRATION PHASE 0 (BUILD INFRASTRUCTURE)
+
+**Goal:** Add TypeScript, Vite, and build step without changing existing code.
+
+1. **6 files created.** `package.json` (typescript, vite, @supabase/supabase-js as devDeps), `tsconfig.json` (strict mode, ES2022, only checks `src/**/*.ts`), `vite.config.ts` (multi-page app config for all 11 HTML pages), `src/types/globals.d.ts` (declares all 16 window globals as typed interfaces), `src/types/database.ts` (placeholder types for key tables + RPC signatures), `.gitignore` updated.
+2. **Verified.** `npm install` (27 packages, 0 vulnerabilities), `tsc --noEmit` passes clean.
+3. **Vercel unchanged.** `vercel.json` still has `buildCommand: null`. App live and unaffected.
+
+**New files:** `package.json`, `tsconfig.json`, `vite.config.ts`, `src/types/globals.d.ts`, `src/types/database.ts`. Updated: `.gitignore`.
+
+---
+
+# 29. SESSION 126 — TYPESCRIPT PHASES 1-2 (FOUNDATION + DEFENSE)
+
+**Goal:** Migrate foundation and defense modules.
+
+1. **Phase 1 — Foundation (2 files).** `src/config.ts` (19 exported type definitions, all constants, escHtml/showToast/friendlyError typed). `src/auth.ts` (30+ functions typed, `safeRpc<T>` generic for compile-time RPC checking, caught dead code: unused `returnTo` variable).
+2. **Phase 2 — Defense (4 files).** `src/tiers.ts` (pure utility, zero dependencies). `src/tokens.ts` (13 milestones typed as union, all claim functions). `src/staking.ts` (imports `safeRpc` directly — LM-185 structurally impossible). `src/powerups.ts` (4 power-ups typed, shop/loadout/activation).
+3. **All 8 files compile clean** with `tsc --noEmit` — strict mode, noUnusedLocals, noUnusedParameters, noUncheckedIndexedAccess.
+
+**New files:** `src/config.ts`, `src/auth.ts`, `src/tiers.ts`, `src/tokens.ts`, `src/staking.ts`, `src/powerups.ts`. Updated: `src/types/globals.d.ts`.
+
+---
+
+# 30. SESSION 127 — TYPESCRIPT PHASE 3 (ALL REMAINING MODULES)
+
+**Goal:** Migrate remaining 12 frontend modules.
+
+1. **12 modules migrated.** `src/scoring.ts`, `src/notifications.ts`, `src/leaderboard.ts`, `src/share.ts`, `src/cards.ts`, `src/analytics.ts`, `src/payments.ts`, `src/paywall.ts`, `src/webrtc.ts`, `src/voicememo.ts`, `src/arena.ts`, `src/async.ts`.
+2. **All 20 TypeScript files compile clean** from fresh clone.
+3. **16 of 16 frontend modules** now have typed TypeScript mirrors in `src/`.
+
+**New files:** 12 `.ts` files in `src/`. Updated: `src/types/globals.d.ts`.
+
+---
+
+# 31. SESSION 128 — TYPESCRIPT PHASE 4 (HTML INLINE SCRIPT EXTRACTION)
+
+**Goal:** Extract inline `<script>` blocks from all 10 HTML pages into typed modules.
+
+1. **10 page modules created.** `src/pages/terms.ts` (37 lines), `src/pages/login.ts` (405 lines), `src/pages/plinko.ts` (337 lines), `src/pages/settings.ts` (430 lines), `src/pages/profile-depth.ts` (656 lines), `src/pages/debate-landing.ts` (377 lines), `src/pages/auto-debate.ts` (378 lines), `src/pages/spectate.ts` (748 lines), `src/pages/groups.ts` (754 lines), `src/pages/home.ts` (630 lines).
+2. **10 HTML files updated** — inline scripts removed, `<script type="module" src="/src/pages/pagename.ts">` tags added.
+3. **7 of 10 fully hand-typed** with proper interfaces. 3 heavy files (spectate, groups, home) mechanically extracted with `any` annotations at boundaries — need full typing pass later.
+
+**New files:** 10 `.ts` files in `src/pages/`. Updated: 10 HTML files, `src/types/globals.d.ts`.
+
+*For all session build logs prior to Session 108, the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map (clone repo first).*

@@ -275,3 +275,187 @@ FIX: Always set both `activated = true` AND `activated_at = now()` together.
   If you add new boolean+timestamp pairs, make sure the RPC updates both.
 SESSION: 109 (introduced), 118 (fixed).
 ```
+
+---
+
+## LM-177: settle_stakes requires stake_pools.winner column
+```
+DECISION (Session 123): settle_stakes RPC writes the winner value to
+  stake_pools.winner for record-keeping. But the column didn't exist.
+BITES YOU WHEN: settle_stakes fires after a debate completes. Without the
+  column, the RPC fails with "column winner does not exist".
+SYMPTOM: Stakes placed successfully, tokens deducted, but settlement fails.
+  Tokens locked in pool forever. Post-debate screen may or may not show
+  staking results depending on error handling.
+FIX: ALTER TABLE stake_pools ADD COLUMN IF NOT EXISTS winner TEXT.
+  Already applied Session 123.
+SESSION: 123 (found and fixed).
+```
+
+---
+
+## LM-178: claim_action_tokens — log_event must use named parameters
+```
+DECISION (Session 123): claim_action_tokens called log_event with positional
+  args: log_event(v_user_id, 'token_earn', json_build_object(...)).
+  Actual log_event signature is (p_event_type text, p_user_id uuid, ...,
+  p_metadata jsonb). Positional args were in wrong order with wrong types.
+BITES YOU WHEN: Any token claim action fires. The log_event call fails,
+  which may or may not cascade depending on whether the RPC wraps it in
+  a BEGIN/EXCEPTION block.
+SYMPTOM: Token claim succeeds but event not logged. Analytics views that
+  read from event_log show no token_earn events.
+FIX: Use named parameters: log_event(p_event_type := 'token_earn',
+  p_user_id := v_user_id, p_metadata := jsonb_build_object(...)).
+  Already applied Session 123.
+SESSION: 123 (found and fixed).
+```
+
+---
+
+## LM-179: token_earn_log column is earn_type not action
+```
+DECISION (Session 124): get_my_milestones and claim_milestone RPCs both
+  referenced a column called `action` on token_earn_log. The actual column
+  is `earn_type`. Second bug: claim_milestone tried to store text milestone
+  keys (like 'first_hot_take') in `reference_id` which is UUID type.
+BITES YOU WHEN: Any page loads (get_my_milestones fires on every page load
+  via colosseum-tokens.js init). Console shows 400 error on every page.
+SYMPTOM: "column action does not exist" 400 error in console on every page
+  load. Milestones never load, milestone toasts never fire.
+FIX: Milestones stored as earn_type = 'milestone:key_name' pattern.
+  reference_id set to NULL for milestones (it's UUID, can't hold text).
+  get_my_milestones reads earn_type LIKE 'milestone:%' and strips prefix.
+PATTERN: When writing RPCs against tables you haven't opened recently,
+  always verify column names with:
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name = 'token_earn_log';
+SESSION: 124 (found and fixed).
+```
+
+---
+
+## LM-180: PostgREST 404s on untyped record returns
+```
+DECISION (Session 124): get_category_counts RPC returned bare `record` type.
+  PostgREST will not expose functions that return untyped `record` — it
+  returns 404 even though the function exists with correct permissions.
+BITES YOU WHEN: Any RPC uses `RETURNS record` or `RETURNS SETOF record`.
+  The function compiles fine in SQL Editor but PostgREST never serves it.
+SYMPTOM: RPC call returns 404. Function exists in pg_proc. Permissions are
+  correct. But PostgREST acts like the function doesn't exist.
+FIX: Use RETURNS TABLE(col1 TYPE, col2 TYPE, ...) instead of RETURNS record.
+  Note: changing return type requires DROP FUNCTION first — can't use
+  CREATE OR REPLACE to change a function's return type.
+RULE: Never use bare `record` return type for RPCs that PostgREST exposes.
+  Always use RETURNS TABLE(...) or RETURNS a named composite type.
+SESSION: 124 (found and fixed).
+```
+
+---
+
+## LM-181: get_category_counts was last debates table holdout
+```
+DECISION (Session 101): Legacy `debates` table eliminated, all code migrated
+  to `arena_debates`. But get_category_counts still queried `public.debates`
+  with old status values (live, waiting, matched).
+BITES YOU WHEN: get_category_counts is called (home page carousel counts).
+  If debates table still exists, returns stale/wrong counts. If debates
+  table was dropped, returns error.
+SYMPTOM: Category counts show 0 or wrong numbers. Combined with LM-180
+  (record return type), the function was double-broken — 404 before the
+  query even ran.
+FIX: Rewritten to query arena_debates with correct status values (live,
+  pending, lobby, matched). Legacy table elimination now truly complete.
+SESSION: 101 (thought it was done), 124 (last holdout found and fixed).
+```
+
+---
+
+## LM-182: Double settle_stakes call in endCurrentDebate
+```
+DECISION (Session 123): endCurrentDebate() in colosseum-arena.js called
+  ColosseumStaking.settleStakes() twice — once from Session 109 (no
+  multiplier param) and once from Session 110 (with power-up multiplier).
+  Session 110 added the multiplier-aware version but didn't remove the
+  Session 109 version.
+BITES YOU WHEN: A debate ends with a stake placed. Settlement fires twice.
+  Second call may double-pay winners or error depending on idempotency.
+SYMPTOM: settle_stakes returns success twice. If no idempotency guard,
+  winners get double payout. The idempotency guard (checks pool.status =
+  'settled') catches this — second call returns "already settled" — but
+  it's still a wasted RPC call and potential race condition.
+FIX: Delete the Session 109 settle_stakes call. Keep only the Session 110
+  version with multiplier support.
+RULE: When adding a replacement function call, always search for and remove
+  the original. Use Ctrl+F for the function name across the whole file.
+SESSION: 109 (original), 110 (added duplicate), 123 (found and fixed).
+```
+
+---
+
+## LM-183: Arena popstate — replaceState for forward, arrow wrapping required
+```
+DECISION (Session 121): Rewrote arena navigation to eliminate _skipNextPop
+  boolean which caused race conditions with dual overlays.
+  New pattern: Forward navigation uses history.replaceState (no history
+  entry created). Back/cancel uses history.back().
+  closeRankedPicker(forward) and closeModeSelect(forward) both take a
+  boolean param — forward=true means replaceState, forward=falsy means
+  history.back().
+BITES YOU WHEN: Event listener callbacks are NOT wrapped in arrow functions.
+  Example: btn.addEventListener('click', closeModeSelect) — the click
+  Event object passes as the forward parameter, which is truthy, so it
+  calls replaceState instead of history.back(). User presses CANCEL but
+  doesn't go back.
+SYMPTOM: Cancel/back buttons don't navigate back. The overlay closes but
+  the URL doesn't change. Pressing browser back goes to a stale state.
+FIX: Always wrap: () => closeModeSelect() not closeModeSelect.
+  This applies to any function with a boolean parameter used as a
+  click handler.
+SESSION: 121 (introduced and documented).
+```
+
+---
+
+## LM-184: AI debates must be created as 'pending' not 'live'
+```
+DECISION (Session 121): create_ai_debate RPC was inserting debates with
+  status = 'live'. Changed to status = 'pending'. The flip to 'live'
+  happens in enterRoom() which calls update_arena_debate({p_status:'live'}).
+BITES YOU WHEN: Someone reverts create_ai_debate to insert as 'live'.
+  place_stake requires status IN ('pending','lobby','matched'). If the
+  debate is already 'live' at creation, the staking window doesn't exist.
+  Users can never stake on AI debates.
+ALSO BITES YOU WHEN: enterRoom() fails or is bypassed. The debate stays
+  'pending' forever. Staking settlement looks for 'completed' status —
+  'pending' debates never settle, tokens locked in pool forever.
+SYMPTOM: "Cannot stake on this debate" error for AI sparring. Or: debate
+  shows as pending indefinitely in the database.
+FIX: AI debates must always be created as 'pending'. enterRoom() flips
+  to 'live'. endCurrentDebate() flips to 'complete'. The full status flow
+  is: pending → live → complete.
+SESSION: 121 (found and fixed).
+```
+
+---
+
+## LM-185: IIFE modules must use ColosseumAuth.safeRpc not bare safeRpc
+```
+DECISION (Session 121): colosseum-staking.js and colosseum-powerups.js are
+  IIFEs (Immediately Invoked Function Expressions) that don't expose window
+  globals. They call safeRpc() but safeRpc doesn't exist at window scope —
+  it's a method on ColosseumAuth.
+BITES YOU WHEN: An IIFE module calls bare safeRpc('rpc_name', params).
+  This throws "safeRpc is not defined" at runtime when the function is
+  invoked.
+SYMPTOM: "safeRpc is not defined" error in console when staking or
+  power-up functions fire. Feature silently fails.
+FIX: Always use ColosseumAuth.safeRpc('rpc_name', params) in IIFE
+  modules. The TypeScript migration (Phase 2) eliminates this class of
+  bug permanently — import { safeRpc } from './auth' makes the
+  dependency explicit and compile-time checked.
+NOTE: This is structurally impossible after TypeScript migration Phase 2
+  (Session 126). Only applies to the original .js files.
+SESSION: 121 (documented). TypeScript fix: Session 126.
+```

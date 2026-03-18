@@ -1,5 +1,5 @@
 # THE COLOSSEUM — WIRING MANIFEST
-### Last Updated: Session 122 (Initial Draft)
+### Last Updated: Session 129 (March 17, 2026)
 
 > **What this is:** A plain-text architecture model inspired by Scryer's C4 hierarchy.
 > Maps every touchpoint so Claude can answer: "If I change X, what breaks?"
@@ -1539,6 +1539,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 122 | Growth layer | Bot army leg-by-leg (Leg 1 reactive, Leg 2 proactive, Leg 3 rage engine), all VPS files mapped, mirror generator, analytics (log_event, 9 views, daily_snapshots, funnel tracking), landing page votes, category classifier |
 | 122 | Page load map | All 9 HTML pages: script loading order, init sequence, auth gate status, key dependencies. Head trio pattern documented. |
 | 122 | Final gaps filled | Moderator system (4 RPCs, ruling panel, auto-allow timer, scoring), WebRTC/voice memo, auto-debate staking (4 RPCs), achievements/milestones (13 milestones, streak freeze, 2 RPCs), cosmetics shop (45 items, 2 RPCs, 2 tables). ALL SECTIONS COMPLETE. |
+| 125-128 | No wiring changes | TypeScript migration Phases 0-4. All `.ts` mirrors created for 16 modules + 10 page modules. Original `.js` untouched. No new RPCs, tables, or flows. Wiring unchanged — file paths will update when Vite build is enabled. |
 
 ---
 

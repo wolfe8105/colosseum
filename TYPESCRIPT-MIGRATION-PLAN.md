@@ -1,5 +1,5 @@
 # THE COLOSSEUM — TYPESCRIPT MIGRATION PLAN
-### Created: Session 122 (March 16, 2026)
+### Created: Session 122 (March 16, 2026) | Updated: Session 129 (March 17, 2026)
 
 > **What this is:** A phased plan to migrate from vanilla JS + IIFEs to TypeScript
 > with proper imports. Gradual — nothing breaks. App stays live throughout.
@@ -232,18 +232,20 @@ is secondary. Edge Functions and PL/pgSQL are already fine.
 
 # TIMELINE ESTIMATE
 
-| Phase | Sessions | What |
-|-------|----------|------|
-| 0 | 1 | Build infrastructure (no code changes) |
-| 1 | 2 | Config + Auth (foundation) |
-| 2 | 2 | Tokens + Tiers + Staking + Power-ups (defense) |
-| 3 | 4 | Arena + all social/utility modules |
-| 4 | 3 | HTML page inline script extraction |
-| 5 | 2 | Bot army |
-| 6 | 2 | Tests + cleanup |
-| **Total** | **~16 sessions** | |
+| Phase | Sessions | What | Status |
+|-------|----------|------|--------|
+| 0 | 1 | Build infrastructure (no code changes) | ✅ Session 125 |
+| 1 | 2 | Config + Auth (foundation) | ✅ Session 126 |
+| 2 | 2 | Tokens + Tiers + Staking + Power-ups (defense) | ✅ Session 126 |
+| 3 | 4 | Arena + all social/utility modules | ✅ Session 127 |
+| 4 | 3 | HTML page inline script extraction | ✅ Session 128 |
+| 5 | 2 | Bot army | ⏳ Future |
+| 6 | 2 | Tests + cleanup | ⏳ Future |
+| **Total** | **~16 sessions** | | **Phases 0-4 COMPLETE** |
 
-At ~1 hour per session, that's roughly 3-4 weeks of evening work. Feature development can continue during the migration — just build new features in TypeScript from the start.
+Phases 0-4 completed in 4 sessions (125-128) vs estimated 12. Remaining: Phase 5 (bot army) and Phase 6 (tests + cleanup).
+
+Note: 3 heavy page modules (spectate.ts, groups.ts, home.ts) were mechanically extracted with `any` annotations. They compile but need a full typing pass for real type safety.
 
 ---
 
