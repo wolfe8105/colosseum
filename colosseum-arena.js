@@ -2587,6 +2587,7 @@ window.ColosseumArena = (() => {
     init,
     renderLobby,
     showModeSelect,
+    showPowerUpShop,
     enterQueue,
     get view() { return view; },
     get currentDebate() { return currentDebate ? { ...currentDebate } : null; },
