@@ -2,9 +2,12 @@
 // COLOSSEUM PAYMENTS — Stripe Checkout Client (Item 6.2.2.1)
 // Token purchases, subscription upgrades, placeholder modals.
 // Placeholder mode when Stripe key missing.
+// SESSION 134: Issue 51 — defensive escaping on placeholder modal innerHTML.
 // ============================================================
 
 window.ColosseumPayments = (() => {
+
+  const _esc = (s) => ColosseumConfig?.escapeHTML ? ColosseumConfig.escapeHTML(s) : String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   let stripe = null;
   let isPlaceholderMode = true;
@@ -152,8 +155,8 @@ window.ColosseumPayments = (() => {
     `;
     modal.innerHTML = `
       <div style="background:#132240;border:1px solid rgba(212,168,67,0.3);border-radius:12px;max-width:360px;width:100%;padding:24px;text-align:center;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#d4a843;margin-bottom:8px;">${title}</div>
-        <div style="color:#a0a8b8;font-size:14px;line-height:1.5;margin-bottom:20px;">${body}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#d4a843;margin-bottom:8px;">${_esc(title)}</div>
+        <div style="color:#a0a8b8;font-size:14px;line-height:1.5;margin-bottom:20px;">${_esc(body)}</div>
         <div style="background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);border-radius:8px;padding:12px;margin-bottom:20px;">
           <div style="color:#cc2936;font-size:12px;font-weight:700;">⚠️ PLACEHOLDER MODE</div>
           <div style="color:#a0a8b8;font-size:11px;margin-top:4px;">Paste your Stripe keys into colosseum-config.js</div>

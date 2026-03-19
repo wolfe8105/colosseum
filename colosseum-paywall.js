@@ -3,9 +3,12 @@
 // 4 variants: general, shop, social, leaderboard
 // gate() helper, dismissible, non-aggressive.
 // Items: 14.2.6.1-14.2.6.4
+// SESSION 134: Issue 52 — defensive escaping on paywall modal innerHTML.
 // ============================================================
 
 window.ColosseumPaywall = (() => {
+
+  const _esc = (s) => ColosseumConfig?.escapeHTML ? ColosseumConfig.escapeHTML(s) : String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const VARIANTS = {
     general: {
@@ -88,9 +91,9 @@ window.ColosseumPaywall = (() => {
       ">
         <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
         <div style="text-align:center;margin-bottom:20px;">
-          <div style="font-size:40px;margin-bottom:8px;">${v.icon}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${v.title}</div>
-          <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${v.subtitle}</div>
+          <div style="font-size:40px;margin-bottom:8px;">${_esc(v.icon)}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${_esc(v.title)}</div>
+          <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${_esc(v.subtitle)}</div>
         </div>
         
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
@@ -112,7 +115,7 @@ window.ColosseumPaywall = (() => {
           width:100%;padding:14px;background:#cc2936;color:#fff;border:none;border-radius:10px;
           font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;
           margin-bottom:8px;
-        ">${v.cta}</button>
+        ">${_esc(v.cta)}</button>
         
         <button onclick="document.getElementById('paywall-modal')?.remove();" style="
           width:100%;padding:12px;background:none;color:#a0a8b8;border:none;

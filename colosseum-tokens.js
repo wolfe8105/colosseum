@@ -6,10 +6,13 @@
 //
 // DEPENDENCIES: colosseum-config.js, colosseum-auth.js
 // LOAD ORDER: After colosseum-auth.js
+// SESSION 134: Issue 63 — defensive escaping on milestone toast innerHTML.
 // ============================================================
 
 window.ColosseumTokens = (function () {
   'use strict';
+
+  const _esc = (s) => ColosseumConfig?.escapeHTML ? ColosseumConfig.escapeHTML(s) : String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   let lastKnownBalance = null;
   let milestoneClaimed = new Set();
@@ -134,10 +137,10 @@ window.ColosseumTokens = (function () {
     if (tokens > 0 && freezes > 0) rewardText = `+${Number(tokens)} 🪙 + ${Number(freezes)} ❄️`;
 
     el.innerHTML = `
-      <span class="mt-icon">${icon || '🏆'}</span>
+      <span class="mt-icon">${_esc(icon || '🏆')}</span>
       <span class="mt-label">MILESTONE UNLOCKED</span>
-      <div style="font-size:16px;margin-top:2px;color:#f0f0f0;">${label}</div>
-      <div class="mt-reward">${rewardText}</div>
+      <div style="font-size:16px;margin-top:2px;color:#f0f0f0;">${_esc(label)}</div>
+      <div class="mt-reward">${_esc(rewardText)}</div>
     `;
     document.body.appendChild(el);
     if (tokens > 0) _coinFlyUp();
