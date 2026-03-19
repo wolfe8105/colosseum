@@ -22,6 +22,9 @@
 //   BUG 4: Follow/Rival buttons now gate on requireAuth()
 //   BUG 5: Rival button shows friendly error, not raw server message
 //   BUG 6: Profile modal initial char now escaped
+// SESSION 134: Issue 9 fix — requireAuth() now rejects placeholder mode.
+//   Was: `if (currentUser) return true` which passed because placeholder
+//   sets currentUser to a fake object. Now: `if (currentUser && !isPlaceholderMode)`.
 // ============================================================
 
 window.ColosseumAuth = (() => {
@@ -803,7 +806,7 @@ window.ColosseumAuth = (() => {
   // Without this, any caller passing user-controlled input (e.g. topic name from
   // URL params) could inject arbitrary HTML/JS via the template literal.
   function requireAuth(actionLabel) {
-    if (currentUser) return true;
+    if (currentUser && !isPlaceholderMode) return true;
 
     // Remove any existing gate modal
     document.getElementById('auth-gate-modal')?.remove();
