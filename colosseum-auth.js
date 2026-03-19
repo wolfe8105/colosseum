@@ -671,6 +671,8 @@ window.ColosseumAuth = (() => {
 
   async function submitReference(debateId, url, description, supportsSide) {
     if (isPlaceholderMode) return { success: true, reference_id: 'placeholder-ref-' + Date.now() };
+    // SESSION 134: Validate URL protocol to prevent stored XSS via javascript:/data: URLs
+    if (url && !/^https?:\/\//i.test(url)) return { error: 'Invalid URL — must start with http:// or https://' };
     try {
       const { data, error } = await safeRpc('submit_reference', {
         p_debate_id: debateId,
