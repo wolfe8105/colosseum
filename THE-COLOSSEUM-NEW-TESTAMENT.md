@@ -323,7 +323,7 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 
 ---
 
-# SESSION BUILD LOGS (Sessions 108-128)
+# SESSION BUILD LOGS (Sessions 108-132)
 
 > Sessions 92-107 moved to Old Testament during Session 117 consolidation.
 
@@ -595,5 +595,32 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 3. **7 of 10 fully hand-typed** with proper interfaces. 3 heavy files (spectate, groups, home) mechanically extracted with `any` annotations at boundaries — need full typing pass later.
 
 **New files:** 10 `.ts` files in `src/pages/`. Updated: 10 HTML files, `src/types/globals.d.ts`.
+
+---
+
+# 32. SESSION 131 — TYPESCRIPT PHASE 6 STEP 1 (VITEST + 96 TESTS)
+
+**Goal:** Add Vitest test runner and write tests for critical bot army modules.
+
+1. **Vitest installed.** `vitest.config.ts` (new), `package.json` updated with `vitest` + `dotenv` devDeps, `"test": "vitest run"` and `"test:watch": "vitest"` scripts.
+2. **3 test files written.** `tests/category-classifier.test.ts` (35 tests — all 7 categories, feedLabel override, edge cases). `tests/content-filter.test.ts` (32 tests — blocked terms, dangerous patterns, filterDebate rounds, invalid input). `tests/bot-config.test.ts` (29 tests — validateConfig with all flag combos, warnings, config structure).
+3. **96/96 passing** on VPS at `/opt/colosseum`.
+4. **2 production bugs found by tests (not fixed).** (a) Category classifier: keywords >4 chars use `includes()` with no word boundary — "computing" matches "putin" → false positive. (b) Content filter: regex alternation `(?:is|=|like|worse than)` greedily matches bare "is" first — "Trump is like Hitler" passes the filter.
+
+**New files:** `vitest.config.ts`, `tests/category-classifier.test.ts`, `tests/content-filter.test.ts`, `tests/bot-config.test.ts`. Updated: `package.json`.
+
+---
+
+# 33. SESSION 132 — BUG FIXES + PHASE 6 REASSESSMENT
+
+**Goal:** Fix 2 production bugs found by tests. Reassess Phase 6 steps 2-4.
+
+1. **Bug 1 fixed: category classifier substring match.** `lib/category-classifier.ts` — `buildMatchers()` now applies `\b` word-boundary regex to ALL keywords, not just ≤4 chars. Eliminated the `Matcher` union type and `includes()` code path. "computing" no longer matches "putin". "trumpet" no longer matches "trump".
+2. **Bug 2 fixed: content filter regex ordering.** `lib/content-filter.ts` — regex alternation reordered to `(?:is\s+worse\s+than|is\s+like|is|=|like|worse than)` so longer `is`-prefixed patterns match before bare `is`. "Trump is like Hitler" and "Trump is worse than Hitler" now correctly blocked.
+3. **Tests updated.** Added 1 new test (substring false positives — "computing", "trumpet"). Flipped KNOWN GAP test to verify fix + added 2 assertions (Biden/Stalin, plain "is"). **97/97 passing** on VPS.
+4. **VPS live bots updated.** Fixed `.js` copies deployed to `/opt/colosseum/bot-army/colosseum-bot-army/lib/`. PM2 restarted, running clean.
+5. **Phase 6 steps 2-4 reassessed.** Plan said "remove window.GlobalName bridges" as cleanup. Reality: 36 `window.Colosseum*` references remain across 6 page modules (`src/pages/*.ts`). These are consumers, not bridges. Removing them requires converting all page modules to proper imports, removing all 16 IIFE `<script>` tags from every HTML page, and verifying Vite module init replaces IIFE load-time behavior. This is a real cutover (effectively Phase 7), not a cleanup step. `src/types/globals.d.ts` cannot be deleted until the cutover is complete.
+
+**Updated files:** `lib/category-classifier.ts`, `lib/content-filter.ts`, `tests/category-classifier.test.ts`, `tests/content-filter.test.ts`. **VPS files:** `category-classifier.js`, `content-filter.js` in bot-army lib. **Zero SQL. Zero frontend behavior changes. Zero RPC changes.**
 
 *For all session build logs prior to Session 108, the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map (clone repo first).*

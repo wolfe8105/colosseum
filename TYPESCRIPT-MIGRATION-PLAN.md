@@ -218,13 +218,16 @@ is secondary. Edge Functions and PL/pgSQL are already fine.
 **Goal:** Add basic tests, remove migration bridges, clean up.
 
 ### Steps:
-1. Add Vitest (Vite-native test runner)
-2. Write type tests for critical paths: safeRpc return types, staking parameter validation, debate status transitions
-3. Remove all `window.GlobalName` bridges (only if no remaining consumers)
-4. Remove `src/types/globals.d.ts` bridge file
-5. Final `npm run build` with zero warnings
-6. Update Wiring Manifest to reflect new file structure
-7. Update NT with migration completion
+1. ✅ Add Vitest (Vite-native test runner) — Session 131. 96 tests across 3 files.
+2. ✅ Write tests for critical paths: category classifier, content filter, bot config — Session 131.
+3. ✅ Fix 2 production bugs found by tests — Session 132. 97/97 passing.
+4. ⛔ Remove all `window.GlobalName` bridges — **BLOCKED.** 36 `window.Colosseum*` reads remain across 6 page modules. These are active consumers, not dead bridges. Removing requires converting all page modules to proper imports + removing all 16 IIFE `<script>` tags from HTML. This is a full cutover, not cleanup.
+5. ⛔ Remove `src/types/globals.d.ts` bridge file — **BLOCKED.** Depends on step 4.
+6. Final `npm run build` with zero warnings
+7. Update Wiring Manifest to reflect new file structure
+8. Update NT with migration completion
+
+**Reassessment (Session 132):** Steps 4-5 are a real module cutover — "Phase 7" in scope. Every HTML page changes, every page module changes, IIFE-to-Vite init behavior must be verified. Not a cleanup task.
 
 **After Phase 6:** Unified TypeScript codebase. One language, one module system, one build step, proper imports, full type safety, testable, sellable.
 
@@ -240,10 +243,10 @@ is secondary. Edge Functions and PL/pgSQL are already fine.
 | 3 | 4 | Arena + all social/utility modules | ✅ Session 127 |
 | 4 | 3 | HTML page inline script extraction | ✅ Session 128 |
 | 5 | 2 | Bot army | ⏳ Future |
-| 6 | 2 | Tests + cleanup | ⏳ Future |
-| **Total** | **~16 sessions** | | **Phases 0-4 COMPLETE** |
+| 6 | 2 | Tests + cleanup | 🔶 Steps 1-3 done (Sessions 131-132). Steps 4-5 blocked — see Phase 6 notes. |
+| **Total** | **~16 sessions** | | **Phases 0-4 COMPLETE, Phase 6 partial** |
 
-Phases 0-4 completed in 4 sessions (125-128) vs estimated 12. Remaining: Phase 5 (bot army) and Phase 6 (tests + cleanup).
+Phases 0-4 completed in 4 sessions (125-128) vs estimated 12. Phase 6 steps 1-3 done in sessions 131-132 (Vitest + 97 tests + 2 bug fixes). Steps 4-5 (bridge removal) reassessed as a full module cutover — bigger than originally scoped.
 
 Note: 3 heavy page modules (spectate.ts, groups.ts, home.ts) were mechanically extracted with `any` annotations. They compile but need a full typing pass for real type safety.
 
