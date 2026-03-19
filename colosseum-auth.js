@@ -25,6 +25,9 @@
 // SESSION 134: Issue 9 fix — requireAuth() now rejects placeholder mode.
 //   Was: `if (currentUser) return true` which passed because placeholder
 //   sets currentUser to a fake object. Now: `if (currentUser && !isPlaceholderMode)`.
+//   Issues 6+7+21: Added isUUID() validation to 9 functions that were missing it:
+//   getFollowers, getFollowing, getFollowCounts, respondRival, submitReference,
+//   ruleOnReference, scoreModerator, assignModerator, getDebateReferences.
 // ============================================================
 
 window.ColosseumAuth = (() => {
@@ -406,6 +409,7 @@ window.ColosseumAuth = (() => {
 
   // --- Follow reads (SELECT — .from() is fine, RLS allows reads) ---
   async function getFollowers(userId) {
+    if (!isUUID(userId)) return { success: false, error: 'Invalid user ID', data: [], count: 0 };
     if (isPlaceholderMode) return { success: true, data: [], count: 0 };
     try {
       const { data, count, error } = await supabase
@@ -420,6 +424,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function getFollowing(userId) {
+    if (!isUUID(userId)) return { success: false, error: 'Invalid user ID', data: [], count: 0 };
     if (isPlaceholderMode) return { success: true, data: [], count: 0 };
     try {
       const { data, count, error } = await supabase
@@ -436,6 +441,7 @@ window.ColosseumAuth = (() => {
   // --- SESSION 23: Follow Counts (via RPC) ---
   // SESSION 64 BUG 3 FIX: supabase.rpc() → safeRpc() for 401 recovery.
   async function getFollowCounts(userId) {
+    if (!isUUID(userId)) return { followers: 0, following: 0 };
     if (isPlaceholderMode) return { followers: 0, following: 0 };
     try {
       const { data, error } = await safeRpc('get_follow_counts', { p_user_id: userId });
@@ -488,6 +494,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function respondRival(rivalId, accept) {
+    if (!isUUID(rivalId)) return { success: false, error: 'Invalid rival ID' };
     if (isPlaceholderMode) return { success: true };
     try {
       const { data, error } = await safeRpc('respond_rival', {
@@ -673,6 +680,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function submitReference(debateId, url, description, supportsSide) {
+    if (!isUUID(debateId)) return { error: 'Invalid debate ID' };
     if (isPlaceholderMode) return { success: true, reference_id: 'placeholder-ref-' + Date.now() };
     // SESSION 134: Validate URL protocol to prevent stored XSS via javascript:/data: URLs
     if (url && !/^https?:\/\//i.test(url)) return { error: 'Invalid URL — must start with http:// or https://' };
@@ -690,6 +698,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function ruleOnReference(referenceId, ruling, reason, ruledByType) {
+    if (!isUUID(referenceId)) return { error: 'Invalid reference ID' };
     if (isPlaceholderMode) return { success: true };
     try {
       const { data, error } = await safeRpc('rule_on_reference', {
@@ -706,6 +715,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function scoreModerator(debateId, score) {
+    if (!isUUID(debateId)) return { error: 'Invalid debate ID' };
     if (isPlaceholderMode) return { success: true };
     try {
       const { data, error } = await safeRpc('score_moderator', {
@@ -720,6 +730,8 @@ window.ColosseumAuth = (() => {
   }
 
   async function assignModerator(debateId, moderatorId, moderatorType) {
+    if (!isUUID(debateId)) return { error: 'Invalid debate ID' };
+    if (moderatorId && !isUUID(moderatorId)) return { error: 'Invalid moderator ID' };
     if (isPlaceholderMode) return { success: true, moderator_type: moderatorType || 'ai' };
     try {
       const { data, error } = await safeRpc('assign_moderator', {
@@ -752,6 +764,7 @@ window.ColosseumAuth = (() => {
   }
 
   async function getDebateReferences(debateId) {
+    if (!isUUID(debateId)) return [];
     if (isPlaceholderMode) return [];
     try {
       const { data, error } = await safeRpc('get_debate_references', {
