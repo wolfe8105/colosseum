@@ -28,6 +28,7 @@
 //   Issues 6+7+21: Added isUUID() validation to 9 functions that were missing it:
 //   getFollowers, getFollowing, getFollowCounts, respondRival, submitReference,
 //   ruleOnReference, scoreModerator, assignModerator, getDebateReferences.
+//   Issue 11: Removed _notify from public API — internal-only, was enabling auth state spoofing.
 // ============================================================
 
 window.ColosseumAuth = (() => {
@@ -900,7 +901,6 @@ window.ColosseumAuth = (() => {
     safeRpc,                // SESSION 47
     requireAuth,            // SESSION 50
     onChange,
-    _notify,
   };
 
 })();
