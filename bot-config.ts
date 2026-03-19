@@ -62,6 +62,7 @@ export interface BlueskyConfig {
 
 export interface AppConfig {
   baseUrl: string;
+  mirrorUrl: string;
   debateLandingPath: null;
   autoDebatePath: string;
 }
@@ -218,6 +219,7 @@ export const config: BotConfig = {
   // --- App ---
   app: {
     baseUrl: process.env.APP_BASE_URL || 'https://colosseum-six.vercel.app',
+    mirrorUrl: process.env.MIRROR_URL || 'https://colosseum-f30.pages.dev',
     debateLandingPath: null,
     autoDebatePath: process.env.AUTO_DEBATE_PATH || '/colosseum-auto-debate.html',
   },

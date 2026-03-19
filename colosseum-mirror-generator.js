@@ -221,6 +221,9 @@ function pageFooter() {
   <a href="https://colosseum-six.vercel.app/colosseum-terms.html">Terms</a> &middot;
   <a href="https://colosseum-six.vercel.app/colosseum-privacy.html">Privacy</a>
 </div>
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d25d3c99c0c9466c98592936404df595"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </body>
 </html>`;
 }

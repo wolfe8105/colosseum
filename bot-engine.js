@@ -1,32 +1,34 @@
 // ============================================================
-// THE COLOSSEUM — BOT ENGINE (TypeScript)
+// THE COLOSSEUM — BOT ENGINE
 // Main orchestrator. Runs on cron schedules.
 // Ties Leg 1 (Reactive) + Leg 2 (Proactive) + Leg 3 (Auto-Debate) together.
 // Start with: pm2 start ecosystem.config.js
-// Migrated to TypeScript: Session 131.
+// Updated Session 20: Leg 3 auto-debate pipeline added.
+// Updated Session 59: Lemmy un-nested from Bluesky conditionals + formatFlags Lemmy entries.
 // ============================================================
-import cron from 'node-cron';
-import Snoowrap from 'snoowrap';
-import { config, validateConfig } from './bot-config';
-import logger from './lib/logger';
+const cron = require('node-cron');
+const { config, validateConfig } = require('./bot-config');
+const logger = require('./lib/logger');
 
 // Leg 1 modules
-import * as leg1Reddit from './lib/leg1-reddit';
-import * as leg1Twitter from './lib/leg1-twitter';
-import * as leg1Discord from './lib/leg1-discord';
-import * as leg1Bluesky from './lib/leg1-bluesky';
+const leg1Reddit = require('./lib/leg1-reddit');
+const leg1Twitter = require('./lib/leg1-twitter');
+const leg1Discord = require('./lib/leg1-discord');
+const leg1Bluesky = require('./lib/leg1-bluesky');
 
 // Leg 2 modules
-import * as leg2NewsScanner from './lib/leg2-news-scanner';
-import * as leg2DebateCreator from './lib/leg2-debate-creator';
-import * as leg2TwitterPoster from './lib/leg2-twitter-poster';
-import * as leg2BlueskyPoster from './lib/leg2-bluesky-poster';
+const leg2NewsScanner = require('./lib/leg2-news-scanner');
+const leg2DebateCreator = require('./lib/leg2-debate-creator');
+const leg2TwitterPoster = require('./lib/leg2-twitter-poster');
+const leg2BlueskyPoster = require('./lib/leg2-bluesky-poster');
+//const leg2LemmyPoster = require('./leg2-lemmy-poster');
+//const leg3LemmyPoster = require('./leg3-lemmy-poster');
 
-// Leg 3 modules
-import * as leg3AutoDebate from './lib/leg3-auto-debate';
+// Leg 3 modules (Session 20)
+const leg3AutoDebate = require('./lib/leg3-auto-debate');
 
 // Stats
-import { getBotStats, logBotAction } from './lib/supabase-client';
+const { getBotStats } = require('./lib/supabase-client');
 
 // Track daily auto-debate count
 let autoDebatesToday = 0;
@@ -36,7 +38,7 @@ let lastAutoDebateReset = new Date().toDateString();
 // STARTUP
 // ============================================================
 
-async function boot(): Promise<void> {
+async function boot() {
   console.log(`
   ╔══════════════════════════════════════════╗
   ║   🏛️  THE COLOSSEUM — BOT ARMY v2.0     ║
@@ -45,6 +47,7 @@ async function boot(): Promise<void> {
   ╚══════════════════════════════════════════╝
   `);
 
+  // Validate config
   const { errors, warnings } = validateConfig();
 
   for (const w of warnings) {
@@ -63,15 +66,20 @@ async function boot(): Promise<void> {
   logger.info(`Mode: ${config.dryRun ? '🧪 DRY RUN (no real posts)' : '🔴 LIVE'}`);
   logger.info(`Features: ${formatFlags()}`);
 
+  // Start persistent connections
   await startPersistentBots();
+
+  // Schedule cron jobs
   scheduleCronJobs();
+
+  // Log stats every 6 hours
   scheduleStatsReport();
 
   logger.info('🚀 Bot army is operational');
 }
 
-function formatFlags(): string {
-  const flags: string[] = [];
+function formatFlags() {
+  const flags = [];
   if (config.flags.leg1Reddit) flags.push('L1-Reddit');
   if (config.flags.leg1Twitter) flags.push('L1-Twitter');
   if (config.flags.leg1Discord) flags.push('L1-Discord');
@@ -84,6 +92,8 @@ function formatFlags(): string {
   if (config.flags.leg1Bluesky) flags.push('L1-Bluesky');
   if (config.flags.leg2Bluesky) flags.push('L2-Bluesky');
   if (config.flags.leg3BlueskyPost) flags.push('L3-Bluesky');
+  if (config.flags.leg2Lemmy) flags.push('L2-Lemmy');
+  if (config.flags.leg3LemmyPost) flags.push('L3-Lemmy');
   return flags.join(', ') || 'NONE (all disabled)';
 }
 
@@ -91,12 +101,12 @@ function formatFlags(): string {
 // PERSISTENT BOTS
 // ============================================================
 
-async function startPersistentBots(): Promise<void> {
+async function startPersistentBots() {
   if (config.flags.leg1Discord) {
     try {
       await leg1Discord.start();
     } catch (err) {
-      logger.error(`Discord bot failed to start: ${(err as Error).message}`);
+      logger.error(`Discord bot failed to start: ${err.message}`);
     }
   }
 }
@@ -105,52 +115,79 @@ async function startPersistentBots(): Promise<void> {
 // CRON SCHEDULES
 // ============================================================
 
-function jitteredRun(fn: () => Promise<void>, label: string): void {
+function jitteredRun(fn, label) {
   const jitter = Math.floor(Math.random() * 8 * 60 * 1000);
   setTimeout(async () => {
     try { await fn(); }
-    catch (err) { logger.error(label + ' failed: ' + (err as Error).message); }
+    catch (err) { logger.error(label + ' failed: ' + err.message); }
   }, jitter);
 }
 
-function scheduleCronJobs(): void {
+function scheduleCronJobs() {
+  // ----------------------------------------
   // LEG 1: REACTIVE
+  // ----------------------------------------
 
   if (config.flags.leg1Reddit) {
     cron.schedule('*/20 * * * *', () => jitteredRun(async () => {
-      await leg1Reddit.scanAndReply();
+      try {
+        await leg1Reddit.scanAndReply();
+      } catch (err) {
+        logger.error(`Leg 1 Reddit cron failed: ${err.message}`);
+      }
     }, 'L1-Reddit'));
-    logger.info('📅 Scheduled: Leg 1 Reddit — every 20 min');
   }
 
+  // Bluesky Leg 1 — every 30 min (conservative)
   if (config.flags.leg1Bluesky) {
     cron.schedule('*/30 * * * *', () => jitteredRun(async () => {
-      await leg1Bluesky.scanAndReply();
+      try {
+        await leg1Bluesky.scanAndReply();
+      } catch (err) {
+        logger.error(`Leg 1 Bluesky cron failed: ${err.message}`);
+      }
     }, 'L1-Bluesky'));
-    logger.info('📅 Scheduled: Leg 1 Bluesky — every 30 min');
+    logger.info('📅 Scheduled: Leg 1 Reddit — every 20 min');
   }
 
   if (config.flags.leg1Twitter) {
     cron.schedule('*/30 * * * *', () => jitteredRun(async () => {
-      await leg1Twitter.scanAndReply();
+      try {
+        await leg1Twitter.scanAndReply();
+      } catch (err) {
+        logger.error(`Leg 1 Twitter cron failed: ${err.message}`);
+      }
     }, 'L1-Twitter'));
     logger.info('📅 Scheduled: Leg 1 Twitter — every 30 min');
   }
 
-  // LEG 2: PROACTIVE
+  // ----------------------------------------
+  // LEG 2: PROACTIVE — hot takes + brand posts
+  // ----------------------------------------
 
   if (config.flags.leg2News) {
     cron.schedule('*/15 * * * *', () => jitteredRun(async () => {
-      await runLeg2Pipeline();
+      try {
+        await runLeg2Pipeline();
+      } catch (err) {
+        logger.error(`Leg 2 pipeline cron failed: ${err.message}`);
+      }
     }, 'L2-News'));
     logger.info('📅 Scheduled: Leg 2 Pipeline — every 15 min');
   }
 
-  // LEG 3: AUTO-DEBATE
+  // ----------------------------------------
+  // LEG 3: AUTO-DEBATE — rage-click engine (Session 20)
+  // ----------------------------------------
 
   if (config.flags.leg3AutoDebate) {
+    // Run every 45 minutes — fewer but higher-quality content pieces
     cron.schedule('5 */1 * * *', () => jitteredRun(async () => {
-      await runLeg3Pipeline();
+      try {
+        await runLeg3Pipeline();
+      } catch (err) {
+        logger.error(`Leg 3 auto-debate cron failed: ${err.message}`);
+      }
     }, 'L3-AutoDebate'));
     logger.info('📅 Scheduled: Leg 3 Auto-Debate — every hour at :05');
   }
@@ -160,7 +197,7 @@ function scheduleCronJobs(): void {
 // LEG 2 PIPELINE
 // ============================================================
 
-async function runLeg2Pipeline(): Promise<void> {
+async function runLeg2Pipeline() {
   logger.leg2('pipeline', 'Starting Leg 2 pipeline');
 
   const headlines = await leg2NewsScanner.scanNews(3);
@@ -180,19 +217,21 @@ async function runLeg2Pipeline(): Promise<void> {
       }
 
       if (config.flags.leg2Twitter) {
-        await leg2TwitterPoster.postHotTake({
-          ...debate,
-          urgent: headline.score >= 8,
-        });
+        debate.urgent = headline.score >= 8;
+        await leg2TwitterPoster.postHotTake(debate);
       }
 
       if (config.flags.leg2Bluesky) {
         await leg2BlueskyPoster.postHotTake(debate);
       }
 
+      if (config.flags.leg2Lemmy) {
+        //await leg2LemmyPoster.postHotTake(debate);
+      }
+
       await sleep(15_000 + Math.random() * 30_000);
     } catch (err) {
-      logger.error(`Leg 2 pipeline failed for headline: ${(err as Error).message}`);
+      logger.error(`Leg 2 pipeline failed for headline: ${err.message}`);
     }
   }
 
@@ -200,16 +239,18 @@ async function runLeg2Pipeline(): Promise<void> {
 }
 
 // ============================================================
-// LEG 3 PIPELINE
+// LEG 3 PIPELINE — AUTO-DEBATE (Session 20)
 // ============================================================
 
-async function runLeg3Pipeline(): Promise<void> {
+async function runLeg3Pipeline() {
+  // Reset daily counter at midnight
   const today = new Date().toDateString();
   if (today !== lastAutoDebateReset) {
     autoDebatesToday = 0;
     lastAutoDebateReset = today;
   }
 
+  // Check daily limit
   if (autoDebatesToday >= config.autoDebate.maxPerDay) {
     logger.leg3('pipeline', `Daily limit reached (${autoDebatesToday}/${config.autoDebate.maxPerDay}). Skipping.`);
     return;
@@ -217,6 +258,7 @@ async function runLeg3Pipeline(): Promise<void> {
 
   logger.leg3('pipeline', `Starting Leg 3 pipeline (${autoDebatesToday}/${config.autoDebate.maxPerDay} today)`);
 
+  // Use the same news scanner as Leg 2 — pick the most debate-worthy headlines
   const headlines = await leg2NewsScanner.scanNews(config.autoDebate.maxPerCycle);
 
   if (headlines.length === 0) {
@@ -225,6 +267,7 @@ async function runLeg3Pipeline(): Promise<void> {
   }
 
   for (const headline of headlines) {
+    // Recheck daily limit inside loop
     if (autoDebatesToday >= config.autoDebate.maxPerDay) break;
 
     try {
@@ -237,6 +280,7 @@ async function runLeg3Pipeline(): Promise<void> {
 
       autoDebatesToday++;
 
+      // Post the auto-debate to Twitter with the rage-bait hook
       if (config.flags.leg3TwitterPost) {
         await leg2TwitterPoster.postHotTake({
           hotTakeText: autoDebate.shareHook,
@@ -245,26 +289,38 @@ async function runLeg3Pipeline(): Promise<void> {
         });
       }
 
+      // Post to Bluesky as an auto-debate
       if (config.flags.leg3BlueskyPost) {
         await leg2BlueskyPoster.postAutoDebate(autoDebate);
       }
 
+      // Post to Lemmy as an auto-debate
+      if (config.flags.leg3LemmyPost) {
+        //await leg3LemmyPoster.postAutoDebate(autoDebate);
+      }
+
+      // Post to Reddit as a new thread (uses the share hook as title)
       if (config.flags.leg3RedditPost) {
         await postAutoDebateToReddit(autoDebate);
       }
 
+      // Stagger between auto-debates — they're heavy (5+ AI calls each)
       await sleep(30_000 + Math.random() * 60_000);
     } catch (err) {
-      logger.error(`Leg 3 pipeline failed for headline: ${(err as Error).message}`);
+      logger.error(`Leg 3 pipeline failed for headline: ${err.message}`);
     }
   }
 
   logger.leg3('pipeline', `Leg 3 cycle complete. ${autoDebatesToday}/${config.autoDebate.maxPerDay} today.`);
 }
 
-async function postAutoDebateToReddit(autoDebate: any): Promise<void> {
+/**
+ * Post an auto-debate link to relevant subreddits as a new thread
+ */
+async function postAutoDebateToReddit(autoDebate) {
   try {
-    const subredditMap: Record<string, string[]> = {
+    // Map categories to relevant subreddits
+    const subredditMap = {
       sports: ['sports', 'nba', 'nfl', 'unpopularopinion'],
       politics: ['politics', 'changemyview', 'unpopularopinion'],
       entertainment: ['entertainment', 'movies', 'unpopularopinion'],
@@ -272,8 +328,8 @@ async function postAutoDebateToReddit(autoDebate: any): Promise<void> {
       general: ['unpopularopinion', 'changemyview'],
     };
 
-    const category = autoDebate.category as string || 'general';
-    const subs = subredditMap[category] || subredditMap.general;
+    const subs = subredditMap[autoDebate.category] || subredditMap.general;
+    // Pick one random subreddit to avoid cross-posting spam
     const targetSub = subs[Math.floor(Math.random() * subs.length)];
 
     if (config.dryRun) {
@@ -281,38 +337,43 @@ async function postAutoDebateToReddit(autoDebate: any): Promise<void> {
       return;
     }
 
-    const reddit = new Snoowrap({
-      userAgent: config.reddit.userAgent!,
-      clientId: config.reddit.clientId!,
-      clientSecret: config.reddit.clientSecret!,
-      username: config.reddit.username!,
-      password: config.reddit.password!,
-    } as any);
-
-    await (reddit.getSubreddit(targetSub) as any).submitLink({
-      title: autoDebate.shareHook as string,
-      url: autoDebate.url as string,
+    // Use the existing Reddit leg1 module's API client to post
+    // This is a link post, not a comment
+    const snoowrap = require('snoowrap');
+    const reddit = new snoowrap({
+      userAgent: config.reddit.userAgent,
+      clientId: config.reddit.clientId,
+      clientSecret: config.reddit.clientSecret,
+      username: config.reddit.username,
+      password: config.reddit.password,
     });
 
-    logger.leg3('reddit', `✅ Posted to r/${targetSub}: "${(autoDebate.shareHook as string).substring(0, 50)}..."`);
+    await reddit.getSubreddit(targetSub).submitLink({
+      title: autoDebate.shareHook,
+      url: autoDebate.url,
+    });
 
+    logger.leg3('reddit', `✅ Posted to r/${targetSub}: "${autoDebate.shareHook.substring(0, 50)}..."`);
+
+    const { logBotAction } = require('./lib/supabase-client');
     await logBotAction({
       leg: 3,
       platform: 'reddit',
       type: 'auto_debate_posted',
-      text: autoDebate.shareHook as string,
-      debateId: autoDebate.id as string,
+      text: autoDebate.shareHook,
+      debateId: autoDebate.id,
       success: true,
       metadata: { subreddit: targetSub, url: autoDebate.url },
     });
   } catch (err) {
-    logger.error(`Leg 3 Reddit post failed: ${(err as Error).message}`);
+    logger.error(`Leg 3 Reddit post failed: ${err.message}`);
+    const { logBotAction } = require('./lib/supabase-client');
     await logBotAction({
       leg: 3,
       platform: 'reddit',
       type: 'auto_debate_posted',
       success: false,
-      error: (err as Error).message,
+      error: err.message,
     });
   }
 }
@@ -321,7 +382,7 @@ async function postAutoDebateToReddit(autoDebate: any): Promise<void> {
 // STATS REPORT
 // ============================================================
 
-function scheduleStatsReport(): void {
+function scheduleStatsReport() {
   cron.schedule('0 */6 * * *', async () => {
     try {
       const stats = await getBotStats(24);
@@ -334,7 +395,7 @@ function scheduleStatsReport(): void {
         logger.info(`   By platform: ${JSON.stringify(stats.byPlatform)}`);
       }
     } catch (err) {
-      logger.error(`Stats report failed: ${(err as Error).message}`);
+      logger.error(`Stats report failed: ${err.message}`);
     }
   });
 
@@ -350,12 +411,12 @@ function scheduleStatsReport(): void {
 // GRACEFUL SHUTDOWN
 // ============================================================
 
-async function shutdown(signal: string): Promise<void> {
+async function shutdown(signal) {
   logger.info(`${signal} received — shutting down gracefully...`);
 
   try {
     await leg1Discord.stop();
-  } catch { /* ignore */ }
+  } catch (e) { /* ignore */ }
 
   await sleep(2000);
 
@@ -365,11 +426,11 @@ async function shutdown(signal: string): Promise<void> {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('uncaughtException', (err: Error) => {
+process.on('uncaughtException', (err) => {
   logger.error(`Uncaught exception: ${err.message}`);
-  logger.error(err.stack || '');
+  logger.error(err.stack);
 });
-process.on('unhandledRejection', (reason: unknown) => {
+process.on('unhandledRejection', (reason) => {
   logger.error(`Unhandled rejection: ${reason}`);
 });
 
@@ -377,7 +438,7 @@ process.on('unhandledRejection', (reason: unknown) => {
 // HELPERS
 // ============================================================
 
-function sleep(ms: number): Promise<void> {
+function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -385,6 +446,6 @@ function sleep(ms: number): Promise<void> {
 // GO
 // ============================================================
 boot().catch(err => {
-  logger.error(`Boot failed: ${(err as Error).message}`);
+  logger.error(`Boot failed: ${err.message}`);
   process.exit(1);
 });
