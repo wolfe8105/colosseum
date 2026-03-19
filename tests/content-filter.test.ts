@@ -114,14 +114,13 @@ describe('filterContent — dangerous comparison patterns', () => {
     expect(result.reason).toBe('Dangerous comparison pattern');
   });
 
-  it('KNOWN GAP: "X is [comparison] Y" evades regex', () => {
-    // The alternation (?:is|=|like|worse than) greedily matches "is" first,
-    // then fails to match "hitler" after the remaining text.
-    // Affects: "Trump is like Hitler", "Trump is worse than Hitler", etc.
-    // Fix: restructure regex to try longer matches first, e.g.
-    //   (?:is\s+worse\s+than|is\s+like|is|=|like|worse than)
-    expect(filterContent('Trump is worse than Hitler').pass).toBe(true);  // BUG
-    expect(filterContent('Trump is like Hitler').pass).toBe(true);        // BUG
+  it('blocks "X is like/worse than Y" comparisons', () => {
+    // Fixed Session 132: regex alternation reordered to try longest match first
+    expect(filterContent('Trump is worse than Hitler').pass).toBe(false);
+    expect(filterContent('Trump is like Hitler').pass).toBe(false);
+    expect(filterContent('Biden is like Stalin').pass).toBe(false);
+    // Plain "is" still works
+    expect(filterContent('Trump is Hitler').pass).toBe(false);
   });
 
   it('blocks group-as-threat rhetoric', () => {
