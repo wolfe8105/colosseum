@@ -5,6 +5,7 @@
  * Linear 4-step signup: OAuth/Email → Age Gate → Username → Enter.
  *
  * Migration: Session 128 (Phase 4)
+ * Session 134: OAuth path now calls set_profile_dob RPC (DOB-in-JWT fix)
  */
 
 // ============================================================
@@ -243,6 +244,13 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
             p_username: username,
           });
         } catch { /* non-critical */ }
+
+        // SESSION 134: Write DOB to profiles via RPC (OAuth bypasses signUp metadata)
+        if (signupDob) {
+          try {
+            await supabaseClient.rpc('set_profile_dob', { p_dob: signupDob });
+          } catch { /* non-critical — DOB missing is better than blocking signup */ }
+        }
       }
 
       const welcome = document.getElementById('welcome-text');
