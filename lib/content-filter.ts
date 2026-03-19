@@ -37,7 +37,7 @@ const BLOCKED_TERMS: string[] = [
 const DANGEROUS_COMPARISONS: RegExp[] = [
   /(?:republican|democrat|liberal|conservative|left|right|gop|dnc)s?\s*(?:vs\.?|versus|are|=)\s*(?:nazi|fascist|communist|terrorist|satan|devil|evil)/i,
   /(?:should|need to|must|deserve)\s+(?:be\s+)?(?:eliminated|exterminated|eradicated|purged|removed|deported)/i,
-  /(?:trump|biden|obama|desantis|harris|aoc|pelosi|mcconnell)\s+(?:is|=|like|worse than)\s+(?:hitler|stalin|mao|mussolini|pol pot)/i,
+  /(?:trump|biden|obama|desantis|harris|aoc|pelosi|mcconnell)\s+(?:is\s+worse\s+than|is\s+like|is|=|like|worse than)\s+(?:hitler|stalin|mao|mussolini|pol pot)/i,
   /(?:black|white|asian|latino|hispanic|jewish|muslim|christian|gay|trans)\s+(?:people|men|women|folks)\s+(?:are|=)\s+(?:the\s+)?(?:problem|enemy|threat|disease|cancer|plague|virus)/i,
 ];
 
