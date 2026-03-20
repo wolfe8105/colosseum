@@ -1,17 +1,25 @@
 /**
  * THE COLOSSEUM — Leaderboard Module (TypeScript)
  *
- * Typed mirror of colosseum-leaderboard.js. Rankings with ELO/Wins/Streak
- * tabs, time filters, My Rank card, shimmer loading, Elo explainer modal.
+ * Runtime module — replaces colosseum-leaderboard.js when Vite build is active.
+ * Depends on: config.ts, auth.ts
  *
- * Source of truth for runtime: colosseum-leaderboard.js (until Phase 4 cutover)
+ * Source of truth for runtime: this file (Phase 3 cutover)
  * Source of truth for types: this file
  *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
-import type { SafeRpcResult } from './auth.ts';
 import { escapeHTML } from './config.ts';
+import {
+  safeRpc,
+  getCurrentUser,
+  getCurrentProfile,
+  getIsPlaceholderMode,
+  getSupabaseClient,
+  ready,
+} from './auth.ts';
+import type { SafeRpcResult } from './auth.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -49,28 +57,10 @@ interface LeaderboardRpcRow {
 }
 
 // ============================================================
-// AUTH / CONFIG BRIDGE
+// ESCAPE HELPER (imported from config.ts)
 // ============================================================
 
-declare const ColosseumConfig: {
-  escapeHTML: (str: string) => string;
-};
-
-declare const ColosseumAuth: {
-  supabase: unknown | null;
-  isPlaceholderMode: boolean;
-  currentUser: { id: string } | null;
-  currentProfile: {
-    elo_rating?: number;
-    wins?: number;
-    username?: string;
-  } | null;
-  safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-};
-
-// Use the import for type consistency, runtime uses ColosseumConfig.escapeHTML
-const escHtml: (str: string) => string =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.escapeHTML : escapeHTML;
+const escHtml = escapeHTML;
 
 // ============================================================
 // STATE
@@ -105,15 +95,18 @@ const PLACEHOLDER_DATA: LeaderboardEntry[] = [
 
 async function fetchLeaderboard(): Promise<void> {
   if (isLoading) return;
-  const sb = typeof ColosseumAuth !== 'undefined' ? ColosseumAuth.supabase : null;
-  if (!sb || ColosseumAuth?.isPlaceholderMode) return;
+
+  const sb = getSupabaseClient();
+  if (!sb || getIsPlaceholderMode()) return;
 
   isLoading = true;
   try {
     const sortCol =
-      currentTab === 'elo' ? 'elo_rating' : currentTab === 'wins' ? 'wins' : 'current_streak';
+      currentTab === 'elo' ? 'elo_rating' :
+      currentTab === 'wins' ? 'wins' :
+      'current_streak';
 
-    const { data, error } = await ColosseumAuth.safeRpc<LeaderboardRpcRow[]>('get_leaderboard', {
+    const { data, error } = await safeRpc<LeaderboardRpcRow[]>('get_leaderboard', {
       p_sort_by: sortCol,
       p_limit: 50,
       p_offset: 0,
@@ -136,7 +129,7 @@ async function fetchLeaderboard(): Promise<void> {
         debates: Number(p.debates_completed) || 0,
       }));
 
-      const me = ColosseumAuth?.currentUser?.id;
+      const me = getCurrentUser()?.id;
       if (me) {
         const idx = liveData.findIndex((p) => p.id === me);
         myRank = idx >= 0 ? idx + 1 : null;
@@ -185,6 +178,7 @@ export function showEloExplainer(): void {
   modal.id = 'elo-explainer-modal';
   modal.style.cssText =
     'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:coloFadeIn 0.2s ease;';
+
   modal.innerHTML = `
     <div style="
       background:linear-gradient(180deg,#12122A 0%,#1a2d4a 100%);
@@ -201,7 +195,8 @@ export function showEloExplainer(): void {
       </div>
       <div style="color:#e0e4ec;font-family:'Barlow Condensed',sans-serif;font-size:15px;line-height:1.6;">
         <p style="margin-bottom:14px;">
-          Your Elo is a <strong style="color:#d4a843;">skill number</strong> that goes up when you win and down when you lose. Everyone starts at <strong style="color:#d4a843;">1200</strong>.
+          Your Elo is a <strong style="color:#d4a843;">skill number</strong> that goes up when you win and down when you lose.
+          Everyone starts at <strong style="color:#d4a843;">1200</strong>.
         </p>
         <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;margin-bottom:14px;">
           <div style="font-weight:700;color:#d4a843;margin-bottom:8px;font-size:13px;letter-spacing:1px;">HOW IT MOVES</div>
@@ -244,7 +239,6 @@ export function showEloExplainer(): void {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
-
   document.body.appendChild(modal);
 }
 
@@ -267,8 +261,14 @@ function renderList(): string {
 
   return sorted
     .map((p) => {
-      const stat = currentTab === 'elo' ? p.elo : currentTab === 'wins' ? p.wins : p.streak;
-      const statLabel = currentTab === 'elo' ? 'ELO' : currentTab === 'wins' ? 'WINS' : '🔥';
+      const stat =
+        currentTab === 'elo' ? p.elo :
+        currentTab === 'wins' ? p.wins :
+        p.streak;
+      const statLabel =
+        currentTab === 'elo' ? 'ELO' :
+        currentTab === 'wins' ? 'WINS' :
+        '🔥';
 
       const medalColors: Record<number, string> = { 1: '#d4a843', 2: '#a8a8a8', 3: '#b87333' };
       const rankColor = medalColors[p.rank] ?? '#6a7a90';
@@ -282,6 +282,7 @@ function renderList(): string {
       const tierBorder = tierBorderMap[p.tier] ?? 'rgba(255,255,255,0.15)';
 
       const safeUsername = escHtml(p.username ?? '');
+
       return `
         <div data-username="${safeUsername}" style="
           display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
@@ -318,7 +319,8 @@ export function render(): void {
   const container = document.getElementById('screen-leaderboard');
   if (!container) return;
 
-  const profile = typeof ColosseumAuth !== 'undefined' ? ColosseumAuth.currentProfile : null;
+  const profile = getCurrentProfile();
+
   const myElo = Number(profile?.elo_rating) || 1200;
   const myWins = Number(profile?.wins) || 0;
   const myName = escHtml((profile?.username ?? 'YOU').toUpperCase());
@@ -330,6 +332,7 @@ export function render(): void {
         <div style="font-family:'Cinzel',serif;font-size:24px;letter-spacing:3px;color:#d4a843;font-weight:700;">🏆 RANKINGS</div>
         <div style="color:#a0a8b8;font-size:13px;">The numbers speak for themselves.</div>
       </div>
+
       <div style="
         background:linear-gradient(135deg,rgba(212,168,67,0.12) 0%,rgba(204,41,54,0.08) 100%);
         border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px;margin-bottom:16px;
@@ -348,6 +351,7 @@ export function render(): void {
           <div style="font-size:10px;color:#6a7a90;">YOUR RANK</div>
         </div>
       </div>
+
       <div style="display:flex;gap:4px;margin-bottom:8px;">
         ${(['elo', 'wins', 'streak'] as const)
           .map(
@@ -371,6 +375,7 @@ export function render(): void {
           )
           .join('')}
       </div>
+
       <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;">
         ${(['all', 'week', 'month'] as const)
           .map(
@@ -383,6 +388,7 @@ export function render(): void {
           )
           .join('')}
       </div>
+
       <div id="lb-list">
         ${isLoading ? renderShimmer() : renderList()}
       </div>
@@ -449,3 +455,11 @@ export const ColosseumLeaderboard = {
   setTime,
   showEloExplainer,
 } as const;
+
+(window as unknown as { ColosseumLeaderboard: typeof ColosseumLeaderboard }).ColosseumLeaderboard = ColosseumLeaderboard;
+
+// ============================================================
+// AUTO-INIT (waits for auth ready, then wires MutationObserver)
+// ============================================================
+
+ready.then(() => init());
