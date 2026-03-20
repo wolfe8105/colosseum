@@ -5,45 +5,22 @@
  * Live/completed debate spectating, message stream, spectator chat,
  * audience pulse gauge, voting, share with social proof.
  *
- * Migration: Session 128 (Phase 4)
- * NOTE: Mechanical extraction from IIFE. Type annotations added at
- * key boundaries. tsconfig strict mode will flag remaining issues.
+ * Migration: Session 128 (Phase 4), Session 139 (ES imports, 9 window globals removed)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { ready, getSupabaseClient, safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from '../auth.ts';
+
 (async function init() {
 
   // ---- Wait for auth init, then use its Supabase client ----
-  let sb: any;
-  try {
-    if (typeof (window as any).ColosseumAuth !== 'undefined' && (window as any).ColosseumAuth.ready) {
-      await (window as any).ColosseumAuth.ready;
-      sb = (window as any).ColosseumAuth.supabase;
-    }
-  } catch(_e) { /* auth init timeout — fall through */ }
+  await ready;
+  const sb: any = getSupabaseClient();
 
-  // Fallback: create our own client if auth didn't provide one
-  if (!sb) {
-    const cfg = (window as any).ColosseumConfig || {};
-    if ((window as any).supabase?.createClient) {
-      sb = (window as any).supabase.createClient(
-        cfg.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co',
-        cfg.SUPABASE_ANON_KEY || 'PASTE_YOUR_ANON_KEY_HERE'
-      );
-    } else {
-      const el = document.getElementById('app');
-      if (el) el.innerHTML = '<div class="error-state">Failed to initialize. Please refresh.</div>';
-      return;
-    }
-  }
-
-  // Wrapper: use safeRpc when available (401 retry), fall back to sb.rpc
+  // Wrapper: safeRpc with 401 recovery
   async function rpc(name: string, params?: Record<string, unknown>): Promise<any> {
-    if (typeof (window as any).ColosseumAuth !== 'undefined' && (window as any).ColosseumAuth.safeRpc) {
-      return (window as any).ColosseumAuth.safeRpc(name, params);
-    }
-    return sb.rpc(name, params);
+    return safeRpc(name, params);
   }
 
   const app = document.getElementById('app');
@@ -54,8 +31,7 @@
   let debateData: any = null;
   let chatMessages: any[] = [];
   let chatOpen = true;
-  const ColosseumAuth = (window as any).ColosseumAuth;
-  const isLoggedIn = !!(typeof ColosseumAuth !== 'undefined' && ColosseumAuth?.currentUser && !ColosseumAuth?.isPlaceholderMode);
+  const isLoggedIn = !!(getCurrentUser() && !getIsPlaceholderMode());
 
   // ---- Back button ----
   document.getElementById('back-btn').addEventListener('click', () => {
@@ -67,7 +43,7 @@
   });
 
   // ---- Hide JOIN button if logged in ----
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentUser) {
+  if (getCurrentUser()) {
     const joinBtn = document.getElementById('join-btn');
     if (joinBtn) joinBtn.style.display = 'none';
   }
@@ -495,12 +471,12 @@
           }
         } else {
           // Optimistic append
-          const displayName = data?.display_name || (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentProfile?.display_name) || 'You';
+          const displayName = data?.display_name || getCurrentProfile()?.display_name || 'You';
           chatMessages.push({
             display_name: displayName,
             message: msg,
             created_at: new Date().toISOString(),
-            user_id: (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentUser?.id) || null
+            user_id: getCurrentUser()?.id || null
           });
           refreshChatUI();
         }
