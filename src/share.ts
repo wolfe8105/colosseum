@@ -1,15 +1,17 @@
 /**
  * THE COLOSSEUM — Share Module (TypeScript)
  *
- * Typed mirror of colosseum-share.js. During migration (Phases 1-3),
- * the original .js file runs in production. This .ts file provides
- * compile-time type safety for all new TypeScript modules.
+ * Runtime module — replaces colosseum-share.js when Vite build is active.
+ * Depends on: config.ts, auth.ts
  *
- * Source of truth for runtime: colosseum-share.js (until Phase 4 cutover)
+ * Source of truth for runtime: this file (Phase 3 cutover)
  * Source of truth for types: this file
  *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
+
+import { APP } from './config.ts';
+import { getCurrentUser, ready } from './auth.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -42,20 +44,6 @@ interface ShareData {
 }
 
 // ============================================================
-// AUTH BRIDGE
-// ============================================================
-
-declare const ColosseumConfig: {
-  APP?: { baseUrl?: string };
-};
-
-declare const ColosseumAuth: {
-  currentUser: { id: string } | null;
-};
-
-declare function navigateTo(screen: string): void;
-
-// ============================================================
 // INTERNAL STATE
 // ============================================================
 
@@ -67,7 +55,7 @@ let _pendingShareResult: ShareResultParams | null = null;
 // ============================================================
 
 function getBaseUrl(): string {
-  return (typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.APP?.baseUrl : undefined) ?? window.location.origin;
+  return APP.baseUrl || window.location.origin;
 }
 
 function generateRefCode(userId: string): string {
@@ -146,7 +134,7 @@ export function shareProfile({
 }
 
 export function inviteFriend(): void {
-  const userId = (typeof ColosseumAuth !== 'undefined' ? ColosseumAuth.currentUser?.id : undefined) ?? 'demo';
+  const userId = getCurrentUser()?.id ?? 'demo';
   const refCode = generateRefCode(userId);
   const url = `${getBaseUrl()}/join?ref=${encodeURIComponent(refCode)}`;
   const text = `Think you can hold your own? Join me on The Colosseum.\n\n${url}`;
@@ -165,6 +153,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
   if (existing) existing.remove();
 
   _pendingShareResult = result || {};
+
   const won = (result as Record<string, unknown> | undefined)?.['won'];
 
   const modal = document.createElement('div');
@@ -173,6 +162,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
     position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;
     display:flex;align-items:flex-end;justify-content:center;
   `;
+
   modal.innerHTML = `
     <div style="
       background:linear-gradient(180deg,#132240 0%,#0a1628 100%);
@@ -206,16 +196,19 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
+
   document.body.appendChild(modal);
 
   document.getElementById('post-debate-share-btn')?.addEventListener('click', () => {
     if (_pendingShareResult) shareResult(_pendingShareResult);
     modal.remove();
   });
+
   document.getElementById('post-debate-invite-btn')?.addEventListener('click', () => {
     inviteFriend();
     modal.remove();
   });
+
   document.getElementById('post-debate-skip-btn')?.addEventListener('click', () => {
     modal.remove();
   });
@@ -234,11 +227,14 @@ export function handleDeepLink(): void {
   if (ref) {
     localStorage.setItem('colosseum_referrer', ref);
   }
+
   if (debate) {
     setTimeout(() => {
-      if (typeof navigateTo === 'function') navigateTo('arena');
+      const nav = (window as unknown as { navigateTo?: (screen: string) => void }).navigateTo;
+      if (typeof nav === 'function') nav('arena');
     }, 500);
   }
+
   if (challenge) {
     // BUG 3 FIX: Sanitize and truncate URL params before display
     const safeName = String(challenge).replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
@@ -262,3 +258,11 @@ export const ColosseumShare = {
   showPostDebatePrompt,
   handleDeepLink,
 } as const;
+
+(window as unknown as { ColosseumShare: typeof ColosseumShare }).ColosseumShare = ColosseumShare;
+
+// ============================================================
+// AUTO-INIT (deep link handler runs after auth is ready)
+// ============================================================
+
+ready.then(() => handleDeepLink());
