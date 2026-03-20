@@ -1,23 +1,24 @@
 /**
  * THE COLOSSEUM — Paywall Module (TypeScript)
  *
- * Typed mirror of colosseum-paywall.js. 4 contextual paywall variants.
- * gate() helper checks access, dismissible, non-aggressive.
+ * Runtime module — replaces colosseum-paywall.js when Vite build is active.
+ * 4 contextual paywall variants. gate() checks access, dismissible, non-aggressive.
+ * Depends on: config.ts, auth.ts
  *
- * Source of truth for runtime: colosseum-paywall.js (until Phase 4 cutover)
+ * Source of truth for runtime: this file (Phase 3 cutover)
  * Source of truth for types: this file
  *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
 import { escapeHTML } from './config.ts';
+import { getCurrentProfile } from './auth.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================
 
 export type PaywallVariant = 'general' | 'shop' | 'social' | 'leaderboard';
-
 export type SubscriptionTier = 'free' | 'contender' | 'champion' | 'creator';
 
 export type GatedFeature =
@@ -38,18 +39,6 @@ export interface PaywallVariantConfig {
   readonly cta: string;
   readonly icon: string;
 }
-
-// ============================================================
-// AUTH BRIDGE
-// ============================================================
-
-declare const ColosseumAuth: {
-  currentProfile: {
-    subscription_tier?: string;
-  } | null;
-};
-
-declare function navigateTo(screen: string): void;
 
 // ============================================================
 // CONSTANTS
@@ -105,7 +94,7 @@ const FEATURE_TO_VARIANT: Readonly<Record<string, PaywallVariant>> = {
  * Returns true if allowed, false if blocked (and shows paywall).
  */
 export function gate(feature: GatedFeature, requiredTier: SubscriptionTier = 'contender'): boolean {
-  const profile = typeof ColosseumAuth !== 'undefined' ? ColosseumAuth.currentProfile : null;
+  const profile = getCurrentProfile();
   if (!profile) return true; // Don't block if we can't check
 
   const userIdx = TIER_ORDER.indexOf((profile.subscription_tier as SubscriptionTier) ?? 'free');
@@ -130,6 +119,8 @@ export function show(variant: PaywallVariant = 'general'): void {
     position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;
     display:flex;align-items:flex-end;justify-content:center;padding:0;
   `;
+
+  // NOTE: navigateTo('shop') in onclick runs in global scope — finds window.navigateTo at runtime
   modal.innerHTML = `
     <div id="paywall-sheet" style="
       background:linear-gradient(180deg,#132240 0%,#0a1628 100%);
@@ -172,6 +163,7 @@ export function show(variant: PaywallVariant = 'general'): void {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
+
   document.body.appendChild(modal);
 
   // Animate in
@@ -199,3 +191,5 @@ export const ColosseumPaywall = {
   dismiss,
   VARIANTS,
 } as const;
+
+(window as unknown as { ColosseumPaywall: typeof ColosseumPaywall }).ColosseumPaywall = ColosseumPaywall;
