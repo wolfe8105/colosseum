@@ -7,9 +7,9 @@
  * Migration: Session 128 (Phase 4)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../auth.ts';
-import '../tokens.ts';
+// ES imports (replaces window globals)
+import { ready, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, safeRpc } from '../auth.ts';
+import { checkProfileMilestones } from '../tokens.ts';
 import '../tiers.ts';
 
 // ============================================================
@@ -511,32 +511,22 @@ async function saveSection(section: Section): Promise<void> {
     localStorage.setItem('colosseum_depth_complete', JSON.stringify([...completedSections]));
 
     // Session 72: Token milestone check
-    const tokens = window.ColosseumTokens as unknown as Record<string, unknown> | undefined;
-    const checkProfileMilestones = tokens?.checkProfileMilestones as ((count: number) => void) | undefined;
-    if (checkProfileMilestones) checkProfileMilestones(completedSections.size);
+    checkProfileMilestones(completedSections.size);
 
     showReward(section.reward);
   }
 
   // Save to Supabase
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const config = window.ColosseumConfig as unknown as Record<string, unknown> | undefined;
-  const isPlaceholder = !!(config as unknown as Record<string, unknown>)?.placeholderMode;
+  const isPlaceholder = getIsPlaceholderMode();
 
-  if (auth?.currentUser && !isPlaceholder) {
+  if (getCurrentUser() && !isPlaceholder) {
     try {
       const sectionAnswers: Record<string, AnswerValue> = {};
       section.questions.forEach(q => {
         if (answers[q.id] !== undefined) sectionAnswers[q.id] = answers[q.id];
       });
 
-      const safeRpc = auth.safeRpc as ((fn: string, args: Record<string, unknown>) => Promise<{ data?: Record<string, unknown> | null; error?: { message: string } | null }>) | undefined;
-      const rpcFn = safeRpc ?? ((fn: string, args: Record<string, unknown>) => {
-        const sb = auth.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data?: unknown; error?: unknown }> };
-        return sb.rpc(fn, args);
-      });
-
-      const { error } = await rpcFn('save_profile_depth', {
+      const { error } = await safeRpc('save_profile_depth', {
         p_section_id: section.id,
         p_answers: sectionAnswers,
       });
@@ -552,7 +542,7 @@ async function saveSection(section: Section): Promise<void> {
       });
 
       if (newCount > 0) {
-        const incResult = await rpcFn('increment_questions_answered', { p_count: newCount });
+        const incResult = await safeRpc('increment_questions_answered', { p_count: newCount });
         const incData = incResult as { data?: { ok?: boolean; questions_answered?: number } | null; error?: unknown };
         if (incData.error) {
           console.error('increment_questions_answered error:', incData.error);
@@ -603,16 +593,11 @@ function showReward(reward: SectionReward): void {
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const config = window.ColosseumConfig as unknown as Record<string, unknown> | undefined;
-  const isPlaceholder = !!(config as unknown as Record<string, unknown>)?.placeholderMode;
+  const isPlaceholder = getIsPlaceholderMode();
 
   // SESSION 32: Members Zone auth gate
-  const ready = auth?.ready as Promise<void> | undefined;
-  if (ready) {
-    await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
-  }
-  if (!auth || (!auth.currentUser && !(auth as Record<string, unknown>).isPlaceholderMode)) {
+  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
+  if (!getCurrentUser() && !isPlaceholder) {
     window.location.href = 'colosseum-plinko.html';
     return;
   }
@@ -622,10 +607,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateDiscount();
 
   // Session 117: Fetch questions_answered and render tier banner
-  if (auth.currentUser && !isPlaceholder) {
+  if (getCurrentUser() && !isPlaceholder) {
     try {
-      const sb = auth.supabase as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { single: () => Promise<{ data: { questions_answered?: number } | null; error: unknown }> } } } } | undefined;
-      const user = auth.currentUser as { id: string };
+      const sb = getSupabaseClient() as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { single: () => Promise<{ data: { questions_answered?: number } | null; error: unknown }> } } } } | null;
+      const user = getCurrentUser() as { id: string };
 
       if (sb) {
         const { data: profile, error } = await sb
@@ -639,12 +624,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
           // Migration sync: if server is 0 but user has local answers, catch up
           if (serverQuestionsAnswered === 0 && previouslyAnsweredIds.size > 0) {
-            const safeRpc = auth.safeRpc as ((fn: string, args: Record<string, unknown>) => Promise<{ data?: { ok?: boolean; questions_answered?: number } | null; error?: unknown }>) | undefined;
-            const rpcFn = safeRpc ?? ((fn: string, args: Record<string, unknown>) => {
-              const client = auth.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> };
-              return client.rpc(fn, args);
-            });
-            const syncResult = await rpcFn('increment_questions_answered', { p_count: previouslyAnsweredIds.size });
+            const syncResult = await safeRpc('increment_questions_answered', { p_count: previouslyAnsweredIds.size });
             const syncData = syncResult as { data?: { ok?: boolean; questions_answered?: number } | null };
             if (syncData.data?.ok) {
               serverQuestionsAnswered = syncData.data.questions_answered ?? serverQuestionsAnswered;

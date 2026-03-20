@@ -8,9 +8,10 @@
  * Migration: Session 128 (Phase 4)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../config.ts';
-import '../cards.ts';
+// ES imports (replaces window globals)
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.ts';
+import { downloadCard as dlCardFn } from '../cards.ts';
 import '../analytics.ts';
 
 // ============================================================
@@ -41,12 +42,7 @@ interface DebateEntry {
 // INIT SUPABASE (standalone — this page uses anon client, not ColosseumAuth)
 // ============================================================
 
-const cfg = (window as unknown as Record<string, unknown>).ColosseumConfig as Record<string, string> | undefined;
-const supabaseLib = (window as unknown as Record<string, { createClient: (url: string, key: string) => unknown }>).supabase;
-const sb = supabaseLib.createClient(
-  cfg?.SUPABASE_URL ?? 'https://faomczmipsccwbhpivmp.supabase.co',
-  cfg?.SUPABASE_ANON_KEY ?? 'PASTE_YOUR_ANON_KEY_HERE'
-) as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
 
 // ============================================================
 // ESCAPE HTML
@@ -340,16 +336,10 @@ function shareDebate(method: string): void {
 }
 
 function downloadCard(): void {
-  const cards = window.ColosseumCards as unknown as Record<string, unknown> | undefined;
-  const dlCard = cards?.downloadCard as ((opts: Record<string, unknown>) => void) | undefined;
-  if (dlCard) {
-    const votedSide = localStorage.getItem(voteKey);
-    const yV = debate.yesVotes + (!voteCounted && votedSide === 'yes' ? 1 : 0);
-    const nV = debate.noVotes + (!voteCounted && votedSide === 'no' ? 1 : 0);
-    dlCard({ topic: debate.topic, sideA: debate.sideA, sideB: debate.sideB, yesVotes: yV, noVotes: nV, size: 'og' });
-  } else {
-    showToast('Card generator not loaded');
-  }
+  const votedSide = localStorage.getItem(voteKey);
+  const yV = debate.yesVotes + (!voteCounted && votedSide === 'yes' ? 1 : 0);
+  const nV = debate.noVotes + (!voteCounted && votedSide === 'no' ? 1 : 0);
+  dlCardFn({ topic: debate.topic, sideA: debate.sideA, sideB: debate.sideB, yesVotes: yV, noVotes: nV, size: 'og' });
 }
 
 function showToast(msg: string): void {

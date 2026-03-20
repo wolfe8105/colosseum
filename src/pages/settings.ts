@@ -7,8 +7,13 @@
  * Migration: Session 128 (Phase 4)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../auth.ts';
+// ES imports (replaces window globals)
+import {
+  ready, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient,
+  safeRpc, updateProfile, logOut, resetPassword, deleteAccount,
+  toggleModerator, toggleModAvailable,
+} from '../auth.ts';
+import { isAnyPlaceholder, showToast } from '../config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -35,9 +40,7 @@ interface SettingsData {
 // STATE
 // ============================================================
 
-const isPlaceholder: boolean =
-  typeof window.ColosseumConfig !== 'undefined' &&
-  !!(window.ColosseumConfig as unknown as Record<string, unknown>).placeholderMode;
+const isPlaceholder: boolean = isAnyPlaceholder;
 
 const VALID_TIERS = ['free', 'contender', 'champion', 'creator'] as const;
 type ValidTier = typeof VALID_TIERS[number];
@@ -116,15 +119,15 @@ function loadSettings(): void {
   setChecked('set-privacy-challenges', saved.privacy_challenges !== false);
 
   // If auth module has a profile, prefer that over localStorage
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  if (auth?.currentProfile) {
-    const p = auth.currentProfile as Record<string, unknown>;
+  const profile = getCurrentProfile();
+  if (profile) {
+    const p = profile as Record<string, unknown>;
     if (nameEl) nameEl.value = (p.display_name as string) ?? saved.display_name ?? '';
     if (userEl) userEl.value = (p.username as string) ?? saved.username ?? '';
     if (bioEl) bioEl.value = (p.bio as string) ?? saved.bio ?? '';
     if (bioCount) bioCount.textContent = ((p.bio as string) ?? saved.bio ?? '').length + '/160';
 
-    const user = auth.currentUser as { email?: string } | undefined;
+    const user = getCurrentUser() as { email?: string } | null;
     if (emailDisp) emailDisp.textContent = user?.email ?? saved.email ?? '—';
 
     const profileTier = validateTier(p.subscription_tier as string | undefined);
@@ -177,9 +180,7 @@ function saveSettings(): void {
   localStorage.setItem('colosseum_settings', JSON.stringify(settings));
 
   // Save to Supabase if auth is live
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  if (auth?.updateProfile && !isPlaceholder) {
-    const updateProfile = auth.updateProfile as (updates: Record<string, string>) => Promise<unknown>;
+  if (!isPlaceholder) {
     updateProfile({
       display_name: settings.display_name,
       username: settings.username,
@@ -187,13 +188,7 @@ function saveSettings(): void {
     }).catch(() => { /* best effort */ });
 
     // SESSION 52/64: Save toggles via RPC (not direct upsert)
-    const safeRpc = auth.safeRpc as ((fn: string, args: Record<string, boolean>) => Promise<{ error?: { message: string } }>) | undefined;
-    const rpcFn = safeRpc ?? ((fn: string, args: Record<string, boolean>) => {
-      const sb = auth.supabase as { rpc: (fn: string, args: Record<string, boolean>) => Promise<unknown> };
-      return sb.rpc(fn, args);
-    });
-
-    rpcFn('save_user_settings', {
+    safeRpc('save_user_settings', {
       p_notif_challenge: settings.notif_challenge,
       p_notif_debate: settings.notif_debate,
       p_notif_follow: settings.notif_follow,
@@ -226,9 +221,7 @@ getEl<HTMLTextAreaElement>('set-bio')?.addEventListener('input', (e: Event) => {
 // ============================================================
 
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const logOut = auth?.logOut as (() => Promise<void>) | undefined;
-  if (logOut) await logOut();
+  await logOut();
   localStorage.removeItem('colosseum_settings');
   window.location.href = 'colosseum-plinko.html';
 });
@@ -238,16 +231,12 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
 // ============================================================
 
 document.getElementById('reset-pw-btn')?.addEventListener('click', async () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const user = auth?.currentUser as { email?: string } | undefined;
+  const user = getCurrentUser() as { email?: string } | null;
   const email = user?.email;
   if (!email) { alert('You must be logged in to reset your password.'); return; }
 
   const btn = getEl<HTMLButtonElement>('reset-pw-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
-
-  const resetPassword = auth?.resetPassword as ((email: string) => Promise<{ success: boolean; error?: string }>) | undefined;
-  if (!resetPassword) return;
 
   const result = await resetPassword(email);
   if (result.success) {
@@ -288,12 +277,10 @@ document.getElementById('delete-modal')?.addEventListener('click', (e: Event) =>
 });
 
 document.getElementById('delete-confirm')?.addEventListener('click', async () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const deleteAccount = auth?.deleteAccount as (() => Promise<{ error?: unknown } | undefined>) | undefined;
-  if (deleteAccount && !isPlaceholder) {
+  if (!isPlaceholder) {
     const result = await deleteAccount();
     if (result?.error) {
-      window.ColosseumConfig?.showToast?.('Delete failed — try again', 'error');
+      showToast('Delete failed — try again', 'error');
       return;
     }
   }
@@ -306,9 +293,9 @@ document.getElementById('delete-confirm')?.addEventListener('click', async () =>
 // ============================================================
 
 function loadModeratorSettings(): void {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  if (!auth?.currentProfile) return;
-  const p = auth.currentProfile as Record<string, unknown>;
+  const profile = getCurrentProfile();
+  if (!profile) return;
+  const p = profile as Record<string, unknown>;
 
   const isMod = !!(p.is_moderator);
   const isAvail = !!(p.mod_available);
@@ -345,17 +332,13 @@ getEl<HTMLInputElement>('set-mod-enabled')?.addEventListener('change', async (e:
   const enabled = target.checked;
   target.disabled = true;
 
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const toggleModerator = auth?.toggleModerator as ((enabled: boolean) => Promise<{ error?: string } | undefined>) | undefined;
-  if (toggleModerator) {
-    const result = await toggleModerator(enabled);
-    if (result?.error) {
-      target.checked = !enabled;
-      toast('❌ ' + result.error);
-    } else {
-      toast(enabled ? '⚖️ Moderator mode ON' : 'Moderator mode OFF');
-      loadModeratorSettings();
-    }
+  const result = await toggleModerator(enabled);
+  if (result?.error) {
+    target.checked = !enabled;
+    toast('❌ ' + result.error);
+  } else {
+    toast(enabled ? '⚖️ Moderator mode ON' : 'Moderator mode OFF');
+    loadModeratorSettings();
   }
   target.disabled = false;
 });
@@ -365,18 +348,14 @@ getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (
   const available = target.checked;
   target.disabled = true;
 
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  const toggleModAvailable = auth?.toggleModAvailable as ((available: boolean) => Promise<{ error?: string } | undefined>) | undefined;
-  if (toggleModAvailable) {
-    const result = await toggleModAvailable(available);
-    if (result?.error) {
-      target.checked = !available;
-      toast('❌ ' + result.error);
-    } else {
-      const dot = getEl('mod-dot');
-      if (dot) dot.style.background = available ? 'var(--success)' : 'var(--white-dim)';
-      toast(available ? '🟢 Available to moderate' : '🔴 Offline');
-    }
+  const result = await toggleModAvailable(available);
+  if (result?.error) {
+    target.checked = !available;
+    toast('❌ ' + result.error);
+  } else {
+    const dot = getEl('mod-dot');
+    if (dot) dot.style.background = available ? 'var(--success)' : 'var(--white-dim)';
+    toast(available ? '🟢 Available to moderate' : '🔴 Offline');
   }
   target.disabled = false;
 });
@@ -386,15 +365,10 @@ getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-
   // SESSION 32: Members Zone auth gate
-  const ready = auth?.ready as Promise<void> | undefined;
-  if (ready) {
-    await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
-  }
+  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
 
-  if (!auth || (!auth.currentUser && !(auth as Record<string, unknown>).isPlaceholderMode)) {
+  if (!getCurrentUser() && !getIsPlaceholderMode()) {
     window.location.href = 'colosseum-plinko.html';
     return;
   }
@@ -403,8 +377,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadModeratorSettings();
 
   // SESSION 52: Load toggles from user_settings table (overrides localStorage)
-  const uid = (auth.currentUser as { id?: string } | undefined)?.id;
-  const sb = auth.supabase as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => { single: () => Promise<{ data: Record<string, boolean | null> | null; error: unknown }> } } } } | undefined;
+  const user = getCurrentUser() as { id?: string } | null;
+  const uid = user?.id;
+  const sb = getSupabaseClient() as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => { single: () => Promise<{ data: Record<string, boolean | null> | null; error: unknown }> } } } } | null;
 
   if (uid && sb) {
     const { data, error } = await sb

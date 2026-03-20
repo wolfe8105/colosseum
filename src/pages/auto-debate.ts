@@ -8,9 +8,11 @@
  * Migration: Session 128 (Phase 4)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../tokens.ts';
-import '../cards.ts';
+// ES imports (replaces window globals)
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.ts';
+import { claimVote } from '../tokens.ts';
+import { shareCard } from '../cards.ts';
 import '../analytics.ts';
 
 // ============================================================
@@ -53,12 +55,7 @@ interface AutoDebateData {
 // INIT
 // ============================================================
 
-const cfgObj = (window as unknown as Record<string, unknown>).ColosseumConfig as Record<string, string> | undefined;
-const supabaseLib = (window as unknown as Record<string, { createClient: (url: string, key: string) => unknown }>).supabase;
-const sb = supabaseLib.createClient(
-  cfgObj?.SUPABASE_URL ?? 'https://faomczmipsccwbhpivmp.supabase.co',
-  cfgObj?.SUPABASE_ANON_KEY ?? 'PASTE_YOUR_ANON_KEY_HERE'
-) as {
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as {
   rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
   from: (table: string) => {
     select: (cols: string) => {
@@ -332,9 +329,7 @@ async function castVoteImpl(side: string): Promise<void> {
     }
     if (result?.success) {
       showResults(result.votes_a ?? 0, result.votes_b ?? 0, result.vote_count ?? 0, d.winner, side);
-      const tokens = window.ColosseumTokens as unknown as Record<string, unknown> | undefined;
-      const claimVote = tokens?.claimVote as ((id: string) => void) | undefined;
-      if (claimVote) claimVote(d.id);
+      claimVote(d.id);
     } else {
       showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
     }
@@ -362,9 +357,7 @@ function shareDebateImpl(method: string): void {
   } else if (method === 'twitter') {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   } else if (method === 'native') {
-    const cards = window.ColosseumCards as unknown as Record<string, unknown> | undefined;
-    const shareCard = cards?.shareCard as ((opts: Record<string, unknown>) => void) | undefined;
-    if (shareCard && d.yes_votes !== undefined) {
+    if (d.yes_votes !== undefined) {
       shareCard({ topic: d.topic, sideA: d.side_a ?? 'Side A', sideB: d.side_b ?? 'Side B', yesVotes: d.yes_votes ?? 0, noVotes: d.no_votes ?? 0, size: 'og' });
     } else if (navigator.share) {
       navigator.share({ title: d.topic, text, url }).catch(() => { /* cancelled */ });

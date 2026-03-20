@@ -7,8 +7,9 @@
  * Migration: Session 128 (Phase 4)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../auth.ts';
+// ES imports (replaces window globals)
+import { logIn, signUp, oauthLogin, resetPassword, updatePassword, getCurrentUser, getSupabaseClient, ready } from '../auth.ts';
+import { isAnyPlaceholder } from '../config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -29,9 +30,7 @@ interface RateLimitCheck {
 // HELPERS
 // ============================================================
 
-const isPlaceholder: boolean =
-  typeof window.ColosseumConfig !== 'undefined' &&
-  !!(window.ColosseumConfig as unknown as Record<string, unknown>).placeholderMode;
+const isPlaceholder: boolean = isAnyPlaceholder;
 
 if (isPlaceholder) {
   const banner = document.getElementById('placeholder-banner');
@@ -163,10 +162,6 @@ loginForm?.addEventListener('submit', async (e: Event) => {
   if (btn) { btn.disabled = true; btn.textContent = 'ENTERING...'; }
 
   try {
-    const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-    const logIn = auth.logIn as ((opts: { email: string; password: string }) => Promise<{ success: boolean; error?: string }>) | undefined;
-    if (!logIn) return;
-
     const result = await logIn({ email, password });
     if (!result.success) {
       recordFailedAttempt();
@@ -230,10 +225,6 @@ signupForm?.addEventListener('submit', async (e: Event) => {
   if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
   try {
-    const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-    const signUp = auth.signUp as ((opts: Record<string, string>) => Promise<{ success: boolean; error?: string }>) | undefined;
-    if (!signUp) return;
-
     const dob = `${year}-${String(parseInt(month)).padStart(2, '0')}-${String(parseInt(day)).padStart(2, '0')}`;
     const result = await signUp({ email, password, username, displayName: username, dob });
 
@@ -279,9 +270,7 @@ function handleOAuth(provider: string): void {
     showMsg(msgId, `Demo mode — ${provider} OAuth not available without Supabase.`, 'error');
     return;
   }
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-  const oauthLogin = auth?.oauthLogin as ((provider: string) => void) | undefined;
-  if (oauthLogin) oauthLogin(provider);
+  oauthLogin(provider);
 }
 
 document.getElementById('oauth-google')?.addEventListener('click', () => handleOAuth('google'));
@@ -315,9 +304,7 @@ document.getElementById('reset-btn')?.addEventListener('click', async () => {
   if (isPlaceholder) { showMsg('reset-msg', 'Demo mode — no email sent.', 'error'); return; }
 
   try {
-    const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-    const resetPassword = auth.resetPassword as ((email: string) => Promise<void>) | undefined;
-    if (resetPassword) await resetPassword(email);
+    await resetPassword(email);
     showMsg('reset-msg', 'Reset link sent! Check your inbox.', 'success');
   } catch {
     showMsg('reset-msg', 'Could not send reset link.', 'error');
@@ -339,10 +326,6 @@ document.getElementById('newpw-btn')?.addEventListener('click', async () => {
   if (btn) { btn.disabled = true; btn.textContent = 'UPDATING...'; }
 
   try {
-    const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-    const updatePassword = auth.updatePassword as ((pw: string) => Promise<{ success: boolean; error?: string }>) | undefined;
-    if (!updatePassword) return;
-
     const result = await updatePassword(pw);
     if (!result.success) {
       showMsg('newpw-msg', result.error ?? 'Could not update password.', 'error');
@@ -362,10 +345,7 @@ document.getElementById('newpw-btn')?.addEventListener('click', async () => {
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', () => {
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  if (!auth) return;
-
-  const supabaseClient = auth.supabase as { auth: { onAuthStateChange: (cb: (event: string, session: { user?: unknown } | null) => void) => void } } | undefined;
+  const supabaseClient = getSupabaseClient() as { auth: { onAuthStateChange: (cb: (event: string, session: { user?: unknown } | null) => void) => void } } | null;
 
   if (!isPlaceholder && supabaseClient) {
     supabaseClient.auth.onAuthStateChange((event: string, session: { user?: unknown } | null) => {
@@ -394,15 +374,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // SESSION 37: Await readyPromise so INITIAL_SESSION has time to fire.
-  const ready = auth.ready as Promise<void> | undefined;
-  const currentUser = auth.currentUser as unknown;
-  if (ready) {
-    ready.then(() => {
-      if ((window.ColosseumAuth as unknown as Record<string, unknown>).currentUser && !isPlaceholder) {
-        window.location.href = getReturnTo();
-      }
-    });
-  } else if (currentUser && !isPlaceholder) {
-    window.location.href = getReturnTo();
-  }
+  ready.then(() => {
+    if (getCurrentUser() && !isPlaceholder) {
+      window.location.href = getReturnTo();
+    }
+  });
 });

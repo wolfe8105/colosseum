@@ -8,8 +8,9 @@
  * Session 134: OAuth path now calls set_profile_dob RPC (DOB-in-JWT fix)
  */
 
-// Side-effect imports — ensure modules execute and set window globals
-import '../auth.ts';
+// ES imports (replaces window globals)
+import { oauthLogin, signUp, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from '../auth.ts';
+import { isAnyPlaceholder } from '../config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -30,9 +31,7 @@ let _isMinor = false;
 
 const TOTAL_STEPS = 4;
 
-const isPlaceholder: boolean =
-  typeof window.ColosseumConfig !== 'undefined' &&
-  !!(window.ColosseumConfig as unknown as Record<string, unknown>).placeholderMode;
+const isPlaceholder: boolean = isAnyPlaceholder;
 
 if (isPlaceholder) {
   const banner = document.getElementById('placeholder-banner');
@@ -122,9 +121,7 @@ function handleOAuth(provider: string): void {
     return;
   }
   signupMethod = 'oauth';
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-  const oauthLogin = auth?.oauthLogin as ((provider: string, redirectTo: string) => void) | undefined;
-  if (oauthLogin) oauthLogin(provider, window.location.href);
+  oauthLogin(provider, window.location.href);
 }
 
 document.getElementById('btn-google')?.addEventListener('click', () => handleOAuth('google'));
@@ -209,12 +206,7 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
   if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
   try {
-    const auth = window.ColosseumAuth as unknown as Record<string, unknown>;
-
     if (signupMethod === 'email') {
-      const signUp = auth.signUp as ((opts: Record<string, string>) => Promise<{ success: boolean; error?: string }>) | undefined;
-      if (!signUp) return;
-
       const result = await signUp({
         email: signupEmail,
         password: signupPassword,
@@ -239,7 +231,7 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
 
     } else if (signupMethod === 'oauth') {
       // OAuth user returned — update their profile with username/dob
-      const supabaseClient = auth.supabase as { rpc: (fn: string, args: Record<string, string>) => Promise<unknown> } | undefined;
+      const supabaseClient = getSupabaseClient() as { rpc: (fn: string, args: Record<string, string>) => Promise<unknown> } | null;
       if (supabaseClient) {
         try {
           await supabaseClient.rpc('update_profile', {
@@ -284,10 +276,7 @@ document.getElementById('btn-enter')?.addEventListener('click', () => {
 window.addEventListener('DOMContentLoaded', () => {
   updateProgress();
 
-  const auth = window.ColosseumAuth as unknown as Record<string, unknown> | undefined;
-  if (!auth) return;
-
-  const supabaseClient = auth.supabase as { auth: { onAuthStateChange: (cb: (event: string, session: { user?: unknown } | null) => void) => void } } | undefined;
+  const supabaseClient = getSupabaseClient() as { auth: { onAuthStateChange: (cb: (event: string, session: { user?: unknown } | null) => void) => void } } | null;
 
   if (!isPlaceholder && supabaseClient) {
     supabaseClient.auth.onAuthStateChange((event: string, session: { user?: unknown } | null) => {
@@ -320,7 +309,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const type = params.get('type');
     if (type === 'signup' || type === 'email') {
       // SESSION 64: Verify real session before showing confirmation
-      const hasRealSession = !!auth.currentUser;
+      const hasRealSession = !!getCurrentUser();
       if (hasRealSession) {
         const welcome = document.getElementById('welcome-text');
         if (welcome) welcome.textContent = 'Email confirmed! Welcome to the arena.';
@@ -335,14 +324,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // If already logged in, go straight to app
   // SESSION 63: Use readyPromise so INITIAL_SESSION has time to fire.
-  const ready = auth.ready as Promise<void> | undefined;
-  if (ready) {
-    ready.then(() => {
-      if ((window.ColosseumAuth as unknown as Record<string, unknown>).currentUser && !isPlaceholder) {
-        window.location.href = getReturnTo();
-      }
-    });
-  } else if (auth.currentUser && !isPlaceholder) {
-    window.location.href = getReturnTo();
-  }
+  ready.then(() => {
+    if (getCurrentUser() && !isPlaceholder) {
+      window.location.href = getReturnTo();
+    }
+  });
 });
