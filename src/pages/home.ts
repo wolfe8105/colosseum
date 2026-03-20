@@ -5,12 +5,13 @@
  * Spoke carousel, category overlays, pull-to-refresh, activity indicators,
  * shop screen, hot takes feed wiring, leaderboard, predictions.
  *
- * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports)
+ * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports),
+ *            Session 139 (ColosseumAsync ES import, 5 dead window globals removed)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// --- Converted modules: ES imports ---
+// --- ES imports (all window globals eliminated) ---
 import {
   onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
   getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing,
@@ -18,14 +19,7 @@ import {
 } from '../auth.ts';
 import { showToast, escapeHTML } from '../config.ts';
 import '../tokens.ts'; // side-effect: auto-inits daily login, milestones, balance display
-
-// --- Unconverted modules: window globals (script tags still in index.html) ---
-const ColosseumAsync = (window as any).ColosseumAsync;
-const ColosseumNotifications = (window as any).ColosseumNotifications;
-const ColosseumLeaderboard = (window as any).ColosseumLeaderboard;
-const ColosseumShare = (window as any).ColosseumShare;
-const ColosseumPayments = (window as any).ColosseumPayments;
-const ColosseumPaywall = (window as any).ColosseumPaywall;
+import { ColosseumAsync } from '../async.ts';
 
 // ============================================================
 // APP SHELL V4 — Session 23: Auth race fix, Predictions, Rivals, Follows
