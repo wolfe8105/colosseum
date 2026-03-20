@@ -20,6 +20,7 @@ import {
   safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile,
   assignModerator, getDebateReferences, declareRival, showUserProfile,
   submitReference, ruleOnReference, scoreModerator, getAvailableModerators,
+  ready,
 } from './auth.ts';
 import {
   escapeHTML, SUPABASE_URL, SUPABASE_ANON_KEY, isAnyPlaceholder,
@@ -2622,6 +2623,12 @@ export function getView(): ArenaView {
 export function getCurrentDebate(): CurrentDebate | null {
   return currentDebate ? { ...currentDebate } : null;
 }
+
+// ============================================================
+// AUTO-INIT (matches .js IIFE — waits for auth ready)
+// ============================================================
+
+ready.then(() => init()).catch(() => init());
 
 // ============================================================
 // WINDOW GLOBAL BRIDGE (removed in Phase 4)
