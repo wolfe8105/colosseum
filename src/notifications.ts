@@ -1,17 +1,13 @@
 /**
  * THE COLOSSEUM — Notifications Module (TypeScript)
  *
- * Typed mirror of colosseum-notifications.js. During migration (Phases 1-3),
- * the original .js file runs in production. This .ts file provides
- * compile-time type safety for all new TypeScript modules.
+ * Runtime module — replaces colosseum-notifications.js when Vite build is active.
+ * Depends on: config.ts, auth.ts
  *
- * Source of truth for runtime: colosseum-notifications.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3), Session 138 (cutover — ES imports, zero globalThis reads)
  */
 
-import type { SafeRpcResult } from './auth.ts';
+import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from './auth.ts';
 import { escapeHTML } from './config.ts';
 
 // ============================================================
@@ -85,35 +81,6 @@ let unreadCount = 0;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 let panelOpen = false;
 
-// ============================================================
-// AUTH BRIDGE (removed in Phase 4 — will use direct imports)
-// ============================================================
-
-declare const ColosseumAuth: {
-  supabase: {
-    from: (table: string) => {
-      select: (cols: string) => {
-        eq: (col: string, val: string) => {
-          order: (col: string, opts: { ascending: boolean }) => {
-            limit: (n: number) => Promise<{ data: Notification[] | null; error: { message: string } | null }>;
-          };
-        };
-      };
-    };
-  } | null;
-  isPlaceholderMode: boolean;
-  currentUser: { id: string } | null;
-  safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-  ready: Promise<void>;
-};
-
-declare const ColosseumConfig: {
-  escapeHTML: (str: string) => string;
-};
-
-// Use the import for type consistency, but runtime uses ColosseumConfig.escapeHTML
-const escHtml: (str: string) => string =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.escapeHTML : escapeHTML;
 
 // ============================================================
 // TIME FORMATTING
@@ -246,16 +213,16 @@ function renderList(filter: NotificationFilter = 'all'): void {
         : '';
       const displayTime = n.created_at ? timeAgo(n.created_at) : (n.time ?? '');
       return `
-      <div class="notif-item" data-id="${escHtml(n.id)}" style="
+      <div class="notif-item" data-id="${escapeHTML(n.id)}" style="
         display:flex;gap:12px;align-items:flex-start;padding:12px 16px;cursor:pointer;
         background:${n.read ? 'transparent' : 'rgba(204,41,54,0.04)'};
         border-bottom:1px solid rgba(255,255,255,0.03);
       ">
         <div style="font-size:20px;flex-shrink:0;margin-top:2px;">${typeInfo.icon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;margin-bottom:2px;">${escHtml(n.title)}</div>
-          <div style="font-size:12px;color:#a0a8b8;line-height:1.4;">${escHtml(n.body)}</div>
-          <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escHtml(displayTime)}</div>
+          <div style="font-weight:700;font-size:13px;color:#f0f0f0;margin-bottom:2px;">${escapeHTML(n.title)}</div>
+          <div style="font-size:12px;color:#a0a8b8;line-height:1.4;">${escapeHTML(n.body)}</div>
+          <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escapeHTML(displayTime)}</div>
         </div>
         ${unreadDot}
       </div>`;
@@ -308,8 +275,8 @@ export function markRead(id: string): void {
     updateBadge();
     renderList();
 
-    if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase && !ColosseumAuth.isPlaceholderMode) {
-      ColosseumAuth.safeRpc('mark_notifications_read', {
+    if (getSupabaseClient() && !getIsPlaceholderMode()) {
+      safeRpc('mark_notifications_read', {
         p_notification_ids: [id],
       }).then(({ error }) => {
         if (error) console.error('mark_notifications_read error:', error);
@@ -326,8 +293,8 @@ export function markAllRead(): void {
   updateBadge();
   renderList();
 
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase && !ColosseumAuth.isPlaceholderMode) {
-    ColosseumAuth.safeRpc('mark_notifications_read', {
+  if (getSupabaseClient() && !getIsPlaceholderMode()) {
+    safeRpc('mark_notifications_read', {
       p_notification_ids: null,
     }).then(({ error }) => {
       if (error) console.error('mark_notifications_read (all) error:', error);
@@ -367,20 +334,17 @@ export function destroy(): void {
 }
 
 async function fetchNotifications(): Promise<void> {
-  if (
-    typeof ColosseumAuth === 'undefined' ||
-    !ColosseumAuth.supabase ||
-    ColosseumAuth.isPlaceholderMode ||
-    !ColosseumAuth.currentUser
-  ) {
+  const client = getSupabaseClient();
+  const user = getCurrentUser();
+  if (!client || getIsPlaceholderMode() || !user) {
     return;
   }
 
   try {
-    const { data, error } = await ColosseumAuth.supabase
+    const { data, error } = await client
       .from('notifications')
       .select('*')
-      .eq('user_id', ColosseumAuth.currentUser.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -416,7 +380,7 @@ export function init(): void {
   createPanel();
   bindBellButton();
 
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.isPlaceholderMode) {
+  if (getIsPlaceholderMode()) {
     notifications = getPlaceholderNotifs();
     unreadCount = notifications.filter((n) => !n.read).length;
     updateBadge();
@@ -426,13 +390,28 @@ export function init(): void {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
+// DEFAULT EXPORT
 // ============================================================
 
-export const ColosseumNotifications = {
+const notificationsModule = {
+  init,
   open,
   close,
   markRead,
   markAllRead,
   destroy,
 } as const;
+
+export default notificationsModule;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumNotifications: typeof notificationsModule }).ColosseumNotifications = notificationsModule;
+
+// ============================================================
+// AUTO-INIT (matches .js IIFE — waits for auth ready)
+// ============================================================
+
+ready.then(() => init()).catch(() => init());
