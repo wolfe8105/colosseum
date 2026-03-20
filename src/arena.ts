@@ -828,7 +828,7 @@ function renderPlaceholderCards(type: string): string {
 // POWER-UP SHOP
 // ============================================================
 
-function showPowerUpShop(): void {
+export function showPowerUpShop(): void {
   if (!getCurrentUser() && !isPlaceholder()) {
     window.location.href = 'colosseum-plinko.html';
     return;
