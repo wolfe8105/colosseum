@@ -8,6 +8,9 @@
  * Session 134: OAuth path now calls set_profile_dob RPC (DOB-in-JWT fix)
  */
 
+// Side-effect imports — ensure modules execute and set window globals
+import '../auth.ts';
+
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================

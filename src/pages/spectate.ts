@@ -11,6 +11,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from '../auth.ts';
+import '../tokens.ts';
+import '../analytics.ts';
 
 (async function init() {
 

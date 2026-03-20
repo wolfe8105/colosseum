@@ -7,6 +7,9 @@
  * Migration: Session 128 (Phase 4)
  */
 
+// Side-effect imports — ensure modules execute and set window globals
+import '../auth.ts';
+
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================

@@ -8,6 +8,11 @@
  * Migration: Session 128 (Phase 4)
  */
 
+// Side-effect imports — ensure modules execute and set window globals
+import '../tokens.ts';
+import '../cards.ts';
+import '../analytics.ts';
+
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================
