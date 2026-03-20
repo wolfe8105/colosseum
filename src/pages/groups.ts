@@ -5,17 +5,17 @@
  * Groups: discover, my groups, rankings, detail view, hot takes,
  * GvG challenges (Session 116), group hot take composer (Session 105).
  *
- * Migration: Session 128 (Phase 4)
+ * Migration: Session 128 (Phase 4), Session 139 (ES imports, 3 window globals removed)
  * NOTE: Mechanical extraction. Type annotations at key boundaries.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { ready, getCurrentUser, getSupabaseClient } from '../auth.ts';
+import { escapeHTML, showToast } from '../config.ts';
+
 // ── STATE ─────────────────────────────────────────────────
 let sb: any = null;
-const ColosseumAuth = (window as any).ColosseumAuth;
-const ColosseumConfig = (window as any).ColosseumConfig;
-const ColosseumTokens = (window as any).ColosseumTokens;
 
 let currentUser: any = null;
 let activeTab = 'discover';
@@ -31,9 +31,9 @@ const CATEGORY_LABELS = {
 };
 
 // ── INIT ──────────────────────────────────────────────────
-ColosseumAuth.ready.then(() => {
-  sb = ColosseumAuth.supabase;
-  currentUser = ColosseumAuth.currentUser;
+ready.then(() => {
+  sb = getSupabaseClient();
+  currentUser = getCurrentUser();
   loadDiscover();
 });
 
@@ -125,7 +125,7 @@ function renderGroupList(containerId: string, groups: any[], showRole = false, s
     el.innerHTML = renderEmpty('👥', 'No groups here yet', 'Be the first to create one');
     return;
   }
-  const esc = ColosseumConfig.escapeHTML;
+  const esc = escapeHTML;
   el.innerHTML = groups.map((g, i) => {
     const catLabel = CATEGORY_LABELS[g.category] || esc(g.category || 'General');
     const roleHtml = (showRole && g.role) ? `<span class="my-role-badge ${esc(g.role)}">${esc(g.role.toUpperCase())}</span>` : '';
@@ -246,7 +246,7 @@ async function loadGroupHotTakes(groupId: string) {
     if (error) throw error;
 
     // E211: Compose UI — auth-gated, only shown for logged-in users
-    const esc = ColosseumConfig.escapeHTML;
+    const esc = escapeHTML;
     let composerHtml = '';
     if (currentUser) {
       composerHtml = `<div style="background:rgba(19,34,64,0.6);border:1px solid rgba(212,168,67,0.15);border-radius:10px;padding:12px;margin-bottom:14px;">
@@ -327,9 +327,7 @@ async function postGroupHotTake(groupId: string) {
 
     if (error) {
       console.error('create_hot_take (group) error:', error);
-      if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
-        ColosseumConfig.showToast('Post failed — try again', 'error');
-      }
+              showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
       return;
     }
@@ -337,22 +335,18 @@ async function postGroupHotTake(groupId: string) {
     // Success — reload hot takes to show the new one
     input.value = '';
     document.getElementById('group-take-count').textContent = '0/280';
-    if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
-      ColosseumConfig.showToast('🔥 Hot take posted', 'success');
-    }
+          showToast('🔥 Hot take posted', 'success');
     loadGroupHotTakes(groupId);
   } catch (e) {
     console.error('create_hot_take (group) exception:', e);
-    if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
-      ColosseumConfig.showToast('Post failed — try again', 'error');
-    }
+          showToast('Post failed — try again', 'error');
   }
   if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
 }
 
 // ── MEMBERS LIST ──────────────────────────────────────────
 async function loadGroupMembers(groupId: string) {
-  const esc = ColosseumConfig.escapeHTML;
+  const esc = escapeHTML;
   try {
     const { data, error } = await sb.rpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
     if (error) throw error;
@@ -451,7 +445,7 @@ async function searchGroupsForChallenge(query: string) {
   if (query.length < 2) { container.innerHTML = ''; return; }
 
   try {
-    const esc = ColosseumConfig.escapeHTML;
+    const esc = escapeHTML;
     const { data, error } = await sb
       .from('groups')
       .select('id, name, avatar_emoji, group_elo, member_count')
@@ -480,7 +474,7 @@ async function searchGroupsForChallenge(query: string) {
       opt.addEventListener('click', () => {
         selectedOpponentGroup = { id: opt.dataset.gid, name: opt.dataset.gname, emoji: opt.dataset.gemoji, elo: parseInt(opt.dataset.gelo) };
         const sel = document.getElementById('gvg-selected-opponent');
-        const esc2 = ColosseumConfig.escapeHTML;
+        const esc2 = escapeHTML;
         sel.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:20px;">${esc2(selectedOpponentGroup.emoji)}</span>
           <div style="flex:1;">
@@ -540,9 +534,7 @@ async function submitGroupChallenge() {
     // Success
     closeGvGModal();
     loadGroupChallenges(currentGroupId);
-    if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
-      ColosseumConfig.showToast('⚔️ Challenge sent!', 'success');
-    }
+          showToast('⚔️ Challenge sent!', 'success');
   } catch (e) {
     errEl.textContent = 'Something went wrong'; errEl.style.display = 'block';
   }
@@ -563,7 +555,7 @@ async function loadGroupChallenges(groupId: string) {
       return;
     }
 
-    const esc = ColosseumConfig.escapeHTML;
+    const esc = escapeHTML;
     container.innerHTML = challenges.map(c => {
       const isDefender = c.defender_group_id === groupId;
       const oppName = isDefender ? c.challenger_name : c.defender_name;
@@ -631,20 +623,18 @@ async function respondToChallenge(challengeId: string, action: string) {
       p_action: action
     });
     if (error) {
-      if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) ColosseumConfig.showToast('⚠️ ' + (error.message || 'Failed'), 'error');
+      showToast('⚠️ ' + (error.message || 'Failed'), 'error');
       return;
     }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result && result.error) {
-      if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) ColosseumConfig.showToast('⚠️ ' + result.error, 'error');
+      showToast('⚠️ ' + result.error, 'error');
       return;
     }
     loadGroupChallenges(currentGroupId);
-    if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) {
-      ColosseumConfig.showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
-    }
+          showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
   } catch (e) {
-    if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.showToast) ColosseumConfig.showToast('⚠️ Something went wrong', 'error');
+    showToast('⚠️ Something went wrong', 'error');
   }
 }
 
@@ -750,5 +740,5 @@ async function submitCreateGroup() {
 // ── URL PARAM: open group directly ────────────────────────
 const urlGroup = new URLSearchParams(window.location.search).get('group');
 if (urlGroup && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(urlGroup)) {
-  ColosseumAuth.ready.then(() => openGroup(urlGroup));
+  ready.then(() => openGroup(urlGroup));
 }
