@@ -11,7 +11,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from '../auth.ts';
-import '../tokens.ts';
+import { claimVote } from '../tokens.ts';
 import '../analytics.ts';
 
 (async function init() {
@@ -656,9 +656,7 @@ import '../analytics.ts';
         updatePulse(fva, fvb);
       }
 
-      if (typeof ColosseumTokens !== 'undefined') {
-        ColosseumTokens.claimVote(debateId);
-      }
+      claimVote(debateId);
     } catch (err) {
       const fva = (d.vote_count_a || 0) + (side === 'a' ? 1 : 0);
       const fvb = (d.vote_count_b || 0) + (side === 'b' ? 1 : 0);

@@ -29,7 +29,7 @@ import { subscribe } from '../payments.ts';
 // --- Side-effect imports: pull in all modules index.html needs ---
 // These auto-init and expose window bridges for screens/features on index.html.
 // arena.ts transitively imports staking, powerups, webrtc, voicememo.
-import '../arena.ts';
+import { showPowerUpShop } from '../arena.ts';
 import '../notifications.ts';
 import '../leaderboard.ts';
 import '../scoring.ts';
@@ -301,7 +301,7 @@ document.addEventListener('click', (e: Event) => {
   const action = el.dataset.action;
   if (action === 'powerup-shop') {
     navigateTo('arena');
-    setTimeout(() => (window as any).ColosseumArena?.showPowerUpShop(), 300);
+    setTimeout(() => showPowerUpShop(), 300);
   } else if (action === 'share-profile') {
     const p = getCurrentProfile();
     const u = getCurrentUser();
