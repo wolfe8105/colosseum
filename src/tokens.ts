@@ -1,14 +1,14 @@
 /**
  * THE COLOSSEUM — Token Earn System (TypeScript)
  *
- * Typed mirror of colosseum-tokens.js.
+ * Runtime module — replaces colosseum-tokens.js when Vite build is active.
  * Depends on: config.ts, auth.ts
  *
- * Migration: Session 126 (Phase 2)
+ * Migration: Session 126 (Phase 2), Session 138 (cutover — imports replace globalThis reads)
  */
 
 import { showToast, escapeHTML } from './config.ts';
-import { safeRpc } from './auth.ts';
+import { safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, onChange } from './auth.ts';
 import type { Profile } from './auth.ts';
 
 // ============================================================
@@ -74,19 +74,19 @@ const milestoneClaimed = new Set<string>();
 // ============================================================
 
 export const MILESTONES: Readonly<Record<MilestoneKey, MilestoneDefinition>> = {
-  first_hot_take:      { tokens: 25,  label: 'First Hot Take',      icon: '🔥' },
-  first_debate:        { tokens: 50,  label: 'First Debate',        icon: '⚔️' },
-  first_vote:          { tokens: 10,  label: 'First Vote',          icon: '🗳️' },
-  first_reaction:      { tokens: 5,   label: 'First Reaction',      icon: '👊' },
-  first_ai_sparring:   { tokens: 15,  label: 'First AI Sparring',   icon: '🤖' },
-  first_prediction:    { tokens: 10,  label: 'First Prediction',    icon: '🎯' },
-  profile_3_sections:  { tokens: 30,  label: '3 Profile Sections',  icon: '📝' },
-  profile_6_sections:  { tokens: 75,  label: '6 Profile Sections',  icon: '📋' },
-  profile_12_sections: { tokens: 150, label: 'All 12 Sections',     icon: '🏆' },
-  verified_gladiator:  { tokens: 100, label: 'Verified Gladiator',  icon: '🛡️' },
-  streak_7:            { tokens: 0,   label: '7-Day Streak',        icon: '❄️', freezes: 1 },
-  streak_30:           { tokens: 0,   label: '30-Day Streak',       icon: '❄️', freezes: 3 },
-  streak_100:          { tokens: 0,   label: '100-Day Streak',      icon: '❄️', freezes: 5 },
+  first_hot_take:     { tokens: 25,  label: 'First Hot Take',    icon: '🔥' },
+  first_debate:       { tokens: 50,  label: 'First Debate',      icon: '⚔️' },
+  first_vote:         { tokens: 10,  label: 'First Vote',        icon: '🗳️' },
+  first_reaction:     { tokens: 5,   label: 'First Reaction',    icon: '👊' },
+  first_ai_sparring:  { tokens: 15,  label: 'First AI Sparring', icon: '🤖' },
+  first_prediction:   { tokens: 10,  label: 'First Prediction',  icon: '🎯' },
+  profile_3_sections: { tokens: 30,  label: '3 Profile Sections', icon: '📝' },
+  profile_6_sections: { tokens: 75,  label: '6 Profile Sections', icon: '📋' },
+  profile_12_sections:{ tokens: 150, label: 'All 12 Sections',   icon: '🏆' },
+  verified_gladiator: { tokens: 100, label: 'Verified Gladiator', icon: '🛡️' },
+  streak_7:           { tokens: 0,   label: '7-Day Streak',      icon: '❄️', freezes: 1 },
+  streak_30:          { tokens: 0,   label: '30-Day Streak',      icon: '❄️', freezes: 3 },
+  streak_100:         { tokens: 0,   label: '100-Day Streak',     icon: '❄️', freezes: 5 },
 } as const;
 
 // ============================================================
@@ -101,34 +101,32 @@ function _injectCSS(): void {
   const style = document.createElement('style');
   style.textContent = `
     @keyframes tokenFlyUp {
-      0% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
-      60% { opacity:1; transform:translateX(-50%) translateY(-60px) scale(1.2); }
+      0%   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+      60%  { opacity:1; transform:translateX(-50%) translateY(-60px) scale(1.2); }
       100% { opacity:0; transform:translateX(-50%) translateY(-100px) scale(0.8); }
     }
     @keyframes tokenFlash {
-      0% { box-shadow:0 0 0 0 rgba(212,168,67,0); }
-      30% { box-shadow:0 0 20px 8px rgba(212,168,67,0.4); }
+      0%   { box-shadow:0 0 0 0 rgba(212,168,67,0); }
+      30%  { box-shadow:0 0 20px 8px rgba(212,168,67,0.4); }
       100% { box-shadow:0 0 0 0 rgba(212,168,67,0); }
     }
     @keyframes milestoneSlide {
-      0% { opacity:0; transform:translateX(-50%) translateY(20px) scale(0.9); }
-      20% { opacity:1; transform:translateX(-50%) translateY(0) scale(1.05); }
-      30% { transform:translateX(-50%) translateY(0) scale(1); }
-      80% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+      0%   { opacity:0; transform:translateX(-50%) translateY(20px) scale(0.9); }
+      20%  { opacity:1; transform:translateX(-50%) translateY(0) scale(1.05); }
+      30%  { transform:translateX(-50%) translateY(0) scale(1); }
+      80%  { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
       100% { opacity:0; transform:translateX(-50%) translateY(-10px) scale(0.95); }
     }
     .token-fly-coin {
-      position:fixed; left:50%; z-index:100000;
-      font-size:28px; pointer-events:none;
-      animation: tokenFlyUp 0.9s ease-out forwards;
+      position:fixed; left:50%; z-index:100000; font-size:28px;
+      pointer-events:none; animation: tokenFlyUp 0.9s ease-out forwards;
     }
     .token-earn-toast {
       position:fixed; top:20px; left:50%; transform:translateX(-50%);
       background:linear-gradient(135deg, #D4A843 0%, #b8942e 100%);
       color:#0A0A1A; font-family:"Cinzel",serif; font-weight:700;
-      padding:10px 20px; border-radius:8px; z-index:99999;
-      font-size:15px; white-space:nowrap;
-      animation: tokenFlash 0.6s ease-out;
+      padding:10px 20px; border-radius:8px; z-index:99999; font-size:15px;
+      white-space:nowrap; animation: tokenFlash 0.6s ease-out;
       box-shadow: 0 4px 12px rgba(212,168,67,0.3);
     }
     .milestone-toast {
@@ -136,13 +134,13 @@ function _injectCSS(): void {
       background:linear-gradient(135deg, #1a2d4a 0%, #2d5a8e 100%);
       border:2px solid #D4A843; color:#f0f0f0;
       font-family:"Barlow Condensed",sans-serif; font-weight:600;
-      padding:14px 24px; border-radius:12px; z-index:99999;
-      font-size:15px; text-align:center; max-width:320px;
+      padding:14px 24px; border-radius:12px; z-index:99999; font-size:15px;
+      text-align:center; max-width:320px;
       animation: milestoneSlide 3.5s ease-in-out forwards;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
-    .milestone-toast .mt-icon { font-size:28px; display:block; margin-bottom:4px; }
-    .milestone-toast .mt-label { color:#D4A843; font-family:"Cinzel",serif; font-size:14px; letter-spacing:1px; }
+    .milestone-toast .mt-icon   { font-size:28px; display:block; margin-bottom:4px; }
+    .milestone-toast .mt-label  { color:#D4A843; font-family:"Cinzel",serif; font-size:14px; letter-spacing:1px; }
     .milestone-toast .mt-reward { font-size:13px; margin-top:4px; color:#a0a8b8; }
   `;
   document.head.appendChild(style);
@@ -161,7 +159,7 @@ function _coinFlyUp(): void {
   if (bar) {
     const rect = bar.getBoundingClientRect();
     coin.style.left = rect.left + rect.width / 2 + 'px';
-    coin.style.top = rect.bottom + 'px';
+    coin.style.top  = rect.bottom + 'px';
   } else {
     coin.style.top = '60px';
   }
@@ -173,7 +171,6 @@ function _tokenToast(tokens: number, label: string): void {
   if (!tokens || tokens <= 0) return;
   _injectCSS();
   _coinFlyUp();
-
   const msg = `+${tokens} 🪙 ${label}`;
   showToast(msg, 'success');
 }
@@ -182,12 +179,10 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
   _injectCSS();
   const el = document.createElement('div');
   el.className = 'milestone-toast';
-
   let rewardText = '';
-  if (tokens > 0) rewardText = `+${Number(tokens)} 🪙 tokens`;
-  if (freezes > 0) rewardText = `+${Number(freezes)} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
+  if (tokens > 0)              rewardText = `+${Number(tokens)} 🪙 tokens`;
+  if (freezes > 0)             rewardText = `+${Number(freezes)} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
   if (tokens > 0 && freezes > 0) rewardText = `+${Number(tokens)} 🪙 + ${Number(freezes)} ❄️`;
-
   el.innerHTML = `
     <span class="mt-icon">${escapeHTML(icon || '🏆')}</span>
     <span class="mt-label">MILESTONE UNLOCKED</span>
@@ -206,17 +201,13 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
 function _updateBalanceDisplay(newBalance: number | null | undefined): void {
   if (newBalance == null) return;
   lastKnownBalance = newBalance;
-
   document.querySelectorAll('[data-token-balance]').forEach(el => {
     el.textContent = newBalance.toLocaleString();
   });
-
   const balEl = document.getElementById('token-balance');
   if (balEl) balEl.textContent = newBalance.toLocaleString();
-
   const countEl = document.getElementById('token-count');
   if (countEl) countEl.textContent = newBalance.toLocaleString();
-
   const bar = document.getElementById('token-display');
   if (bar) {
     bar.style.animation = 'tokenFlash 0.6s ease-out';
@@ -225,17 +216,14 @@ function _updateBalanceDisplay(newBalance: number | null | undefined): void {
 }
 
 // ============================================================
-// SAFE RPC HELPER (delegates to auth.safeRpc)
+// SAFE RPC HELPER (uses imported safeRpc from auth.ts)
 // ============================================================
 
 async function _rpc(fnName: string, args: Record<string, unknown> = {}): Promise<ClaimResult | null> {
-  const auth = (globalThis as unknown as { ColosseumAuth?: { isPlaceholderMode: boolean; currentUser: unknown; safeRpc: typeof safeRpc } }).ColosseumAuth;
-  if (!auth) return null;
-  if (auth.isPlaceholderMode) return null;
-  if (!auth.currentUser) return null;
-
+  if (getIsPlaceholderMode()) return null;
+  if (!getCurrentUser()) return null;
   try {
-    const { data, error } = await auth.safeRpc(fnName, args);
+    const { data, error } = await safeRpc(fnName, args);
     if (error) {
       console.warn(`[Tokens] ${fnName} error:`, error.message ?? error);
       return null;
@@ -252,13 +240,10 @@ async function _rpc(fnName: string, args: Record<string, unknown> = {}): Promise
 // ============================================================
 
 export function requireTokens(amount: number, actionLabel?: string): boolean {
-  const auth = (globalThis as unknown as { ColosseumAuth?: { currentProfile: Profile | null } }).ColosseumAuth;
-  const profile = auth?.currentProfile ?? null;
+  const profile = getCurrentProfile();
   if (!profile) return true;
-
   const balance = profile.token_balance || 0;
   if (balance >= amount) return true;
-
   const deficit = amount - balance;
   const msg = `Need ${amount} tokens to ${actionLabel ?? 'do that'} (${deficit} more to go)`;
   showToast(msg, 'error');
@@ -273,13 +258,11 @@ export async function claimMilestone(key: MilestoneKey): Promise<ClaimResult | n
   if (milestoneClaimed.has(key)) return null;
   const def = MILESTONES[key];
   if (!def) return null;
-
   const result = await _rpc('claim_milestone', { p_milestone_key: key });
   if (!result?.success) {
     if (result?.error === 'Already claimed') milestoneClaimed.add(key);
     return null;
   }
-
   milestoneClaimed.add(key);
   if (result.new_balance != null) _updateBalanceDisplay(result.new_balance);
   _milestoneToast(def.icon, def.label, result.tokens_earned ?? 0, result.freezes_earned ?? 0);
@@ -298,8 +281,8 @@ export async function _loadMilestones(): Promise<void> {
 
 function _checkStreakMilestones(streak: number): void {
   if (!streak) return;
-  if (streak >= 7) void claimMilestone('streak_7');
-  if (streak >= 30) void claimMilestone('streak_30');
+  if (streak >= 7)   void claimMilestone('streak_7');
+  if (streak >= 30)  void claimMilestone('streak_30');
   if (streak >= 100) void claimMilestone('streak_100');
 }
 
@@ -316,9 +299,7 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
     }
     return null;
   }
-
   _updateBalanceDisplay(result.new_balance);
-
   let label = 'Daily login';
   if (result.freeze_used) {
     label = 'Daily login (❄️ freeze saved your streak!)';
@@ -326,10 +307,8 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
     label = `Daily login + ${result.login_streak ?? 0}-day streak!`;
   }
   _tokenToast(result.tokens_earned ?? 0, label);
-
   console.log(`[Tokens] Daily login: +${result.tokens_earned ?? 0} (streak: ${result.login_streak ?? 0}, freeze used: ${result.freeze_used ?? false})`);
   _checkStreakMilestones(result.login_streak ?? 0);
-
   return result;
 }
 
@@ -337,7 +316,6 @@ export async function claimHotTake(hotTakeId: string): Promise<ClaimResult | nul
   if (!hotTakeId) return null;
   const result = await _rpc('claim_action_tokens', { p_action: 'hot_take', p_reference_id: hotTakeId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Hot take');
   void claimMilestone('first_hot_take');
@@ -348,7 +326,6 @@ export async function claimReaction(hotTakeId: string): Promise<ClaimResult | nu
   if (!hotTakeId) return null;
   const result = await _rpc('claim_action_tokens', { p_action: 'reaction', p_reference_id: hotTakeId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Reaction');
   void claimMilestone('first_reaction');
@@ -359,7 +336,6 @@ export async function claimVote(debateId: string): Promise<ClaimResult | null> {
   if (!debateId) return null;
   const result = await _rpc('claim_action_tokens', { p_action: 'vote', p_reference_id: debateId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Vote');
   void claimMilestone('first_vote');
@@ -370,9 +346,7 @@ export async function claimDebate(debateId: string): Promise<ClaimResult | null>
   if (!debateId) return null;
   const result = await _rpc('claim_debate_tokens', { p_debate_id: debateId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
-
   let label = 'Debate complete';
   if (result.is_winner) {
     label = 'Debate win!';
@@ -387,7 +361,6 @@ export async function claimAiSparring(debateId: string): Promise<ClaimResult | n
   if (!debateId) return null;
   const result = await _rpc('claim_action_tokens', { p_action: 'ai_sparring', p_reference_id: debateId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'AI Sparring');
   void claimMilestone('first_ai_sparring');
@@ -398,7 +371,6 @@ export async function claimPrediction(debateId: string): Promise<ClaimResult | n
   if (!debateId) return null;
   const result = await _rpc('claim_action_tokens', { p_action: 'prediction', p_reference_id: debateId });
   if (!result?.success) return null;
-
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Prediction');
   void claimMilestone('first_prediction');
@@ -407,10 +379,10 @@ export async function claimPrediction(debateId: string): Promise<ClaimResult | n
 
 export async function checkProfileMilestones(completedCount: number): Promise<void> {
   if (!completedCount) return;
-  if (completedCount >= 3) void claimMilestone('profile_3_sections');
-  if (completedCount >= 6) void claimMilestone('profile_6_sections');
+  if (completedCount >= 3)  void claimMilestone('profile_3_sections');
+  if (completedCount >= 6)  void claimMilestone('profile_6_sections');
   if (completedCount >= 12) void claimMilestone('profile_12_sections');
-  if (completedCount >= 3) void claimMilestone('verified_gladiator');
+  if (completedCount >= 3)  void claimMilestone('verified_gladiator');
 }
 
 export async function getSummary(): Promise<TokenSummary | null> {
@@ -432,13 +404,33 @@ export function getMilestoneList(): MilestoneListItem[] {
 // GETTERS
 // ============================================================
 
-export function getBalance(): number | null { return lastKnownBalance; }
+export function getBalance(): number | null {
+  return lastKnownBalance;
+}
+
+// ============================================================
+// INIT (matches colosseum-tokens.js _init())
+// ============================================================
+
+export function init(): void {
+  _injectCSS();
+  onChange((user, profile) => {
+    if (user && profile) {
+      if (profile.token_balance != null) {
+        _updateBalanceDisplay(profile.token_balance);
+      }
+      claimDailyLogin();
+      _loadMilestones();
+    }
+  });
+}
 
 // ============================================================
 // DEFAULT EXPORT
 // ============================================================
 
 const tokens = {
+  init,
   claimDailyLogin,
   claimHotTake,
   claimReaction,
@@ -456,3 +448,19 @@ const tokens = {
 } as const;
 
 export default tokens;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumTokens: typeof tokens }).ColosseumTokens = tokens;
+
+// ============================================================
+// AUTO-INIT (same pattern as .js IIFE)
+// ============================================================
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
