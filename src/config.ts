@@ -1,14 +1,10 @@
 /**
  * THE COLOSSEUM — Central Configuration (TypeScript)
  *
- * Typed mirror of colosseum-config.js. During migration (Phases 1-3),
- * the original .js file runs in production. This .ts file provides
- * compile-time type safety for all new TypeScript modules.
+ * Runtime module — replaces colosseum-config.js when Vite build is active.
+ * All constants, escapeHTML, showToast, friendlyError live here.
  *
- * Source of truth for runtime: colosseum-config.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 126 (Phase 1)
+ * Migration: Session 126 (Phase 1), Session 138 (cutover — window bridge added)
  */
 
 // ============================================================
@@ -479,3 +475,9 @@ const config: ColosseumConfig = {
 } as const;
 
 export default config;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumConfig: typeof config }).ColosseumConfig = config;

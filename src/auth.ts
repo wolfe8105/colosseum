@@ -1,19 +1,15 @@
 /**
  * THE COLOSSEUM — Authentication Module (TypeScript)
  *
- * Typed mirror of colosseum-auth.js. During migration (Phases 1-3),
- * the original .js file runs in production. This .ts file provides
- * compile-time type safety for all new TypeScript modules.
+ * Runtime module — replaces colosseum-auth.js when Vite build is active.
+ * Depends on: config.ts, @supabase/supabase-js (npm)
  *
- * Source of truth for runtime: colosseum-auth.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 126 (Phase 1)
+ * Migration: Session 126 (Phase 1), Session 138 (cutover — npm import, zero globalThis reads)
  */
 
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { escapeHTML } from './config.ts';
-import type { ColosseumConfig } from './config.ts';
+import { escapeHTML, SUPABASE_URL, SUPABASE_ANON_KEY, placeholderMode, APP } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -324,37 +320,24 @@ async function _loadProfile(userId: string): Promise<void> {
  * Uses INITIAL_SESSION as sole init path. noOpLock bypasses navigator.locks.
  */
 export function init(): void {
-  // Check for config — access via window global since config.js loads before auth.js
-  const config = (globalThis as unknown as { ColosseumConfig?: ColosseumConfig }).ColosseumConfig;
+  // Config is always available via ES import — no globalThis check needed
 
-  if (!config) {
-    console.warn('ColosseumAuth: config not loaded, entering placeholder mode');
-    _enterPlaceholderMode();
-    return;
-  }
-
-  if (config.placeholderMode.supabase) {
+  if (placeholderMode.supabase) {
     console.warn('ColosseumAuth: Supabase credentials missing, placeholder mode');
     _enterPlaceholderMode();
     return;
   }
 
   try {
-    const supabaseGlobal = (globalThis as unknown as {
-      supabase?: { createClient: (url: string, key: string, opts: unknown) => SupabaseClient };
-    }).supabase;
-
-    if (!supabaseGlobal?.createClient) throw new Error('Supabase CDN not loaded');
-
     // noOpLock bypasses navigator.locks (GitHub issue supabase-js#1594)
     const noOpLock = async (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>): Promise<unknown> => {
       return await fn();
     };
 
-    supabaseClient = supabaseGlobal.createClient(
-      config.SUPABASE_URL,
-      config.SUPABASE_ANON_KEY,
-      { auth: { lock: noOpLock } }
+    supabaseClient = createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { lock: noOpLock } } as any
     );
     isPlaceholderMode = false;
 
@@ -409,10 +392,7 @@ export async function signUp({ email, password, username, displayName, dob }: Si
   if (isPlaceholderMode) return { success: true, placeholder: true };
 
   try {
-    const config = (globalThis as unknown as { ColosseumConfig?: ColosseumConfig }).ColosseumConfig;
-    const redirectTo = config?.APP?.baseUrl
-      ? config.APP.baseUrl + '/colosseum-login.html'
-      : window.location.origin + '/colosseum-login.html';
+    const redirectTo = APP.baseUrl + '/colosseum-login.html';
 
     const { data, error } = await supabaseClient!.auth.signUp({
       email,
@@ -1065,3 +1045,19 @@ const auth = {
 } as const;
 
 export default auth;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumAuth: typeof auth }).ColosseumAuth = auth;
+
+// ============================================================
+// AUTO-INIT (same pattern as .js IIFE)
+// ============================================================
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
