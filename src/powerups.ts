@@ -1,10 +1,10 @@
 /**
  * THE COLOSSEUM — Power-Up System (TypeScript)
  *
- * Typed mirror of colosseum-powerups.js.
+ * Runtime module (replaces colosseum-powerups.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, getPowerUpSlots, getNextTier)
  *
- * Migration: Session 126 (Phase 2)
+ * Migration: Session 126 (Phase 2). Window bridge: Session 140.
  */
 
 import { safeRpc } from './auth.ts';
@@ -449,3 +449,9 @@ const powerups = {
 } as const;
 
 export default powerups;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumPowerUps: typeof powerups }).ColosseumPowerUps = powerups;

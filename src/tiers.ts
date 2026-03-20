@@ -1,10 +1,10 @@
 /**
  * THE COLOSSEUM — Questionnaire Tier System (TypeScript)
  *
- * Typed mirror of colosseum-tiers.js. Pure utility — zero dependencies.
+ * Runtime module (replaces colosseum-tiers.js). Pure utility — zero dependencies.
  * Client-side is DISPLAY ONLY — all RPCs enforce server-side.
  *
- * Migration: Session 126 (Phase 2)
+ * Migration: Session 126 (Phase 2). Window bridge: Session 140.
  */
 
 import { escapeHTML } from './config.ts';
@@ -169,3 +169,9 @@ const tiers = {
 } as const;
 
 export default tiers;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumTiers: typeof tiers }).ColosseumTiers = tiers;

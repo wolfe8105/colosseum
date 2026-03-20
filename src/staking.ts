@@ -1,13 +1,13 @@
 /**
  * THE COLOSSEUM — Token Staking System (TypeScript)
  *
- * Typed mirror of colosseum-staking.js.
+ * Runtime module (replaces colosseum-staking.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, canStake)
  *
  * THIS IS WHERE LM-185 DIES: `import { safeRpc }` replaces bare
  * `ColosseumAuth.safeRpc()` — scope bug is structurally impossible.
  *
- * Migration: Session 126 (Phase 2)
+ * Migration: Session 126 (Phase 2). Window bridge: Session 140.
  */
 
 import { safeRpc } from './auth.ts';
@@ -333,3 +333,9 @@ const staking = {
 } as const;
 
 export default staking;
+
+// ============================================================
+// WINDOW BRIDGE (for declare-const modules not yet converted)
+// ============================================================
+
+(window as unknown as { ColosseumStaking: typeof staking }).ColosseumStaking = staking;
