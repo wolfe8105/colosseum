@@ -13,10 +13,19 @@
  * interfaces. Render functions reference the same HTML templates — full HTML
  * lives in colosseum-arena.js.
  *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3). ES imports: Session 141.
  */
 
+import { safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile, assignModerator, getDebateReferences } from './auth.ts';
+import { escapeHTML, SUPABASE_URL, SUPABASE_ANON_KEY, isAnyPlaceholder } from './config.ts';
+import { claimDebate, claimAiSparring } from './tokens.ts';
+import { settleStakes } from './staking.ts';
+import { hasMultiplier } from './powerups.ts';
+import { joinDebate, leaveDebate, on as onWebRTC } from './webrtc.ts';
+import { startRecording, stopRecording, retake as vmRetake, send as vmSend } from './voicememo.ts';
 import type { SafeRpcResult } from './auth.ts';
+import type { SettleResult } from './staking.ts';
+import type { EquippedItem } from './powerups.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -57,7 +66,7 @@ export interface CurrentDebate {
   moderatorType?: string | null;
   moderatorId?: string | null;
   moderatorName?: string | null;
-  _stakingResult?: { payout: number; success: boolean } | null;
+  _stakingResult?: SettleResult | null;
 }
 
 export interface SelectedModerator {
@@ -116,93 +125,6 @@ export interface PowerUpEquipped {
   activated: boolean;
 }
 
-// ============================================================
-// AUTH / CONFIG BRIDGE
-// ============================================================
-
-declare const ColosseumConfig: {
-  escapeHTML: (str: string) => string;
-  isAnyPlaceholder: boolean;
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  showToast?: (msg: string, type: string) => void;
-  friendlyError?: (err: unknown) => string;
-};
-
-declare const ColosseumAuth: {
-  supabase: {
-    from: (table: string) => unknown;
-    rpc: (name: string, params?: Record<string, unknown>) => Promise<SafeRpcResult>;
-  } | null;
-  isPlaceholderMode: boolean;
-  currentUser: { id: string } | null;
-  currentProfile: {
-    display_name?: string;
-    username?: string;
-    elo_rating?: number;
-    token_balance?: number;
-    questions_answered?: number;
-    login_streak?: number;
-  } | null;
-  safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-  requireAuth: (label: string) => boolean;
-  declareRival: (targetId: string) => Promise<{ error?: unknown }>;
-  showUserProfile: (userId: string) => void;
-  submitReference: (debateId: string, url: string | null, desc: string | null, side?: string | null) => Promise<{ error?: unknown }>;
-  ruleOnReference: (refId: string, ruling: string, reason: string | null, type?: string) => Promise<{ error?: unknown }>;
-  assignModerator: (debateId: string, modId: string | null, modType: string) => Promise<void>;
-  getAvailableModerators: (excludeIds: string[]) => Promise<AvailableModerator[]>;
-  getDebateReferences: (debateId: string) => Promise<unknown[]>;
-};
-
-declare const ColosseumWebRTC: {
-  joinDebate: (id: string, role: string) => Promise<void>;
-  leaveDebate: () => void;
-  toggleMute: () => void;
-  createWaveform: (stream: MediaStream, canvas: HTMLCanvasElement) => void;
-  on: (event: string, cb: (data: Record<string, unknown>) => void) => void;
-  localStream: MediaStream | null;
-} | undefined;
-
-declare const ColosseumVoiceMemo: {
-  startRecording: () => Promise<void>;
-  stopRecording: () => Promise<void>;
-  retake: () => void;
-  send: () => Promise<void>;
-} | undefined;
-
-declare const ColosseumShare: {
-  shareResult: (data: Record<string, unknown>) => void;
-} | undefined;
-
-declare const ColosseumTokens: {
-  claimDebate: (id: string) => void;
-  claimAiSparring: (id: string) => void;
-  balance?: number;
-} | undefined;
-
-declare const ColosseumStaking: {
-  getPool: (id: string) => Promise<unknown>;
-  renderStakingPanel: (id: string, a: string, b: string, pool: unknown, qa: number) => string;
-  wireStakingPanel: (id: string) => void;
-  settleStakes: (id: string, winner: string, multiplier: number) => Promise<{ payout: number; success: boolean }>;
-} | undefined;
-
-declare const ColosseumPowerUps: {
-  getMyPowerUps: (id: string) => Promise<{ inventory: unknown[]; equipped: PowerUpEquipped[]; questions_answered: number }>;
-  getOpponentPowerUps: (id: string) => Promise<{ success: boolean; equipped: PowerUpEquipped[] }>;
-  renderLoadout: (inv: unknown[], eq: unknown[], qa: number, id: string) => string;
-  wireLoadout: (id: string, cb?: (result: unknown) => void) => void;
-  renderActivationBar: (equipped: PowerUpEquipped[]) => string | null;
-  wireActivationBar: (id: string, handlers: { onSilence: () => void; onShield: () => void; onReveal: () => Promise<void> }) => void;
-  hasMultiplier: (equipped: PowerUpEquipped[]) => boolean;
-  renderSilenceOverlay: (name: string) => ReturnType<typeof setInterval>;
-  renderShieldIndicator: () => void;
-  removeShieldIndicator?: () => void;
-  renderRevealPopup: (equipped: PowerUpEquipped[]) => void;
-} | undefined;
-
-declare function navigateTo(screen: string): void;
 
 // ============================================================
 // CONSTANTS
@@ -270,7 +192,7 @@ export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
 export let shieldActive = false;
-export let equippedForDebate: PowerUpEquipped[] = [];
+export let equippedForDebate: EquippedItem[] = [];
 export let silenceTimer: ReturnType<typeof setInterval> | null = null;
 export let _rulingCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -283,29 +205,8 @@ let vmSeconds = 0;
 // HELPERS
 // ============================================================
 
-function getSupabase(): typeof ColosseumAuth.supabase {
-  return (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase) ? ColosseumAuth.supabase : null;
-}
-
 function isPlaceholder(): boolean {
-  return !getSupabase() || (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.isAnyPlaceholder);
-}
-
-async function safeRpc<T = unknown>(name: string, params?: Record<string, unknown>): Promise<SafeRpcResult<T>> {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.safeRpc) {
-    return ColosseumAuth.safeRpc<T>(name, params);
-  }
-  const sb = getSupabase();
-  if (!sb) return { data: null, error: { message: 'Supabase not available' } };
-  return sb.rpc(name, params) as Promise<SafeRpcResult<T>>;
-}
-
-function currentUser(): { id: string } | null {
-  return (typeof ColosseumAuth !== 'undefined') ? ColosseumAuth.currentUser : null;
-}
-
-function currentProfile(): typeof ColosseumAuth.currentProfile {
-  return (typeof ColosseumAuth !== 'undefined') ? ColosseumAuth.currentProfile : null;
+  return !getSupabaseClient() || isAnyPlaceholder;
 }
 
 function formatTimer(sec: number): string {
@@ -317,9 +218,6 @@ function formatTimer(sec: number): string {
 function randomFrom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!;
 }
-
-const sanitize: (s: string) => string =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.escapeHTML : (s: string) => s;
 
 // ============================================================
 // BROWSER HISTORY (Session 121 rewrite)
@@ -370,7 +268,7 @@ async function loadLobbyFeed(): Promise<void> {
 // ============================================================
 
 export function showRankedPicker(): void {
-  if (!currentUser() && !isPlaceholder()) {
+  if (!getCurrentUser() && !isPlaceholder()) {
     window.location.href = 'colosseum-plinko.html';
     return;
   }
@@ -391,7 +289,7 @@ export function closeRankedPicker(forward?: boolean): void {
 }
 
 export function showModeSelect(): void {
-  if (!currentUser() && !isPlaceholder()) {
+  if (!getCurrentUser() && !isPlaceholder()) {
     window.location.href = 'colosseum-plinko.html';
     return;
   }
@@ -653,11 +551,11 @@ async function generateAIDebateResponse(
   }));
 
   try {
-    const supabaseUrl = typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.SUPABASE_URL : null;
+    const supabaseUrl = SUPABASE_URL;
     if (!supabaseUrl) throw new Error('No supabase URL');
 
     const edgeUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai-sparring';
-    const anonKey = typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.SUPABASE_ANON_KEY : null;
+    const anonKey = SUPABASE_ANON_KEY;
 
     const res = await fetch(edgeUrl, {
       method: 'POST',
@@ -708,11 +606,10 @@ function startLiveRoundTimer(): void {
 }
 
 async function initLiveAudio(): Promise<void> {
-  if (typeof ColosseumWebRTC === 'undefined') return;
   const debate = currentDebate!;
-  ColosseumWebRTC.on('debateEnd', () => { void endCurrentDebate(); });
+  onWebRTC('debateEnd', () => { void endCurrentDebate(); });
   try {
-    await ColosseumWebRTC.joinDebate(debate.id, debate.role);
+    await joinDebate(debate.id, debate.role);
   } catch { /* mic access blocked */ }
 }
 
@@ -726,7 +623,7 @@ export function wireVoiceMemoControls(): void {
     else stopVoiceMemoRecording();
   });
   document.getElementById('arena-vm-cancel')?.addEventListener('click', () => {
-    if (typeof ColosseumVoiceMemo !== 'undefined') ColosseumVoiceMemo.retake?.();
+    vmRetake();
     resetVoiceMemoUI();
   });
   document.getElementById('arena-vm-send')?.addEventListener('click', () => { void sendVoiceMemo(); });
@@ -739,17 +636,13 @@ async function startVoiceMemoRecording(): Promise<void> {
     vmSeconds++;
     if (vmSeconds >= 120) stopVoiceMemoRecording();
   }, 1000);
-  if (typeof ColosseumVoiceMemo !== 'undefined') {
-    try { await ColosseumVoiceMemo.startRecording(); } catch { resetVoiceMemoUI(); }
-  }
+  try { await startRecording(); } catch { resetVoiceMemoUI(); }
 }
 
 function stopVoiceMemoRecording(): void {
   vmRecording = false;
   if (vmTimer) clearInterval(vmTimer);
-  if (typeof ColosseumVoiceMemo !== 'undefined') {
-    void ColosseumVoiceMemo.stopRecording?.();
-  }
+  void stopRecording();
 }
 
 function resetVoiceMemoUI(): void {
@@ -762,9 +655,7 @@ async function sendVoiceMemo(): Promise<void> {
   const debate = currentDebate!;
   addMessage(debate.role, `🎤 Voice memo (${formatTimer(vmSeconds)})`, debate.round, false);
   resetVoiceMemoUI();
-  if (typeof ColosseumVoiceMemo !== 'undefined') {
-    await ColosseumVoiceMemo.send?.();
-  }
+  await vmSend();
   addSystemMessage('Voice memo sent — waiting for opponent...');
 }
 
@@ -785,15 +676,15 @@ export function addMessage(side: DebateRole, text: string, round: number, isAI: 
     });
   }
 
-  const profile = currentProfile();
+  const profile = getCurrentProfile();
   const isMe = side === debate?.role;
   const name = isAI ? '🤖 AI' : isMe ? (profile?.display_name ?? 'You') : (debate?.opponentName ?? 'Opponent');
 
   const msg = document.createElement('div');
   msg.className = `arena-msg side-${side} arena-fade-in`;
   msg.innerHTML = `
-    <div class="msg-label">${sanitize(name)}</div>
-    <div>${sanitize(text)}</div>
+    <div class="msg-label">${escapeHTML(name)}</div>
+    <div>${escapeHTML(text)}</div>
     <div class="msg-round">Round ${round}</div>
   `;
   messages.appendChild(msg);
@@ -822,8 +713,8 @@ export async function endCurrentDebate(): Promise<void> {
 
   const debate = currentDebate!;
 
-  if (debate.mode === 'live' && typeof ColosseumWebRTC !== 'undefined') {
-    ColosseumWebRTC.leaveDebate();
+  if (debate.mode === 'live') {
+    leaveDebate();
   }
 
   // Generate scores
@@ -851,18 +742,14 @@ export async function endCurrentDebate(): Promise<void> {
       });
     } catch { /* warned */ }
 
-    if (typeof ColosseumTokens !== 'undefined') {
-      if (debate.mode === 'ai') ColosseumTokens.claimAiSparring(debate.id);
-      else ColosseumTokens.claimDebate(debate.id);
-    }
+    if (debate.mode === 'ai') claimAiSparring(debate.id);
+    else claimDebate(debate.id);
 
-    if (typeof ColosseumStaking !== 'undefined') {
-      try {
-        const hasMulti = typeof ColosseumPowerUps !== 'undefined' && ColosseumPowerUps?.hasMultiplier(equippedForDebate);
-        const stakeResult = await ColosseumStaking.settleStakes(debate.id, winner, hasMulti ? 2 : 1);
-        debate._stakingResult = stakeResult;
-      } catch { /* warned */ }
-    }
+    try {
+      const hasMulti = hasMultiplier(equippedForDebate);
+      const stakeResult = await settleStakes(debate.id, winner, hasMulti ? 2 : 1);
+      debate._stakingResult = stakeResult;
+    } catch { /* warned */ }
   }
 
   // Clean up power-up state
@@ -883,9 +770,7 @@ export async function assignSelectedMod(debateId: string): Promise<void> {
   if (!selectedModerator || isPlaceholder()) return;
   if (debateId.startsWith('ai-local-') || debateId.startsWith('placeholder-')) return;
   try {
-    if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.assignModerator) {
-      await ColosseumAuth.assignModerator(debateId, selectedModerator.id, selectedModerator.type);
-    }
+    await assignModerator(debateId, selectedModerator.id, selectedModerator.type);
   } catch { /* warned */ }
 }
 
@@ -910,7 +795,7 @@ export function startReferencePoll(debateId: string): void {
   if (referencePollTimer) clearInterval(referencePollTimer);
   referencePollTimer = setInterval(async () => {
     try {
-      const refs = await ColosseumAuth?.getDebateReferences?.(debateId);
+      const refs = await getDebateReferences(debateId);
       if (refs) pendingReferences = refs;
     } catch { /* silent */ }
   }, 5000);
@@ -963,3 +848,5 @@ export const ColosseumArenaExport = {
   get view() { return view; },
   get currentDebate() { return getCurrentDebate(); },
 } as const;
+
+(window as unknown as { ColosseumArena: typeof ColosseumArenaExport }).ColosseumArena = ColosseumArenaExport;
