@@ -7,7 +7,9 @@
  *
  * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports),
  *            Session 139 (ColosseumAsync ES import, 5 dead window globals removed,
- *            inline onclick handlers migrated to data-action + addEventListener)
+ *            inline onclick handlers migrated to data-action + addEventListener),
+ *            Session 142 (added side-effect imports for all 16 modules — removed
+ *            legacy .js script tags from index.html)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,6 +25,18 @@ import '../tokens.ts'; // side-effect: auto-inits daily login, milestones, balan
 import { ColosseumAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
+
+// --- Side-effect imports: pull in all modules index.html needs ---
+// These auto-init and expose window bridges for screens/features on index.html.
+// arena.ts transitively imports staking, powerups, webrtc, voicememo.
+import '../arena.ts';
+import '../notifications.ts';
+import '../leaderboard.ts';
+import '../scoring.ts';
+import '../tiers.ts';
+import '../paywall.ts';
+import '../cards.ts';
+import '../analytics.ts';
 
 // ============================================================
 // APP SHELL V4 — Session 23: Auth race fix, Predictions, Rivals, Follows
