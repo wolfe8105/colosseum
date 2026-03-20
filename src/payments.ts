@@ -65,7 +65,10 @@ export function init(): void {
     console.warn('ColosseumPayments: Stripe credentials missing, placeholder mode');
     return;
   }
-
+  if (typeof Stripe === 'undefined') {
+    _isPlaceholderMode = true;
+    return;
+  }
   try {
     stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     _isPlaceholderMode = false;
@@ -121,7 +124,6 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
     position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;
     display:flex;align-items:center;justify-content:center;padding:20px;
   `;
-
   modal.innerHTML = `
     <div style="background:#132240;border:1px solid rgba(212,168,67,0.3);border-radius:12px;max-width:360px;width:100%;padding:24px;text-align:center;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#d4a843;margin-bottom:8px;">${escapeHTML(title)}</div>
@@ -135,7 +137,6 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
       </button>
     </div>
   `;
-
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
@@ -170,7 +171,6 @@ export async function subscribe(tier: string): Promise<void> {
     }
 
     const userId = getCurrentUser()?.id ?? 'unknown';
-
     const res = await fetch(STRIPE_FUNCTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -216,7 +216,6 @@ export async function buyTokens(packageId: string): Promise<void> {
     }
 
     const userId = getCurrentUser()?.id ?? 'unknown';
-
     const res = await fetch(STRIPE_FUNCTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -243,6 +242,7 @@ export function getIsPlaceholderMode(): boolean {
 }
 
 // ============================================================
+
 export const ColosseumPayments = {
   subscribe,
   buyTokens,
@@ -251,9 +251,7 @@ export const ColosseumPayments = {
   },
 } as const;
 
-
 // ============================================================
 // AUTO-INIT (waits for auth ready, then inits Stripe)
 // ============================================================
-
 ready.then(() => init());
