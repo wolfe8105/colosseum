@@ -1,16 +1,13 @@
 /**
  * THE COLOSSEUM — Scoring Module (TypeScript)
  *
- * Typed mirror of colosseum-scoring.js. During migration (Phases 1-3),
- * the original .js file runs in production. This .ts file provides
- * compile-time type safety for all new TypeScript modules.
+ * Runtime module (replaces colosseum-scoring.js).
+ * Voting + predictions — all server-side via safeRpc.
  *
- * Source of truth for runtime: colosseum-scoring.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3). ES imports: Session 140.
  */
 
+import { safeRpc, getIsPlaceholderMode } from './auth.ts';
 import type { SafeRpcResult } from './auth.ts';
 
 // ============================================================
@@ -58,20 +55,8 @@ export function validateUUID(id: string): string {
 // HELPERS
 // ============================================================
 
-declare const ColosseumAuth: {
-  supabase: unknown | null;
-  safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-};
-
-function getClient(): unknown | null {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase) {
-    return ColosseumAuth.supabase;
-  }
-  return null;
-}
-
 function isPlaceholder(): boolean {
-  return !getClient();
+  return getIsPlaceholderMode();
 }
 
 // ============================================================
@@ -87,7 +72,7 @@ export async function castVote(
     return { success: true, vote_count_a: 5, vote_count_b: 3, your_vote: votedFor };
   }
 
-  const { data, error } = await ColosseumAuth.safeRpc<CastVoteResult>('cast_vote', {
+  const { data, error } = await safeRpc<CastVoteResult>('cast_vote', {
     p_debate_id: debateId,
     p_voted_for: votedFor,
     p_round: round,
@@ -110,7 +95,7 @@ export async function placePrediction(
     return { success: true, amount, new_balance: 50 - amount };
   }
 
-  const { data, error } = await ColosseumAuth.safeRpc<PlacePredictionResult>('place_prediction', {
+  const { data, error } = await safeRpc<PlacePredictionResult>('place_prediction', {
     p_debate_id: debateId,
     p_predicted_winner: predictedWinnerId,
     p_amount: amount,
@@ -121,10 +106,14 @@ export async function placePrediction(
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
+// DEFAULT EXPORT + WINDOW BRIDGE
 // ============================================================
 
-export const ColosseumScoring = {
+const scoring = {
   castVote,
   placePrediction,
 } as const;
+
+export default scoring;
+
+(window as unknown as { ColosseumScoring: typeof scoring }).ColosseumScoring = scoring;
