@@ -247,9 +247,6 @@ export function handleDeepLink(): void {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
 export const ColosseumShare = {
   shareResult,
   shareProfile,
@@ -259,7 +256,6 @@ export const ColosseumShare = {
   handleDeepLink,
 } as const;
 
-(window as unknown as { ColosseumShare: typeof ColosseumShare }).ColosseumShare = ColosseumShare;
 
 // ============================================================
 // AUTO-INIT (deep link handler runs after auth is ready)

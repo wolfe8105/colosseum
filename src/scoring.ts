@@ -106,7 +106,7 @@ export async function placePrediction(
 }
 
 // ============================================================
-// DEFAULT EXPORT + WINDOW BRIDGE
+// DEFAULT EXPORT
 // ============================================================
 
 const scoring = {
@@ -115,5 +115,3 @@ const scoring = {
 } as const;
 
 export default scoring;
-
-(window as unknown as { ColosseumScoring: typeof scoring }).ColosseumScoring = scoring;

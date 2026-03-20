@@ -243,9 +243,6 @@ export function getIsPlaceholderMode(): boolean {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
 export const ColosseumPayments = {
   subscribe,
   buyTokens,
@@ -254,7 +251,6 @@ export const ColosseumPayments = {
   },
 } as const;
 
-(window as unknown as { ColosseumPayments: typeof ColosseumPayments }).ColosseumPayments = ColosseumPayments;
 
 // ============================================================
 // AUTO-INIT (waits for auth ready, then inits Stripe)

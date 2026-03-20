@@ -2629,19 +2629,3 @@ export function getCurrentDebate(): CurrentDebate | null {
 // ============================================================
 
 ready.then(() => init()).catch(() => init());
-
-// ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
-export const ColosseumArenaExport = {
-  init,
-  renderLobby,
-  showModeSelect,
-  showPowerUpShop,
-  enterQueue,
-  get view() { return view; },
-  get currentDebate() { return getCurrentDebate(); },
-} as const;
-
-(window as unknown as { ColosseumArena: typeof ColosseumArenaExport }).ColosseumArena = ColosseumArenaExport;

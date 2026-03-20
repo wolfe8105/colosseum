@@ -98,7 +98,7 @@ export interface CreateHotTakeResult {
 export type CategoryFilter = 'all' | 'politics' | 'sports' | 'entertainment' | 'trending' | 'technology' | string;
 
 // ============================================================
-// UNCONVERTED MODULE BRIDGES (window globals)
+// MODULE EXPORTS
 // ============================================================
 
 declare const ColosseumTokens: {
@@ -1081,9 +1081,6 @@ export function getComposerHTML(): string {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
 export const ColosseumAsync = {
   loadHotTakes,
   fetchTakes,
@@ -1101,7 +1098,6 @@ export const ColosseumAsync = {
   get predictions() { return predictions; },
 } as const;
 
-(window as unknown as { ColosseumAsync: typeof ColosseumAsync }).ColosseumAsync = ColosseumAsync;
 
 // ============================================================
 // AUTO-INIT

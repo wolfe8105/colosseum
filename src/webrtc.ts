@@ -523,7 +523,7 @@ export function isConnected(): boolean {
 }
 
 // ============================================================
-// DEFAULT EXPORT + WINDOW BRIDGE
+// DEFAULT EXPORT
 // ============================================================
 
 const webrtc = {
@@ -543,5 +543,3 @@ const webrtc = {
 } as const;
 
 export default webrtc;
-
-(window as unknown as { ColosseumWebRTC: typeof webrtc }).ColosseumWebRTC = webrtc;

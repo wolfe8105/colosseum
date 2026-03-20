@@ -1047,10 +1047,6 @@ const auth = {
 export default auth;
 
 // ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumAuth: typeof auth }).ColosseumAuth = auth;
 
 // ============================================================
 // AUTO-INIT (same pattern as .js IIFE)

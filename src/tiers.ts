@@ -169,9 +169,3 @@ const tiers = {
 } as const;
 
 export default tiers;
-
-// ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumTiers: typeof tiers }).ColosseumTiers = tiers;

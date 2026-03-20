@@ -405,10 +405,6 @@ const notificationsModule = {
 export default notificationsModule;
 
 // ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumNotifications: typeof notificationsModule }).ColosseumNotifications = notificationsModule;
 
 // ============================================================
 // AUTO-INIT (matches .js IIFE — waits for auth ready)

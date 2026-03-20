@@ -446,9 +446,6 @@ export function init(): void {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
 export const ColosseumLeaderboard = {
   render,
   setTab,
@@ -456,7 +453,6 @@ export const ColosseumLeaderboard = {
   showEloExplainer,
 } as const;
 
-(window as unknown as { ColosseumLeaderboard: typeof ColosseumLeaderboard }).ColosseumLeaderboard = ColosseumLeaderboard;
 
 // ============================================================
 // AUTO-INIT (waits for auth ready, then wires MutationObserver)

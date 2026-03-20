@@ -475,9 +475,3 @@ const config: ColosseumConfig = {
 } as const;
 
 export default config;
-
-// ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumConfig: typeof config }).ColosseumConfig = config;

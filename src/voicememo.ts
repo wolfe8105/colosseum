@@ -498,7 +498,7 @@ export function isEnabled(): boolean {
 }
 
 // ============================================================
-// DEFAULT EXPORT + WINDOW BRIDGE
+// DEFAULT EXPORT
 // ============================================================
 
 const voicememo = {
@@ -521,5 +521,3 @@ const voicememo = {
 } as const;
 
 export default voicememo;
-
-(window as unknown as { ColosseumVoiceMemo: typeof voicememo }).ColosseumVoiceMemo = voicememo;

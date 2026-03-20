@@ -333,9 +333,3 @@ const staking = {
 } as const;
 
 export default staking;
-
-// ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumStaking: typeof staking }).ColosseumStaking = staking;

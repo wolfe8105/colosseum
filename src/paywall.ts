@@ -182,14 +182,9 @@ export function dismiss(): void {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
-// ============================================================
-
 export const ColosseumPaywall = {
   gate,
   show,
   dismiss,
   VARIANTS,
 } as const;
-
-(window as unknown as { ColosseumPaywall: typeof ColosseumPaywall }).ColosseumPaywall = ColosseumPaywall;

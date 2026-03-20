@@ -449,9 +449,3 @@ const powerups = {
 } as const;
 
 export default powerups;
-
-// ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumPowerUps: typeof powerups }).ColosseumPowerUps = powerups;

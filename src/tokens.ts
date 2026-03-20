@@ -450,10 +450,6 @@ const tokens = {
 export default tokens;
 
 // ============================================================
-// WINDOW BRIDGE (for declare-const modules not yet converted)
-// ============================================================
-
-(window as unknown as { ColosseumTokens: typeof tokens }).ColosseumTokens = tokens;
 
 // ============================================================
 // AUTO-INIT (same pattern as .js IIFE)
