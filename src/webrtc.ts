@@ -1,14 +1,18 @@
 /**
  * THE COLOSSEUM — WebRTC Module (TypeScript)
  *
- * Typed mirror of colosseum-webrtc.js. Live audio debate engine.
+ * Runtime module (replaces colosseum-webrtc.js). Live audio debate engine.
  * Uses Supabase Realtime channels for signaling (no separate server).
  *
- * Source of truth for runtime: colosseum-webrtc.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3). ES imports: Session 140.
  */
+
+import { getSupabaseClient, getCurrentUser } from './auth.ts';
+import { ICE_SERVERS as CONFIG_ICE_SERVERS, DEBATE } from './config.ts';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+/** Channel type derived from SupabaseClient.channel() */
+type RealtimeChannel = ReturnType<SupabaseClient['channel']>;
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -67,52 +71,16 @@ interface SignalingMessage {
 }
 
 // ============================================================
-// AUTH / CONFIG BRIDGE
-// ============================================================
-
-declare const ColosseumConfig: {
-  ICE_SERVERS?: Array<{ urls: string }>;
-  DEBATE: {
-    roundDurationSec: number;
-    breakDurationSec: number;
-    defaultRounds: number;
-  };
-};
-
-declare const ColosseumAuth: {
-  supabase: {
-    channel: (
-      name: string,
-      opts?: Record<string, unknown>
-    ) => {
-      on: (event: string, opts: Record<string, unknown>, cb: (payload: Record<string, unknown>) => void) => unknown;
-      subscribe: (cb: (status: string) => void) => unknown;
-      send: (msg: Record<string, unknown>) => void;
-      track: (data: Record<string, unknown>) => Promise<void>;
-      presenceState: () => Record<string, unknown>;
-      unsubscribe: () => void;
-    };
-  } | null;
-  currentUser: { id: string } | null;
-};
-
-// ============================================================
 // CONSTANTS
 // ============================================================
 
-const ICE_SERVERS: Array<{ urls: string }> =
-  typeof ColosseumConfig !== 'undefined' && ColosseumConfig.ICE_SERVERS
-    ? ColosseumConfig.ICE_SERVERS
-    : [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+const ICE_SERVERS: Array<{ urls: string }> = [...CONFIG_ICE_SERVERS];
 
-const ROUND_DURATION: number =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.DEBATE.roundDurationSec : 120;
+const ROUND_DURATION: number = DEBATE.roundDurationSec;
 
-const BREAK_DURATION: number =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.DEBATE.breakDurationSec : 30;
+const BREAK_DURATION: number = DEBATE.breakDurationSec;
 
-const MAX_ROUNDS: number =
-  typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.DEBATE.defaultRounds : 5;
+const MAX_ROUNDS: number = DEBATE.defaultRounds;
 
 // ============================================================
 // STATE
@@ -121,7 +89,7 @@ const MAX_ROUNDS: number =
 let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
-let signalingChannel: NonNullable<ReturnType<NonNullable<typeof ColosseumAuth.supabase>['channel']>> | null = null;
+let signalingChannel: RealtimeChannel | null = null;
 
 let debateState: DebateState = {
   debateId: null,
@@ -141,11 +109,8 @@ const callbacks: Record<string, WebRTCEventCallback[]> = {};
 // HELPERS
 // ============================================================
 
-function getSupabase(): typeof ColosseumAuth.supabase {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase) {
-    return ColosseumAuth.supabase;
-  }
-  return null;
+function getSupabase(): SupabaseClient | null {
+  return getSupabaseClient();
 }
 
 function isPlaceholder(): boolean {
@@ -237,7 +202,7 @@ function setupSignaling(debateId: string): void {
   const channelName = 'debate-' + debateId;
 
   signalingChannel = supabase.channel(channelName, {
-    config: { presence: { key: ColosseumAuth?.currentUser?.id || 'anon' } },
+    config: { presence: { key: getCurrentUser()?.id || 'anon' } },
   });
 
   signalingChannel.on('broadcast', { event: 'signal' }, (payload: Record<string, unknown>) => {
@@ -558,10 +523,10 @@ export function isConnected(): boolean {
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
+// DEFAULT EXPORT + WINDOW BRIDGE
 // ============================================================
 
-export const ColosseumWebRTC = {
+const webrtc = {
   joinDebate,
   startLive,
   leaveDebate,
@@ -576,3 +541,7 @@ export const ColosseumWebRTC = {
   get remoteStream() { return getRemoteStream(); },
   get isConnected() { return isConnected(); },
 } as const;
+
+export default webrtc;
+
+(window as unknown as { ColosseumWebRTC: typeof webrtc }).ColosseumWebRTC = webrtc;

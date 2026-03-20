@@ -1,16 +1,16 @@
 /**
  * THE COLOSSEUM — Voice Memo Module (TypeScript)
  *
- * Typed mirror of colosseum-voicememo.js. SURVIVAL-CRITICAL: Solves empty
+ * Runtime module (replaces colosseum-voicememo.js). SURVIVAL-CRITICAL: Solves empty
  * lobby problem. Record take → opponent records reply → async voice debate.
  * Uses MediaRecorder API, Supabase Storage, placeholder fallback.
  *
- * Source of truth for runtime: colosseum-voicememo.js (until Phase 4 cutover)
- * Source of truth for types: this file
- *
- * Migration: Session 127 (Phase 3)
+ * Migration: Session 127 (Phase 3). ES imports: Session 140.
  */
 
+import { safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from './auth.ts';
+import { escapeHTML, FEATURES } from './config.ts';
+import { loadHotTakes } from './async.ts';
 import type { SafeRpcResult } from './auth.ts';
 
 // ============================================================
@@ -39,38 +39,6 @@ export interface RecorderContext {
 }
 
 // ============================================================
-// AUTH / CONFIG BRIDGE
-// ============================================================
-
-declare const ColosseumConfig: {
-  escapeHTML: (str: string) => string;
-  FEATURES?: { voiceMemo?: boolean };
-};
-
-declare const ColosseumAuth: {
-  supabase: {
-    storage: {
-      from: (bucket: string) => {
-        upload: (
-          path: string,
-          blob: Blob,
-          opts: { contentType: string; upsert: boolean }
-        ) => Promise<{ data: unknown; error: { message: string } | null }>;
-        getPublicUrl: (path: string) => { data: { publicUrl: string } };
-      };
-    };
-  } | null;
-  currentUser: { id: string } | null;
-  currentProfile: { display_name?: string | null; username?: string | null } | null;
-  isPlaceholderMode: boolean;
-  safeRpc: <T = unknown>(rpcName: string, params?: Record<string, unknown>) => Promise<SafeRpcResult<T>>;
-};
-
-declare const ColosseumAsync: {
-  loadHotTakes?: (section: string) => void;
-} | undefined;
-
-// ============================================================
 // CONSTANTS
 // ============================================================
 
@@ -97,28 +65,24 @@ let isPlayingState = false;
 // HELPERS
 // ============================================================
 
-function getSupabase(): typeof ColosseumAuth.supabase {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.supabase) {
-    return ColosseumAuth.supabase;
-  }
-  return null;
+function getSupabase() {
+  return getSupabaseClient();
 }
 
 function isPlaceholder(): boolean {
-  return !getSupabase();
+  return getIsPlaceholderMode();
 }
 
 function currentUserId(): string {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentUser) {
-    return ColosseumAuth.currentUser.id;
-  }
-  return 'placeholder-user';
+  const user = getCurrentUser();
+  return user ? user.id : 'placeholder-user';
 }
 
 /** Available for future use — voice take attribution */
 export function _currentUsername(): string {
-  if (typeof ColosseumAuth !== 'undefined' && ColosseumAuth.currentProfile) {
-    return ColosseumAuth.currentProfile.display_name ?? ColosseumAuth.currentProfile.username ?? 'Gladiator';
+  const profile = getCurrentProfile();
+  if (profile) {
+    return (profile as Record<string, unknown>).display_name as string ?? (profile as Record<string, unknown>).username as string ?? 'Gladiator';
   }
   return 'Gladiator';
 }
@@ -429,7 +393,7 @@ export async function send(): Promise<void> {
   const { url, path } = await uploadVoiceMemo(pendingRecording.blob, context.debateId ?? null);
 
   if (!isPlaceholder()) {
-    const { error } = await ColosseumAuth.safeRpc('create_voice_take', {
+    const { error } = await safeRpc('create_voice_take', {
       p_section: context.section ?? 'trending',
       p_voice_memo_url: url,
       p_voice_memo_path: path,
@@ -444,9 +408,7 @@ export async function send(): Promise<void> {
   closeRecorderSheet();
   showToast('🎤 Voice take posted!');
 
-  if (typeof ColosseumAsync !== 'undefined' && ColosseumAsync?.loadHotTakes) {
-    ColosseumAsync.loadHotTakes(context.section ?? 'all');
-  }
+  loadHotTakes(context.section ?? 'all');
 }
 
 // ============================================================
@@ -478,7 +440,7 @@ export function renderPlayer(voiceUrl: string, duration: number): string {
   const id = 'vmp-' + Math.random().toString(36).slice(2, 8);
   const min = Math.floor(duration / 60);
   const sec = String(duration % 60).padStart(2, '0');
-  const safeUrl = typeof ColosseumConfig !== 'undefined' ? ColosseumConfig.escapeHTML(voiceUrl) : voiceUrl;
+  const safeUrl = escapeHTML(voiceUrl);
 
   return `
     <div class="vm-inline-player" data-player-id="${id}" style="
@@ -532,17 +494,14 @@ export function playInline(id: string): void {
 }
 
 export function isEnabled(): boolean {
-  if (typeof ColosseumConfig !== 'undefined' && ColosseumConfig.FEATURES) {
-    return ColosseumConfig.FEATURES.voiceMemo !== false;
-  }
-  return true;
+  return FEATURES.voiceMemo !== false;
 }
 
 // ============================================================
-// WINDOW GLOBAL BRIDGE (removed in Phase 4)
+// DEFAULT EXPORT + WINDOW BRIDGE
 // ============================================================
 
-export const ColosseumVoiceMemo = {
+const voicememo = {
   startRecording,
   stopRecording,
   cancelRecording,
@@ -560,3 +519,7 @@ export const ColosseumVoiceMemo = {
   get isRecording() { return isRecordingState; },
   get isEnabled() { return isEnabled(); },
 } as const;
+
+export default voicememo;
+
+(window as unknown as { ColosseumVoiceMemo: typeof voicememo }).ColosseumVoiceMemo = voicememo;
