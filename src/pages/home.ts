@@ -1,21 +1,27 @@
 /**
  * THE COLOSSEUM — Home Page Controller (TypeScript)
  *
- * Extracted from index.html inline script.
+ * Runtime module — entry point for index.html via Vite.
  * Spoke carousel, category overlays, pull-to-refresh, activity indicators,
  * shop screen, hot takes feed wiring, leaderboard, predictions.
  *
- * Migration: Session 128 (Phase 4)
- * NOTE: Mechanical extraction. Type annotations at key boundaries.
+ * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const ColosseumAuth = (window as any).ColosseumAuth;
-const ColosseumConfig = (window as any).ColosseumConfig;
-const ColosseumTokens = (window as any).ColosseumTokens;
-const ColosseumNotifications = (window as any).ColosseumNotifications;
+// --- Converted modules: ES imports ---
+import {
+  onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
+  getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing,
+  showUserProfile, updateProfile, requireAuth, ready, safeRpc
+} from '../auth.ts';
+import { showToast, escapeHTML } from '../config.ts';
+import '../tokens.ts'; // side-effect: auto-inits daily login, milestones, balance display
+
+// --- Unconverted modules: window globals (script tags still in index.html) ---
 const ColosseumAsync = (window as any).ColosseumAsync;
+const ColosseumNotifications = (window as any).ColosseumNotifications;
 const ColosseumLeaderboard = (window as any).ColosseumLeaderboard;
 const ColosseumShare = (window as any).ColosseumShare;
 const ColosseumPayments = (window as any).ColosseumPayments;
@@ -285,15 +291,16 @@ document.addEventListener('click',()=>{dropdown.classList.remove('open');});
 
 // --- Logout ---
 document.getElementById('logout-btn').addEventListener('click',async()=>{
-  if(typeof ColosseumAuth!=='undefined'&&ColosseumAuth.logOut)await ColosseumAuth.logOut();
+  await logOut();
   window.location.href='colosseum-plinko.html';
 });
 
 // --- SESSION 23: Load Follow Counts ---
 async function loadFollowCounts() {
-  if (!ColosseumAuth?.currentUser?.id) return;
+  const user = getCurrentUser();
+  if (!user?.id) return;
   try {
-    const counts = await ColosseumAuth.getFollowCounts(ColosseumAuth.currentUser.id);
+    const counts = await getFollowCounts(user.id);
     document.getElementById('profile-followers').textContent = counts.followers || 0;
     document.getElementById('profile-following').textContent = counts.following || 0;
   } catch(e) { /* non-critical — counts stay at 0 */ }
@@ -301,9 +308,8 @@ async function loadFollowCounts() {
 
 // --- Area 3, Item 3.4: Live category counts for carousel tiles ---
 async function loadCategoryCounts() {
-  if (!ColosseumAuth?.supabase || ColosseumAuth.isPlaceholderMode) return;
+  if (!getSupabaseClient() || getIsPlaceholderMode()) return;
   try {
-    const safeRpc = ColosseumAuth.safeRpc ? ColosseumAuth.safeRpc.bind(ColosseumAuth) : async (fn) => ColosseumAuth.supabase.rpc(fn);
     const { data, error } = await safeRpc('get_category_counts');
     if (error || !data) return;
     data.forEach(row => {
@@ -338,8 +344,6 @@ async function loadCategoryCounts() {
 }
 
 // --- Auth State → UI ---
-// SESSION 113: escHtml helper for innerHTML safety (profile modals)
-function _escHtml(s: any){return ColosseumConfig?.escapeHTML?ColosseumConfig.escapeHTML(s):String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 // SESSION 113: Parse avatar_url — supports 'emoji:X' format or falls back to initial letter
 function _renderAvatar(el: HTMLElement, profile: any){
@@ -348,12 +352,12 @@ function _renderAvatar(el: HTMLElement, profile: any){
     const emoji=url.slice(6);
     el.textContent='';
     el.style.fontSize='32px';
-    el.innerHTML=_escHtml(emoji)+'<span class="avatar-hint">✏️</span>';
+    el.innerHTML=escapeHTML(emoji)+'<span class="avatar-hint">✏️</span>';
   } else {
     const initial=(profile.display_name||profile.username||'?')[0].toUpperCase();
     el.textContent='';
     el.style.fontSize='';
-    el.innerHTML=_escHtml(initial)+'<span class="avatar-hint">✏️</span>';
+    el.innerHTML=escapeHTML(initial)+'<span class="avatar-hint">✏️</span>';
   }
 }
 function _renderNavAvatar(el: HTMLElement, profile: any){
@@ -396,7 +400,7 @@ function updateUIFromProfile(user: any, profile: any){
     else{bioEl.textContent='Tap to add bio';bioEl.classList.add('placeholder');}
   }
 }
-if(typeof ColosseumAuth!=='undefined'){ColosseumAuth.onChange(updateUIFromProfile);}
+onChange(updateUIFromProfile);
 
 // ============================================================
 // SESSION 113: PROFILE DEPTH — Avatar picker, Bio edit, Follow list
@@ -413,7 +417,7 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
   // Remove existing sheet if any
   document.getElementById('avatar-picker-sheet')?.remove();
 
-  const currentUrl=ColosseumAuth?.currentProfile?.avatar_url||'';
+  const currentUrl=getCurrentProfile()?.avatar_url||'';
   const currentEmoji=currentUrl.startsWith('emoji:')?currentUrl.slice(6):'';
 
   const overlay=document.createElement('div');
@@ -424,7 +428,7 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
       <div class="sheet-handle"></div>
       <div class="sheet-title">CHOOSE YOUR AVATAR</div>
       <div class="avatar-grid" id="avatar-grid">
-        ${AVATAR_EMOJIS.map(e=>`<div class="avatar-option${e===currentEmoji?' selected':''}" data-emoji="${_escHtml(e)}">${e}</div>`).join('')}
+        ${AVATAR_EMOJIS.map(e=>`<div class="avatar-option${e===currentEmoji?' selected':''}" data-emoji="${escapeHTML(e)}">${e}</div>`).join('')}
       </div>
     </div>`;
   overlay.addEventListener('click',(e)=>{if(e.target===overlay)_closeSheet(overlay);});
@@ -439,13 +443,13 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
     opt.classList.add('selected');
     // Save
     opt.style.opacity='0.5';
-    const result=await ColosseumAuth?.updateProfile?.({avatar_url:'emoji:'+emoji});
+    const result=await updateProfile({avatar_url:'emoji:'+emoji});
     opt.style.opacity='1';
     if(result?.success){
       _closeSheet(overlay);
-      ColosseumConfig?.showToast?.('Avatar updated!','success');
+      showToast('Avatar updated!','success');
     } else {
-      ColosseumConfig?.showToast?.('Failed to save avatar','error');
+      showToast('Failed to save avatar','error');
     }
   });
 
@@ -459,7 +463,7 @@ const bioTextarea=document.getElementById('profile-bio-textarea');
 const bioCharcount=document.getElementById('bio-charcount');
 
 bioDisplay.addEventListener('click',()=>{
-  const currentBio=ColosseumAuth?.currentProfile?.bio||'';
+  const currentBio=getCurrentProfile()?.bio||'';
   bioTextarea.value=currentBio;
   bioCharcount.textContent=currentBio.length+'/500';
   bioDisplay.style.display='none';
@@ -481,7 +485,7 @@ document.getElementById('bio-save-btn').addEventListener('click',async()=>{
   const saveBtn=document.getElementById('bio-save-btn');
   saveBtn.textContent='SAVING...';
   saveBtn.style.opacity='0.5';
-  const result=await ColosseumAuth?.updateProfile?.({bio:newBio});
+  const result=await updateProfile({bio:newBio});
   saveBtn.textContent='SAVE';
   saveBtn.style.opacity='1';
   if(result?.success){
@@ -489,9 +493,9 @@ document.getElementById('bio-save-btn').addEventListener('click',async()=>{
     bioDisplay.style.display='';
     if(newBio){bioDisplay.textContent=newBio;bioDisplay.classList.remove('placeholder');}
     else{bioDisplay.textContent='Tap to add bio';bioDisplay.classList.add('placeholder');}
-    ColosseumConfig?.showToast?.('Bio updated!','success');
+    showToast('Bio updated!','success');
   } else {
-    ColosseumConfig?.showToast?.('Failed to save bio','error');
+    showToast('Failed to save bio','error');
   }
 });
 
@@ -500,7 +504,7 @@ async function _openFollowList(type: string){
   // type = 'followers' or 'following'
   document.getElementById('follow-list-sheet')?.remove();
 
-  const userId=ColosseumAuth?.currentUser?.id;
+  const userId=getCurrentUser()?.id;
   if(!userId)return;
 
   const overlay=document.createElement('div');
@@ -519,8 +523,8 @@ async function _openFollowList(type: string){
 
   // Fetch data
   const result=type==='followers'
-    ? await ColosseumAuth?.getFollowers?.(userId)
-    : await ColosseumAuth?.getFollowing?.(userId);
+    ? await getFollowers(userId)
+    : await getFollowing(userId);
 
   const listEl=overlay.querySelector('#follow-list-content');
   if(!result?.success||!result.data?.length){
@@ -534,11 +538,11 @@ async function _openFollowList(type: string){
       ? row.profiles  // follows_follower_id_fkey join
       : row.profiles; // follows_following_id_fkey join
     if(!profileData)return '';
-    const name=_escHtml(profileData.display_name||profileData.username||'Unknown');
-    const initial=_escHtml((profileData.display_name||profileData.username||'?')[0].toUpperCase());
+    const name=escapeHTML(profileData.display_name||profileData.username||'Unknown');
+    const initial=escapeHTML((profileData.display_name||profileData.username||'?')[0].toUpperCase());
     const elo=Number(profileData.elo_rating)||1200;
     const uid=type==='followers'?row.follower_id:row.following_id;
-    return `<div class="follow-list-item" data-user-id="${_escHtml(uid)}" data-username="${_escHtml(profileData.username||'')}">
+    return `<div class="follow-list-item" data-user-id="${escapeHTML(uid)}" data-username="${escapeHTML(profileData.username||'')}">
       <div class="fl-avatar">${initial}</div>
       <div style="flex:1;min-width:0;">
         <div class="fl-name">${name}</div>
@@ -557,8 +561,8 @@ async function _openFollowList(type: string){
     // Try showUserProfile modal first, fall back to /u/ page
     const uid=item.dataset.userId;
     const username=item.dataset.username;
-    if(uid&&ColosseumAuth?.showUserProfile){
-      ColosseumAuth.showUserProfile(uid);
+    if(uid){
+      showUserProfile(uid);
     } else if(username){
       window.location.href='/u/'+encodeURIComponent(username);
     }
@@ -575,32 +579,25 @@ async function appInit(){
   buildTiles();positionTiles();
 
   // Wait for auth to resolve, but never hang more than 4s total
-  if(typeof ColosseumAuth!=='undefined' && ColosseumAuth.ready){
-    try {
-      await Promise.race([
-        ColosseumAuth.ready,
-        new Promise(r => setTimeout(r, 4000))
-      ]);
-    } catch(e) { /* auth init rejected — continue gracefully, gate check below handles redirect */ }
-  }
+  try {
+    await Promise.race([
+      ready,
+      new Promise(r => setTimeout(r, 4000))
+    ]);
+  } catch(e) { /* auth init rejected — continue gracefully, gate check below handles redirect */ }
 
   // Fade out loading screen
   const loading=document.getElementById('loading-screen');
   if(loading){loading.classList.add('fade-out');setTimeout(()=>loading.remove(),400);}
 
-  // Ensure ColosseumAuth exists (placeholder/dev fallback only)
-  if(typeof ColosseumAuth==='undefined'){
-    window.ColosseumAuth={currentUser:null,currentProfile:null,isPlaceholderMode:true,listeners:[],onChange(){},_notify(){},ready:Promise.resolve()};
-  }
-
   // SESSION 32: Members Zone auth gate — no session = redirect to Plinko
-  if(!ColosseumAuth.currentUser && !ColosseumAuth.isPlaceholderMode){
+  if(!getCurrentUser() && !getIsPlaceholderMode()){
     window.location.href='colosseum-plinko.html';
     return;
   }
 
   // Placeholder fallback UI (dev/local only)
-  if(ColosseumAuth.isPlaceholderMode){
+  if(getIsPlaceholderMode()){
     updateUIFromProfile(null,{display_name:'Debater',username:'debater',elo_rating:1200,wins:0,losses:0,current_streak:0,level:1,debates_completed:0,token_balance:50,subscription_tier:'free',profile_depth_pct:0});
   }
 
@@ -623,8 +620,8 @@ else{appInit().catch(e=>console.error('appInit error:',e));}
 
 // --- Payment toasts (SESSION 60: uses global showToast) ---
 const urlParams=new URLSearchParams(window.location.search);
-if(urlParams.get('payment')==='success'){ColosseumConfig.showToast('✅ Payment successful!','success');window.history.replaceState({},'',window.location.pathname);}
-if(urlParams.get('payment')==='canceled'){ColosseumConfig.showToast('Payment canceled.','info');window.history.replaceState({},'',window.location.pathname);}
+if(urlParams.get('payment')==='success'){showToast('✅ Payment successful!','success');window.history.replaceState({},'',window.location.pathname);}
+if(urlParams.get('payment')==='canceled'){showToast('Payment canceled.','info');window.history.replaceState({},'',window.location.pathname);}
 
 // --- SESSION 107: Auto-open category overlay from ?cat= query param ---
 const catParam=urlParams.get('cat');
