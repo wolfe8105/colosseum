@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/",
+    "build": "vite build && cp og-card-default.png dist/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
