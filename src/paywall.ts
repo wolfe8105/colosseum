@@ -10,6 +10,8 @@
  * Migration: Session 127 (Phase 3)
  */
 
+import { escapeHTML } from './config.ts';
+
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================
@@ -137,9 +139,9 @@ export function show(variant: PaywallVariant = 'general'): void {
     ">
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:40px;margin-bottom:8px;">${v.icon}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${v.title}</div>
-        <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${v.subtitle}</div>
+        <div style="font-size:40px;margin-bottom:8px;">${escapeHTML(v.icon)}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${escapeHTML(v.title)}</div>
+        <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${escapeHTML(v.subtitle)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,168,67,0.08);border-radius:8px;">
@@ -159,7 +161,7 @@ export function show(variant: PaywallVariant = 'general'): void {
         width:100%;padding:14px;background:#cc2936;color:#fff;border:none;border-radius:10px;
         font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;
         margin-bottom:8px;
-      ">${v.cta}</button>
+      ">${escapeHTML(v.cta)}</button>
       <button onclick="document.getElementById('paywall-modal')?.remove();" style="
         width:100%;padding:12px;background:none;color:#a0a8b8;border:none;
         font-size:13px;cursor:pointer;

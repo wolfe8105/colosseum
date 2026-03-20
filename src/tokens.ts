@@ -7,7 +7,7 @@
  * Migration: Session 126 (Phase 2)
  */
 
-import { showToast } from './config.ts';
+import { showToast, escapeHTML } from './config.ts';
 import { safeRpc } from './auth.ts';
 import type { Profile } from './auth.ts';
 
@@ -189,10 +189,10 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
   if (tokens > 0 && freezes > 0) rewardText = `+${Number(tokens)} 🪙 + ${Number(freezes)} ❄️`;
 
   el.innerHTML = `
-    <span class="mt-icon">${icon || '🏆'}</span>
+    <span class="mt-icon">${escapeHTML(icon || '🏆')}</span>
     <span class="mt-label">MILESTONE UNLOCKED</span>
-    <div style="font-size:16px;margin-top:2px;color:#f0f0f0;">${label}</div>
-    <div class="mt-reward">${rewardText}</div>
+    <div style="font-size:16px;margin-top:2px;color:#f0f0f0;">${escapeHTML(label)}</div>
+    <div class="mt-reward">${escapeHTML(rewardText)}</div>
   `;
   document.body.appendChild(el);
   if (tokens > 0) _coinFlyUp();
