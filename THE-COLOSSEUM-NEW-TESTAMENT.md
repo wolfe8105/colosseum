@@ -1,5 +1,5 @@
 # THE COLOSSEUM — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 129 (March 17, 2026)
+### Last Updated: Session 143 (March 20, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -9,7 +9,7 @@
 > - `THE-COLOSSEUM-OLD-TESTAMENT.md` — All session build logs (1-62), 502+ item inventory, revenue model, B2B data play, growth strategy
 > - `THE-COLOSSEUM-LAND-MINE-MAP.md` — 185+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
 > - `THE-COLOSSEUM-WIRING-MANIFEST.md` — Full C4-style architecture model. Every RPC, global, flow mapped with CALLED FROM, EXPECTS, BLAST RADIUS. Search any function name to find everything that touches it. (Session 122)
-> - `TYPESCRIPT-MIGRATION-PLAN.md` — 6-phase migration plan: vanilla JS → TypeScript + Vite + proper imports. Phases 0-4 complete. (Session 122)
+> - `TYPESCRIPT-MIGRATION-PLAN.md` — 6-phase migration plan: vanilla JS → TypeScript + Vite + proper imports. Phases 0-5 complete, Phase 6 in progress. (Session 122, updated Session 143)
 > - `THE-COLOSSEUM-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, exclusivity framework, buyer list
 > - `THE-COLOSSEUM-PRODUCT-VISION.md` — Psychology framework, visual game layer, sound-off solution, ad placement, gamification
 > - `THE-COLOSSEUM-WAR-PLAN.md` — 5-phase strategy, shelved ideas, open decisions
@@ -111,7 +111,7 @@
 # 7. WHAT ACTUALLY EXISTS
 
 ## Infrastructure Summary
-Supabase (faomczmipsccwbhpivmp): 36 tables, RLS hardened, 48+ server functions, sanitization, rate limits, 9 analytics views, 3 security views, 20 RPCs wired to log_event(). Token system Phase 3 complete (milestones, streak freezes, token display, gold coin animation). Token staking + power-up systems fully built (Phases 1-5, Sessions 109-110/117-118): 5 tables (stakes, stake_pools, power_ups, user_power_ups, debate_power_ups), 7 RPCs, parimutuel pool model, tier-gated staking caps, 4 power-ups. Landing page vote persistence live (landing_votes + fingerprint dedup + 2 anon RPCs, Session 107). Auto-debate staking backend live (auto_debate_stakes + 4 RPCs, Session 99). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, 1 serverless function (profile pages). Stripe sandbox: 7 products, Edge Functions, webhooks. Auth working end-to-end. Resend SMTP configured. Security audit FULLY COMPLETE (Sessions A-D + Session 92 Claude Code audit: 120+ issues found across 43 files, 29 critical fixes shipped). Bot army deployed to VPS (DigitalOcean $6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false LIVE. Content-first upgrade: ESPN-style share card generation (card-generator.js) + Bluesky image posting LIVE (leg2-bluesky-poster.js v2, verified Session 92). Mirror generator live (5-min cron, 50+ pages/build, deploys to colosseum-f30.pages.dev, Cloudflare Web Analytics on all pages Session 96, mirror generator path fixed Session 96). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI fully built. Reference/evidence system live. Analytics layer live. Funnel analytics live (mirror + app). Legal docs live (Privacy Policy + Terms). Groups feature live (including group hot take composer, Session 105). Ranked/Casual mode live. Public profile pages live. OWASP audit complete (7/10 STRONG). SRI hashes on 6 HTML files. Edge Functions hardened (Deno.serve, CORS allowlist). Draw.io dead end audit: all 5 flagged dead ends resolved (Sessions 102-107). **TypeScript migration Phases 0-4 complete (Sessions 125-128):** 30 `.ts` files in `src/` (16 module mirrors + 10 page modules + 2 type files + vite config + tsconfig). Strict mode, all compile clean. Original `.js` files untouched — TS files activate when Vite build step is enabled. Phase 5 (bot army) and Phase 6 (tests + cleanup) remain.
+Supabase (faomczmipsccwbhpivmp): 36 tables, RLS hardened, 48+ server functions, sanitization, rate limits, 9 analytics views, 3 security views, 20 RPCs wired to log_event(). Token system Phase 3 complete (milestones, streak freezes, token display, gold coin animation). Token staking + power-up systems fully built (Phases 1-5, Sessions 109-110/117-118): 5 tables (stakes, stake_pools, power_ups, user_power_ups, debate_power_ups), 7 RPCs, parimutuel pool model, tier-gated staking caps, 4 power-ups. Landing page vote persistence live (landing_votes + fingerprint dedup + 2 anon RPCs, Session 107). Auto-debate staking backend live (auto_debate_stakes + 4 RPCs, Session 99). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, 1 serverless function (profile pages). Stripe sandbox: 7 products, Edge Functions, webhooks. Auth working end-to-end. Resend SMTP configured. Security audit FULLY COMPLETE (Sessions A-D + Session 92 Claude Code audit: 120+ issues found across 43 files, 29 critical fixes shipped). Bot army deployed to VPS (DigitalOcean $6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false LIVE. Content-first upgrade: ESPN-style share card generation (card-generator.js) + Bluesky image posting LIVE (leg2-bluesky-poster.js v2, verified Session 92). Mirror generator live (5-min cron, 50+ pages/build, deploys to colosseum-f30.pages.dev, Cloudflare Web Analytics on all pages Session 96, mirror generator path fixed Session 96). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI fully built. Reference/evidence system live. Analytics layer live. Funnel analytics live (mirror + app). Legal docs live (Privacy Policy + Terms). Groups feature live (including group hot take composer, Session 105). Ranked/Casual mode live. Public profile pages live. OWASP audit complete (7/10 STRONG). SRI hashes on 6 HTML files. Edge Functions hardened (Deno.serve, CORS allowlist). Draw.io dead end audit: all 5 flagged dead ends resolved (Sessions 102-107). **TypeScript migration Phases 0-5 complete (Sessions 125-131):** 30 `.ts` files in `src/` (16 module mirrors + 10 page modules + 2 type files + vite config + tsconfig). 19 bot army `.ts` files on VPS + GitHub. Strict mode, all compile clean. Vite build live on Vercel (Session 130). PM2 runs compiled bot army from `dist/` (Session 131). Phase 6 in progress: Vitest installed, 97 tests passing, 2 bugs found and fixed (Session 132). Remaining: remove window global bridges, delete globals.d.ts. **Security audit CLOSED** (Sessions 133-134): all 120+ issues resolved. **Session 142:** All 76 legacy `<script>` tags removed from 11 HTML pages. Every page runs single `<script type="module">` via Vite. Dead `.js` files still in repo root but unreferenced.
 
 ## Toolchain
 | Tool | Purpose |
@@ -166,12 +166,14 @@ Supabase (faomczmipsccwbhpivmp): 36 tables, RLS hardened, 48+ server functions, 
 ## Supabase Edge Functions: ai-sparring, ai-moderator, stripe-* (templates)
 ## Vercel Serverless: api/profile.js (public profile pages)
 ## Bot Army: 17+ files, ~3,200+ lines, DigitalOcean VPS, PM2 managed
-## VPS Bot Files (not on GitHub):
-- card-generator.js — Server-side ESPN share card PNG generator (canvas npm)
-- leg2-bluesky-poster.js (v2) — Image-first Bluesky posting with uploadBlob()
-- ai-generator.js — Auto-debate AI content generation + template fallback (125 combos/side)
-- supabase-client.js — Bot Supabase client + CATEGORY_TO_SLUG mapping
-- category-classifier.js — Keyword-based headline→category router (Session 98, fixes 60% "general" misrouting)
+## VPS Bot Files (TypeScript, Session 131 — source .ts in repo, compiled .js in dist/):
+- bot-engine.ts — PM2-managed orchestrator, runs leg1/leg2/leg3 cycles
+- bot-config.ts — Env loader, validator, platform flags, timing config
+- card-generator.ts — Server-side ESPN share card PNG generator (canvas npm)
+- leg2-bluesky-poster.ts — Image-first Bluesky posting with uploadBlob()
+- ai-generator.ts — Auto-debate AI content generation + template fallback (125 combos/side)
+- supabase-client.ts — Bot Supabase client + CATEGORY_TO_SLUG mapping
+- category-classifier.ts — Keyword-based headline→category router (word-boundary regex, fixed Session 132)
 
 ## Legal Compliance
 Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA agent NOT registered. Legal emails NOT created (need domain).
@@ -221,16 +223,16 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 # 11. WHAT TO DO NEXT
 
 ## Pat Action Items
-- ⏳ **Make GitHub repo private** (Settings → Danger Zone → Change visibility) — PII is hardcoded throughout
-- ⏳ Reddit API approval — check email, resubmit if rejected (submitted March 4, 11+ days, Reddit tightened commercial approvals since Jan 2026)
+- ✅ **Make GitHub repo private** — Done Session 134. Later re-opened as public.
+- ⏳ Reddit API approval — check email, resubmit if rejected (submitted March 4, Reddit tightened commercial approvals since Jan 2026)
 - ⏳ Register DMCA agent at copyright.gov ($6)
 - ⏳ Purchase domain thecolosseum.app
 
 ## Prioritized Roadmap
 
 ### Tier 1 — Must Do Before Any Public Exposure
-- ⏳ **PII scrub** — hardcoded email, name, user ID throughout codebase. Must move to env vars before repo goes public or any real users arrive.
-- ⏳ **Content guardrails** — extreme debate framings ("Republicans VS Nazis") risk Bluesky account bans. AI generator needs topic filtering.
+- ✅ **PII scrub** — Personal Gmail removed from legal-snippets (Session 134). Repo was made private (Session 134), later re-opened.
+- ⏳ **Content guardrails** — extreme debate framings ("Republicans VS Nazis") risk Bluesky account bans. AI generator needs topic filtering. Category classifier substring bug fixed Session 132, content filter regex fixed Session 132.
 
 ### Tier 2 — Active Build (Token Staking — COMPLETE)
 - ✅ **Phase 1: Questionnaire Tier Foundation** (Session 117) — questions_answered column, guard trigger, increment RPC, tier utility, profile-depth UI
@@ -246,8 +248,8 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ✅ **Phase 2: Defense Modules** (Session 126) — src/tiers.ts, src/tokens.ts, src/staking.ts, src/powerups.ts
 - ✅ **Phase 3: All Remaining Modules** (Session 127) — 12 modules: arena, async, scoring, notifications, leaderboard, share, cards, analytics, payments, paywall, webrtc, voicememo
 - ✅ **Phase 4: HTML Inline Script Extraction** (Session 128) — 10 pages extracted into src/pages/*.ts modules
-- ⏳ **Phase 5: Bot Army** — Migrate VPS code from CommonJS to TypeScript
-- ⏳ **Phase 6: Tests + Cleanup** — Vitest, remove window global bridges, delete globals.d.ts
+- ✅ **Phase 5: Bot Army** (Session 131) — 19 files migrated (17 .ts + tsconfig.json + types.d.ts). PM2 running compiled JS from dist/. Original .js kept as rollback.
+- 🔶 **Phase 6: Tests + Cleanup** (Sessions 131-132+) — Vitest installed, 97 tests passing, 2 bugs found and fixed. Remaining: remove window.GlobalName bridges, delete globals.d.ts. Session 142 removed all legacy script tags — may unblock bridge removal.
 
 ### Tier 3 — Future Features (See Ideas Master Map)
 - Reference Arsenal system
@@ -261,11 +263,13 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - ⏳ Stripe Edge Function templates use old imports (not urgent, deploy when Stripe goes live)
 - ⏳ Edge Function CORS allowlist missing mirror domain (OK since mirror is pure HTML)
 - ⏳ 3 older RLS policies still have {public} scope (low priority)
-- ⏳ VPS-only bot files not in repo: bot-engine.js, ai-generator.js, supabase-client.js, card-generator.js, category-classifier.js (backups exist on VPS)
-- ⏳ Power-ups shop shows "Answer NaN more questions" (tier display bug — cosmetic)
-- ⏳ AI bot profile shows "NaN ELO" (missing elo_rating on bot profile row — cosmetic)
-- ⏳ Slider questions in profile-depth don't record without a touch event (needs input event listener — cosmetic)
+- ✅ ~~VPS-only bot files not in repo~~ — All bot files now in repo as TypeScript (Session 131)
+- ✅ ~~Power-ups shop "NaN questions"~~ — Fixed Session 130 (`next.questionsNeeded` replaces nonexistent `next.minQuestions`)
+- ✅ ~~AI bot "NaN ELO"~~ — Fixed Session 130 (hardcoded `opponentElo: 1200` replaces placeholder `'???'`)
+- ✅ ~~Slider questions not recording~~ — Fixed Session 130 (already correct in profile-depth.ts, activated by Vite build)
 - ⏳ 3 heavy page modules (spectate.ts, groups.ts, home.ts) have `any` annotations — need full typing pass
+- ⏳ Dead `.js` files still in repo root — nothing references them after Session 142 script tag removal. Need deletion + build script cleanup.
+- ⏳ `colosseum-arena.html` in Wiring Manifest page load map but NOT in vite.config.ts — needs investigation (dead page or missing entry point)
 
 ## Monitoring
 - Leg 1 Bluesky — `pm2 logs` for `[LEG1][BLUESKY]`, watch follower count on `wolfe8105.bsky.social`
@@ -319,11 +323,18 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 - **Arena popstate: replaceState for forward, history.back for back** (LM-183). Arrow function wrapping required: `() => fn()` not `fn` (click Event passes as truthy boolean param). Session 121 rewrite.
 - **AI debates must be created as `'pending'` not `'live'`** (LM-184). Flip to 'live' happens in `enterRoom()` only. If created as 'live', `place_stake` breaks (status not in allowed set).
 - **IIFE modules must use `ColosseumAuth.safeRpc()` not bare `safeRpc()`** (LM-185). `safeRpc` doesn't exist at window scope. TypeScript migration eliminates this class of bug via proper imports.
+- **Bot army runs TypeScript now** — PM2 runs `dist/bot-engine.js` (compiled from .ts). Original .js files are rollback only. Session 131.
+- **Vite build is live on Vercel** — `buildCommand: "npm run build"`, `outputDirectory: "dist"`. Build script: `vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/`. Session 130.
+- **Zero legacy script tags** — Every HTML page uses a single `<script type="module">` entry point. Dead .js files still in repo root but unreferenced. Session 142.
+- **DOB stripped from JWT metadata** — `handle_new_user` trigger strips `date_of_birth` from `raw_user_meta_data` after writing to profiles. `set_profile_dob` RPC handles OAuth users (one-shot, rejects if already set). Session 134.
+- **Security audit CLOSED** — All 120+ issues from Sessions A-D + Session 92 Claude Code audit + Session 133-134 resolved. No open items.
+- **`navigateTo` exposed on window** — `src/pages/home.ts` sets `window.navigateTo = navigateTo`. Required for inline onclick handlers in index.html. Session 131.
+- **Power-up shop entry points** — Arena lobby button + profile link. Both call `navigateTo('arena')` then `ColosseumArena.showPowerUpShop()`. Session 131.
 
 
 ---
 
-# SESSION BUILD LOGS (Sessions 108-132)
+# SESSION BUILD LOGS (Sessions 108-142)
 
 > Sessions 92-107 moved to Old Testament during Session 117 consolidation.
 
@@ -598,29 +609,92 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 
 ---
 
-# 32. SESSION 131 — TYPESCRIPT PHASE 6 STEP 1 (VITEST + 96 TESTS)
+# 32. SESSION 130 — VITE BUILD ENABLED + 3 COSMETIC BUGS FIXED
 
-**Goal:** Add Vitest test runner and write tests for critical bot army modules.
+**Goal:** Fix 3 cosmetic bugs, enable Vite build in production.
 
-1. **Vitest installed.** `vitest.config.ts` (new), `package.json` updated with `vitest` + `dotenv` devDeps, `"test": "vitest run"` and `"test:watch": "vitest"` scripts.
-2. **3 test files written.** `tests/category-classifier.test.ts` (35 tests — all 7 categories, feedLabel override, edge cases). `tests/content-filter.test.ts` (32 tests — blocked terms, dangerous patterns, filterDebate rounds, invalid input). `tests/bot-config.test.ts` (29 tests — validateConfig with all flag combos, warnings, config structure).
-3. **96/96 passing** on VPS at `/opt/colosseum`.
-4. **2 production bugs found by tests (not fixed).** (a) Category classifier: keywords >4 chars use `includes()` with no word boundary — "computing" matches "putin" → false positive. (b) Content filter: regex alternation `(?:is|=|like|worse than)` greedily matches bare "is" first — "Trump is like Hitler" passes the filter.
+1. **"Answer NaN more questions" fixed.** `colosseum-powerups.js`: `next.minQuestions - (questionsAnswered || 0)` → `next.questionsNeeded`. Property name was wrong.
+2. **"NaN ELO" on AI bot fixed.** `colosseum-arena.js` line 1221: `opponentElo: '???'` → `opponentElo: 1200`.
+3. **Slider questions already fixed.** Was correct in `src/pages/profile-depth.ts` from Phase 4, but dead because Vercel wasn't running the build step.
+4. **Vite build enabled.** `package.json` build script: `vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/`. `vercel.json`: `buildCommand: "npm run build"`, `outputDirectory: "dist"`. First successful build confirmed. All Phase 4 TS modules now live in production.
+5. **Power-up shop unreachable** — `renderShop()` had no caller. Added entry points: arena lobby button + profile link. Fixed 404 from `colosseum-arena.html` (doesn't exist) — shop opens inline via `navigateTo('arena')` + `showPowerUpShop()`. Exposed `navigateTo` on window.
 
-**New files:** `vitest.config.ts`, `tests/category-classifier.test.ts`, `tests/content-filter.test.ts`, `tests/bot-config.test.ts`. Updated: `package.json`.
+**Files changed:** `package.json`, `vercel.json`, `colosseum-powerups.js`, `colosseum-arena.js`, `index.html`, `src/pages/home.ts`
 
 ---
 
-# 33. SESSION 132 — BUG FIXES + PHASE 6 REASSESSMENT
+# 33. SESSION 131 — PHASE 5 COMPLETE (BOT ARMY TS MIGRATION)
 
-**Goal:** Fix 2 production bugs found by tests. Reassess Phase 6 steps 2-4.
+**Goal:** Complete bot army TypeScript migration.
 
-1. **Bug 1 fixed: category classifier substring match.** `lib/category-classifier.ts` — `buildMatchers()` now applies `\b` word-boundary regex to ALL keywords, not just ≤4 chars. Eliminated the `Matcher` union type and `includes()` code path. "computing" no longer matches "putin". "trumpet" no longer matches "trump".
-2. **Bug 2 fixed: content filter regex ordering.** `lib/content-filter.ts` — regex alternation reordered to `(?:is\s+worse\s+than|is\s+like|is|=|like|worse than)` so longer `is`-prefixed patterns match before bare `is`. "Trump is like Hitler" and "Trump is worse than Hitler" now correctly blocked.
-3. **Tests updated.** Added 1 new test (substring false positives — "computing", "trumpet"). Flipped KNOWN GAP test to verify fix + added 2 assertions (Biden/Stalin, plain "is"). **97/97 passing** on VPS.
-4. **VPS live bots updated.** Fixed `.js` copies deployed to `/opt/colosseum/bot-army/colosseum-bot-army/lib/`. PM2 restarted, running clean.
-5. **Phase 6 steps 2-4 reassessed.** Plan said "remove window.GlobalName bridges" as cleanup. Reality: 36 `window.Colosseum*` references remain across 6 page modules (`src/pages/*.ts`). These are consumers, not bridges. Removing them requires converting all page modules to proper imports, removing all 16 IIFE `<script>` tags from every HTML page, and verifying Vite module init replaces IIFE load-time behavior. This is a real cutover (effectively Phase 7), not a cleanup step. `src/types/globals.d.ts` cannot be deleted until the cutover is complete.
+1. **Phase 5 complete.** 19 files (17 .ts + tsconfig.json + types.d.ts). All compile clean. Deployed to production via `dist/`. PM2 running compiled JS. `ecosystem.config.js` updated to `dist/bot-engine.js`. Original .js files untouched as rollback.
+2. **Investigated "Leg 3 blank page" report** — not broken. Other Claude visited literal template URL `/debate/%7Bid%7D.html`. Real debate pages confirmed working.
 
-**Updated files:** `lib/category-classifier.ts`, `lib/content-filter.ts`, `tests/category-classifier.test.ts`, `tests/content-filter.test.ts`. **VPS files:** `category-classifier.js`, `content-filter.js` in bot-army lib. **Zero SQL. Zero frontend behavior changes. Zero RPC changes.**
+**Files changed:** 19 new .ts files on VPS + GitHub, `ecosystem.config.js`
+
+---
+
+# 34. SESSION 132 — VITEST + BOT ARMY TESTS (PHASE 6 STARTED)
+
+**Goal:** Install Vitest, write bot army tests, fix 2 bugs found by tests. Reassess Phase 6 steps.
+
+1. **Vitest installed.** `vitest.config.ts`, `package.json` updated. 3 test files: category-classifier (35 tests), content-filter (32 tests), bot-config (29 tests).
+2. **Bug 1 fixed: category classifier substring match.** `buildMatchers()` now applies `\b` word-boundary regex to ALL keywords. "computing" no longer matches "putin".
+3. **Bug 2 fixed: content filter regex ordering.** Alternation reordered so longer `is`-prefixed patterns match before bare `is`.
+4. **97/97 tests passing** on VPS. VPS live bots updated.
+5. **Phase 6 steps 4-5 reassessed.** 36 `window.Colosseum*` references remain across 6 page modules. Removing requires full cutover (effectively Phase 7). `globals.d.ts` cannot be deleted until cutover complete.
+
+**VPS note:** Git repo root is `/opt/colosseum`, NOT `/opt/colosseum/bot-army/colosseum-bot-army/`.
+
+**Files on GitHub:** `vitest.config.ts`, `lib/category-classifier.ts`, `lib/content-filter.ts`, `tests/*.test.ts`, `package.json`.
+
+---
+
+> Sessions 133-134 were conducted in a separate project chat (security audit).
+
+# 35. SESSION 133 — SECURITY AUDIT PHASE 1-2 (PII SCRUB + XSS)
+
+**Goal:** Execute security audit Phases 1-2.
+
+1. **Phase 1 PII scrub complete.** Personal Gmail removed from `colosseum-legal-snippets.html`. Other PII issues already fixed.
+2. **Phase 2 XSS fixes.** New: `submitReference` URL validation (rejects non-http/https). Issues 51/52/63 deferred.
+3. **DOB-in-JWT issue identified.** `date_of_birth` in Supabase `user_metadata` embeds in every JWT.
+
+**Files changed:** `colosseum-auth.js`, `colosseum-legal-snippets.html`
+
+---
+
+# 36. SESSION 134 — SECURITY AUDIT PHASE 3 (AUTH FIXES + DOB-IN-JWT)
+
+**Goal:** Auth fixes + DOB-in-JWT fix. Close security audit.
+
+1. **Issue 9 (HIGH): requireAuth() placeholder bypass fixed.** Checks `currentUser && !isPlaceholderMode`.
+2. **Issues 6+7+21: UUID validation added.** 14 functions now have `isUUID()` checks.
+3. **Issue 11 (MED): `_notify` removed from public API.**
+4. **DOB-in-JWT fix shipped.** Trigger strips DOB from metadata. New `set_profile_dob()` RPC. Existing metadata cleaned.
+5. **Phase 2 deferred innerHTML fixes shipped.** `_esc()` helpers added to payments, paywall, tokens.
+
+**Security audit status: CLOSED.** All 120+ issues resolved.
+
+**Files changed:** `colosseum-auth.js`, `colosseum-payments.js`, `colosseum-paywall.js`, `colosseum-tokens.js`, `src/pages/plinko.ts`, `colosseum-dob-fix.sql`
+**Supabase:** `handle_new_user` trigger updated, `set_profile_dob` RPC created, metadata cleanup ran.
+
+---
+
+> Sessions 135-141: Not in project chat record.
+
+# 37. SESSION 142 — LEGACY SCRIPT TAG REMOVAL (VIA CLAUDE CODE)
+
+**Goal:** Remove all legacy `<script>` tags from HTML files.
+
+1. **index.html** — removed 19 legacy `<script>` tags. Single `<script type="module" src="/src/pages/home.ts">` is now sole entry point. `src/pages/home.ts` updated with 8 side-effect imports.
+2. **10 remaining HTML pages** — removed 57 legacy `<script>` tags total (commit `3e7a3a0`). 7 page .ts files updated with side-effect imports.
+3. **Verified live on Vercel:** index.html, colosseum-groups.html, colosseum-settings.html — all rendering correctly.
+
+**Current state:** Every HTML page runs single `<script type="module">` via Vite. Zero legacy tags remain. Dead .js files still in repo root but unreferenced. Supabase from npm, not CDN. `colosseum-locks-fix.js` dead — `noOpLock` lives in `auth.ts`.
+
+**Known gap:** `colosseum-arena.html` in Wiring Manifest page load map but NOT in `vite.config.ts`. Needs investigation.
+
+**Files changed:** All 11 HTML files, 8 page .ts files. Zero SQL. Zero VPS.
 
 *For all session build logs prior to Session 108, the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map (clone repo first).*

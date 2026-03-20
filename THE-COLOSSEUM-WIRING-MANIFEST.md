@@ -1,5 +1,5 @@
 # THE COLOSSEUM — WIRING MANIFEST
-### Last Updated: Session 129 (March 17, 2026)
+### Last Updated: Session 143 (March 20, 2026)
 
 > **What this is:** A plain-text architecture model inspired by Scryer's C4 hierarchy.
 > Maps every touchpoint so Claude can answer: "If I change X, what breaks?"
@@ -906,24 +906,25 @@ Communication:
 
 ## 5.1 BOT ARCHITECTURE
 
+> **TypeScript migration (Session 131):** All bot army files migrated from CommonJS .js to TypeScript .ts. PM2 runs compiled JS from `dist/`. Source files are .ts (in repo), runtime files are `dist/*.js` (on VPS). Original .js kept as rollback. Vitest tests added Session 132 (97 passing). Category classifier substring bug + content filter regex bug fixed Session 132.
+
 ### Service Role Client
-- DEFINED IN: /opt/colosseum/bot-army/colosseum-bot-army/supabase-client.js (VPS)
+- DEFINED IN: /opt/colosseum/bot-army/colosseum-bot-army/supabase-client.ts (VPS, compiled to dist/supabase-client.js)
 - USES: service_role key (bypasses RLS entirely)
 - PROVIDES: createHotTake(), logBotAction(), CATEGORY_TO_SLUG mapping
 - CATEGORY_TO_SLUG: Handles mismatch between bot categories and mirror slugs (e.g., `couples` → `couples-court`)
 - BLAST RADIUS: If this key leaks, attacker has full DB access. Key is in .env on VPS only.
-- NOT IN REPO: VPS-only file
-- LAND MINES: LM-166 (VPS is authoritative, GitHub is stale)
+- IN REPO: Yes (as .ts source, Session 131)
 
-### bot-engine.js (Orchestrator)
-- DEFINED IN: VPS only (/opt/colosseum/bot-army/colosseum-bot-army/)
+### bot-engine.ts (Orchestrator)
+- DEFINED IN: VPS (/opt/colosseum/bot-army/colosseum-bot-army/bot-engine.ts → compiled to dist/bot-engine.js)
 - PURPOSE: PM2-managed cron scheduler. Runs leg1, leg2, leg3 cycles.
-- CONSUMES: bot-config.js for flags, env vars for credentials
+- CONSUMES: bot-config.ts for flags, env vars for credentials
 - REQUIRES: leg2-news-scanner, leg2-debate-creator, leg2-bluesky-poster, leg3-auto-debate, ai-generator
 - STATS: Logs daily summary via bot_stats_24h view. Tracks autoDebates count per day.
 - BLAST RADIUS: If this crashes, all automated content stops. PM2 auto-restarts.
 
-### bot-config.js
+### bot-config.ts
 - DEFINED IN: BOTH repo root AND VPS
 - PURPOSE: Env loader, validator, platform flags, timing config
 - CRITICAL: maxPerDay default is 3 (matched to .env). Bluesky config section + flags + credential validation.
@@ -933,7 +934,8 @@ Communication:
 ### ecosystem.config.js
 - DEFINED IN: VPS only (/opt/colosseum/bot-army/colosseum-bot-army/)
 - PURPOSE: PM2 process config. Daily restart at 4am via cron_restart.
-- CRITICAL: env block was stripped of all platform flags (Session 94). `.env` is the single source of truth for flags. If flags reappear in ecosystem.config.js, they override `.env`.
+- CRITICAL: script path is `dist/bot-engine.js` (TypeScript compiled output, Session 131). env block stripped of all platform flags (Session 94). `.env` is the single source of truth for flags.
+- ROLLBACK: `sed -i "s|script: 'dist/bot-engine.js',|script: 'bot-engine.js',|" ecosystem.config.js && pm2 restart all`
 - LAND MINES: LM-149 (env block overrides .env)
 
 ---
@@ -1540,8 +1542,13 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 122 | Page load map | All 9 HTML pages: script loading order, init sequence, auth gate status, key dependencies. Head trio pattern documented. |
 | 122 | Final gaps filled | Moderator system (4 RPCs, ruling panel, auto-allow timer, scoring), WebRTC/voice memo, auto-debate staking (4 RPCs), achievements/milestones (13 milestones, streak freeze, 2 RPCs), cosmetics shop (45 items, 2 RPCs, 2 tables). ALL SECTIONS COMPLETE. |
 | 125-128 | No wiring changes | TypeScript migration Phases 0-4. All `.ts` mirrors created for 16 modules + 10 page modules. Original `.js` untouched. No new RPCs, tables, or flows. Wiring unchanged — file paths will update when Vite build is enabled. |
+| 130 | No wiring changes | Vite build enabled on Vercel. 3 cosmetic bugs fixed (NaN powerups, NaN ELO, slider). Power-up shop entry points added (arena lobby + profile). All TS modules now live in production. |
+| 131 | Bot army TS migration | All bot .js files migrated to .ts. PM2 runs `dist/bot-engine.js`. ecosystem.config.js script path updated. Source files are .ts, runtime is compiled dist/*.js. |
+| 132 | No wiring changes | Vitest installed. 97 bot army tests. 2 classifier bugs fixed (substring match, regex ordering). Phase 6 steps 4-5 reassessed as full cutover. |
+| 133-134 | set_profile_dob RPC added | Security audit Phases 1-3. Auth fixes (requireAuth bypass, UUID validation, _notify removed). DOB-in-JWT fix (trigger strips metadata, new RPC). Audit CLOSED. |
+| 142 | Script tag removal | 76 legacy `<script>` tags removed across 11 HTML pages. All pages now single `<script type="module">` entry point via Vite. Dead .js files still in repo root but unreferenced by any HTML. |
 
 ---
 
-> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build.
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 143.
 > Future additions: As new features are built, add entries here. Update affected entries at end of each session.

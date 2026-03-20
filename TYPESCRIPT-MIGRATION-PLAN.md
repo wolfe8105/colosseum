@@ -1,5 +1,5 @@
 # THE COLOSSEUM — TYPESCRIPT MIGRATION PLAN
-### Created: Session 122 (March 16, 2026) | Updated: Session 129 (March 17, 2026)
+### Created: Session 122 (March 16, 2026) | Updated: Session 143 (March 20, 2026)
 
 > **What this is:** A phased plan to migrate from vanilla JS + IIFEs to TypeScript
 > with proper imports. Gradual — nothing breaks. App stays live throughout.
@@ -242,11 +242,11 @@ is secondary. Edge Functions and PL/pgSQL are already fine.
 | 2 | 2 | Tokens + Tiers + Staking + Power-ups (defense) | ✅ Session 126 |
 | 3 | 4 | Arena + all social/utility modules | ✅ Session 127 |
 | 4 | 3 | HTML page inline script extraction | ✅ Session 128 |
-| 5 | 2 | Bot army | ⏳ Future |
+| 5 | 2 | Bot army | ✅ Session 131 |
 | 6 | 2 | Tests + cleanup | 🔶 Steps 1-3 done (Sessions 131-132). Steps 4-5 blocked — see Phase 6 notes. |
-| **Total** | **~16 sessions** | | **Phases 0-4 COMPLETE, Phase 6 partial** |
+| **Total** | **~16 sessions** | | **Phases 0-5 COMPLETE, Phase 6 partial** |
 
-Phases 0-4 completed in 4 sessions (125-128) vs estimated 12. Phase 6 steps 1-3 done in sessions 131-132 (Vitest + 97 tests + 2 bug fixes). Steps 4-5 (bridge removal) reassessed as a full module cutover — bigger than originally scoped.
+Phases 0-4 completed in 4 sessions (125-128) vs estimated 12. Phase 5 completed Session 131 (19 files: 17 .ts + tsconfig.json + types.d.ts, PM2 running from dist/). Phase 6 steps 1-3 done in sessions 131-132 (Vitest + 97 tests + 2 bug fixes). Steps 4-5 (bridge removal) reassessed as a full module cutover — bigger than originally scoped. Session 142 removed all legacy `<script>` tags from HTML — may unblock steps 4-5 (needs investigation).
 
 Note: 3 heavy page modules (spectate.ts, groups.ts, home.ts) were mechanically extracted with `any` annotations. They compile but need a full typing pass for real type safety.
 
@@ -257,7 +257,7 @@ Note: 3 heavy page modules (spectate.ts, groups.ts, home.ts) were mechanically e
 1. **Vite + multi-page HTML** — Vite handles this but the config is tricky. Phase 0 is where we prove it works.
 2. **Supabase CDN script** — currently loaded via CDN with SRI hash. After migration, it's an npm import bundled by Vite. SRI hashes go away (no longer needed — the bundle is local).
 3. **Vercel build** — currently zero-build (static files). After Phase 0, Vercel runs `npm run build`. If build fails, deploy fails. This is actually a feature — broken code can't deploy.
-4. **Bot army deploy** — VPS currently runs raw JS. After Phase 5, need either `tsc` compile step or `ts-node` runtime. PM2 config changes.
+4. ~~**Bot army deploy** — VPS currently runs raw JS. After Phase 5, need either `tsc` compile step or `ts-node` runtime. PM2 config changes.~~ ✅ RESOLVED Session 131. VPS runs compiled JS from `dist/`. PM2 config updated to `dist/bot-engine.js`. Rollback: `sed -i "s|script: 'dist/bot-engine.js',|script: 'bot-engine.js',|" ecosystem.config.js && pm2 restart all`.
 5. **Inline scripts in HTML** — some pages have substantial inline JS (groups.html). Extraction is mechanical but tedious.
 
 ---
