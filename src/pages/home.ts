@@ -6,7 +6,8 @@
  * shop screen, hot takes feed wiring, leaderboard, predictions.
  *
  * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports),
- *            Session 139 (ColosseumAsync ES import, 5 dead window globals removed)
+ *            Session 139 (ColosseumAsync ES import, 5 dead window globals removed,
+ *            inline onclick handlers migrated to data-action + addEventListener)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,6 +21,8 @@ import {
 import { showToast, escapeHTML } from '../config.ts';
 import '../tokens.ts'; // side-effect: auto-inits daily login, milestones, balance display
 import { ColosseumAsync } from '../async.ts';
+import { shareProfile, inviteFriend } from '../share.ts';
+import { subscribe } from '../payments.ts';
 
 // ============================================================
 // APP SHELL V4 — Session 23: Auth race fix, Predictions, Rivals, Follows
@@ -276,6 +279,26 @@ function navigateTo(screenId: string){
 }
 document.querySelectorAll('.bottom-nav-btn').forEach(btn=>{btn.addEventListener('click',()=>navigateTo(btn.dataset.screen));});
 (window as any).navigateTo = navigateTo;
+
+// --- data-action wiring (replaces inline onclick handlers) ---
+document.addEventListener('click', (e: Event) => {
+  const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action === 'powerup-shop') {
+    navigateTo('arena');
+    setTimeout(() => (window as any).ColosseumArena?.showPowerUpShop(), 300);
+  } else if (action === 'share-profile') {
+    const p = getCurrentProfile();
+    const u = getCurrentUser();
+    shareProfile({ userId: u?.id, username: p?.username, displayName: p?.display_name, elo: p?.elo_rating, wins: p?.wins, losses: p?.losses, streak: p?.current_streak });
+  } else if (action === 'invite-friend') {
+    inviteFriend();
+  } else if (action === 'subscribe') {
+    const tier = el.dataset.tier;
+    if (tier) subscribe(tier);
+  }
+});
 
 // --- User Dropdown ---
 const avatarBtn=document.getElementById('user-avatar-btn');
