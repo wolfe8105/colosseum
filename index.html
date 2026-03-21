@@ -277,6 +277,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
       <a href="colosseum-profile-depth.html" class="profile-link"><span class="link-label">📊 Complete Your Profile</span><span class="link-arrow">→</span></a>
       <a href="colosseum-settings.html" class="profile-link"><span class="link-label">⚙️ Settings</span><span class="link-arrow">→</span></a>
       <div class="profile-link" data-action="powerup-shop"><span class="link-label">⚡ Power-Up Shop</span><span class="link-arrow">→</span></div>
+      <div class="profile-link" data-action="arsenal"><span class="link-label">⚔️ Reference Arsenal</span><span class="link-arrow">→</span></div>
       <div class="profile-link" onclick="navigateTo('shop')"><span class="link-label">🛒 Cosmetics Shop</span><span class="link-arrow">→</span></div>
       <div class="profile-link" data-action="share-profile"><span class="link-label">🔗 Share Profile</span><span class="link-arrow">→</span></div>
       <div class="profile-link" data-action="invite-friend"><span class="link-label">📨 Invite a Friend</span><span class="link-arrow">→</span></div>
@@ -314,6 +315,19 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     </div>
   </div>
   <div class="screen" id="screen-leaderboard"></div>
+  <!-- SESSION 148: Reference Arsenal screen -->
+  <div class="screen" id="screen-arsenal">
+    <div class="section-banner">
+      <button class="arsenal-back-btn" id="arsenal-back-btn">← Back</button>
+      <h2>⚔️ REFERENCE ARSENAL</h2>
+      <div class="subtitle">Forge, verify, and wield your sources.</div>
+    </div>
+    <div class="arsenal-tabs" id="arsenal-tabs">
+      <div class="arsenal-tab active" data-arsenal-tab="my-arsenal">My Arsenal</div>
+      <div class="arsenal-tab" data-arsenal-tab="library">Library</div>
+    </div>
+    <div id="arsenal-content"></div>
+  </div>
 </div>
 
 <div class="category-overlay" id="categoryOverlay">
