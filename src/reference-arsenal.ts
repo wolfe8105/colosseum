@@ -686,6 +686,7 @@ export async function renderArsenal(container: HTMLElement): Promise<ArsenalRefe
 
   // Return refs so caller can wire edit buttons with full data
   return refs;
+}
 
 // ============================================================
 // LIBRARY RENDERER (browse all references)
