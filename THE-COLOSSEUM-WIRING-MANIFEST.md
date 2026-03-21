@@ -1519,6 +1519,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 - Trust SCP success messages — always grep for unique content after transfer (LM-167)
 - Load page-specific modules before auth.js — auth.js must resolve .ready before anything else runs
 - Render auth-gated content before ColosseumAuth.ready resolves — use await, never setTimeout
+- Call `log_event()` with positional args — MUST use named parameters (p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=). LM-188 closed Session 151.
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -1597,8 +1598,10 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 133-134 | set_profile_dob RPC added | Security audit Phases 1-3. Auth fixes (requireAuth bypass, UUID validation, _notify removed). DOB-in-JWT fix (trigger strips metadata, new RPC). Audit CLOSED. |
 | 142 | Script tag removal | 76 legacy `<script>` tags removed across 11 HTML pages. All pages now single `<script type="module">` entry point via Vite. Dead .js files still in repo root but unreferenced by any HTML. |
 | 147 | Section 4.10 added, Source Map row added | Reference Arsenal: 2 tables, 6 RPCs, 1 TS module. Column name bug caught (LM-186). |
+| 150 | No wiring changes | edit_reference log_event bug fixed (named params). Verify flow confirmed end-to-end. Login/signup flow problems identified (LM-189). |
+| 151 | No wiring changes | Full log_event named-param audit. 29 calls fixed across 26 RPCs. LM-188 closed. Zero positional calls remain. |
 
 ---
 
-> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 148.
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 151.
 > Future additions: As new features are built, add entries here. Update affected entries at end of each session.

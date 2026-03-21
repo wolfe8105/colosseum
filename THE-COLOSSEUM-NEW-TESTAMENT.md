@@ -1,5 +1,5 @@
 # THE COLOSSEUM — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 143 (March 20, 2026)
+### Last Updated: Session 151 (March 21, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -330,6 +330,8 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 - **Security audit CLOSED** — All 120+ issues from Sessions A-D + Session 92 Claude Code audit + Session 133-134 resolved. No open items.
 - **`navigateTo` exposed on window** — `src/pages/home.ts` sets `window.navigateTo = navigateTo`. Required for inline onclick handlers in index.html. Session 131.
 - **Power-up shop entry points** — Arena lobby button + profile link. Both call `navigateTo('arena')` then `ColosseumArena.showPowerUpShop()`. Session 131.
+- **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Positional args cause type ambiguity errors or silent data corruption. Full audit completed Session 151 — 29 calls fixed across 26 RPCs. Zero positional calls remain.
+- **Google OAuth provider disabled in Supabase** (LM-189). Signup via Google fails. Email confirmation also broken. Only way to create test accounts is Supabase dashboard with Auto Confirm on. Needs re-enable + SMTP fix.
 
 
 ---
@@ -728,5 +730,32 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 5. **`src/reference-arsenal.ts` built and deployed.** 730 lines. 4 RPC wrappers, 5-step forge form renderer, reference card renderer, arsenal list + library browser. All types exported. Window bridge. Compiles clean strict mode.
 
 **Files changed:** `src/reference-arsenal.ts` (new, deployed to GitHub). **Supabase:** `arsenal_references` table, `reference_verifications` table, 6 RPCs created.
+
+---
+
+> Sessions 148-149: Not in project chat record.
+
+# 40. SESSION 150 — EDIT BUG FIX + VERIFY FLOW CONFIRMED
+
+**Goal:** Test edit and verify features live, fix bugs found.
+
+1. **edit_reference RPC bug found and fixed.** log_event called with positional args — same class as LM-178. Fixed to named parameters (p_event_type :=, p_metadata :=). Two iterations: first removed extra v_user_id arg, second switched to named params to resolve type ambiguity.
+2. **Verify flow tested end-to-end with second account.** Test user created in Supabase dashboard (Google OAuth disabled, email confirm broken). Verification from second account succeeded. Duplicate vote blocked. Owner card shows locked indicator with verification point.
+3. **Login/signup flow problems noted.** Google OAuth provider disabled. Email confirmation failing. No clear path separation between login and signup. Needs dedicated fix.
+4. **Verification UI upgrade designed.** Thermometer progress bar with threshold tick marks, point counts, level indicators. Not yet built. Touches renderReferenceCard (reference-arsenal.ts) + CSS (index.html).
+
+**Files changed:** Supabase: edit_reference RPC patched. Zero GitHub changes. Zero VPS.
+
+---
+
+# 41. SESSION 151 — LM-188 FULL AUDIT: log_event NAMED PARAMS
+
+**Goal:** Eliminate all positional log_event calls across entire codebase.
+
+1. **7 broken calls fixed (Script 1).** 6 RPCs had log_event calls passing args in wrong slots — uuid into p_event_type, json into p_user_id, or missing middle params. join_debate_queue (×2), toggle_moderator_status, update_arena_debate, claim_debate_tokens, create_group, join_group.
+2. **22 fragile calls fixed (Script 2).** 20 RPCs had working positional calls converted to named params. All 6 params explicit: p_event_type, p_user_id, p_debate_id, p_category, p_side, p_metadata.
+3. **29 total calls, 26 RPCs, zero positional calls remain.** LM-188 closed permanently.
+
+**Files changed:** Supabase: 26 RPCs patched via CREATE OR REPLACE. Zero GitHub. Zero VPS.
 
 *For all session build logs prior to Session 108, the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map (clone repo first).*
