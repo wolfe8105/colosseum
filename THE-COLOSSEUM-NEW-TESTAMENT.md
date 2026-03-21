@@ -697,4 +697,36 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 
 **Files changed:** All 11 HTML files, 8 page .ts files. Zero SQL. Zero VPS.
 
+---
+
+> Sessions 143-145: Not in project chat record.
+
+# 38. SESSION 146 — REFERENCE ARSENAL DESIGN + STRIPE FIX + DEAD FILE CLEANUP
+
+**Goal:** Design Reference Arsenal end-to-end, fix Stripe console error, clean repo.
+
+1. **Stripe console error fixed.** `src/payments.ts` — added `typeof Stripe === 'undefined'` guard in `init()`. Silent fallback to placeholder mode instead of throwing. Zero console errors confirmed on live site.
+2. **Three dead files deleted.** `src/types/database.ts` (zero imports, placeholder types from Phase 0). `database.ts` (repo root, duplicate). `globals.d.ts` (repo root, migration leftover).
+3. **Reference Arsenal feature designed end-to-end.** Form prototype built (HTML, 3 versions iterated). Database schema written (SQL migration ready). Full game mechanic designed with community-driven verification system.
+
+**Design decisions locked:** 5-step forge form, 6 source types with power ceilings (Peer-Reviewed S/5, Data A/4, Expert A/4, Government B/3, News D/1, Other D/1), community verification with voter type weighting (clan 0.5, outside 1.0, rival 2.0), challenge system with -10 point penalty on rejection, power affects score multiplier + token earnings + XP.
+
+**Database schema designed:** `arsenal_references` (21 cols), `reference_verifications` (6 cols), 2 helpers, 4 SECURITY DEFINER RPCs. RLS on both tables.
+
+**Files changed:** `src/payments.ts` (deployed). 3 files deleted. 2 output files created (form prototype, migration SQL — not deployed).
+
+---
+
+# 39. SESSION 147 — REFERENCE ARSENAL MIGRATION + TYPESCRIPT MODULE
+
+**Goal:** Verify schema, run migration, build TypeScript module.
+
+1. **Verified `group_members` and `rivals` table names.** Confirmed columns: `group_members.group_id`/`user_id`, `rivals.challenger_id`/`target_id`.
+2. **Column name bug caught and fixed (LM-186).** Migration SQL had `user_id`/`rival_id` for rivals table — actual columns are `challenger_id`/`target_id`. Fixed before running.
+3. **Migration SQL executed.** 2 tables, 2 helpers, 4 SECURITY DEFINER RPCs live in Supabase.
+4. **2 read RPCs created.** `get_my_arsenal` and `get_reference_library`. Both SECURITY DEFINER, authenticated only.
+5. **`src/reference-arsenal.ts` built and deployed.** 730 lines. 4 RPC wrappers, 5-step forge form renderer, reference card renderer, arsenal list + library browser. All types exported. Window bridge. Compiles clean strict mode.
+
+**Files changed:** `src/reference-arsenal.ts` (new, deployed to GitHub). **Supabase:** `arsenal_references` table, `reference_verifications` table, 6 RPCs created.
+
 *For all session build logs prior to Session 108, the full inventory, revenue details, B2B strategy — see the Old Testament. For the B2B intelligence play — see the War Chest. For the product design north star — see the Product Vision. For documented pitfalls — see the Land Mine Map (clone repo first).*

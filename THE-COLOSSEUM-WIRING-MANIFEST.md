@@ -823,6 +823,54 @@ Communication:
 
 ---
 
+## 4.10 REFERENCE ARSENAL (Session 147)
+
+### arsenal_references (Table)
+- DEFINED IN: Supabase (Session 147)
+- COLUMNS: id, user_id, claim, url, domain, author, publication_year, source_type, power_ceiling, category, verification_points, current_power, citation_count, win_count, loss_count, challenge_count, challenge_wins, challenge_losses, xp, rarity, created_at
+- RLS: SELECT all authenticated. INSERT own rows only. No direct UPDATE/DELETE — RPCs only.
+- INDEXES: user_id, category, source_type, current_power DESC
+
+### reference_verifications (Table)
+- DEFINED IN: Supabase (Session 147)
+- COLUMNS: id, reference_id, voter_id, voter_type (clan/outside/rival), vote_value (0.5/1.0/2.0), created_at
+- UNIQUE: (reference_id, voter_id) — one vote per user per reference
+- RLS: SELECT all authenticated. INSERT own rows only.
+
+### forge_reference (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: src/reference-arsenal.ts → forgeReference()
+- VALIDATES: auth, source_type, category, URL format, claim length, author length
+- LOGS: log_event('reference_forged')
+- RETURNS: UUID
+- BLAST RADIUS: Low — creates a row.
+
+### verify_reference (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: src/reference-arsenal.ts → verifyReference()
+- DETERMINES: voter_type via group_members (clan 0.5) + rivals (rival 2.0), else outside 1.0
+- UPDATES: verification_points, recalculates current_power
+- BLAST RADIUS: If group_members or rivals schema changes, voter_type detection breaks. LM-186.
+
+### cite_reference (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: src/reference-arsenal.ts → citeReference() (not wired to debate room yet)
+- OUTCOME null=cite, 'win'=XP award, 'loss'=loss count
+- BLAST RADIUS: Must be called from debate settle flow when wired.
+
+### challenge_reference (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- CALLED FROM: src/reference-arsenal.ts → challengeReference() (not wired to moderator yet)
+- REJECTED: -10 verification_points, power recalculated. LOGS: log_event('reference_challenge_lost')
+- BLAST RADIUS: Currently callable by anyone — needs moderator-only gate when wired.
+
+### get_my_arsenal / get_reference_library (RPCs)
+- DEFINED IN: Supabase RPCs (SECURITY DEFINER)
+- CALLED FROM: src/reference-arsenal.ts → renderArsenal() / renderLibrary()
+- BLAST RADIUS: Low — read-only.
+
+---
+
 # SECTION 4B: WIRING MANIFEST — PAYMENTS LAYER
 
 ## 4B.1 STRIPE INTEGRATION
@@ -1527,6 +1575,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | colosseum-debate-landing.html | Growth | Landing page, anonymous votes, fingerprint dedup | auth.js (anon RPCs) |
 | colosseum-plinko.html | Defense | 4-step signup gate | auth.js, config.js |
 | colosseum-groups.html | Social | Groups discover/detail/challenges (inline JS) | auth.js, config.js |
+| src/reference-arsenal.ts | Social | window.ColosseumArsenal (forgeReference, verifyReference, citeReference, challengeReference, showForgeForm, renderArsenal, renderLibrary) | auth.ts (safeRpc), config.ts (escapeHTML, showToast) |
 
 ---
 
@@ -1547,8 +1596,9 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 132 | No wiring changes | Vitest installed. 97 bot army tests. 2 classifier bugs fixed (substring match, regex ordering). Phase 6 steps 4-5 reassessed as full cutover. |
 | 133-134 | set_profile_dob RPC added | Security audit Phases 1-3. Auth fixes (requireAuth bypass, UUID validation, _notify removed). DOB-in-JWT fix (trigger strips metadata, new RPC). Audit CLOSED. |
 | 142 | Script tag removal | 76 legacy `<script>` tags removed across 11 HTML pages. All pages now single `<script type="module">` entry point via Vite. Dead .js files still in repo root but unreferenced by any HTML. |
+| 147 | Section 4.10 added, Source Map row added | Reference Arsenal: 2 tables, 6 RPCs, 1 TS module. Column name bug caught (LM-186). |
 
 ---
 
-> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 143.
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 148.
 > Future additions: As new features are built, add entries here. Update affected entries at end of each session.

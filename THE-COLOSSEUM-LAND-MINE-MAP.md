@@ -459,3 +459,29 @@ NOTE: This is structurally impossible after TypeScript migration Phase 2
   (Session 126). Only applies to the original .js files.
 SESSION: 121 (documented). TypeScript fix: Session 126.
 ```
+
+---
+
+## LM-186: verify_reference rivals column names — challenger_id/target_id not user_id/rival_id
+```
+DECISION (Session 147): The reference-arsenal-migration.sql from Session 146
+  had wrong column names for the rivals table query inside verify_reference RPC.
+  Used `user_id` and `rival_id` — actual columns are `challenger_id` and `target_id`.
+  Caught by querying information_schema.columns before running migration.
+  Fixed in the SQL before execution.
+BITES YOU WHEN: Any new RPC that queries the rivals table. The column names
+  are not intuitive — `challenger_id` is the user who declared the rivalry,
+  `target_id` is who they declared against. Rivalries are one-directional
+  (Session 23 design), so both directions must be checked to find ANY rivalry
+  between two users.
+ALSO BITES YOU WHEN: You assume rivals have a `status = 'accepted'` gate.
+  The declare_rival RPC creates rows with status 'pending' by default, but
+  the current UX does not have an accept flow — the row just exists.
+  verify_reference currently counts ALL rival rows regardless of status.
+  If an accept flow is added later, update verify_reference to filter
+  by status = 'accepted'.
+PATTERN: Same class of bug as LM-174 (tokens vs token_balance). Schema
+  assumptions without verification. Rule: always query information_schema
+  before writing any RPC that touches a table.
+SESSION: 146 (introduced), 147 (caught and fixed before execution).
+```
