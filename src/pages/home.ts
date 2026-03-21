@@ -37,6 +37,7 @@ import '../tiers.ts';
 import '../paywall.ts';
 import '../cards.ts';
 import '../analytics.ts';
+import { showForgeForm, renderArsenal, renderLibrary } from '../reference-arsenal.ts';
 
 // ============================================================
 // APP SHELL V4 — Session 23: Auth race fix, Predictions, Rivals, Follows
@@ -276,7 +277,7 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
 })();
 
 // --- NAVIGATION ---
-const VALID_SCREENS=['home','arena','profile','shop','leaderboard'];
+const VALID_SCREENS=['home','arena','profile','shop','leaderboard','arsenal'];
 function navigateTo(screenId: string){
   if(!VALID_SCREENS.includes(screenId))screenId='home';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -289,6 +290,11 @@ function navigateTo(screenId: string){
   if(screenId==='profile'){
     ColosseumAsync?.renderRivals?.(document.getElementById('rivals-feed'));
     loadFollowCounts();
+  }
+
+  // SESSION 148: Load arsenal content when switching to arsenal screen
+  if(screenId==='arsenal'){
+    loadArsenalScreen();
   }
 }
 document.querySelectorAll('.bottom-nav-btn').forEach(btn=>{btn.addEventListener('click',()=>navigateTo(btn.dataset.screen));});
@@ -311,7 +317,79 @@ document.addEventListener('click', (e: Event) => {
   } else if (action === 'subscribe') {
     const tier = el.dataset.tier;
     if (tier) subscribe(tier);
+  } else if (action === 'arsenal') {
+    navigateTo('arsenal');
   }
+});
+
+// --- SESSION 148: Reference Arsenal screen wiring ---
+let arsenalForgeCleanup: (() => void) | null = null;
+let arsenalActiveTab = 'my-arsenal';
+
+function loadArsenalScreen(): void {
+  // Cancel any open forge form
+  if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
+
+  const container = document.getElementById('arsenal-content');
+  if (!container) return;
+
+  // Reset tab UI
+  arsenalActiveTab = 'my-arsenal';
+  document.querySelectorAll('[data-arsenal-tab]').forEach(t => {
+    t.classList.toggle('active', (t as HTMLElement).dataset.arsenalTab === 'my-arsenal');
+  });
+
+  renderArsenal(container).then(() => wireForgeButton(container));
+}
+
+function wireForgeButton(container: HTMLElement): void {
+  const forgeBtn = container.querySelector('#arsenal-forge-btn') as HTMLElement | null;
+  if (!forgeBtn) return;
+  forgeBtn.addEventListener('click', () => {
+    arsenalForgeCleanup = showForgeForm(
+      container,
+      (_refId: string) => {
+        arsenalForgeCleanup = null;
+        showToast('Reference forged!', 'success');
+        renderArsenal(container).then(() => wireForgeButton(container));
+      },
+      () => {
+        arsenalForgeCleanup = null;
+        renderArsenal(container).then(() => wireForgeButton(container));
+      },
+    );
+  });
+}
+
+// Arsenal back button
+document.getElementById('arsenal-back-btn')?.addEventListener('click', () => {
+  if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
+  navigateTo('profile');
+});
+
+// Arsenal tab switching
+document.querySelectorAll('[data-arsenal-tab]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabId = (tab as HTMLElement).dataset.arsenalTab;
+    if (!tabId || tabId === arsenalActiveTab) return;
+
+    // Cancel forge if open
+    if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
+
+    arsenalActiveTab = tabId;
+    document.querySelectorAll('[data-arsenal-tab]').forEach(t => {
+      t.classList.toggle('active', (t as HTMLElement).dataset.arsenalTab === tabId);
+    });
+
+    const container = document.getElementById('arsenal-content');
+    if (!container) return;
+
+    if (tabId === 'my-arsenal') {
+      renderArsenal(container).then(() => wireForgeButton(container));
+    } else if (tabId === 'library') {
+      renderLibrary(container);
+    }
+  });
 });
 
 // --- User Dropdown ---
