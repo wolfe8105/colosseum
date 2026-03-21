@@ -145,6 +145,31 @@ export async function forgeReference(params: ForgeParams): Promise<string> {
 }
 
 // ============================================================
+// RPC 1B: EDIT REFERENCE (pre-verification only)
+// ============================================================
+
+/**
+ * Edit an existing reference. Only allowed when verification_points = 0.
+ * Once anyone has verified it, the reference is locked.
+ */
+export async function editReference(
+  referenceId: string,
+  params: Partial<ForgeParams>,
+): Promise<void> {
+  const { error } = await safeRpc<{ success: boolean }>('edit_reference', {
+    p_reference_id: referenceId,
+    p_claim: params.claim?.trim() || null,
+    p_url: params.url?.trim() || null,
+    p_author: params.author?.trim() || null,
+    p_publication_year: params.publication_year || null,
+    p_source_type: params.source_type || null,
+    p_category: params.category || null,
+  });
+
+  if (error) throw new Error(error.message || 'Failed to edit reference');
+}
+
+// ============================================================
 // RPC 2: VERIFY REFERENCE
 // ============================================================
 
@@ -271,21 +296,24 @@ interface ForgeFormState {
 /**
  * Render the 5-step forge form into a container element.
  * Returns a cleanup function to remove event listeners.
+ * If editRef is provided, pre-fills the form and calls editReference on submit.
  */
 export function showForgeForm(
   container: HTMLElement,
   onComplete: (refId: string) => void,
   onCancel: () => void,
+  editRef?: ArsenalReference,
 ): () => void {
+  const isEdit = !!editRef;
   const state: ForgeFormState = {
     step: 1,
-    claim: '',
-    url: '',
-    domain: '',
-    author: '',
-    publication_year: new Date().getFullYear(),
-    source_type: '',
-    category: '',
+    claim: editRef?.claim || '',
+    url: editRef?.url || '',
+    domain: editRef?.domain || '',
+    author: editRef?.author || '',
+    publication_year: editRef?.publication_year || new Date().getFullYear(),
+    source_type: editRef?.source_type || '',
+    category: editRef?.category || '',
   };
 
   let destroyed = false;
@@ -379,7 +407,7 @@ export function showForgeForm(
     if (state.step < 5) {
       html += `<button id="forge-next" class="forge-btn-primary">Next</button>`;
     } else {
-      html += `<button id="forge-submit" class="forge-btn-primary">⚔ Forge Weapon</button>`;
+      html += `<button id="forge-submit" class="forge-btn-primary">${isEdit ? '✏️ Save Changes' : '⚔ Forge Weapon'}</button>`;
     }
     html += `</div>`;
 
@@ -503,27 +531,34 @@ export function showForgeForm(
     const submitBtn = document.getElementById('forge-submit') as HTMLButtonElement | null;
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Forging...';
+      submitBtn.textContent = isEdit ? 'Saving...' : 'Forging...';
     }
 
     try {
-      const refId = await forgeReference({
+      const params: ForgeParams = {
         claim: state.claim,
         url: state.url,
         author: state.author,
         publication_year: state.publication_year,
         source_type: state.source_type as SourceType,
         category: state.category as ReferenceCategory,
-      });
+      };
 
-      showToast('Reference forged! ⚔️', 'success');
-      onComplete(refId);
+      if (isEdit && editRef) {
+        await editReference(editRef.id, params);
+        showToast('Reference updated! ✏️', 'success');
+        onComplete(editRef.id);
+      } else {
+        const refId = await forgeReference(params);
+        showToast('Reference forged! ⚔️', 'success');
+        onComplete(refId);
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Forge failed';
+      const msg = err instanceof Error ? err.message : isEdit ? 'Edit failed' : 'Forge failed';
       showToast(msg, 'error');
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = '⚔ Forge Weapon';
+        submitBtn.textContent = isEdit ? '✏️ Save Changes' : '⚔ Forge Weapon';
       }
     }
   }
@@ -546,7 +581,7 @@ export function showForgeForm(
  * Render a single reference card as HTML string.
  * Caller is responsible for inserting into DOM and wiring click handlers.
  */
-export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolean): string {
+export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolean, showEditBtn: boolean = false): string {
   const esc = escapeHTML;
   const srcInfo = SOURCE_TYPES[ref.source_type];
   const wr = winRate(ref);
@@ -582,6 +617,8 @@ export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolea
         <span title="XP">✨ ${ref.xp} XP</span>
       </div>
       ${showVerifyBtn ? `<button class="ref-card-verify-btn" data-ref-id="${esc(ref.id)}">⚡ Verify</button>` : ''}
+      ${showEditBtn && ref.verification_points === 0 ? `<button class="ref-card-edit-btn" data-ref-id="${esc(ref.id)}">✏️ Edit</button>` : ''}
+      ${showEditBtn && ref.verification_points > 0 ? `<span class="ref-card-locked">🔒 Verified — locked</span>` : ''}
     </div>
   `;
 }
@@ -594,11 +631,11 @@ export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolea
  * Render the user's arsenal (list of their references) into a container.
  * Fetches from arsenal_references via a read-only select.
  */
-export async function renderArsenal(container: HTMLElement): Promise<void> {
+export async function renderArsenal(container: HTMLElement): Promise<ArsenalReference[]> {
   const user = getCurrentUser();
   if (!user) {
     container.innerHTML = '<p class="arsenal-empty">Sign in to view your arsenal.</p>';
-    return;
+    return [];
   }
 
   container.innerHTML = '<p class="arsenal-loading">Loading arsenal...</p>';
@@ -617,7 +654,7 @@ export async function renderArsenal(container: HTMLElement): Promise<void> {
         <button id="arsenal-forge-btn" class="forge-btn-primary">⚔ Forge Your First Weapon</button>
       </div>
     `;
-    return;
+    return [];
   }
 
   const refs = (data || []) as ArsenalReference[];
@@ -629,7 +666,7 @@ export async function renderArsenal(container: HTMLElement): Promise<void> {
         <button id="arsenal-forge-btn" class="forge-btn-primary">⚔ Forge Your First Weapon</button>
       </div>
     `;
-    return;
+    return [];
   }
 
   // Sort by current_power DESC, then created_at DESC
@@ -641,12 +678,14 @@ export async function renderArsenal(container: HTMLElement): Promise<void> {
   </div>`;
   html += `<div class="arsenal-grid">`;
   for (const ref of refs) {
-    html += renderReferenceCard(ref, false);
+    html += renderReferenceCard(ref, false, true);
   }
   html += `</div>`;
 
   container.innerHTML = html;
-}
+
+  // Return refs so caller can wire edit buttons with full data
+  return refs;
 
 // ============================================================
 // LIBRARY RENDERER (browse all references)
@@ -714,6 +753,7 @@ export async function renderLibrary(
 
 (window as unknown as Record<string, unknown>).ColosseumArsenal = {
   forgeReference,
+  editReference,
   verifyReference,
   citeReference,
   challengeReference,
