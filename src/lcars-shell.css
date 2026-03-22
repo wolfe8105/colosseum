@@ -1,0 +1,713 @@
+/* ============================================================
+   THE MODERATOR — LCARS Shell Layout
+   Session 156
+   ============================================================
+   Structural layout only. Consumes vars from moderator-tokens.css.
+   Does NOT style page content (cards, overlays, forms, etc.)
+   — those get reskinned page-by-page in later sessions.
+   ============================================================ */
+
+/* --- RESET OVERRIDES ---
+   Suppress old Colosseum structural styles that still live
+   in index.html's <style> block. Safe to remove these once
+   the old CSS is cleaned out.
+   ------------------------------------------------------------ */
+body {
+  display: block;
+  background: var(--mod-bg-base);
+  color: var(--mod-text-primary);
+  font-family: var(--mod-font-ui);
+}
+body::before,
+body::after {
+  display: none;
+}
+
+/* ============================================================
+   GRID SHELL
+   Desktop: 2-column grid (sidebar | main)
+   Mobile:  single-column (header → pills → content → footer)
+   ============================================================ */
+.mod-shell {
+  display: grid;
+  grid-template-columns: var(--mod-sidebar-width) 1fr;
+  grid-template-rows: var(--mod-header-height) 1fr var(--mod-footer-height);
+  grid-template-areas:
+    "sweep   header"
+    "sidebar content"
+    "foot    footer";
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--mod-bg-base);
+}
+
+/* ============================================================
+   TOP SWEEP (ELBOW)
+   The curved connector between header bar and sidebar.
+   Solid bar color with a concave cutout at bottom-right.
+   ============================================================ */
+.mod-sweep-top {
+  grid-area: sweep;
+  background: var(--mod-bar-primary);
+  background-image: var(--mod-gloss);
+  position: relative;
+  z-index: var(--mod-z-header);
+}
+
+/* Concave cutout — base-bg square with rounded top-left corner */
+.mod-sweep-top::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--mod-sweep-radius);
+  height: var(--mod-sweep-radius);
+  background: var(--mod-bg-base);
+  border-top-left-radius: var(--mod-sweep-radius);
+}
+
+/* ============================================================
+   HEADER BAR
+   Horizontal bar across the top-right. Title + controls.
+   ============================================================ */
+.mod-header {
+  grid-area: header;
+  background: var(--mod-bar-primary);
+  background-image: var(--mod-gloss);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--mod-space-lg);
+  z-index: var(--mod-z-header);
+  /* Right end of header is pill-rounded */
+  border-radius: 0 0 var(--mod-radius-pill) 0;
+}
+
+.mod-title {
+  font-family: var(--mod-font-ui);
+  font-size: var(--mod-font-title-size);
+  font-weight: var(--mod-font-title-weight);
+  letter-spacing: var(--mod-font-title-spacing);
+  text-transform: uppercase;
+  color: var(--mod-text-on-bar);
+  white-space: nowrap;
+}
+
+.mod-title-the {
+  opacity: 0.55;
+  margin-right: 4px;
+}
+
+/* --- Header controls row --- */
+.mod-header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--mod-space-sm);
+}
+
+.mod-token-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 5px 10px;
+  border-radius: var(--mod-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mod-text-on-bar);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mod-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mod-text-on-bar);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background var(--mod-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.mod-icon-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.mod-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mod-text-on-bar);
+  font-family: var(--mod-font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--mod-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.mod-avatar:active {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   SIDEBAR
+   Vertical nav pills with gaps between them.
+   Base background shows through gaps for the LCARS look.
+   ============================================================ */
+.mod-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mod-bar-gap);
+  padding-top: var(--mod-bar-gap);
+  background: var(--mod-bg-base);
+  z-index: var(--mod-z-sidebar);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.mod-pill {
+  background: var(--mod-bar-secondary);
+  background-image: var(--mod-gloss-subtle);
+  border: none;
+  color: var(--mod-text-on-bar);
+  font-family: var(--mod-font-ui);
+  font-size: var(--mod-font-nav-size);
+  font-weight: var(--mod-font-nav-weight);
+  letter-spacing: var(--mod-font-nav-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: var(--mod-bar-btn-height);
+  flex-shrink: 0;
+  /* Flat left edge, pill-rounded right edge */
+  border-radius: 0 var(--mod-radius-pill) var(--mod-radius-pill) 0;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--mod-transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  /* Give pills room to breathe on right so rounded end isn't clipped */
+  margin-right: 2px;
+}
+
+/* Active state — lighter bar + accent marker */
+.mod-pill.active {
+  background-color: var(--mod-bar-tertiary);
+  background-image: var(--mod-gloss);
+}
+
+.mod-pill:active {
+  background-color: var(--mod-bar-tertiary);
+}
+
+/* Accent pill (arena) — uses red accent for standout */
+.mod-pill[data-screen="arena"] {
+  background-color: var(--mod-bar-accent);
+  color: var(--mod-text-on-accent);
+}
+.mod-pill[data-screen="arena"].active {
+  background-color: var(--mod-accent-hover);
+}
+
+.mod-pill-label {
+  /* Labels written vertically on desktop sidebar */
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+/* --- Sidebar spacer pill (decorative filler) --- */
+.mod-pill-spacer {
+  flex: 1;
+  background: var(--mod-bar-secondary);
+  background-image: var(--mod-gloss-subtle);
+  border-radius: 0 var(--mod-radius-pill) var(--mod-radius-pill) 0;
+  min-height: 8px;
+  margin-right: 2px;
+  opacity: 0.4;
+}
+
+/* ============================================================
+   BOTTOM SWEEP (ELBOW)
+   Mirror of top sweep. Cutout at top-right.
+   ============================================================ */
+.mod-sweep-bottom {
+  grid-area: foot;
+  background: var(--mod-bar-primary);
+  background-image: var(--mod-gloss);
+  position: relative;
+  z-index: var(--mod-z-header);
+}
+
+.mod-sweep-bottom::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: var(--mod-sweep-radius);
+  height: var(--mod-sweep-radius);
+  background: var(--mod-bg-base);
+  border-bottom-left-radius: var(--mod-sweep-radius);
+}
+
+/* ============================================================
+   FOOTER BAR
+   Horizontal bar bottom-right. Legal links.
+   ============================================================ */
+.mod-footer {
+  grid-area: footer;
+  background: var(--mod-bar-primary);
+  background-image: var(--mod-gloss-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mod-space-lg);
+  padding: 0 var(--mod-space-lg);
+  z-index: var(--mod-z-header);
+  /* Right end pill-rounded, left end flat (flush with sweep) */
+  border-radius: 0 var(--mod-radius-pill) 0 0;
+}
+
+.mod-footer a {
+  color: var(--mod-text-on-bar);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  transition: opacity var(--mod-transition-fast);
+}
+.mod-footer a:hover {
+  opacity: 1;
+}
+.mod-footer-sep {
+  color: var(--mod-text-on-bar);
+  opacity: 0.25;
+  font-size: 10px;
+}
+.mod-footer-copy {
+  color: var(--mod-text-on-bar);
+  font-size: 10px;
+  opacity: 0.4;
+}
+
+/* ============================================================
+   CONTENT AREA
+   Where .screen divs live. Replaces old .main-content.
+   ============================================================ */
+.mod-content {
+  grid-area: content;
+  overflow: hidden;
+  position: relative;
+  background: var(--mod-bg-content);
+}
+
+/* Override old .main-content styles from inline <style> */
+.mod-content.main-content {
+  flex: unset;
+}
+
+/* ============================================================
+   DOT-TRACK FLOW INDICATOR
+   Decorative animated dots along a horizontal track.
+   Place inside any bar or section header.
+   ============================================================ */
+.mod-dot-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--mod-dot-track-height);
+  margin: 0 var(--mod-space-sm);
+  flex: 1;
+  max-width: 120px;
+}
+
+.mod-dot-track .dot {
+  width: var(--mod-dot-size);
+  height: var(--mod-dot-size);
+  border-radius: 50%;
+  background: var(--mod-dot-primary);
+  animation: modDotPulse var(--mod-dot-speed) ease-in-out infinite;
+}
+.mod-dot-track .dot:nth-child(2) { animation-delay: 0.3s; }
+.mod-dot-track .dot:nth-child(3) { animation-delay: 0.6s; }
+.mod-dot-track .dot:nth-child(4) { animation-delay: 0.9s; }
+.mod-dot-track .dot:nth-child(5) { animation-delay: 1.2s; }
+
+@keyframes modDotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   LOADING SCREEN OVERRIDE
+   ============================================================ */
+.loading-screen {
+  background: var(--mod-bg-base) !important;
+}
+.loading-logo {
+  font-family: var(--mod-font-ui) !important;
+  color: var(--mod-bar-tertiary) !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+}
+.loading-spinner {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  border-top-color: var(--mod-bar-tertiary) !important;
+}
+
+/* ============================================================
+   DROPDOWN OVERRIDE
+   Reposition to align with new header height.
+   ============================================================ */
+.user-dropdown {
+  top: calc(var(--mod-header-height) - 4px);
+  background: rgba(17, 20, 25, 0.95);
+  border-color: var(--mod-border-primary);
+}
+
+/* ============================================================
+   NOTIFICATION DOT — keep working on new icon btn
+   ============================================================ */
+.notification-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--mod-status-live);
+  border-radius: 50%;
+}
+
+/* ============================================================
+   MOBILE LAYOUT (< 768px)
+   Sidebar column collapses. Pills go horizontal below header.
+   Sweeps hide. Single column layout.
+   ============================================================ */
+@media (max-width: 767px) {
+  .mod-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--mod-header-height) auto 1fr auto;
+    grid-template-areas:
+      "header"
+      "sidebar"
+      "content"
+      "footer";
+  }
+
+  /* Hide sweeps on mobile */
+  .mod-sweep-top,
+  .mod-sweep-bottom {
+    display: none;
+  }
+
+  /* Header spans full width, both ends pill-rounded */
+  .mod-header {
+    border-radius: 0;
+    padding: 0 var(--mod-space-md);
+  }
+
+  /* Sidebar becomes horizontal pill strip */
+  .mod-sidebar {
+    flex-direction: row;
+    gap: var(--mod-bar-gap);
+    padding: var(--mod-bar-gap) var(--mod-space-sm);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Subtle top/bottom gap to separate from header/content */
+    background: var(--mod-bg-base);
+  }
+
+  .mod-pill {
+    /* Full pill shape on mobile, horizontal layout */
+    border-radius: var(--mod-radius-pill);
+    margin-right: 0;
+    min-height: 32px;
+    min-width: var(--mod-touch-min);
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+
+  .mod-pill-label {
+    /* Cancel vertical text — horizontal on mobile */
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    transform: none;
+  }
+
+  /* Hide decorative spacer on mobile */
+  .mod-pill-spacer {
+    display: none;
+  }
+
+  /* Footer compact on mobile */
+  .mod-footer {
+    border-radius: 0;
+    height: auto;
+    min-height: 40px;
+    padding: var(--mod-space-sm) var(--mod-space-md);
+    gap: var(--mod-space-md);
+  }
+}
+
+/* ============================================================
+   TABLET / WIDER MOBILE (768-1023px)
+   Sidebar slightly wider for readability.
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mod-shell {
+    --mod-sidebar-width: 76px;
+  }
+}
+
+/* ============================================================
+   DESKTOP WIDE (≥1440px)
+   Content area gets max-width to prevent extreme stretching.
+   ============================================================ */
+@media (min-width: 1440px) {
+  .mod-content {
+    /* Content doesn't stretch to infinity on ultrawide */
+    max-width: 1200px;
+  }
+}
+
+/* ============================================================
+   LCARS HOME PANEL
+   Reskins spoke-wheel into a classic LCARS button panel.
+   JS buildTiles() still runs — CSS overrides inline transforms
+   to pin tiles as horizontal bar buttons. openCategory() still
+   fires on click. Carousel physics become visually inert.
+   ============================================================ */
+
+/* --- Kill circular container, make it a column layout --- */
+.spoke-wheel {
+  /* !important overrides inline styles set by JS positionTiles() */
+  width: 100% !important;
+  height: auto !important;
+  max-width: 480px;
+  position: relative !important;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mod-bar-gap);
+  padding: var(--mod-space-lg);
+  transform-style: flat !important;
+  perspective: none !important;
+}
+
+/* --- Kill spoke positioning, make tiles horizontal bars --- */
+.spoke-tile {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  left: auto !important;
+  top: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  opacity: 1 !important;
+  z-index: auto !important;
+  filter: none !important;
+  will-change: auto;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.spoke-tile:active {
+  filter: brightness(1.15);
+}
+
+/* --- Tile inner: LCARS horizontal bar button --- */
+.spoke-tile .tile-inner {
+  width: 100% !important;
+  height: auto !important;
+  /* LCARS bar shape: flat left, pill-rounded right */
+  background: var(--mod-bar-secondary) !important;
+  background-image: var(--mod-gloss-subtle) !important;
+  border: none !important;
+  border-radius: 6px var(--mod-radius-pill) var(--mod-radius-pill) 6px !important;
+  padding: 12px 20px 12px 14px !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  position: relative;
+  min-height: var(--mod-bar-btn-height);
+  transition: filter var(--mod-transition-fast);
+}
+
+/* Remove old shimmer overlay */
+.spoke-tile .tile-inner::before {
+  display: none !important;
+}
+
+/* Icon */
+.spoke-tile .tile-icon {
+  font-size: 22px !important;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Label: LCARS readout style */
+.spoke-tile .tile-label {
+  font-family: var(--mod-font-ui) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase;
+  color: var(--mod-text-on-bar) !important;
+  text-align: left !important;
+  line-height: 1.1 !important;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Count / live indicator — pushed to far right */
+.spoke-tile .tile-count {
+  font-family: var(--mod-font-ui) !important;
+  font-size: 10px !important;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--mod-text-on-bar) !important;
+  opacity: 0.55;
+  margin-left: auto;
+  text-transform: uppercase;
+}
+
+.spoke-tile .tile-live {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1.5px !important;
+  color: var(--mod-text-on-bar) !important;
+  margin-left: auto;
+  gap: 4px !important;
+  text-transform: uppercase;
+}
+.spoke-tile .tile-live .pulse {
+  width: 5px !important;
+  height: 5px !important;
+  background: var(--mod-text-on-bar) !important;
+}
+
+/* Active press */
+.spoke-tile:active .tile-inner {
+  transform: scale(0.99) !important;
+  filter: brightness(1.1);
+}
+
+/* --- "front" class no longer meaningful — override to nothing --- */
+.spoke-tile.front .tile-inner {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.spoke-tile.front .tile-label {
+  color: var(--mod-text-on-bar) !important;
+}
+
+/* --- Per-category bar colors (alternating tones like classic LCARS) --- */
+.spoke-tile[data-id="politics"] .tile-inner   { background-color: var(--mod-bar-tertiary) !important; }
+.spoke-tile[data-id="sports"] .tile-inner      { background-color: var(--mod-bar-secondary) !important; }
+.spoke-tile[data-id="entertainment"] .tile-inner { background-color: var(--mod-bar-primary) !important; }
+.spoke-tile[data-id="couples"] .tile-inner     { background-color: var(--mod-bar-tertiary) !important; }
+.spoke-tile[data-id="trending"] .tile-inner    { background-color: var(--mod-bar-accent) !important; }
+.spoke-tile[data-id="trending"] .tile-label,
+.spoke-tile[data-id="trending"] .tile-count,
+.spoke-tile[data-id="trending"] .tile-live     { color: var(--mod-text-on-accent) !important; }
+.spoke-tile[data-id="trending"] .tile-live .pulse { background: var(--mod-text-on-accent) !important; }
+.spoke-tile[data-id="music"] .tile-inner       { background-color: var(--mod-bar-secondary) !important; }
+
+/* --- Home screen layout override --- */
+#screen-home {
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding-top: var(--mod-space-xl) !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+  touch-action: auto !important;
+}
+
+/* --- LCARS decorative header bar above the panel --- */
+.lcars-panel-header {
+  display: flex;
+  gap: var(--mod-bar-gap);
+  width: 100%;
+  max-width: 480px;
+  padding: 0 var(--mod-space-lg);
+  margin-bottom: var(--mod-bar-gap);
+}
+
+.lcars-panel-header .bar-deco {
+  height: 14px;
+  border-radius: var(--mod-radius-pill);
+  background-image: var(--mod-gloss-subtle);
+}
+
+/* --- LCARS decorative footer readout below the panel --- */
+.lcars-panel-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--mod-bar-gap);
+  width: 100%;
+  max-width: 480px;
+  padding: 0 var(--mod-space-lg);
+  margin-top: var(--mod-bar-gap);
+}
+
+.lcars-panel-footer .bar-deco {
+  height: 10px;
+  border-radius: var(--mod-radius-pill);
+  background-image: var(--mod-gloss-subtle);
+}
+
+.lcars-panel-footer .readout {
+  font-family: var(--mod-font-ui);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--mod-text-muted);
+  white-space: nowrap;
+}
+
+/* --- Mobile adjustments --- */
+@media (max-width: 767px) {
+  .spoke-wheel {
+    padding: var(--mod-space-md) !important;
+  }
+  .spoke-tile .tile-label {
+    font-size: 11px !important;
+    letter-spacing: 1.5px !important;
+  }
+  .spoke-tile .tile-inner {
+    padding: 10px 16px 10px 12px !important;
+  }
+  .lcars-panel-header,
+  .lcars-panel-footer {
+    padding: 0 var(--mod-space-md);
+  }
+}
+
+/* ============================================================
+   DESKTOP WIDE (≥1440px)
+   ============================================================ */
+@media (min-width: 1440px) {
+  .mod-content {
+    max-width: 1200px;
+  }
+}
