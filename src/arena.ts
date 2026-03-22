@@ -302,52 +302,64 @@ function injectCSS(): void {
   cssInjected = true;
   const style = document.createElement('style');
   style.textContent = `
-    /* ===== ARENA STYLES — Session 24 ===== */
+    /* ===== ARENA STYLES — Session 158 LCARS reskin ===== */
 
     /* LOBBY */
-    .arena-lobby { padding: 16px; padding-bottom: 80px; }
-    .arena-hero { text-align: center; padding: 24px 16px 20px; }
-    .arena-hero-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
-    .arena-hero-sub { font-size: 13px; color: var(--white-dim); margin-bottom: 16px; }
-    .arena-enter-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 30px; border: none; background: linear-gradient(135deg, var(--red), #e63946); color: #fff; font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(204,41,54,0.35); transition: transform 0.15s, box-shadow 0.15s; -webkit-tap-highlight-color: transparent; }
-    .arena-enter-btn:active { transform: scale(0.96); box-shadow: 0 2px 12px rgba(204,41,54,0.25); }
-    .arena-enter-btn .btn-pulse { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.8); animation: livePulse 1.5s ease-in-out infinite; }
+    .arena-lobby { padding: var(--mod-space-lg); padding-bottom: 80px; }
+    .arena-hero { padding: var(--mod-space-xl) var(--mod-space-lg) var(--mod-space-lg); }
+    .arena-hero-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: var(--mod-space-xs); }
+    .arena-hero-sub { font-size: 13px; color: var(--mod-text-body); margin-bottom: var(--mod-space-lg); line-height: 1.5; }
+    .arena-stat-row { display: flex; gap: var(--mod-space-sm); margin-bottom: var(--mod-space-lg); }
+    .arena-stat { flex: 1; background: var(--mod-stat-bg); border: 1px solid var(--mod-stat-border); border-radius: var(--mod-radius-md); padding: var(--mod-space-md); text-align: center; }
+    .arena-stat-value { font-family: var(--mod-font-ui); font-size: var(--mod-font-stat-size); font-weight: var(--mod-font-stat-weight); color: var(--mod-stat-value); }
+    .arena-stat-label { font-size: var(--mod-font-stat-label-size); font-weight: var(--mod-font-stat-label-weight); letter-spacing: var(--mod-font-stat-label-spacing); color: var(--mod-stat-label); text-transform: uppercase; margin-top: 2px; }
+    .arena-stat.accent { background: var(--mod-stat-accent-bg); border-color: var(--mod-stat-accent-border); }
+    .arena-stat.accent .arena-stat-value { color: var(--mod-stat-accent-value); }
+    .arena-stat.accent .arena-stat-label { color: var(--mod-stat-accent-label); }
+    .arena-enter-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 14px; border-radius: var(--mod-radius-pill); border: none; background: var(--mod-bar-accent); background-image: var(--mod-gloss); color: var(--mod-text-on-accent); font-family: var(--mod-font-ui); font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; min-height: var(--mod-touch-min); -webkit-tap-highlight-color: transparent; transition: background-color 0.1s; }
+    .arena-enter-btn:active { background-color: var(--mod-accent-hover); }
+    .arena-enter-btn .btn-pulse { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6); animation: livePulse 1.5s ease-in-out infinite; margin-right: 8px; }
+    .arena-btn-row { display: flex; gap: var(--mod-space-sm); margin-top: var(--mod-space-sm); }
+    .arena-secondary-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-body); font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; min-height: var(--mod-touch-min); -webkit-tap-highlight-color: transparent; }
+    .arena-secondary-btn:active { background: var(--mod-bg-card-active); }
 
     /* SECTION HEADERS */
-    .arena-section { margin-top: 20px; }
-    .arena-section-title { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 3px; color: var(--white-dim); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .arena-section-title .section-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .arena-section-title .live-dot { background: var(--red); animation: livePulse 1.5s ease-in-out infinite; }
-    .arena-section-title .gold-dot { background: var(--gold); }
+    .arena-section { margin-top: var(--mod-space-xl); }
+    .arena-section-title { font-family: var(--mod-font-ui); font-size: 7px; font-weight: 600; letter-spacing: 1px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: var(--mod-space-sm); display: flex; align-items: center; gap: 6px; }
+    .arena-section-title .section-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .arena-section-title .live-dot { background: var(--mod-status-live); animation: livePulse 1.5s ease-in-out infinite; }
+    .arena-section-title .gold-dot { background: var(--mod-bar-secondary); }
 
     /* DEBATE CARDS (lobby) */
-    .arena-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; -webkit-tap-highlight-color: transparent; }
-    .arena-card:active { border-color: var(--card-border-hover); }
-    .arena-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .arena-card-badge { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
-    .arena-card-badge.live { background: rgba(204,41,54,0.15); color: var(--red); }
-    .arena-card-badge.verdict { background: rgba(212,168,67,0.12); color: var(--gold); }
-    .arena-card-badge.ai { background: rgba(46,204,113,0.12); color: var(--success); }
-    .arena-card-badge.text { background: rgba(91,138,191,0.12); color: #7aa3d4; }
-    .arena-card-meta { font-size: 11px; color: var(--white-dim); }
-    .arena-card-topic { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--white); letter-spacing: 0.5px; line-height: 1.3; margin-bottom: 8px; }
-    .arena-card-vs { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--white-dim); }
-    .arena-card-vs .vs { color: var(--red); font-family: var(--font-display); font-weight: 700; letter-spacing: 1px; }
-    .arena-card-score { font-family: var(--font-display); font-weight: 700; color: var(--gold); }
-    .arena-card-action { display: flex; justify-content: flex-end; margin-top: 8px; }
-    .arena-card-btn { padding: 6px 16px; border-radius: 16px; border: 1px solid var(--gold-dim); background: rgba(212,168,67,0.08); color: var(--gold); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
-    .arena-card-btn:active { background: rgba(212,168,67,0.2); }
+    .arena-card { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-left: var(--mod-card-bar-width) solid var(--mod-bar-secondary); border-radius: var(--mod-radius-md); padding: var(--mod-space-md) var(--mod-space-lg); margin-bottom: var(--mod-space-sm); cursor: pointer; transition: background var(--mod-transition-fast); -webkit-tap-highlight-color: transparent; }
+    .arena-card:active { background: var(--mod-bg-card-hover); }
+    .arena-card.card-live { border-left-color: var(--mod-status-live); }
+    .arena-card.card-ai { border-left-color: var(--mod-status-open); }
+    .arena-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .arena-card-badge { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: var(--mod-radius-pill); }
+    .arena-card-badge.live { background: var(--mod-status-live-bg); color: var(--mod-status-live); border: 1px solid var(--mod-accent-border); }
+    .arena-card-badge.verdict { background: var(--mod-status-waiting-bg); color: var(--mod-text-sub); border: 1px solid var(--mod-border-secondary); }
+    .arena-card-badge.ai { background: var(--mod-status-open-bg); color: var(--mod-status-open); border: 1px solid rgba(93,202,165,0.2); }
+    .arena-card-badge.text { background: var(--mod-status-waiting-bg); color: var(--mod-text-sub); border: 1px solid var(--mod-border-secondary); }
+    .arena-card-meta { font-size: 10px; color: var(--mod-text-muted); }
+    .arena-card-topic { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size); font-weight: var(--mod-font-card-title-weight); color: var(--mod-text-primary); letter-spacing: var(--mod-font-card-title-spacing); line-height: 1.35; margin-bottom: 6px; }
+    .arena-card-vs { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--mod-text-muted); }
+    .arena-card-vs .vs { color: var(--mod-accent); font-family: var(--mod-font-ui); font-weight: 700; letter-spacing: 1px; font-size: 10px; }
+    .arena-card-score { font-family: var(--mod-font-ui); font-weight: 700; color: var(--mod-text-sub); }
+    .arena-card-action { display: flex; justify-content: flex-end; margin-top: var(--mod-space-sm); }
+    .arena-card-btn { padding: 6px 14px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-accent); background: var(--mod-accent-muted); color: var(--mod-accent-text); font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+    .arena-card-btn:active { background: rgba(231,68,42,0.2); }
 
     /* CHALLENGE FLOW */
-    .arena-challenge-cta { background: var(--card-bg); border: 1px solid rgba(212,168,67,0.2); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
-    .arena-challenge-cta:active { border-color: rgba(212,168,67,0.4); }
-    .arena-challenge-icon { font-size: 28px; margin-bottom: 6px; }
-    .arena-challenge-text { font-family: var(--font-display); font-size: 13px; letter-spacing: 2px; color: var(--gold); }
-    .arena-challenge-sub { font-size: 12px; color: var(--white-dim); margin-top: 4px; }
+    .arena-challenge-cta { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-left: var(--mod-card-bar-width) solid var(--mod-bar-accent); border-radius: var(--mod-radius-md); padding: var(--mod-space-lg); text-align: center; cursor: pointer; transition: background var(--mod-transition-fast); }
+    .arena-challenge-cta:active { background: var(--mod-bg-card-hover); }
+    .arena-challenge-icon { font-size: 24px; margin-bottom: 4px; }
+    .arena-challenge-text { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--mod-accent-text); text-transform: uppercase; }
+    .arena-challenge-sub { font-size: 11px; color: var(--mod-text-muted); margin-top: 4px; }
 
     /* EMPTY STATE */
-    .arena-empty { text-align: center; padding: 32px 16px; color: var(--white-dim); font-size: 14px; }
-    .arena-empty .empty-icon { font-size: 40px; margin-bottom: 10px; display: block; }
+    .arena-empty { text-align: center; padding: var(--mod-space-2xl) var(--mod-space-lg); color: var(--mod-text-muted); font-size: 13px; }
+    .arena-empty .empty-icon { font-size: 32px; margin-bottom: var(--mod-space-sm); display: block; opacity: 0.5; }
 
     /* MODE SELECT OVERLAY */
     .arena-mode-overlay { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; justify-content: flex-end; }
@@ -656,24 +668,24 @@ export function renderLobby(): void {
 
   lobby.innerHTML = `
     <div class="arena-hero">
-      <div class="arena-hero-title">\u2694\uFE0F The Arena</div>
-      <div class="arena-hero-sub">Where opinions fight. Pick a mode. Find an opponent. Settle it.</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0 4px;">
-        <span style="color:#D4A843;font-weight:700;font-size:15px;">\uD83E\uDE99 <span data-token-balance>0</span> tokens</span>
-        <span style="color:#a0a8b8;font-size:13px;">|</span>
-        <span style="color:#5b8abf;font-size:13px;">\uD83D\uDD25 ${loginStreak}-day streak</span>
+      <div class="arena-hero-title">Arena</div>
+      <div class="arena-hero-sub">Pick a mode. Find an opponent. Settle it.</div>
+      <div class="arena-stat-row">
+        <div class="arena-stat accent">
+          <div class="arena-stat-value"><span data-token-balance>0</span></div>
+          <div class="arena-stat-label">Tokens</div>
+        </div>
+        <div class="arena-stat">
+          <div class="arena-stat-value">${loginStreak}</div>
+          <div class="arena-stat-label">Day Streak</div>
+        </div>
       </div>
       <button class="arena-enter-btn" id="arena-enter-btn">
         <span class="btn-pulse"></span> ENTER THE ARENA
       </button>
-      <button id="arena-powerup-shop-btn" style="
-        display:inline-flex;align-items:center;gap:8px;
-        margin-top:10px;padding:10px 24px;
-        border-radius:30px;border:1px solid rgba(212,168,67,0.4);
-        background:rgba(212,168,67,0.08);
-        color:#D4AF37;font-family:'Barlow Condensed',sans-serif;
-        font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;
-      ">\u26A1 POWER-UP SHOP</button>
+      <div class="arena-btn-row">
+        <button class="arena-secondary-btn" id="arena-powerup-shop-btn">\u26A1 POWER-UPS</button>
+      </div>
     </div>
     <div class="arena-section" id="arena-live-section">
       <div class="arena-section-title"><span class="section-dot live-dot"></span> LIVE NOW</div>
@@ -682,7 +694,6 @@ export function renderLobby(): void {
     <div class="arena-section" id="arena-challenge-section">
       <div class="arena-section-title"><span class="section-dot gold-dot"></span> OPEN CHALLENGES</div>
       <div class="arena-challenge-cta" id="arena-challenge-cta">
-        <div class="arena-challenge-icon">\u26A1</div>
         <div class="arena-challenge-text">DISAGREE WITH SOMEONE?</div>
         <div class="arena-challenge-sub">Find a hot take you hate \u2192 challenge them to debate it</div>
       </div>
@@ -770,13 +781,15 @@ async function loadLobbyFeed(): Promise<void> {
 
 function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const isAuto = d.source === 'auto_debate';
-  const badge = d.status === 'live' ? '<span class="arena-card-badge live">\u25CF LIVE</span>'
+  const isLive = d.status === 'live';
+  const badge = isLive ? '<span class="arena-card-badge live">\u25CF LIVE</span>'
     : isAuto ? '<span class="arena-card-badge ai">AI DEBATE</span>'
     : '<span class="arena-card-badge verdict">VERDICT</span>';
   const votes = (d.vote_count_a || 0) + (d.vote_count_b || 0);
-  const action = d.status === 'live' ? 'SPECTATE' : 'VIEW VERDICT';
+  const action = isLive ? 'SPECTATE' : 'VIEW';
+  const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
-  return `<div class="arena-card" data-link="${isAuto ? 'colosseum-auto-debate.html' : 'colosseum-spectate.html'}?id=${encodeURIComponent(d.id)}">
+  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? 'colosseum-auto-debate.html' : 'colosseum-spectate.html'}?id=${encodeURIComponent(d.id)}">
     <div class="arena-card-top">${badge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">
@@ -790,8 +803,8 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
 }
 
 function renderAutoDebateCard(d: AutoDebateItem): string {
-  return `<div class="arena-card" data-link="colosseum-auto-debate.html?id=${encodeURIComponent(d.id)}">
-    <div class="arena-card-top"><span class="arena-card-badge ai">AI DEBATE</span><span class="arena-card-meta">Leg 3</span></div>
+  return `<div class="arena-card card-ai" data-link="colosseum-auto-debate.html?id=${encodeURIComponent(d.id)}">
+    <div class="arena-card-top"><span class="arena-card-badge ai">AI DEBATE</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic)}</div>
     <div class="arena-card-vs">
       <span>${escapeHTML(d.side_a_label)}</span>
@@ -799,7 +812,7 @@ function renderAutoDebateCard(d: AutoDebateItem): string {
       <span>${escapeHTML(d.side_b_label)}</span>
       <span class="arena-card-score">${Number(d.score_a)}\u2013${Number(d.score_b)}</span>
     </div>
-    <div class="arena-card-action"><button class="arena-card-btn">VIEW VERDICT</button></div>
+    <div class="arena-card-action"><button class="arena-card-btn">VIEW</button></div>
   </div>`;
 }
 
