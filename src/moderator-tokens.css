@@ -1,0 +1,312 @@
+/* ============================================================
+   THE MODERATOR — Design Tokens
+   LCARS Titan/Picard Style
+   Session 155 — Locked
+   ============================================================
+   
+   Usage:
+     Dark theme:  <html data-theme="dark">   (default)
+     Light theme: <html data-theme="light">
+   
+   Reference: https://www.mewho.com/titan/
+   ============================================================ */
+
+/* ------------------------------------------------------------ 
+   DARK THEME (default)
+   ------------------------------------------------------------ */
+:root,
+[data-theme="dark"] {
+
+  /* --- Backgrounds --- */
+  --mod-bg-base: #111419;
+  --mod-bg-content: #111419;
+  --mod-bg-card: rgba(136, 144, 168, 0.03);
+  --mod-bg-card-hover: rgba(136, 144, 168, 0.06);
+  --mod-bg-card-active: rgba(255, 255, 255, 0.08);
+  --mod-bg-overlay: rgba(17, 20, 25, 0.85);
+
+  /* --- LCARS Structural Bars --- */
+  --mod-bar-primary: #555E78;
+  --mod-bar-secondary: #8890A8;
+  --mod-bar-tertiary: #B8BECC;
+  --mod-bar-accent: #E7442A;
+
+  /* --- Text --- */
+  --mod-text-primary: #E8EAF0;
+  --mod-text-heading: #B8BECC;
+  --mod-text-body: #9EA5BA;
+  --mod-text-sub: #B8BECC;
+  --mod-text-muted: #6D748C;
+  --mod-text-on-bar: #1A1E2E;
+  --mod-text-on-bar-dark: #D8DCE8;
+  --mod-text-on-accent: #FFFFFF;
+
+  /* --- Accent / Action --- */
+  --mod-accent: #E7442A;
+  --mod-accent-hover: #FF5A3D;
+  --mod-accent-muted: rgba(231, 68, 42, 0.12);
+  --mod-accent-border: rgba(231, 68, 42, 0.25);
+  --mod-accent-text: #E7442A;
+
+  /* --- Status --- */
+  --mod-status-live: #E7442A;
+  --mod-status-live-bg: rgba(231, 68, 42, 0.04);
+  --mod-status-open: #5DCAA5;
+  --mod-status-open-bg: rgba(93, 202, 165, 0.08);
+  --mod-status-waiting: #8890A8;
+  --mod-status-waiting-bg: rgba(136, 144, 168, 0.06);
+
+  /* --- Borders --- */
+  --mod-border-primary: rgba(85, 94, 120, 0.20);
+  --mod-border-secondary: rgba(136, 144, 168, 0.12);
+  --mod-border-subtle: rgba(136, 144, 168, 0.06);
+  --mod-border-accent: rgba(231, 68, 42, 0.25);
+
+  /* --- Cards (category color bars) --- */
+  --mod-cat-politics: #E7442A;
+  --mod-cat-sports: #555E78;
+  --mod-cat-entertainment: #8890A8;
+  --mod-cat-couples: #B8BECC;
+  --mod-cat-music: #6D748C;
+  --mod-cat-tech: #555E78;
+
+  /* --- Card category text --- */
+  --mod-cat-politics-text: #E7442A;
+  --mod-cat-sports-text: #B8BECC;
+  --mod-cat-entertainment-text: #9EA5BA;
+  --mod-cat-couples-text: #B8BECC;
+  --mod-cat-music-text: #8890A8;
+  --mod-cat-tech-text: #9EA5BA;
+
+  /* --- Stat blocks --- */
+  --mod-stat-bg: rgba(136, 144, 168, 0.06);
+  --mod-stat-border: rgba(136, 144, 168, 0.12);
+  --mod-stat-value: #B8BECC;
+  --mod-stat-label: #9EA5BA;
+  --mod-stat-accent-bg: rgba(231, 68, 42, 0.06);
+  --mod-stat-accent-border: rgba(231, 68, 42, 0.12);
+  --mod-stat-accent-value: #E7442A;
+  --mod-stat-accent-label: rgba(231, 68, 42, 0.65);
+
+  /* --- Dot-track flow indicators --- */
+  --mod-dot-track: rgba(136, 144, 168, 0.15);
+  --mod-dot-primary: #8890A8;
+  --mod-dot-faded: rgba(136, 144, 168, 0.40);
+
+  /* --- Gloss overlay --- */
+  --mod-gloss: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.00) 100%
+  );
+  --mod-gloss-subtle: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+
+  /* --- LCARS sweep cutout --- */
+  --mod-sweep-bg: var(--mod-bar-primary);
+  --mod-sweep-cut: var(--mod-bg-base);
+
+  /* --- LCARS sidebar gaps --- */
+  --mod-gap-bg: var(--mod-bg-base);
+}
+
+
+/* ------------------------------------------------------------ 
+   LIGHT THEME
+   ------------------------------------------------------------ */
+[data-theme="light"] {
+
+  /* --- Backgrounds --- */
+  --mod-bg-base: #F4F5F9;
+  --mod-bg-content: #FAFBFC;
+  --mod-bg-card: #FFFFFF;
+  --mod-bg-card-hover: #F0F1F5;
+  --mod-bg-card-active: #E8E9EE;
+  --mod-bg-overlay: rgba(244, 245, 249, 0.9);
+
+  /* --- LCARS Structural Bars (same hues, same weight) --- */
+  --mod-bar-primary: #555E78;
+  --mod-bar-secondary: #8890A8;
+  --mod-bar-tertiary: #B8BECC;
+  --mod-bar-accent: #E7442A;
+
+  /* --- Text --- */
+  --mod-text-primary: #1A1E2E;
+  --mod-text-heading: #1A1E2E;
+  --mod-text-body: #2F3749;
+  --mod-text-sub: #3D4458;
+  --mod-text-muted: #6D748C;
+  --mod-text-on-bar: #1A1E2E;
+  --mod-text-on-bar-dark: #E8EAF0;
+  --mod-text-on-accent: #FFFFFF;
+
+  /* --- Accent / Action --- */
+  --mod-accent: #E7442A;
+  --mod-accent-hover: #D03820;
+  --mod-accent-muted: rgba(231, 68, 42, 0.06);
+  --mod-accent-border: rgba(231, 68, 42, 0.25);
+  --mod-accent-text: #A8301A;
+
+  /* --- Status --- */
+  --mod-status-live: #E7442A;
+  --mod-status-live-bg: rgba(231, 68, 42, 0.06);
+  --mod-status-open: #0F6E56;
+  --mod-status-open-bg: rgba(29, 158, 117, 0.08);
+  --mod-status-waiting: #555E78;
+  --mod-status-waiting-bg: rgba(85, 94, 120, 0.06);
+
+  /* --- Borders --- */
+  --mod-border-primary: rgba(85, 94, 120, 0.18);
+  --mod-border-secondary: rgba(136, 144, 168, 0.15);
+  --mod-border-subtle: rgba(136, 144, 168, 0.08);
+  --mod-border-accent: rgba(231, 68, 42, 0.25);
+
+  /* --- Cards (category color bars — same as dark) --- */
+  --mod-cat-politics: #E7442A;
+  --mod-cat-sports: #555E78;
+  --mod-cat-entertainment: #8890A8;
+  --mod-cat-couples: #B8BECC;
+  --mod-cat-music: #6D748C;
+  --mod-cat-tech: #555E78;
+
+  /* --- Card category text (darkened for light bg) --- */
+  --mod-cat-politics-text: #A8301A;
+  --mod-cat-sports-text: #1A1E2E;
+  --mod-cat-entertainment-text: #2F3749;
+  --mod-cat-couples-text: #4A5068;
+  --mod-cat-music-text: #3D4458;
+  --mod-cat-tech-text: #2F3749;
+
+  /* --- Stat blocks --- */
+  --mod-stat-bg: #FFFFFF;
+  --mod-stat-border: rgba(85, 94, 120, 0.15);
+  --mod-stat-value: #1A1E2E;
+  --mod-stat-label: #555E78;
+  --mod-stat-accent-bg: #FFFFFF;
+  --mod-stat-accent-border: rgba(231, 68, 42, 0.18);
+  --mod-stat-accent-value: #E7442A;
+  --mod-stat-accent-label: #A8301A;
+
+  /* --- Dot-track flow indicators --- */
+  --mod-dot-track: rgba(85, 94, 120, 0.20);
+  --mod-dot-primary: #555E78;
+  --mod-dot-faded: rgba(85, 94, 120, 0.45);
+
+  /* --- Gloss overlay (brighter on light) --- */
+  --mod-gloss: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.00) 100%
+  );
+  --mod-gloss-subtle: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.50) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+
+  /* --- LCARS sweep cutout --- */
+  --mod-sweep-bg: var(--mod-bar-primary);
+  --mod-sweep-cut: var(--mod-bg-base);
+
+  /* --- LCARS sidebar gaps --- */
+  --mod-gap-bg: var(--mod-bg-base);
+}
+
+
+/* ============================================================
+   SHARED TOKENS (theme-independent)
+   ============================================================ */
+:root {
+
+  /* --- Typography --- */
+  --mod-font-ui: Inter, system-ui, -apple-system, sans-serif;
+  --mod-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Sidebar nav */
+  --mod-font-nav-size: 9px;
+  --mod-font-nav-weight: 500;
+  --mod-font-nav-spacing: 2px;
+
+  /* Title bar */
+  --mod-font-title-size: 10px;
+  --mod-font-title-weight: 300;
+  --mod-font-title-spacing: 4px;
+
+  /* Section pills */
+  --mod-font-pill-size: 8px;
+  --mod-font-pill-weight: 600;
+  --mod-font-pill-spacing: 1px;
+
+  /* Card title */
+  --mod-font-card-title-size: 14px;
+  --mod-font-card-title-weight: 600;
+  --mod-font-card-title-spacing: 0.2px;
+
+  /* Card subtitle */
+  --mod-font-card-sub-size: 11px;
+  --mod-font-card-sub-weight: 500;
+  --mod-font-card-sub-spacing: 0.5px;
+
+  /* Stat numbers */
+  --mod-font-stat-size: 18px;
+  --mod-font-stat-weight: 700;
+
+  /* Stat labels */
+  --mod-font-stat-label-size: 7px;
+  --mod-font-stat-label-weight: 600;
+  --mod-font-stat-label-spacing: 1px;
+
+  /* --- LCARS Structural Dimensions --- */
+  --mod-sidebar-width: 70px;
+  --mod-bar-gap: 4px;
+  --mod-bar-btn-height: 44px;
+  --mod-header-height: 54px;
+  --mod-footer-height: 70px;
+  --mod-sweep-radius: 28px;
+  --mod-card-bar-width: 4px;
+
+  /* --- Spacing --- */
+  --mod-space-xs: 4px;
+  --mod-space-sm: 8px;
+  --mod-space-md: 12px;
+  --mod-space-lg: 16px;
+  --mod-space-xl: 24px;
+  --mod-space-2xl: 32px;
+
+  /* --- Border radius --- */
+  --mod-radius-sm: 3px;
+  --mod-radius-md: 6px;
+  --mod-radius-lg: 10px;
+  --mod-radius-pill: 9999px;
+
+  /* --- Borders --- */
+  --mod-border-width: 1.5px;
+  --mod-border-width-thin: 1px;
+
+  /* --- Dot-track dimensions --- */
+  --mod-dot-track-height: 2px;
+  --mod-dot-size: 5px;
+  --mod-dot-speed: 2.5s;
+
+  /* --- Animations --- */
+  --mod-pulse-speed: 2s;
+  --mod-transition-fast: 0.1s;
+  --mod-transition-normal: 0.2s;
+  --mod-transition-slow: 0.3s;
+
+  /* --- Touch targets (accessibility) --- */
+  --mod-touch-min: 44px;
+
+  /* --- Z-index layers --- */
+  --mod-z-base: 0;
+  --mod-z-card: 1;
+  --mod-z-sidebar: 10;
+  --mod-z-header: 20;
+  --mod-z-overlay: 50;
+  --mod-z-modal: 100;
+}
