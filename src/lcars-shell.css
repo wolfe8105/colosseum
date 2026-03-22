@@ -1,16 +1,16 @@
 /* ============================================================
    THE MODERATOR — LCARS Shell Layout
-   Session 156
+   Session 156 → Session 157: Ring-to-Stack mobile nav
    ============================================================
    Structural layout only. Consumes vars from moderator-tokens.css.
-   Does NOT style page content (cards, overlays, forms, etc.)
-   — those get reskinned page-by-page in later sessions.
+   Does NOT style page content (cards, overlays, forms, etc.) —
+   those get reskinned page-by-page in later sessions.
    ============================================================ */
 
 /* --- RESET OVERRIDES ---
-   Suppress old Colosseum structural styles that still live
-   in index.html's <style> block. Safe to remove these once
-   the old CSS is cleaned out.
+   Suppress old Colosseum structural styles that still live in
+   index.html's <style> block. Safe to remove these once the
+   old CSS is cleaned out.
    ------------------------------------------------------------ */
 body {
   display: block;
@@ -18,29 +18,28 @@ body {
   color: var(--mod-text-primary);
   font-family: var(--mod-font-ui);
 }
-body::before,
-body::after {
-  display: none;
-}
+body::before, body::after { display: none; }
+
 
 /* ============================================================
    GRID SHELL
    Desktop: 2-column grid (sidebar | main)
-   Mobile:  single-column (header → pills → content → footer)
+   Mobile:  single-column (header → content → footer)
    ============================================================ */
 .mod-shell {
   display: grid;
   grid-template-columns: var(--mod-sidebar-width) 1fr;
   grid-template-rows: var(--mod-header-height) 1fr var(--mod-footer-height);
   grid-template-areas:
-    "sweep   header"
+    "sweep  header"
     "sidebar content"
-    "foot    footer";
+    "foot   footer";
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   background: var(--mod-bg-base);
 }
+
 
 /* ============================================================
    TOP SWEEP (ELBOW)
@@ -54,18 +53,17 @@ body::after {
   position: relative;
   z-index: var(--mod-z-header);
 }
-
 /* Concave cutout — base-bg square with rounded top-left corner */
 .mod-sweep-top::after {
   content: '';
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 0; bottom: 0;
   width: var(--mod-sweep-radius);
   height: var(--mod-sweep-radius);
   background: var(--mod-bg-base);
   border-top-left-radius: var(--mod-sweep-radius);
 }
+
 
 /* ============================================================
    HEADER BAR
@@ -80,7 +78,6 @@ body::after {
   justify-content: space-between;
   padding: 0 var(--mod-space-lg);
   z-index: var(--mod-z-header);
-  /* Right end of header is pill-rounded */
   border-radius: 0 0 var(--mod-radius-pill) 0;
 }
 
@@ -93,11 +90,7 @@ body::after {
   color: var(--mod-text-on-bar);
   white-space: nowrap;
 }
-
-.mod-title-the {
-  opacity: 0.55;
-  margin-right: 4px;
-}
+.mod-title-the { opacity: 0.55; margin-right: 4px; }
 
 /* --- Header controls row --- */
 .mod-header-controls {
@@ -110,55 +103,45 @@ body::after {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.08);
   padding: 5px 10px;
   border-radius: var(--mod-radius-pill);
   font-size: 12px;
   font-weight: 600;
   color: var(--mod-text-on-bar);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .mod-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 34px; height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
   color: var(--mod-text-on-bar);
   font-size: 15px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   position: relative;
   transition: background var(--mod-transition-fast);
   -webkit-tap-highlight-color: transparent;
 }
-.mod-icon-btn:active {
-  background: rgba(255, 255, 255, 0.15);
-}
+.mod-icon-btn:active { background: rgba(255,255,255,0.15); }
 
 .mod-avatar {
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
   color: var(--mod-text-on-bar);
   font-family: var(--mod-font-ui);
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: border-color var(--mod-transition-fast);
   -webkit-tap-highlight-color: transparent;
 }
-.mod-avatar:active {
-  border-color: rgba(255, 255, 255, 0.5);
-}
+.mod-avatar:active { border-color: rgba(255,255,255,0.5); }
+
 
 /* ============================================================
    SIDEBAR
@@ -190,7 +173,6 @@ body::after {
   cursor: pointer;
   min-height: var(--mod-bar-btn-height);
   flex-shrink: 0;
-  /* Flat left edge, pill-rounded right edge */
   border-radius: 0 var(--mod-radius-pill) var(--mod-radius-pill) 0;
   padding: 0 6px;
   display: flex;
@@ -198,21 +180,15 @@ body::after {
   justify-content: center;
   transition: background-color var(--mod-transition-fast);
   -webkit-tap-highlight-color: transparent;
-  /* Give pills room to breathe on right so rounded end isn't clipped */
   margin-right: 2px;
 }
 
-/* Active state — lighter bar + accent marker */
 .mod-pill.active {
   background-color: var(--mod-bar-tertiary);
   background-image: var(--mod-gloss);
 }
+.mod-pill:active { background-color: var(--mod-bar-tertiary); }
 
-.mod-pill:active {
-  background-color: var(--mod-bar-tertiary);
-}
-
-/* Accent pill (arena) — uses red accent for standout */
 .mod-pill[data-screen="arena"] {
   background-color: var(--mod-bar-accent);
   color: var(--mod-text-on-accent);
@@ -222,14 +198,12 @@ body::after {
 }
 
 .mod-pill-label {
-  /* Labels written vertically on desktop sidebar */
   writing-mode: vertical-lr;
   text-orientation: mixed;
   transform: rotate(180deg);
   white-space: nowrap;
 }
 
-/* --- Sidebar spacer pill (decorative filler) --- */
 .mod-pill-spacer {
   flex: 1;
   background: var(--mod-bar-secondary);
@@ -239,6 +213,7 @@ body::after {
   margin-right: 2px;
   opacity: 0.4;
 }
+
 
 /* ============================================================
    BOTTOM SWEEP (ELBOW)
@@ -251,21 +226,19 @@ body::after {
   position: relative;
   z-index: var(--mod-z-header);
 }
-
 .mod-sweep-bottom::after {
   content: '';
   position: absolute;
-  right: 0;
-  top: 0;
+  right: 0; top: 0;
   width: var(--mod-sweep-radius);
   height: var(--mod-sweep-radius);
   background: var(--mod-bg-base);
   border-bottom-left-radius: var(--mod-sweep-radius);
 }
 
+
 /* ============================================================
    FOOTER BAR
-   Horizontal bar bottom-right. Legal links.
    ============================================================ */
 .mod-footer {
   grid-area: footer;
@@ -277,36 +250,23 @@ body::after {
   gap: var(--mod-space-lg);
   padding: 0 var(--mod-space-lg);
   z-index: var(--mod-z-header);
-  /* Right end pill-rounded, left end flat (flush with sweep) */
   border-radius: 0 var(--mod-radius-pill) 0 0;
 }
-
 .mod-footer a {
   color: var(--mod-text-on-bar);
   text-decoration: none;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 11px; font-weight: 500;
   letter-spacing: 0.5px;
   opacity: 0.7;
   transition: opacity var(--mod-transition-fast);
 }
-.mod-footer a:hover {
-  opacity: 1;
-}
-.mod-footer-sep {
-  color: var(--mod-text-on-bar);
-  opacity: 0.25;
-  font-size: 10px;
-}
-.mod-footer-copy {
-  color: var(--mod-text-on-bar);
-  font-size: 10px;
-  opacity: 0.4;
-}
+.mod-footer a:hover { opacity: 1; }
+.mod-footer-sep { color: var(--mod-text-on-bar); opacity: 0.25; font-size: 10px; }
+.mod-footer-copy { color: var(--mod-text-on-bar); font-size: 10px; opacity: 0.4; }
+
 
 /* ============================================================
    CONTENT AREA
-   Where .screen divs live. Replaces old .main-content.
    ============================================================ */
 .mod-content {
   grid-area: content;
@@ -314,30 +274,20 @@ body::after {
   position: relative;
   background: var(--mod-bg-content);
 }
+.mod-content.main-content { flex: unset; }
 
-/* Override old .main-content styles from inline <style> */
-.mod-content.main-content {
-  flex: unset;
-}
 
 /* ============================================================
    DOT-TRACK FLOW INDICATOR
-   Decorative animated dots along a horizontal track.
-   Place inside any bar or section header.
    ============================================================ */
 .mod-dot-track {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: flex; align-items: center; gap: 6px;
   height: var(--mod-dot-track-height);
   margin: 0 var(--mod-space-sm);
-  flex: 1;
-  max-width: 120px;
+  flex: 1; max-width: 120px;
 }
-
 .mod-dot-track .dot {
-  width: var(--mod-dot-size);
-  height: var(--mod-dot-size);
+  width: var(--mod-dot-size); height: var(--mod-dot-size);
   border-radius: 50%;
   background: var(--mod-dot-primary);
   animation: modDotPulse var(--mod-dot-speed) ease-in-out infinite;
@@ -346,18 +296,16 @@ body::after {
 .mod-dot-track .dot:nth-child(3) { animation-delay: 0.6s; }
 .mod-dot-track .dot:nth-child(4) { animation-delay: 0.9s; }
 .mod-dot-track .dot:nth-child(5) { animation-delay: 1.2s; }
-
 @keyframes modDotPulse {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1); }
 }
 
+
 /* ============================================================
    LOADING SCREEN OVERRIDE
    ============================================================ */
-.loading-screen {
-  background: var(--mod-bg-base) !important;
-}
+.loading-screen { background: var(--mod-bg-base) !important; }
 .loading-logo {
   font-family: var(--mod-font-ui) !important;
   color: var(--mod-bar-tertiary) !important;
@@ -365,92 +313,208 @@ body::after {
   letter-spacing: 6px !important;
 }
 .loading-spinner {
-  border-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255,255,255,0.06) !important;
   border-top-color: var(--mod-bar-tertiary) !important;
 }
 
+
 /* ============================================================
    DROPDOWN OVERRIDE
-   Reposition to align with new header height.
    ============================================================ */
 .user-dropdown {
   top: calc(var(--mod-header-height) - 4px);
-  background: rgba(17, 20, 25, 0.95);
+  background: rgba(17,20,25,0.95);
   border-color: var(--mod-border-primary);
 }
 
+
 /* ============================================================
-   NOTIFICATION DOT — keep working on new icon btn
+   NOTIFICATION DOT
    ============================================================ */
 .notification-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
+  position: absolute; top: 4px; right: 4px;
+  width: 6px; height: 6px;
   background: var(--mod-status-live);
   border-radius: 50%;
 }
 
+
+/* ============================================================
+   LCARS CIRCULAR NAV — Ring display
+   SVG donut ring with 7 arc segments. Built by home.ts.
+   ============================================================ */
+
+/* Container — center the SVG in #screen-home */
+.spoke-wheel {
+  width: 320px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.lcars-nav-svg { width: 100%; height: 100%; }
+
+/* Arc segment hover/active */
+.lcars-arc { cursor: pointer; transition: opacity 0.15s; }
+.lcars-arc:hover { opacity: 0.82; }
+.lcars-arc:active { opacity: 0.65; }
+
+/* Label text */
+.arc-label {
+  font-family: var(--mod-font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  pointer-events: none;
+}
+
+/* Count/status text */
+.arc-count {
+  font-family: var(--mod-font-ui);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Home screen — center the ring */
+#screen-home {
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+
+/* ============================================================
+   LCARS STACKED BARS — Expand state
+   Right-aligned bars with left-rounded pill shape.
+   Appear when a ring segment is tapped (mobile only).
+   ============================================================ */
+.lcars-stacks {
+  position: absolute;
+  left: 16px;
+  right: 0;
+  bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 5;
+}
+.lcars-stacks.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lcars-stacks-title {
+  font-family: var(--mod-font-ui);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: right;
+  padding-right: 4px;
+  margin-bottom: 2px;
+}
+.lcars-stacks-count {
+  font-family: var(--mod-font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-align: right;
+  padding-right: 4px;
+  opacity: 0.6;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+.lcars-bar {
+  height: 44px;
+  border-radius: 22px 0 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 20px;
+  font-family: var(--mod-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #0a1128;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transform: translateX(20px);
+}
+.lcars-bar.animate-in {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.15s;
+}
+.lcars-bar:hover { filter: brightness(1.2); transform: translateX(-4px); }
+.lcars-bar:active { filter: brightness(0.9); transform: scale(0.98); }
+
+
 /* ============================================================
    MOBILE LAYOUT (< 768px)
-   Sidebar column collapses. Pills go horizontal below header.
-   Sweeps hide. Single column layout.
+   Sidebar HIDDEN — ring IS the nav.
+   Single column: header → content → footer.
    ============================================================ */
 @media (max-width: 767px) {
   .mod-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--mod-header-height) auto 1fr auto;
+    grid-template-rows: var(--mod-header-height) 1fr auto;
     grid-template-areas:
       "header"
-      "sidebar"
       "content"
       "footer";
   }
 
   /* Hide sweeps on mobile */
   .mod-sweep-top,
-  .mod-sweep-bottom {
-    display: none;
-  }
+  .mod-sweep-bottom { display: none; }
 
-  /* Header spans full width, both ends pill-rounded */
+  /* Hide sidebar pills — ring replaces them */
+  .mod-sidebar { display: none; }
+
+  /* Header spans full width */
   .mod-header {
     border-radius: 0;
     padding: 0 var(--mod-space-md);
   }
 
-  /* Sidebar becomes horizontal pill strip */
-  .mod-sidebar {
-    flex-direction: row;
-    gap: var(--mod-bar-gap);
-    padding: var(--mod-bar-gap) var(--mod-space-sm);
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    /* Subtle top/bottom gap to separate from header/content */
-    background: var(--mod-bg-base);
+  /* Ring sizing for mobile */
+  .spoke-wheel {
+    width: 280px;
+    height: 280px;
   }
+  .arc-label { font-size: 9px; letter-spacing: 1px; }
+  .arc-count { font-size: 6.5px; }
 
-  .mod-pill {
-    /* Full pill shape on mobile, horizontal layout */
-    border-radius: var(--mod-radius-pill);
-    margin-right: 0;
-    min-height: 32px;
-    min-width: var(--mod-touch-min);
-    padding: 0 12px;
-    flex-shrink: 0;
+  /* --- RING MINI STATE (shrunken to bottom-right) --- */
+  .spoke-wheel.ring-mini {
+    position: absolute;
+    bottom: 20px;
+    right: 16px;
+    width: 70px;
+    height: 70px;
+    opacity: 0.7;
+    filter: brightness(1.3);
+    z-index: 10;
+    cursor: pointer;
   }
-
-  .mod-pill-label {
-    /* Cancel vertical text — horizontal on mobile */
-    writing-mode: horizontal-tb;
-    text-orientation: initial;
-    transform: none;
-  }
-
-  /* Hide decorative spacer on mobile */
-  .mod-pill-spacer {
+  /* Hide text in mini ring — too small to read */
+  .spoke-wheel.ring-mini .arc-label,
+  .spoke-wheel.ring-mini .arc-count {
     display: none;
   }
 
@@ -464,103 +528,18 @@ body::after {
   }
 }
 
+
 /* ============================================================
    TABLET / WIDER MOBILE (768-1023px)
-   Sidebar slightly wider for readability.
    ============================================================ */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .mod-shell {
-    --mod-sidebar-width: 76px;
-  }
+  .mod-shell { --mod-sidebar-width: 76px; }
 }
 
-/* ============================================================
-   DESKTOP WIDE (≥1440px)
-   Content area gets max-width to prevent extreme stretching.
-   ============================================================ */
-@media (min-width: 1440px) {
-  .mod-content {
-    /* Content doesn't stretch to infinity on ultrawide */
-    max-width: 1200px;
-  }
-}
-
-/* ============================================================
-   LCARS CIRCULAR NAV
-   SVG donut ring with 6 arc segments. Built by home.ts.
-   ============================================================ */
-
-/* Container — center the SVG in #screen-home */
-.spoke-wheel {
-  width: 320px;
-  height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lcars-nav-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Arc segment hover/active */
-.lcars-arc {
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.lcars-arc:hover {
-  opacity: 0.82;
-}
-.lcars-arc:active {
-  opacity: 0.65;
-}
-
-/* Label text */
-.arc-label {
-  font-family: var(--mod-font-ui);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  pointer-events: none;
-}
-
-/* Count/status text */
-.arc-count {
-  font-family: var(--mod-font-ui);
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 1.5px;
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-/* Home screen — center the ring */
-#screen-home {
-  align-items: center;
-  justify-content: center;
-}
-
-/* Mobile — slightly smaller ring */
-@media (max-width: 767px) {
-  .spoke-wheel {
-    width: 280px;
-    height: 280px;
-  }
-  .arc-label {
-    font-size: 9px;
-    letter-spacing: 1.5px;
-  }
-  .arc-count {
-    font-size: 7px;
-  }
-}
 
 /* ============================================================
    DESKTOP WIDE (≥1440px)
    ============================================================ */
 @media (min-width: 1440px) {
-  .mod-content {
-    max-width: 1200px;
-  }
+  .mod-content { max-width: 1200px; }
 }
