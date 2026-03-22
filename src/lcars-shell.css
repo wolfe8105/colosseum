@@ -384,6 +384,7 @@ body::before, body::after { display: none; }
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
 }
 
 
@@ -395,7 +396,7 @@ body::before, body::after { display: none; }
 .lcars-stacks {
   position: absolute;
   left: 16px;
-  right: 0;
+  right: -16px;
   bottom: 100px;
   display: flex;
   flex-direction: column;
@@ -441,7 +442,7 @@ body::before, body::after { display: none; }
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 20px;
+  padding: 0 36px 0 20px;
   font-family: var(--mod-font-ui);
   font-size: 13px;
   font-weight: 600;
