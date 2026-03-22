@@ -60,71 +60,59 @@ const overlayTitle=document.getElementById('overlayTitle');
 const overlayContent=document.getElementById('overlayContent');
 const overlayClose=document.getElementById('overlayClose');
 
-let angle=0,velocity=0,isDragging=false,startX=0,lastX=0,lastTime=0,animFrame=null;
-let totalDragDistance=0,wasSpin=false,velocityHistory=[];
-const TILE_COUNT=CATEGORIES.length;
-const ANGLE_STEP=360/TILE_COUNT;
-const RADIUS=120,TILT=65,FRICTION=0.93,MIN_VELOCITY=0.08,SPIN_THRESHOLD=10,FLICK_BOOST=1.2;
+// --- LCARS CIRCULAR NAV (Session 156) ---
+// Replaces spoke carousel with flat 2D LCARS ring display.
+// 6 donut-arc segments, tap to open category overlay.
+const ARC_COLORS: Record<string, string> = {
+  politics:'#B8BECC', sports:'#8890A8', entertainment:'#555E78',
+  couples:'#B8BECC', trending:'#E7442A', music:'#8890A8'
+};
+const ARC_TEXT: Record<string, string> = {
+  politics:'#1A1E2E', sports:'#1A1E2E', entertainment:'#D8DCE8',
+  couples:'#1A1E2E', trending:'#FFFFFF', music:'#1A1E2E'
+};
 
-function buildTiles(){
+function buildLCARSNav(){
+  const cx=160,cy=160,R=142,r=58,gap=1.8;
+  let s=`<svg viewBox="0 0 320 320" class="lcars-nav-svg" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="155" fill="none" stroke="#555E78" stroke-width="2.5"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="156.5" fill="none" stroke="rgba(136,144,168,0.15)" stroke-width="0.5"/>`;
+
   CATEGORIES.forEach((cat,i)=>{
-    const tile=document.createElement('div');
-    tile.className='spoke-tile';tile.dataset.index=i;tile.dataset.id=cat.id;
-    tile.innerHTML=`<div class="tile-inner"><span class="tile-icon">${cat.icon}</span><span class="tile-label">${cat.label}</span>${cat.hasLive?`<span class="tile-live"><span class="pulse"></span>${cat.count}</span>`:`<span class="tile-count">${cat.count}</span>`}</div>`;
-    tile.addEventListener('click',()=>{if(!wasSpin)openCategory(cat);});
-    wheel.appendChild(tile);
+    const a1=(i*60-90+gap/2)*Math.PI/180;
+    const a2=((i+1)*60-90-gap/2)*Math.PI/180;
+    const d=`M${cx+r*Math.cos(a1)} ${cy+r*Math.sin(a1)}`
+      +`L${cx+R*Math.cos(a1)} ${cy+R*Math.sin(a1)}`
+      +`A${R} ${R} 0 0 1 ${cx+R*Math.cos(a2)} ${cy+R*Math.sin(a2)}`
+      +`L${cx+r*Math.cos(a2)} ${cy+r*Math.sin(a2)}`
+      +`A${r} ${r} 0 0 0 ${cx+r*Math.cos(a1)} ${cy+r*Math.sin(a1)}Z`;
+
+    const mid=(i*60-90+30)*Math.PI/180;
+    const lr=(R+r)/2-6, cr=(R+r)/2+10;
+    const lx=cx+lr*Math.cos(mid), ly=cy+lr*Math.sin(mid);
+    const clx=cx+cr*Math.cos(mid), cly=cy+cr*Math.sin(mid);
+    const fill=ARC_COLORS[cat.id]||'#8890A8';
+    const tf=ARC_TEXT[cat.id]||'#1A1E2E';
+    const label=cat.label.replace('\n',' ').toUpperCase();
+
+    s+=`<g class="lcars-arc" data-id="${cat.id}">`;
+    s+=`<path d="${d}" fill="${fill}" class="arc-path"/>`;
+    s+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tf}" class="arc-label">${label}</text>`;
+    s+=`<text x="${clx}" y="${cly}" text-anchor="middle" dominant-baseline="central" fill="${tf}" class="arc-count">${(cat.count||'').toUpperCase()}</text>`;
+    s+=`</g>`;
+  });
+
+  s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#111419"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="#8890A8"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#111419"/>`;
+  s+=`</svg>`;
+
+  wheel.innerHTML=s;
+  wheel.querySelectorAll('.lcars-arc').forEach(arc=>{
+    const cat=CATEGORIES.find(c=>c.id===(arc as HTMLElement).dataset.id);
+    if(cat) arc.addEventListener('click',()=>openCategory(cat));
   });
 }
-
-function positionTiles(){
-  wheel.querySelectorAll('.spoke-tile').forEach((tile,i)=>{
-    const tileAngle=angle+(i*ANGLE_STEP);
-    const rad=(tileAngle*Math.PI)/180;
-    const x=Math.sin(rad)*RADIUS,z=Math.cos(rad)*RADIUS;
-    const nZ=(z+RADIUS)/(2*RADIUS);
-    const scale=0.6+(nZ*0.4),y=Math.cos(rad)*TILT;
-    tile.style.transform=`translateX(${x}px) translateY(${y}px) scale(${scale})`;
-    tile.style.zIndex=Math.round(nZ*10);tile.style.opacity=1;
-    nZ>0.9?tile.classList.add('front'):tile.classList.remove('front');
-  });
-}
-
-function animate(){
-  if(!isDragging&&Math.abs(velocity)>MIN_VELOCITY){angle+=velocity;velocity*=FRICTION;positionTiles();animFrame=requestAnimationFrame(animate);}
-  else if(!isDragging){velocity=0;snapToNearest();}
-}
-
-function snapToNearest(){
-  const na=((angle%360)+360)%360;let nearest=0,minDist=360;
-  for(let i=0;i<TILE_COUNT;i++){const t=i*ANGLE_STEP;let d=Math.abs(na-t);if(d>180)d=360-d;if(d<minDist){minDist=d;nearest=t;}}
-  let diff=nearest-na;if(diff>180)diff-=360;if(diff<-180)diff+=360;smoothSnap(angle+diff);
-}
-
-function smoothSnap(target: number){
-  const diff=target-angle;if(Math.abs(diff)<0.5){angle=target;positionTiles();return;}
-  angle+=diff*0.15;positionTiles();requestAnimationFrame(()=>smoothSnap(target));
-}
-
-function onStart(cX: number){isDragging=true;startX=cX;lastX=cX;lastTime=Date.now();velocity=0;totalDragDistance=0;wasSpin=false;velocityHistory=[];if(animFrame)cancelAnimationFrame(animFrame);}
-function onMove(cX: number){
-  if(!isDragging)return;const dx=cX-lastX,now=Date.now(),dt=now-lastTime;
-  totalDragDistance+=Math.abs(dx);angle+=dx*0.3;positionTiles();
-  if(dt>0){velocity=(dx*0.3)/Math.max(dt/16,1);velocityHistory.push(velocity);if(velocityHistory.length>5)velocityHistory.shift();}
-  lastX=cX;lastTime=now;
-}
-function onEnd(){
-  wasSpin=totalDragDistance>SPIN_THRESHOLD;isDragging=false;
-  if(velocityHistory.length>0){const peak=velocityHistory.reduce((a,b)=>Math.abs(a)>Math.abs(b)?a:b);velocity=peak*FLICK_BOOST;}
-  animFrame=requestAnimationFrame(animate);
-}
-
-homeScreen.addEventListener('touchstart',(e)=>{onStart(e.touches[0].clientX);},{passive:true});
-homeScreen.addEventListener('touchmove',(e)=>{onMove(e.touches[0].clientX);},{passive:true});
-homeScreen.addEventListener('touchend',onEnd);
-homeScreen.addEventListener('touchcancel',onEnd);
-homeScreen.addEventListener('mousedown',(e)=>{onStart(e.clientX);e.preventDefault();});
-document.addEventListener('mousemove',(e)=>{onMove(e.clientX);});
-document.addEventListener('mouseup',onEnd);
 
 // --- SESSION 23: Category Overlay (async, tabbed: Takes + Predictions) ---
 let currentOverlayCat = null;
@@ -460,31 +448,18 @@ async function loadCategoryCounts() {
     const { data, error } = await safeRpc('get_category_counts');
     if (error || !data) return;
     data.forEach(row => {
-      const tile = document.querySelector(`.spoke-tile[data-id="${row.section}"]`);
-      if (!tile) return;
+      const arc = document.querySelector(`.lcars-arc[data-id="${row.section}"]`);
+      if (!arc) return;
+      const countEl = arc.querySelector('.arc-count');
+      if (!countEl) return;
       const liveCount = Number(row.live_debates) || 0;
       const takeCount = Number(row.hot_takes) || 0;
-      const liveEl  = tile.querySelector('.tile-live');
-      const countEl = tile.querySelector('.tile-count');
       if (liveCount > 0) {
-        // Has live/active debates — show red live indicator
-        if (liveEl) {
-          liveEl.innerHTML = `<span class="pulse"></span>${liveCount} Live`;
-        } else if (countEl) {
-          countEl.outerHTML = `<span class="tile-live"><span class="pulse"></span>${liveCount} Live</span>`;
-        }
+        countEl.textContent = `${liveCount} LIVE`;
       } else if (takeCount > 0) {
-        // No live debates but has recent hot takes
-        const label = `${takeCount > 99 ? '99+' : takeCount} Hot`;
-        if (liveEl) {
-          liveEl.outerHTML = `<span class="tile-count">${label}</span>`;
-        } else if (countEl) {
-          countEl.textContent = label;
-        }
+        countEl.textContent = `${takeCount > 99 ? '99+' : takeCount} HOT`;
       } else {
-        // Nothing active
-        if (liveEl) liveEl.outerHTML = `<span class="tile-count">Quiet</span>`;
-        else if (countEl) countEl.textContent = 'Quiet';
+        countEl.textContent = 'QUIET';
       }
     });
   } catch(e) { /* non-critical — static counts remain */ }
@@ -723,7 +698,7 @@ document.getElementById('following-stat').addEventListener('click',()=>_openFoll
 // Unauthenticated users are redirected to the Plinko Gate.
 // Bot army links point to the static mirror, not here.
 async function appInit(){
-  buildTiles();positionTiles();
+  buildLCARSNav();
 
   // Wait for auth to resolve, but never hang more than 4s total
   try {
