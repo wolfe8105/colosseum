@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a2d4a">
-<title>The Colosseum</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#111419">
+<title>The Moderator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -306,17 +306,33 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .ref-card-edit-btn:active{background:rgba(212,168,67,0.1)}
 .ref-card-locked{display:block;margin-top:10px;text-align:center;font-family:var(--font-body);font-size:12px;color:#6b7280;letter-spacing:0.5px}
 </style>
+<link rel="stylesheet" href="/src/moderator-tokens.css">
+<link rel="stylesheet" href="/src/lcars-shell.css">
 </head>
 <body>
-<div id="loading-screen" class="loading-screen"><div class="loading-logo">THE COLOSSEUM</div><div class="loading-spinner"></div></div>
+<div id="loading-screen" class="loading-screen"><div class="loading-logo">THE MODERATOR</div><div class="loading-spinner"></div></div>
 
-<nav class="top-nav">
-  <div class="logo"><span class="the">The</span>Colosseum</div>
-  <div class="top-nav-right">
-    <div class="token-bar" id="token-display">🪙 <span id="token-count">0</span></div>
-    <button class="nav-icon-btn" id="notif-btn" title="Notifications">🔔<div class="notification-dot" id="notif-dot" style="display:none;"></div></button>
-    <div class="user-avatar-small" id="user-avatar-btn" title="Account">?</div>
+<div class="mod-shell">
+
+<div class="mod-sweep-top"></div>
+
+<header class="mod-header">
+  <span class="mod-title"><span class="mod-title-the">THE</span> MODERATOR</span>
+  <div class="mod-dot-track"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  <div class="mod-header-controls">
+    <div class="mod-token-bar" id="token-display">🪙 <span id="token-count">0</span></div>
+    <button class="mod-icon-btn" id="notif-btn" title="Notifications">🔔<div class="notification-dot" id="notif-dot" style="display:none;"></div></button>
+    <div class="mod-avatar" id="user-avatar-btn" title="Account">?</div>
   </div>
+</header>
+
+<nav class="mod-sidebar">
+  <button class="mod-pill bottom-nav-btn active" data-screen="home"><span class="mod-pill-label">HOME</span></button>
+  <button class="mod-pill bottom-nav-btn" data-screen="leaderboard"><span class="mod-pill-label">RANKS</span></button>
+  <button class="mod-pill bottom-nav-btn" data-screen="arena"><span class="mod-pill-label">ARENA</span></button>
+  <button class="mod-pill bottom-nav-btn" data-screen="shop"><span class="mod-pill-label">SHOP</span></button>
+  <button class="mod-pill bottom-nav-btn" data-screen="profile"><span class="mod-pill-label">PROFILE</span></button>
+  <div class="mod-pill-spacer"></div>
 </nav>
 
 <div class="user-dropdown" id="user-dropdown">
@@ -331,7 +347,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   <button class="dropdown-item danger" id="logout-btn">🚪 Log Out</button>
 </div>
 
-<div class="main-content">
+<div class="mod-content main-content">
   <div class="screen active" id="screen-home"><div class="spoke-wheel" id="spokeWheel"></div></div>
   <div class="screen" id="screen-arena"></div>
   <div class="screen" id="screen-profile">
@@ -430,6 +446,18 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   </div>
 </div>
 
+<div class="mod-sweep-bottom"></div>
+
+<footer class="mod-footer">
+  <a href="colosseum-privacy.html">Privacy Policy</a>
+  <span class="mod-footer-sep">|</span>
+  <a href="colosseum-terms.html">Terms of Service</a>
+  <span class="mod-footer-sep">|</span>
+  <span class="mod-footer-copy">&copy; 2026 The Moderator</span>
+</footer>
+
+</div><!-- /.mod-shell -->
+
 <div class="category-overlay" id="categoryOverlay">
   <div class="overlay-header"><span class="cat-title" id="overlayTitle">Category</span><button class="overlay-close" id="overlayClose">✕</button></div>
   <!-- SESSION 23: Tabs for Takes / Predictions -->
@@ -443,21 +471,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   </div>
 </div>
 
-<nav class="bottom-nav">
-  <button class="bottom-nav-btn active" data-screen="home"><span class="nav-icon">🏛️</span><span class="nav-label">Home</span></button>
-  <button class="bottom-nav-btn" data-screen="leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Ranks</span></button>
-  <button class="bottom-nav-btn action-btn" data-screen="arena"><div class="action-circle">🎙️</div></button>
-  <button class="bottom-nav-btn" data-screen="shop"><span class="nav-icon">🛒</span><span class="nav-label">Shop</span></button>
-  <button class="bottom-nav-btn" data-screen="profile"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></button>
-</nav>
 
 <script type="module" src="/src/pages/home.ts"></script>
-<div class="colosseum-legal-footer">
-  <a href="colosseum-privacy.html">Privacy Policy</a>
-  <span class="footer-sep">|</span>
-  <a href="colosseum-terms.html">Terms of Service</a>
-  <span class="footer-sep">|</span>
-  <span class="footer-copy">&copy; 2026 The Colosseum</span>
-</div>
 </body>
 </html>
