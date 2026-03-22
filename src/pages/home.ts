@@ -2,33 +2,28 @@
  * THE COLOSSEUM — Home Page Controller (TypeScript)
  *
  * Runtime module — entry point for index.html via Vite.
- * Spoke carousel, category overlays, pull-to-refresh, activity indicators,
+ * LCARS ring nav, category overlays, pull-to-refresh, activity indicators,
  * shop screen, hot takes feed wiring, leaderboard, predictions.
  *
  * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports),
- *            Session 139 (ColosseumAsync ES import, 5 dead window globals removed,
- *            inline onclick handlers migrated to data-action + addEventListener),
- *            Session 142 (added side-effect imports for all 16 modules — removed
- *            legacy .js script tags from index.html)
+ *   Session 139 (ColosseumAsync ES import, 5 dead window globals removed,
+ *     inline onclick handlers migrated to data-action + addEventListener),
+ *   Session 142 (added side-effect imports for all 16 modules — removed
+ *     legacy .js script tags from index.html)
+ *   Session 157 (Ring-to-Stack mobile nav — 7 segments, expand/collapse,
+ *     stacked bars with real routing, sidebar hidden on mobile)
  */
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // --- ES imports (all window globals eliminated) ---
-import {
-  onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
-  getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing,
-  showUserProfile, updateProfile, requireAuth, ready, safeRpc
-} from '../auth.ts';
+import { onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing, showUserProfile, updateProfile, requireAuth, ready, safeRpc } from '../auth.ts';
 import { showToast, escapeHTML } from '../config.ts';
-import '../tokens.ts'; // side-effect: auto-inits daily login, milestones, balance display
+import '../tokens.ts';
 import { ColosseumAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
 
-// --- Side-effect imports: pull in all modules index.html needs ---
-// These auto-init and expose window bridges for screens/features on index.html.
-// arena.ts transitively imports staking, powerups, webrtc, voicememo.
+// --- Side-effect imports ---
 import { showPowerUpShop } from '../arena.ts';
 import '../notifications.ts';
 import '../leaderboard.ts';
@@ -40,10 +35,10 @@ import '../analytics.ts';
 import { showForgeForm, renderArsenal, renderLibrary, verifyReference, ArsenalReference } from '../reference-arsenal.ts';
 
 // ============================================================
-// APP SHELL V4 — Session 23: Auth race fix, Predictions, Rivals, Follows
+// APP SHELL V5 — Session 157: Ring-to-Stack Nav
 // ============================================================
 
-// --- SPOKE CAROUSEL ---
+// --- CATEGORIES (used by openCategory, loadCategoryCounts, ?cat= param) ---
 const CATEGORIES=[
   {id:'politics',icon:'🏛️',label:'Politics',section:'THE FLOOR',count:'3 Live',hasLive:true},
   {id:'sports',icon:'🏈',label:'Sports',section:'THE PRESSBOX',count:'7 Live',hasLive:true},
@@ -60,68 +55,254 @@ const overlayTitle=document.getElementById('overlayTitle');
 const overlayContent=document.getElementById('overlayContent');
 const overlayClose=document.getElementById('overlayClose');
 
-// --- LCARS CIRCULAR NAV (Session 156) ---
-// Replaces spoke carousel with flat 2D LCARS ring display.
-// 6 donut-arc segments, tap to open category overlay.
-const ARC_COLORS: Record<string, string> = {
-  politics:'#B8BECC', sports:'#8890A8', entertainment:'#555E78',
-  couples:'#B8BECC', trending:'#E7442A', music:'#8890A8'
-};
-const ARC_TEXT: Record<string, string> = {
-  politics:'#1A1E2E', sports:'#1A1E2E', entertainment:'#D8DCE8',
-  couples:'#1A1E2E', trending:'#FFFFFF', music:'#1A1E2E'
-};
 
-function buildLCARSNav(){
-  const cx=160,cy=160,R=142,r=58,gap=1.8;
-  let s=`<svg viewBox="0 0 320 320" class="lcars-nav-svg" xmlns="http://www.w3.org/2000/svg">`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="155" fill="none" stroke="#555E78" stroke-width="2.5"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="156.5" fill="none" stroke="rgba(136,144,168,0.15)" stroke-width="0.5"/>`;
-
-  CATEGORIES.forEach((cat,i)=>{
-    const a1=(i*60-90+gap/2)*Math.PI/180;
-    const a2=((i+1)*60-90-gap/2)*Math.PI/180;
-    const d=`M${cx+r*Math.cos(a1)} ${cy+r*Math.sin(a1)}`
-      +`L${cx+R*Math.cos(a1)} ${cy+R*Math.sin(a1)}`
-      +`A${R} ${R} 0 0 1 ${cx+R*Math.cos(a2)} ${cy+R*Math.sin(a2)}`
-      +`L${cx+r*Math.cos(a2)} ${cy+r*Math.sin(a2)}`
-      +`A${r} ${r} 0 0 0 ${cx+r*Math.cos(a1)} ${cy+r*Math.sin(a1)}Z`;
-
-    const mid=(i*60-90+30)*Math.PI/180;
-    const lr=(R+r)/2-6, cr=(R+r)/2+10;
-    const lx=cx+lr*Math.cos(mid), ly=cy+lr*Math.sin(mid);
-    const clx=cx+cr*Math.cos(mid), cly=cy+cr*Math.sin(mid);
-    const fill=ARC_COLORS[cat.id]||'#8890A8';
-    const tf=ARC_TEXT[cat.id]||'#1A1E2E';
-    const label=cat.label.replace('\n',' ').toUpperCase();
-
-    s+=`<g class="lcars-arc" data-id="${cat.id}">`;
-    s+=`<path d="${d}" fill="${fill}" class="arc-path"/>`;
-    s+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tf}" class="arc-label">${label}</text>`;
-    s+=`<text x="${clx}" y="${cly}" text-anchor="middle" dominant-baseline="central" fill="${tf}" class="arc-count">${(cat.count||'').toUpperCase()}</text>`;
-    s+=`</g>`;
-  });
-
-  s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#111419"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="#8890A8"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#111419"/>`;
-  s+=`</svg>`;
-
-  wheel.innerHTML=s;
-  wheel.querySelectorAll('.lcars-arc').forEach(arc=>{
-    const cat=CATEGORIES.find(c=>c.id===(arc as HTMLElement).dataset.id);
-    if(cat) arc.addEventListener('click',()=>openCategory(cat));
-  });
+// --- RING SEGMENTS (7 segments for the LCARS ring nav) ---
+interface RingBar {
+  label: string;
+  action: () => void;
 }
+interface RingSegment {
+  id: string;
+  label: string;
+  color: string;
+  textColor: string;
+  bars: RingBar[];
+  catId?: string;  // links to CATEGORIES id for count updates
+}
+
+const RING_SEGMENTS: RingSegment[] = [
+  {
+    id: 'politics', label: 'POLITICS', color: '#7B8DB8', textColor: '#0a1128', catId: 'politics',
+    bars: [
+      { label: 'HOT TAKES', action: () => openCategoryTab('politics', 'takes') },
+      { label: 'PREDICTIONS', action: () => openCategoryTab('politics', 'predictions') },
+      { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
+      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+    ]
+  },
+  {
+    id: 'sports', label: 'SPORTS', color: '#B8BECC', textColor: '#0a1128', catId: 'sports',
+    bars: [
+      { label: 'HOT TAKES', action: () => openCategoryTab('sports', 'takes') },
+      { label: 'PREDICTIONS', action: () => openCategoryTab('sports', 'predictions') },
+      { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
+      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+    ]
+  },
+  {
+    id: 'entertainment', label: 'FILM & TV', color: '#9A8CBB', textColor: '#0a1128', catId: 'entertainment',
+    bars: [
+      { label: 'HOT TAKES', action: () => openCategoryTab('entertainment', 'takes') },
+      { label: 'PREDICTIONS', action: () => openCategoryTab('entertainment', 'predictions') },
+      { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
+      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+    ]
+  },
+  {
+    id: 'couples', label: 'COUPLES', color: '#C4956A', textColor: '#0a1128', catId: 'couples',
+    bars: [
+      { label: 'HOT TAKES', action: () => openCategoryTab('couples', 'takes') },
+      { label: 'PREDICTIONS', action: () => openCategoryTab('couples', 'predictions') },
+      { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
+      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+    ]
+  },
+  {
+    id: 'music', label: 'MUSIC', color: '#6BA8A0', textColor: '#0a1128', catId: 'music',
+    bars: [
+      { label: 'HOT TAKES', action: () => openCategoryTab('music', 'takes') },
+      { label: 'PREDICTIONS', action: () => openCategoryTab('music', 'predictions') },
+      { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
+      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+    ]
+  },
+  {
+    id: 'arena', label: 'ARENA', color: '#E7442A', textColor: '#0a1128',
+    bars: [
+      { label: 'QUICK MATCH', action: () => { collapseRing(); navigateTo('arena'); } },
+      { label: 'AI SPARRING', action: () => { collapseRing(); navigateTo('arena'); } },
+      { label: 'RANKED', action: () => { collapseRing(); navigateTo('arena'); } },
+      { label: 'CASUAL', action: () => { collapseRing(); navigateTo('arena'); } },
+    ]
+  },
+  {
+    id: 'you', label: 'YOU', color: '#8B7EC8', textColor: '#0a1128',
+    bars: [
+      { label: 'PROFILE', action: () => { collapseRing(); navigateTo('profile'); } },
+      { label: 'RANKS', action: () => { collapseRing(); navigateTo('leaderboard'); } },
+      { label: 'SHOP', action: () => { collapseRing(); navigateTo('shop'); } },
+      { label: 'SETTINGS', action: () => { window.location.href = 'colosseum-settings.html'; } },
+      { label: 'ARSENAL', action: () => { collapseRing(); navigateTo('arsenal'); } },
+    ]
+  },
+];
+
+
+// --- RING STATE ---
+let ringExpanded = false;
+let currentSegmentIdx = -1;
+let stacksContainer: HTMLElement | null = null;
+const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
+
+
+// --- LCARS RING BUILDER (Session 157) ---
+function buildLCARSNav() {
+  const segCount = RING_SEGMENTS.length;
+  const cx = 160, cy = 160, R = 138, r = 55, gap = 2;
+  const segAngle = 360 / segCount;
+
+  let s = `<svg viewBox="0 0 320 320" class="lcars-nav-svg" xmlns="http://www.w3.org/2000/svg">`;
+
+  RING_SEGMENTS.forEach((seg, i) => {
+    const a1 = (i * segAngle - 90 + gap / 2) * Math.PI / 180;
+    const a2 = ((i + 1) * segAngle - 90 - gap / 2) * Math.PI / 180;
+    const mid = (i * segAngle - 90 + segAngle / 2) * Math.PI / 180;
+
+    // Arc path
+    const d = `M${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)}`
+      + `L${cx + R * Math.cos(a1)} ${cy + R * Math.sin(a1)}`
+      + `A${R} ${R} 0 0 1 ${cx + R * Math.cos(a2)} ${cy + R * Math.sin(a2)}`
+      + `L${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`
+      + `A${r} ${r} 0 0 0 ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)}Z`;
+
+    // Label position (inner track)
+    const lr = (R + r) / 2 - 8;
+    const lx = cx + lr * Math.cos(mid);
+    const ly = cy + lr * Math.sin(mid);
+
+    // Count position (outer track)
+    const cr = (R + r) / 2 + 14;
+    const clx = cx + cr * Math.cos(mid);
+    const cly = cy + cr * Math.sin(mid);
+
+    s += `<g class="lcars-arc" data-id="${seg.id}" data-idx="${i}">`;
+    s += `<path d="${d}" fill="${seg.color}" class="arc-path"/>`;
+    s += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${seg.textColor}" class="arc-label">${seg.label}</text>`;
+    s += `<text x="${clx}" y="${cly}" text-anchor="middle" dominant-baseline="central" fill="${seg.textColor}" class="arc-count"></text>`;
+    s += `</g>`;
+  });
+
+  // Center hole
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#111419"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="8" fill="#8890A8"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="3" fill="#111419"/>`;
+  s += `</svg>`;
+
+  wheel.innerHTML = s;
+
+  // Click handler — different behavior mobile vs desktop
+  wheel.addEventListener('click', handleRingClick);
+}
+
+
+function handleRingClick(e: Event) {
+  const arc = (e.target as HTMLElement).closest('.lcars-arc') as HTMLElement | null;
+
+  // If ring is mini (expanded state), collapse on any click
+  if (ringExpanded) {
+    collapseRing();
+    return;
+  }
+
+  if (!arc) return;
+  const idx = parseInt(arc.dataset.idx || '0', 10);
+  const seg = RING_SEGMENTS[idx];
+
+  if (isMobile()) {
+    // Mobile: expand into stacked bars
+    expandSegment(idx);
+  } else {
+    // Desktop: direct action — open category overlay or navigate
+    if (seg.catId) {
+      const cat = CATEGORIES.find(c => c.id === seg.catId);
+      if (cat) openCategory(cat);
+    } else if (seg.id === 'arena') {
+      navigateTo('arena');
+    } else if (seg.id === 'you') {
+      navigateTo('profile');
+    }
+  }
+}
+
+
+function expandSegment(idx: number) {
+  if (ringExpanded) return;
+  ringExpanded = true;
+  currentSegmentIdx = idx;
+  const seg = RING_SEGMENTS[idx];
+
+  // Shrink ring to bottom-right
+  wheel.classList.add('ring-mini');
+
+  // Build stacked bars
+  if (!stacksContainer) return;
+  stacksContainer.innerHTML = '';
+
+  // Title
+  const title = document.createElement('div');
+  title.className = 'lcars-stacks-title';
+  title.style.color = seg.color;
+  title.textContent = seg.label;
+  stacksContainer.appendChild(title);
+
+  // Build bars with stagger
+  const barWidths = [100, 92, 84, 76, 68, 60]; // decreasing widths
+  seg.bars.forEach((bar, i) => {
+    const el = document.createElement('div');
+    el.className = 'lcars-bar';
+    el.style.background = seg.color;
+    el.style.width = (barWidths[i] || 52) + '%';
+    el.textContent = bar.label;
+    el.addEventListener('click', () => {
+      bar.action();
+    });
+    stacksContainer.appendChild(el);
+
+    // Staggered animation
+    setTimeout(() => { el.classList.add('animate-in'); }, 80 + i * 60);
+  });
+
+  // Show stacks
+  stacksContainer.classList.add('visible');
+}
+
+
+function collapseRing() {
+  if (!ringExpanded) return;
+  ringExpanded = false;
+  currentSegmentIdx = -1;
+
+  // Restore ring
+  wheel.classList.remove('ring-mini');
+
+  // Hide stacks
+  if (stacksContainer) {
+    stacksContainer.classList.remove('visible');
+  }
+}
+
+
+// --- Helper: open category overlay with specific tab ---
+function openCategoryTab(catId: string, tab: string) {
+  collapseRing();
+  const cat = CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+  // Open overlay then switch to correct tab
+  openCategory(cat);
+  // After overlay opens, switch tab
+  setTimeout(() => {
+    const tabEl = document.querySelector(`.overlay-tab[data-tab="${tab}"]`) as HTMLElement | null;
+    if (tabEl) tabEl.click();
+  }, 50);
+}
+
 
 // --- SESSION 23: Category Overlay (async, tabbed: Takes + Predictions) ---
 let currentOverlayCat = null;
-
 async function openCategory(cat: any){
   currentOverlayCat = cat;
   overlayTitle.textContent = cat.section || cat.label.replace('\n',' ');
 
-  // Reset tabs
   const takesTab = document.getElementById('overlay-takes-tab');
   const predsTab = document.getElementById('overlay-predictions-tab');
   takesTab.style.display = '';
@@ -129,37 +310,33 @@ async function openCategory(cat: any){
   document.querySelectorAll('.overlay-tab').forEach(t => t.classList.remove('active'));
   document.querySelector('.overlay-tab[data-tab="takes"]')?.classList.add('active');
 
-  // Show loading
   takesTab.innerHTML = '<div style="text-align:center;padding:30px;"><div class="loading-spinner" style="margin:0 auto;"></div></div>';
   predsTab.innerHTML = '';
+
   overlay.classList.add('open');
 
   try {
-    // Fetch hot takes
     await ColosseumAsync.fetchTakes(cat.id);
-    
-    // Render composer + feed
     takesTab.innerHTML = ColosseumAsync.getComposerHTML();
     const feedDiv = document.createElement('div');
     feedDiv.id = 'hot-takes-feed';
     takesTab.appendChild(feedDiv);
     ColosseumAsync.loadHotTakes(cat.id);
 
-    // Wire char counter
     const input = document.getElementById('hot-take-input');
     const counter = document.getElementById('take-char-count');
     if (input && counter) {
-      input.addEventListener('input', () => { counter.textContent = input.value.length + ' / 280'; });
+      input.addEventListener('input', () => {
+        counter.textContent = input.value.length + ' / 280';
+      });
     }
   } catch(e) {
     takesTab.innerHTML = '<div class="placeholder-text"><span class="emoji">⚠️</span>Failed to load hot takes. Pull down to retry.</div>';
   }
 
   try {
-    // Fetch & render predictions
     await ColosseumAsync.fetchPredictions();
     await ColosseumAsync.fetchStandaloneQuestions?.();
-    // predsTab variable already references the element — no id rename needed
     ColosseumAsync.renderPredictions(predsTab);
   } catch(e) {
     predsTab.innerHTML = '<div class="placeholder-text"><span class="emoji">⚠️</span>Failed to load predictions.</div>';
@@ -182,13 +359,13 @@ let overlayStartY=0;
 overlay.addEventListener('touchstart',(e)=>{overlayStartY=e.touches[0].clientY;},{passive:true});
 overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlayStartY>100)overlay.classList.remove('open');});
 
+
 // --- PULL TO REFRESH (Area 2, Item 2.15) ---
 (function initPullToRefresh(){
-  const PTR_THRESHOLD = 64;   // px drag required to trigger
-  const PTR_MAX      = 90;    // px max visual drag
+  const PTR_THRESHOLD = 64;
+  const PTR_MAX = 90;
   let ptrStartY = 0, ptrDragging = false, ptrTriggered = false;
 
-  // Inject spinner element once
   const ptr = document.createElement('div');
   ptr.id = 'ptr-indicator';
   ptr.innerHTML = '<div class="ptr-spinner"></div><span class="ptr-label">Release to refresh</span>';
@@ -200,16 +377,13 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
   overlayContent.style.position = 'relative';
   overlayContent.insertBefore(ptr, overlayContent.firstChild);
 
-  // Inject spinner CSS once
   const style = document.createElement('style');
   style.textContent = `
     #ptr-indicator { user-select:none; }
-    .ptr-spinner {
-      width:18px;height:18px;border-radius:50%;
+    .ptr-spinner { width:18px;height:18px;border-radius:50%;
       border:2px solid rgba(212,168,67,0.3);
       border-top-color:rgba(212,168,67,0.9);
-      animation:none;
-    }
+      animation:none; }
     .ptr-spinner.spinning { animation:ptrSpin 0.7s linear infinite; }
     @keyframes ptrSpin { to { transform:rotate(360deg); } }
   `;
@@ -242,12 +416,10 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
       ptr.style.transform = 'translateY(-100%)';
       return;
     }
-    // Show loading state
     ptr.querySelector('.ptr-label').textContent = 'Refreshing…';
     ptr.querySelector('.ptr-spinner').classList.add('spinning');
     ptr.style.transform = 'translateY(0)';
     ptr.style.opacity = 1;
-    // Refresh feed
     try {
       await ColosseumAsync.fetchTakes(currentOverlayCat.id);
       ColosseumAsync.loadHotTakes(currentOverlayCat.id);
@@ -256,7 +428,6 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
       const predsTab = document.getElementById('overlay-predictions-tab');
       if (predsTab) ColosseumAsync.renderPredictions(predsTab);
     } catch(e) { /* non-critical */ }
-    // Snap back
     ptr.querySelector('.ptr-spinner').classList.remove('spinning');
     ptr.style.opacity = 0;
     ptr.style.transform = 'translateY(-100%)';
@@ -264,23 +435,25 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
   });
 })();
 
+
 // --- NAVIGATION ---
 const VALID_SCREENS=['home','arena','profile','shop','leaderboard','arsenal'];
 function navigateTo(screenId: string){
   if(!VALID_SCREENS.includes(screenId))screenId='home';
+
+  // Session 157: collapse ring when leaving home
+  if (screenId !== 'home') collapseRing();
+
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));
   const screen=document.getElementById('screen-'+screenId);if(screen)screen.classList.add('active');
   const btn=document.querySelector(`.bottom-nav-btn[data-screen="${screenId}"]`);if(btn)btn.classList.add('active');
   try{localStorage.setItem('colosseum_last_screen',screenId);}catch(e){}
 
-  // SESSION 23: Load rivals when switching to profile
   if(screenId==='profile'){
     ColosseumAsync?.renderRivals?.(document.getElementById('rivals-feed'));
     loadFollowCounts();
   }
-
-  // SESSION 148: Load arsenal content when switching to arsenal screen
   if(screenId==='arsenal'){
     loadArsenalScreen();
   }
@@ -288,7 +461,8 @@ function navigateTo(screenId: string){
 document.querySelectorAll('.bottom-nav-btn').forEach(btn=>{btn.addEventListener('click',()=>navigateTo(btn.dataset.screen));});
 (window as any).navigateTo = navigateTo;
 
-// --- data-action wiring (replaces inline onclick handlers) ---
+
+// --- data-action wiring ---
 document.addEventListener('click', (e: Event) => {
   const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
   if (!el) return;
@@ -310,25 +484,20 @@ document.addEventListener('click', (e: Event) => {
   }
 });
 
+
 // --- SESSION 148: Reference Arsenal screen wiring ---
-// --- SESSION 149: Edit button wiring + Library onVerify fix ---
 let arsenalForgeCleanup: (() => void) | null = null;
 let arsenalActiveTab = 'my-arsenal';
 let arsenalRefs: ArsenalReference[] = [];
 
 function loadArsenalScreen(): void {
-  // Cancel any open forge form
   if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
-
   const container = document.getElementById('arsenal-content');
   if (!container) return;
-
-  // Reset tab UI
   arsenalActiveTab = 'my-arsenal';
   document.querySelectorAll('[data-arsenal-tab]').forEach(t => {
     t.classList.toggle('active', (t as HTMLElement).dataset.arsenalTab === 'my-arsenal');
   });
-
   loadMyArsenal(container);
 }
 
@@ -345,78 +514,53 @@ async function loadLibrary(container: HTMLElement): Promise<void> {
 }
 
 function wireArsenalButtons(container: HTMLElement): void {
-  // Wire forge button
   const forgeBtn = container.querySelector('#arsenal-forge-btn') as HTMLElement | null;
   if (forgeBtn) {
     forgeBtn.addEventListener('click', () => {
       arsenalForgeCleanup = showForgeForm(
         container,
-        (_refId: string) => {
-          arsenalForgeCleanup = null;
-          loadMyArsenal(container);
-        },
-        () => {
-          arsenalForgeCleanup = null;
-          loadMyArsenal(container);
-        },
+        (_refId: string) => { arsenalForgeCleanup = null; loadMyArsenal(container); },
+        () => { arsenalForgeCleanup = null; loadMyArsenal(container); },
       );
     });
   }
-
-  // Wire edit buttons (only visible on unverified cards)
   container.querySelectorAll('.ref-card-edit-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const refId = (btn as HTMLElement).dataset.refId;
       if (!refId) return;
       const ref = arsenalRefs.find(r => r.id === refId);
       if (!ref) return;
-
       arsenalForgeCleanup = showForgeForm(
         container,
-        (_editedId: string) => {
-          arsenalForgeCleanup = null;
-          loadMyArsenal(container);
-        },
-        () => {
-          arsenalForgeCleanup = null;
-          loadMyArsenal(container);
-        },
-        ref, // pre-fill for edit mode
+        (_editedId: string) => { arsenalForgeCleanup = null; loadMyArsenal(container); },
+        () => { arsenalForgeCleanup = null; loadMyArsenal(container); },
+        ref,
       );
     });
   });
 }
 
-// Arsenal back button
 document.getElementById('arsenal-back-btn')?.addEventListener('click', () => {
   if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
   navigateTo('profile');
 });
 
-// Arsenal tab switching
 document.querySelectorAll('[data-arsenal-tab]').forEach(tab => {
   tab.addEventListener('click', () => {
     const tabId = (tab as HTMLElement).dataset.arsenalTab;
     if (!tabId || tabId === arsenalActiveTab) return;
-
-    // Cancel forge if open
     if (arsenalForgeCleanup) { arsenalForgeCleanup(); arsenalForgeCleanup = null; }
-
     arsenalActiveTab = tabId;
     document.querySelectorAll('[data-arsenal-tab]').forEach(t => {
       t.classList.toggle('active', (t as HTMLElement).dataset.arsenalTab === tabId);
     });
-
     const container = document.getElementById('arsenal-content');
     if (!container) return;
-
-    if (tabId === 'my-arsenal') {
-      loadMyArsenal(container);
-    } else if (tabId === 'library') {
-      loadLibrary(container);
-    }
+    if (tabId === 'my-arsenal') { loadMyArsenal(container); }
+    else if (tabId === 'library') { loadLibrary(container); }
   });
 });
+
 
 // --- User Dropdown ---
 const avatarBtn=document.getElementById('user-avatar-btn');
@@ -430,6 +574,7 @@ document.getElementById('logout-btn').addEventListener('click',async()=>{
   window.location.href='colosseum-plinko.html';
 });
 
+
 // --- SESSION 23: Load Follow Counts ---
 async function loadFollowCounts() {
   const user = getCurrentUser();
@@ -438,10 +583,11 @@ async function loadFollowCounts() {
     const counts = await getFollowCounts(user.id);
     document.getElementById('profile-followers').textContent = counts.followers || 0;
     document.getElementById('profile-following').textContent = counts.following || 0;
-  } catch(e) { /* non-critical — counts stay at 0 */ }
+  } catch(e) { /* non-critical */ }
 }
 
-// --- Area 3, Item 3.4: Live category counts for carousel tiles ---
+
+// --- Area 3, Item 3.4: Live category counts for ring tiles ---
 async function loadCategoryCounts() {
   if (!getSupabaseClient() || getIsPlaceholderMode()) return;
   try {
@@ -462,12 +608,11 @@ async function loadCategoryCounts() {
         countEl.textContent = 'QUIET';
       }
     });
-  } catch(e) { /* non-critical — static counts remain */ }
+  } catch(e) { /* non-critical */ }
 }
 
-// --- Auth State → UI ---
 
-// SESSION 113: Parse avatar_url — supports 'emoji:X' format or falls back to initial letter
+// --- Auth State → UI ---
 function _renderAvatar(el: HTMLElement, profile: any){
   const url=profile.avatar_url||'';
   if(url.startsWith('emoji:')){
@@ -492,7 +637,6 @@ function _renderNavAvatar(el: HTMLElement, profile: any){
     el.style.fontSize='';
   }
 }
-
 function updateUIFromProfile(user: any, profile: any){
   if(!profile)return;
   _renderNavAvatar(document.getElementById('user-avatar-btn'),profile);
@@ -514,7 +658,6 @@ function updateUIFromProfile(user: any, profile: any){
   const depth=profile.profile_depth_pct||0;
   document.getElementById('profile-depth-fill').style.width=depth+'%';
   document.getElementById('profile-depth-text').innerHTML=`Profile ${depth}% complete — <a href="colosseum-profile-depth.html" style="color:var(--gold);">unlock rewards</a>`;
-  // SESSION 113: Bio display
   const bioEl=document.getElementById('profile-bio-display');
   if(bioEl){
     const bio=profile.bio||'';
@@ -524,24 +667,19 @@ function updateUIFromProfile(user: any, profile: any){
 }
 onChange(updateUIFromProfile);
 
+
 // ============================================================
 // SESSION 113: PROFILE DEPTH — Avatar picker, Bio edit, Follow list
-// Bug 030: change avatar, edit bio, tap rival/following→profile
 // ============================================================
 
-// --- Shared: close bottom sheet on overlay click ---
 function _closeSheet(overlay: HTMLElement | null){if(overlay&&overlay.parentNode)overlay.remove();}
 
 // --- 1. AVATAR EMOJI PICKER ---
 const AVATAR_EMOJIS=['⚔️','🏛️','🔥','👑','🛡️','🎯','🦁','🐉','🦅','⚡','💀','🎭','🏆','🗡️','🌟','🐺','🦊','🎪','🧠','💎'];
-
 document.getElementById('profile-avatar').addEventListener('click',()=>{
-  // Remove existing sheet if any
   document.getElementById('avatar-picker-sheet')?.remove();
-
   const currentUrl=getCurrentProfile()?.avatar_url||'';
   const currentEmoji=currentUrl.startsWith('emoji:')?currentUrl.slice(6):'';
-
   const overlay=document.createElement('div');
   overlay.id='avatar-picker-sheet';
   overlay.className='bottom-sheet-overlay';
@@ -554,16 +692,12 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
       </div>
     </div>`;
   overlay.addEventListener('click',(e)=>{if(e.target===overlay)_closeSheet(overlay);});
-
-  // Handle emoji selection
   overlay.querySelector('#avatar-grid').addEventListener('click',async(e)=>{
     const opt=e.target.closest('.avatar-option');
     if(!opt)return;
     const emoji=opt.dataset.emoji;
-    // Visual selection
     overlay.querySelectorAll('.avatar-option').forEach(o=>o.classList.remove('selected'));
     opt.classList.add('selected');
-    // Save
     opt.style.opacity='0.5';
     const result=await updateProfile({avatar_url:'emoji:'+emoji});
     opt.style.opacity='1';
@@ -574,7 +708,6 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
       showToast('Failed to save avatar','error');
     }
   });
-
   document.body.appendChild(overlay);
 });
 
@@ -583,7 +716,6 @@ const bioDisplay=document.getElementById('profile-bio-display');
 const bioEditPanel=document.getElementById('profile-bio-edit');
 const bioTextarea=document.getElementById('profile-bio-textarea');
 const bioCharcount=document.getElementById('bio-charcount');
-
 bioDisplay.addEventListener('click',()=>{
   const currentBio=getCurrentProfile()?.bio||'';
   bioTextarea.value=currentBio;
@@ -592,16 +724,13 @@ bioDisplay.addEventListener('click',()=>{
   bioEditPanel.style.display='block';
   bioTextarea.focus();
 });
-
 bioTextarea.addEventListener('input',()=>{
   bioCharcount.textContent=bioTextarea.value.length+'/500';
 });
-
 document.getElementById('bio-cancel-btn').addEventListener('click',()=>{
   bioEditPanel.style.display='none';
   bioDisplay.style.display='';
 });
-
 document.getElementById('bio-save-btn').addEventListener('click',async()=>{
   const newBio=bioTextarea.value.trim();
   const saveBtn=document.getElementById('bio-save-btn');
@@ -623,12 +752,9 @@ document.getElementById('bio-save-btn').addEventListener('click',async()=>{
 
 // --- 3. FOLLOW LIST MODAL ---
 async function _openFollowList(type: string){
-  // type = 'followers' or 'following'
   document.getElementById('follow-list-sheet')?.remove();
-
   const userId=getCurrentUser()?.id;
   if(!userId)return;
-
   const overlay=document.createElement('div');
   overlay.id='follow-list-sheet';
   overlay.className='bottom-sheet-overlay';
@@ -643,22 +769,18 @@ async function _openFollowList(type: string){
   overlay.addEventListener('click',(e)=>{if(e.target===overlay)_closeSheet(overlay);});
   document.body.appendChild(overlay);
 
-  // Fetch data
   const result=type==='followers'
     ? await getFollowers(userId)
     : await getFollowing(userId);
-
   const listEl=overlay.querySelector('#follow-list-content');
   if(!result?.success||!result.data?.length){
     listEl.innerHTML=`<div class="follow-list-empty">${type==='followers'?'No followers yet':'Not following anyone yet'}</div>`;
     return;
   }
-
-  // Build list — getFollowers returns profiles via foreign key join
   const items=result.data.map(row=>{
     const profileData=type==='followers'
-      ? row.profiles  // follows_follower_id_fkey join
-      : row.profiles; // follows_following_id_fkey join
+      ? row.profiles
+      : row.profiles;
     if(!profileData)return '';
     const name=escapeHTML(profileData.display_name||profileData.username||'Unknown');
     const initial=escapeHTML((profileData.display_name||profileData.username||'?')[0].toUpperCase());
@@ -672,75 +794,63 @@ async function _openFollowList(type: string){
       </div>
     </div>`;
   }).join('');
-
   listEl.innerHTML=items||`<div class="follow-list-empty">No users found</div>`;
-
-  // Wire click → navigate to profile
   listEl.addEventListener('click',(e)=>{
     const item=e.target.closest('.follow-list-item');
     if(!item)return;
     _closeSheet(overlay);
-    // Try showUserProfile modal first, fall back to /u/ page
     const uid=item.dataset.userId;
     const username=item.dataset.username;
-    if(uid){
-      showUserProfile(uid);
-    } else if(username){
-      window.location.href='/u/'+encodeURIComponent(username);
-    }
+    if(uid){ showUserProfile(uid); }
+    else if(username){ window.location.href='/u/'+encodeURIComponent(username); }
   });
 }
-
 document.getElementById('followers-stat').addEventListener('click',()=>_openFollowList('followers'));
 document.getElementById('following-stat').addEventListener('click',()=>_openFollowList('following'));
 
+
 // --- SESSION 32: INIT — Members Zone assumes valid session ---
-// Unauthenticated users are redirected to the Plinko Gate.
-// Bot army links point to the static mirror, not here.
 async function appInit(){
+  // Session 157: create stacked bars container
+  stacksContainer = document.createElement('div');
+  stacksContainer.className = 'lcars-stacks';
+  homeScreen?.appendChild(stacksContainer);
+
   buildLCARSNav();
 
-  // Wait for auth to resolve, but never hang more than 4s total
   try {
     await Promise.race([
       ready,
       new Promise(r => setTimeout(r, 4000))
     ]);
-  } catch(e) { /* auth init rejected — continue gracefully, gate check below handles redirect */ }
+  } catch(e) { /* auth init rejected */ }
 
-  // Fade out loading screen
   const loading=document.getElementById('loading-screen');
   if(loading){loading.classList.add('fade-out');setTimeout(()=>loading.remove(),400);}
 
-  // SESSION 32: Members Zone auth gate — no session = redirect to Plinko
   if(!getCurrentUser() && !getIsPlaceholderMode()){
     window.location.href='colosseum-plinko.html';
     return;
   }
 
-  // Placeholder fallback UI (dev/local only)
   if(getIsPlaceholderMode()){
     updateUIFromProfile(null,{display_name:'Debater',username:'debater',elo_rating:1200,wins:0,losses:0,current_streak:0,level:1,debates_completed:0,token_balance:50,subscription_tier:'free',profile_depth_pct:0});
   }
 
-  // Restore last screen
   try{
     const urlScreen=new URLSearchParams(window.location.search).get('screen');
     const lastScreen=urlScreen||localStorage.getItem('colosseum_last_screen');
     if(lastScreen&&document.getElementById('screen-'+lastScreen)){navigateTo(lastScreen);}
   }catch(e){}
 
-  // Load follow counts if on profile
   loadFollowCounts();
-  // Load live category counts for carousel tiles (Area 3, Item 3.4)
   loadCategoryCounts();
 }
 
-// Fire init
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>appInit().catch(e=>console.error('appInit error:',e)));}
 else{appInit().catch(e=>console.error('appInit error:',e));}
 
-// --- Payment toasts (SESSION 60: uses global showToast) ---
+// --- Payment toasts ---
 const urlParams=new URLSearchParams(window.location.search);
 if(urlParams.get('payment')==='success'){showToast('✅ Payment successful!','success');window.history.replaceState({},'',window.location.pathname);}
 if(urlParams.get('payment')==='canceled'){showToast('Payment canceled.','info');window.history.replaceState({},'',window.location.pathname);}
