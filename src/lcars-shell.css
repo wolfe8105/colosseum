@@ -486,71 +486,25 @@ body::after {
 }
 
 /* ============================================================
-   LCARS HOME PANEL
-   Reskins spoke-wheel into a classic LCARS button panel.
-   JS buildTiles() still runs — CSS overrides inline transforms
-   to pin tiles as horizontal bar buttons. openCategory() still
-   fires on click. Carousel physics become visually inert.
+   LCARS CAROUSEL TILES
+   Reskins spoke tiles as LCARS bar segments. JS carousel
+   physics (positionTiles, spin, snap) stay untouched.
+   Only the VISUAL shape of each tile changes.
    ============================================================ */
 
-/* --- Kill circular container, make it a column layout --- */
-.spoke-wheel {
-  /* !important overrides inline styles set by JS positionTiles() */
-  width: 100% !important;
-  height: auto !important;
-  max-width: 480px;
-  position: relative !important;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--mod-bar-gap);
-  padding: var(--mod-space-lg);
-  transform-style: flat !important;
-  perspective: none !important;
-}
-
-/* --- Kill spoke positioning, make tiles horizontal bars --- */
-.spoke-tile {
-  position: relative !important;
-  width: 100% !important;
-  height: auto !important;
-  left: auto !important;
-  top: auto !important;
-  margin: 0 !important;
-  transform: none !important;
-  opacity: 1 !important;
-  z-index: auto !important;
-  filter: none !important;
-  will-change: auto;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-
-.spoke-tile:active {
-  filter: brightness(1.15);
-}
-
-/* --- Tile inner: LCARS horizontal bar button --- */
+/* --- Tile inner: LCARS horizontal bar shape --- */
 .spoke-tile .tile-inner {
-  width: 100% !important;
-  height: auto !important;
-  /* LCARS bar shape: flat left, pill-rounded right */
   background: var(--mod-bar-secondary) !important;
   background-image: var(--mod-gloss-subtle) !important;
   border: none !important;
+  /* LCARS bar: flat left, pill-rounded right */
   border-radius: 6px var(--mod-radius-pill) var(--mod-radius-pill) 6px !important;
-  padding: 12px 20px 12px 14px !important;
+  padding: 10px 16px 10px 12px !important;
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 12px !important;
+  gap: 10px !important;
   box-shadow: none !important;
-  overflow: hidden;
-  position: relative;
-  min-height: var(--mod-bar-btn-height);
-  transition: filter var(--mod-transition-fast);
 }
 
 /* Remove old shimmer overlay */
@@ -568,7 +522,7 @@ body::after {
 /* Label: LCARS readout style */
 .spoke-tile .tile-label {
   font-family: var(--mod-font-ui) !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   letter-spacing: 2px !important;
   text-transform: uppercase;
@@ -576,13 +530,12 @@ body::after {
   text-align: left !important;
   line-height: 1.1 !important;
   white-space: nowrap;
-  flex: 1;
 }
 
-/* Count / live indicator — pushed to far right */
+/* Count / live indicator */
 .spoke-tile .tile-count {
   font-family: var(--mod-font-ui) !important;
-  font-size: 10px !important;
+  font-size: 9px !important;
   font-weight: 600;
   letter-spacing: 1.5px;
   color: var(--mod-text-on-bar) !important;
@@ -592,7 +545,7 @@ body::after {
 }
 
 .spoke-tile .tile-live {
-  font-size: 10px !important;
+  font-size: 9px !important;
   font-weight: 600 !important;
   letter-spacing: 1.5px !important;
   color: var(--mod-text-on-bar) !important;
@@ -608,20 +561,22 @@ body::after {
 
 /* Active press */
 .spoke-tile:active .tile-inner {
-  transform: scale(0.99) !important;
-  filter: brightness(1.1);
+  filter: brightness(1.15);
 }
 
-/* --- "front" class no longer meaningful — override to nothing --- */
+/* --- Front tile highlight --- */
 .spoke-tile.front .tile-inner {
-  border-color: transparent !important;
-  box-shadow: none !important;
+  background-color: var(--mod-bar-tertiary) !important;
+  background-image: var(--mod-gloss) !important;
+  box-shadow: 0 2px 20px rgba(184, 190, 204, 0.12) !important;
+  border: none !important;
 }
 .spoke-tile.front .tile-label {
   color: var(--mod-text-on-bar) !important;
+  font-weight: 700 !important;
 }
 
-/* --- Per-category bar colors (alternating tones like classic LCARS) --- */
+/* --- Per-category bar colors --- */
 .spoke-tile[data-id="politics"] .tile-inner   { background-color: var(--mod-bar-tertiary) !important; }
 .spoke-tile[data-id="sports"] .tile-inner      { background-color: var(--mod-bar-secondary) !important; }
 .spoke-tile[data-id="entertainment"] .tile-inner { background-color: var(--mod-bar-primary) !important; }
@@ -632,76 +587,6 @@ body::after {
 .spoke-tile[data-id="trending"] .tile-live     { color: var(--mod-text-on-accent) !important; }
 .spoke-tile[data-id="trending"] .tile-live .pulse { background: var(--mod-text-on-accent) !important; }
 .spoke-tile[data-id="music"] .tile-inner       { background-color: var(--mod-bar-secondary) !important; }
-
-/* --- Home screen layout override --- */
-#screen-home {
-  align-items: center !important;
-  justify-content: flex-start !important;
-  padding-top: var(--mod-space-xl) !important;
-  user-select: auto !important;
-  -webkit-user-select: auto !important;
-  touch-action: auto !important;
-}
-
-/* --- LCARS decorative header bar above the panel --- */
-.lcars-panel-header {
-  display: flex;
-  gap: var(--mod-bar-gap);
-  width: 100%;
-  max-width: 480px;
-  padding: 0 var(--mod-space-lg);
-  margin-bottom: var(--mod-bar-gap);
-}
-
-.lcars-panel-header .bar-deco {
-  height: 14px;
-  border-radius: var(--mod-radius-pill);
-  background-image: var(--mod-gloss-subtle);
-}
-
-/* --- LCARS decorative footer readout below the panel --- */
-.lcars-panel-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--mod-bar-gap);
-  width: 100%;
-  max-width: 480px;
-  padding: 0 var(--mod-space-lg);
-  margin-top: var(--mod-bar-gap);
-}
-
-.lcars-panel-footer .bar-deco {
-  height: 10px;
-  border-radius: var(--mod-radius-pill);
-  background-image: var(--mod-gloss-subtle);
-}
-
-.lcars-panel-footer .readout {
-  font-family: var(--mod-font-ui);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  color: var(--mod-text-muted);
-  white-space: nowrap;
-}
-
-/* --- Mobile adjustments --- */
-@media (max-width: 767px) {
-  .spoke-wheel {
-    padding: var(--mod-space-md) !important;
-  }
-  .spoke-tile .tile-label {
-    font-size: 11px !important;
-    letter-spacing: 1.5px !important;
-  }
-  .spoke-tile .tile-inner {
-    padding: 10px 16px 10px 12px !important;
-  }
-  .lcars-panel-header,
-  .lcars-panel-footer {
-    padding: 0 var(--mod-space-md);
-  }
-}
 
 /* ============================================================
    DESKTOP WIDE (≥1440px)
