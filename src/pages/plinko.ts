@@ -47,7 +47,7 @@ function getReturnTo(): string {
   const params = new URLSearchParams(window.location.search);
   const dest = params.get('returnTo');
   if (dest && dest.startsWith('/') && !dest.startsWith('//') && !dest.includes('\\')) return dest;
-  return 'index.html';
+  return 'index.html?screen=arena';
 }
 
 function updateProgress(): void {
