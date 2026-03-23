@@ -13,11 +13,21 @@
  *   Session 157 (Ring-to-Stack mobile nav — 7 segments, expand/collapse,
  *     stacked bars with real routing, sidebar hidden on mobile)
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // --- ES imports (all window globals eliminated) ---
+import type { User } from '@supabase/supabase-js';
 import { onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing, showUserProfile, updateProfile, requireAuth, ready, safeRpc } from '../auth.ts';
+import type { Profile } from '../auth.ts';
 import { showToast, escapeHTML } from '../config.ts';
+
+/** Shape of entries in the CATEGORIES array */
+interface Category {
+  id: string;
+  icon: string;
+  label: string;
+  section: string;
+  count: string;
+  hasLive: boolean;
+}
 import '../tokens.ts';
 import { ModeratorAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
@@ -40,7 +50,7 @@ import { showForgeForm, renderArsenal, renderLibrary, verifyReference, ArsenalRe
 // ============================================================
 
 // --- CATEGORIES (used by openCategory, loadCategoryCounts, ?cat= param) ---
-const CATEGORIES=[
+const CATEGORIES: Category[]=[
   {id:'politics',icon:'🏛️',label:'Politics',section:'THE FLOOR',count:'3 Live',hasLive:true},
   {id:'sports',icon:'🏈',label:'Sports',section:'THE PRESSBOX',count:'7 Live',hasLive:true},
   {id:'entertainment',icon:'🎬',label:'Film & TV',section:'THE SPOTLIGHT',count:'2 Live',hasLive:true},
@@ -299,8 +309,8 @@ function openCategoryTab(catId: string, tab: string) {
 
 
 // --- SESSION 23: Category Overlay (async, tabbed: Takes + Predictions) ---
-let currentOverlayCat = null;
-async function openCategory(cat: any){
+let currentOverlayCat: Category | null = null;
+async function openCategory(cat: Category){
   currentOverlayCat = cat;
   overlayTitle.textContent = cat.section || cat.label.replace('\n',' ');
 
@@ -614,7 +624,7 @@ async function loadCategoryCounts() {
 
 
 // --- Auth State → UI ---
-function _renderAvatar(el: HTMLElement, profile: any){
+function _renderAvatar(el: HTMLElement, profile: Profile){
   const url=profile.avatar_url||'';
   if(url.startsWith('emoji:')){
     const emoji=url.slice(6);
@@ -628,7 +638,7 @@ function _renderAvatar(el: HTMLElement, profile: any){
     el.innerHTML=escapeHTML(initial)+'<span class="avatar-hint">✏️</span>';
   }
 }
-function _renderNavAvatar(el: HTMLElement, profile: any){
+function _renderNavAvatar(el: HTMLElement, profile: Profile){
   const url=profile.avatar_url||'';
   if(url.startsWith('emoji:')){
     el.textContent=url.slice(6);
@@ -638,7 +648,7 @@ function _renderNavAvatar(el: HTMLElement, profile: any){
     el.style.fontSize='';
   }
 }
-function updateUIFromProfile(user: any, profile: any){
+function updateUIFromProfile(user: User | null, profile: Profile | null){
   if(!profile)return;
   _renderNavAvatar(document.getElementById('user-avatar-btn'),profile);
   _renderAvatar(document.getElementById('profile-avatar'),profile);

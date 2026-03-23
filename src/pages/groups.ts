@@ -9,15 +9,29 @@
  * NOTE: Mechanical extraction. Type annotations at key boundaries.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { ready, getCurrentUser, getSupabaseClient } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
 
-// ── STATE ─────────────────────────────────────────────────
-let sb: any = null;
+/** Group row as returned by discover / my-groups / leaderboard RPCs */
+interface GroupListItem {
+  id: string;
+  name: string;
+  avatar_emoji?: string | null;
+  description?: string | null;
+  category?: string;
+  member_count?: number | string;
+  elo_rating?: number | string;
+  role?: string | null;
+  rank?: number | string | null;
+  is_member?: boolean;
+  my_role?: string | null;
+}
 
-let currentUser: any = null;
+// ── STATE ─────────────────────────────────────────────────
+let sb: SupabaseClient | null = null;
+
+let currentUser: User | null = null;
 let activeTab = 'discover';
 let activeDetailTab = 'hot-takes';
 let activeCategory: string | null = null;
@@ -119,7 +133,7 @@ async function loadLeaderboard() {
 }
 
 // ── RENDER: GROUP LIST ────────────────────────────────────
-function renderGroupList(containerId: string, groups: any[], showRole = false, showRank = false) {
+function renderGroupList(containerId: string, groups: GroupListItem[], showRole = false, showRank = false) {
   const el = document.getElementById(containerId);
   if (groups.length === 0) {
     el.innerHTML = renderEmpty('👥', 'No groups here yet', 'Be the first to create one');
@@ -213,7 +227,7 @@ async function openGroup(groupId: string) {
   loadGroupMembers(groupId);
 }
 
-function updateJoinBtn(g: any) {
+function updateJoinBtn(g: GroupListItem) {
   const btn = document.getElementById('join-btn');
   if (!currentUser) {
     btn.textContent = 'SIGN IN TO JOIN';
