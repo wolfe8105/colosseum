@@ -752,7 +752,7 @@ export async function renderLibrary(
 // WINDOW BRIDGE (for non-module consumers during migration)
 // ============================================================
 
-(window as unknown as Record<string, unknown>).ColosseumArsenal = {
+(window as unknown as Record<string, unknown>).ModeratorArsenal = {
   forgeReference,
   editReference,
   verifyReference,

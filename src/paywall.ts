@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Paywall Module (TypeScript)
  *
- * Runtime module — replaces colosseum-paywall.js when Vite build is active.
+ * Runtime module — replaces moderator-paywall.js when Vite build is active.
  * 4 contextual paywall variants. gate() checks access, dismissible, non-aggressive.
  * Depends on: config.ts, auth.ts
  *
@@ -182,7 +182,7 @@ export function dismiss(): void {
 }
 
 // ============================================================
-export const ColosseumPaywall = {
+export const ModeratorPaywall = {
   gate,
   show,
   dismiss,

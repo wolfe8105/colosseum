@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Spectator View Controller (TypeScript)
  *
- * Extracted from colosseum-spectate.html inline script.
+ * Extracted from moderator-spectate.html inline script.
  * Live/completed debate spectating, message stream, spectator chat,
  * audience pulse gauge, voting, share with social proof.
  *
@@ -168,9 +168,9 @@ import '../analytics.ts';
 
       // Update page title + OG (in-page only — mirror handles static OG)
       const topicText = debate.topic || 'Debate';
-      document.title = topicText + ' — The Colosseum';
+      document.title = topicText + ' — The Moderator';
       const ogTitle = document.querySelector('meta[property="og:title"]');
-      if (ogTitle) ogTitle.setAttribute('content', topicText + ' — Live on The Colosseum');
+      if (ogTitle) ogTitle.setAttribute('content', topicText + ' — Live on The Moderator');
       const ogDesc = document.querySelector('meta[property="og:description"]');
       if (ogDesc) ogDesc.setAttribute('content', (debate.debater_a_name || 'Side A') + ' vs ' + (debate.debater_b_name || 'Side B') + ' — Watch live and vote.');
 
@@ -324,7 +324,7 @@ import '../analytics.ts';
       html += '<button id="chat-send">SEND</button>';
       html += '</div>';
     } else {
-      html += '<div class="spec-chat-login"><a href="/colosseum-login.html">Log in</a> to chat</div>';
+      html += '<div class="spec-chat-login"><a href="/moderator-login.html">Log in</a> to chat</div>';
     }
     html += '</div></div>';
 
@@ -368,12 +368,12 @@ import '../analytics.ts';
     // CTA
     html += '<div class="cta-banner fade-up">';
     html += '<div class="cta-headline">THINK YOU COULD DO BETTER?</div>';
-    html += '<div class="cta-sub">Join The Colosseum and debate it yourself. Challenge anyone. Build your record.</div>';
-    html += '<a href="/colosseum-plinko.html" class="cta-btn">ENTER THE ARENA</a>';
+    html += '<div class="cta-sub">Join The Moderator and debate it yourself. Challenge anyone. Build your record.</div>';
+    html += '<a href="/moderator-plinko.html" class="cta-btn">ENTER THE ARENA</a>';
     html += '</div>';
 
     // Footer
-    html += '<div class="footer fade-up">Live debate on <a href="/">The Colosseum</a> · <a href="/colosseum-terms.html">Terms</a></div>';
+    html += '<div class="footer fade-up">Live debate on <a href="/">The Moderator</a> · <a href="/moderator-terms.html">Terms</a></div>';
 
     app.innerHTML = html;
 
@@ -687,7 +687,7 @@ import '../analytics.ts';
     const url = window.location.href;
     const specCount = Number(d.spectator_count) || 0;
     const proofText = specCount > 1 ? specCount + ' watching — ' : '';
-    const text = '⚔️ ' + proofText + (d.topic || 'Live Debate') + ' — Watch on The Colosseum';
+    const text = '⚔️ ' + proofText + (d.topic || 'Live Debate') + ' — Watch on The Moderator';
 
     document.getElementById('share-copy')?.addEventListener('click', () => {
       navigator.clipboard.writeText(url).then(() => {

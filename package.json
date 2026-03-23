@@ -1,7 +1,7 @@
 {
-  "name": "the-colosseum",
+  "name": "the-moderator",
   "version": "1.0.0",
-  "description": "The Colosseum — Live audio debate platform / emergence engine",
+  "description": "The Moderator — Live audio debate platform / emergence engine",
   "private": true,
   "type": "module",
   "scripts": {

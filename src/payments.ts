@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Payments Module (TypeScript)
  *
- * Runtime module — replaces colosseum-payments.js when Vite build is active.
+ * Runtime module — replaces moderator-payments.js when Vite build is active.
  * Depends on: config.ts, auth.ts, Stripe.js (CDN)
  *
  * Source of truth for runtime: this file (Phase 3 cutover)
@@ -62,7 +62,7 @@ let _isPlaceholderMode = true;
 export function init(): void {
   if (placeholderMode.stripe) {
     _isPlaceholderMode = true;
-    console.warn('ColosseumPayments: Stripe credentials missing, placeholder mode');
+    console.warn('ModeratorPayments: Stripe credentials missing, placeholder mode');
     return;
   }
   if (typeof Stripe === 'undefined') {
@@ -73,7 +73,7 @@ export function init(): void {
     stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     _isPlaceholderMode = false;
   } catch (e) {
-    console.error('ColosseumPayments: Stripe init failed', e);
+    console.error('ModeratorPayments: Stripe init failed', e);
     _isPlaceholderMode = true;
   }
 }
@@ -115,7 +115,7 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
     body = `Stripe not connected yet. When live, this will purchase ${tokenPkg.amount} tokens via Stripe Checkout.`;
   } else {
     title = 'PAYMENT';
-    body = 'Stripe not connected. See colosseum-config.js and DEPLOYMENT-GUIDE.md.';
+    body = 'Stripe not connected. See moderator-config.js and DEPLOYMENT-GUIDE.md.';
   }
 
   const modal = document.createElement('div');
@@ -130,7 +130,7 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
       <div style="color:#a0a8b8;font-size:14px;line-height:1.5;margin-bottom:20px;">${escapeHTML(body)}</div>
       <div style="background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);border-radius:8px;padding:12px;margin-bottom:20px;">
         <div style="color:#cc2936;font-size:12px;font-weight:700;">⚠️ PLACEHOLDER MODE</div>
-        <div style="color:#a0a8b8;font-size:11px;margin-top:4px;">Paste your Stripe keys into colosseum-config.js</div>
+        <div style="color:#a0a8b8;font-size:11px;margin-top:4px;">Paste your Stripe keys into moderator-config.js</div>
       </div>
       <button onclick="this.closest('#payment-placeholder-modal').remove()" style="background:#1a2d4a;color:#f0f0f0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 32px;font-weight:700;cursor:pointer;font-size:14px;width:100%;">
         GOT IT
@@ -187,7 +187,7 @@ export async function subscribe(tier: string): Promise<void> {
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {
-    console.error('ColosseumPayments: subscribe error', e);
+    console.error('ModeratorPayments: subscribe error', e);
     showToast('Payment error. Try again.', 'error');
   }
 }
@@ -232,7 +232,7 @@ export async function buyTokens(packageId: string): Promise<void> {
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {
-    console.error('ColosseumPayments: buyTokens error', e);
+    console.error('ModeratorPayments: buyTokens error', e);
     showToast('Payment error. Try again.', 'error');
   }
 }
@@ -243,7 +243,7 @@ export function getIsPlaceholderMode(): boolean {
 
 // ============================================================
 
-export const ColosseumPayments = {
+export const ModeratorPayments = {
   subscribe,
   buyTokens,
   get isPlaceholderMode() {

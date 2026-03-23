@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Leaderboard Module (TypeScript)
  *
- * Runtime module — replaces colosseum-leaderboard.js when Vite build is active.
+ * Runtime module — replaces moderator-leaderboard.js when Vite build is active.
  * Depends on: config.ts, auth.ts
  *
  * Source of truth for runtime: this file (Phase 3 cutover)
@@ -356,14 +356,14 @@ export function render(): void {
         ${(['elo', 'wins', 'streak'] as const)
           .map(
             (tab) => `
-          <button class="lb-tab ${currentTab === tab ? 'active' : ''}" onclick="ColosseumLeaderboard.setTab('${tab}')" style="
+          <button class="lb-tab ${currentTab === tab ? 'active' : ''}" onclick="ModeratorLeaderboard.setTab('${tab}')" style="
             flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
             font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
             background:${currentTab === tab ? 'rgba(212,168,67,0.15)' : 'rgba(255,255,255,0.05)'};
             color:${currentTab === tab ? '#d4a843' : '#a0a8b8'};
           ">${tab === 'elo' ? 'ELO' : tab === 'wins' ? 'WINS' : '🔥 STREAK'}${
               tab === 'elo'
-                ? `<span onclick="event.stopPropagation();ColosseumLeaderboard.showEloExplainer();" style="
+                ? `<span onclick="event.stopPropagation();ModeratorLeaderboard.showEloExplainer();" style="
               display:inline-block;width:16px;height:16px;border-radius:50%;
               background:rgba(212,168,67,0.25);color:#d4a843;
               font-size:10px;line-height:16px;text-align:center;
@@ -380,7 +380,7 @@ export function render(): void {
         ${(['all', 'week', 'month'] as const)
           .map(
             (t) => `
-          <button onclick="ColosseumLeaderboard.setTime('${t}')" style="
+          <button onclick="ModeratorLeaderboard.setTime('${t}')" style="
             padding:6px 14px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;
             background:${currentTime === t ? 'rgba(204,41,54,0.15)' : 'rgba(255,255,255,0.05)'};
             color:${currentTime === t ? '#cc2936' : '#a0a8b8'};white-space:nowrap;
@@ -446,7 +446,7 @@ export function init(): void {
 }
 
 // ============================================================
-export const ColosseumLeaderboard = {
+export const ModeratorLeaderboard = {
   render,
   setTab,
   setTime,

@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Profile Depth Engine (TypeScript)
  *
- * Extracted from colosseum-profile-depth.html inline script.
+ * Extracted from moderator-profile-depth.html inline script.
  * 12 sections, 39+ questions, tier system integration, discount waterfall.
  *
  * Migration: Session 128 (Phase 4)
@@ -178,7 +178,7 @@ const SECTIONS: Section[] = [
     id: 'social', icon: '🤝', name: 'SOCIAL',
     reward: { type: 'feature', text: 'Unlock custom bio' },
     questions: [
-      { id: 'x1', label: 'How did you hear about The Colosseum?', type: 'chips', options: ['Friend', 'Social media', 'Search', 'Ad', 'Podcast', 'Other'] },
+      { id: 'x1', label: 'How did you hear about The Moderator?', type: 'chips', options: ['Friend', 'Social media', 'Search', 'Ad', 'Podcast', 'Other'] },
       { id: 'x2', label: 'Would you refer friends?', type: 'chips', options: ['Already did', 'Definitely', 'Maybe', 'Probably not'] },
       { id: 'x3', label: 'What would make this app essential?', type: 'input', placeholder: 'One feature that would hook you...' },
     ]
@@ -238,10 +238,10 @@ let serverQuestionsAnswered = 0;
 const previouslyAnsweredIds = new Set<string>();
 
 // ============================================================
-// TIER INTEGRATION (colosseum-tiers.js globals)
+// TIER INTEGRATION (moderator-tiers.js globals)
 // ============================================================
 
-// These functions are loaded as globals from colosseum-tiers.js <script> tag
+// These functions are loaded as globals from moderator-tiers.js <script> tag
 const getTier = (window as unknown as Record<string, unknown>).getTier as
   ((qa: number) => { maxStake: number; slots: number; name: string }) | undefined;
 const getNextTier = (window as unknown as Record<string, unknown>).getNextTier as
@@ -598,7 +598,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // SESSION 32: Members Zone auth gate
   await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
   if (!getCurrentUser() && !isPlaceholder) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
 

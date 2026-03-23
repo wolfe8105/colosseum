@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="var(--mod-bg-base)">
-<title>Settings — The Colosseum</title>
+<title>Settings — The Moderator</title>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap');
@@ -252,7 +252,7 @@
   }
 
   /* === LEGAL FOOTER === */
-  .colosseum-legal-footer {
+  .moderator-legal-footer {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -272,19 +272,19 @@
     font-weight: 400;
     letter-spacing: 0.5px;
   }
-  .colosseum-legal-footer a {
+  .moderator-legal-footer a {
     color: var(--mod-text-muted);
     text-decoration: none;
     transition: color 0.2s;
   }
-  .colosseum-legal-footer a:hover {
+  .moderator-legal-footer a:hover {
     color: var(--mod-accent-text);
   }
-  .colosseum-legal-footer .footer-sep {
+  .moderator-legal-footer .footer-sep {
     color: rgba(240, 192, 64, 0.3);
     font-weight: 300;
   }
-  .colosseum-legal-footer .footer-copy {
+  .moderator-legal-footer .footer-copy {
     color: var(--mod-text-muted);
   }
 </style>
@@ -481,7 +481,7 @@
   <button class="settings-btn danger" id="delete-btn">🗑️ DELETE ACCOUNT</button>
 </div>
 
-<div class="version-text">The Colosseum v2.0.0</div>
+<div class="version-text">The Moderator v2.0.0</div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal-overlay" id="delete-modal">
@@ -505,12 +505,12 @@
 <div class="toast" id="toast"></div>
 
 <script type="module" src="/src/pages/settings.ts"></script>
-<div class="colosseum-legal-footer">
-  <a href="colosseum-privacy.html">Privacy Policy</a>
+<div class="moderator-legal-footer">
+  <a href="moderator-privacy.html">Privacy Policy</a>
   <span class="footer-sep">|</span>
-  <a href="colosseum-terms.html">Terms of Service</a>
+  <a href="moderator-terms.html">Terms of Service</a>
   <span class="footer-sep">|</span>
-  <span class="footer-copy">&copy; 2026 The Colosseum</span>
+  <span class="footer-copy">&copy; 2026 The Moderator</span>
 </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Auto-Debate Page Controller (TypeScript)
  *
- * Extracted from colosseum-auto-debate.html inline script.
+ * Extracted from moderator-auto-debate.html inline script.
  * AI vs AI debate page. Ungated voting with fingerprint dedup.
  * Rage-click funnel, More Debates discovery section (E279/E280).
  *
@@ -82,7 +82,7 @@ if (debateId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     try {
       const { data } = await sb.from('auto_debates').select('id').order('created_at', { ascending: false }).limit(1).single();
       if (data?.id) {
-        window.location.replace('/colosseum-auto-debate.html?id=' + data.id);
+        window.location.replace('/moderator-auto-debate.html?id=' + data.id);
       } else {
         showError('No debates yet. Check back soon.');
       }
@@ -111,7 +111,7 @@ function getCatIcon(cat: string): string {
 function showError(msg: string): void {
   if (loadingEl) loadingEl.style.display = 'none';
   if (app) app.innerHTML = `<div class="error-state">❌ ${escHtml(msg)}</div>
-    <div style="text-align:center;margin-top:20px"><a href="/" class="join-btn">Go to The Colosseum</a></div>`;
+    <div style="text-align:center;margin-top:20px"><a href="/" class="join-btn">Go to The Moderator</a></div>`;
 }
 
 function getFingerprint(): string {
@@ -149,7 +149,7 @@ async function loadDebate(): Promise<void> {
 function renderDebate(d: AutoDebateData): void {
   const rounds: AutoDebateRound[] = typeof d.rounds === 'string' ? JSON.parse(d.rounds) : d.rounds;
   const marginText = d.margin === 'landslide' ? 'LANDSLIDE' : d.margin === 'clear' ? 'CLEAR WIN' : 'SPLIT DECISION';
-  document.title = `${d.topic} — The Colosseum`;
+  document.title = `${d.topic} — The Moderator`;
 
   let html = '';
 
@@ -219,8 +219,8 @@ function renderDebate(d: AutoDebateData): void {
   // CTA
   html += `<div class="cta-banner fade-up">
     <div class="cta-headline">THINK THE AI IS WRONG?</div>
-    <div class="cta-sub">Join The Colosseum and debate it yourself. Challenge the verdict. Build your record.</div>
-    <a href="/colosseum-plinko.html" class="cta-btn">ENTER THE ARENA</a>
+    <div class="cta-sub">Join The Moderator and debate it yourself. Challenge the verdict. Build your record.</div>
+    <a href="/moderator-plinko.html" class="cta-btn">ENTER THE ARENA</a>
   </div>`;
 
   // Share
@@ -234,7 +234,7 @@ function renderDebate(d: AutoDebateData): void {
   html += `<div class="more-debates fade-up" id="more-debates"></div>`;
 
   // Footer
-  html += `<div class="footer fade-up">AI-generated debate for entertainment. Scores are deliberately provocative.<br><a href="/">The Colosseum</a> · <a href="/colosseum-terms.html">Terms</a></div>`;
+  html += `<div class="footer fade-up">AI-generated debate for entertainment. Scores are deliberately provocative.<br><a href="/">The Moderator</a> · <a href="/moderator-terms.html">Terms</a></div>`;
 
   // Store for voting
   (window as unknown as Record<string, unknown>)._debate = d;
@@ -267,7 +267,7 @@ async function loadMoreDebates(currentId: string, currentCategory: string): Prom
     let moreHtml = '<div class="section-label">MORE DEBATES</div>';
     for (const d of sorted) {
       const w = d.winner === 'a' ? d.side_a_label : d.side_b_label;
-      moreHtml += `<a href="/colosseum-auto-debate.html?id=${encodeURIComponent(d.id)}" class="more-debate-card">
+      moreHtml += `<a href="/moderator-auto-debate.html?id=${encodeURIComponent(d.id)}" class="more-debate-card">
         <div class="more-debate-topic">${escHtml(d.topic)}</div>
         <div class="more-debate-matchup"><span class="mda">${escHtml(d.side_a_label)}</span><span class="mdvs">VS</span><span class="mdb">${escHtml(d.side_b_label)}</span></div>
         <div class="more-debate-meta"><span>${getCatIcon(d.category)} ${escHtml(d.category || 'general')}</span><span>·</span><span class="more-debate-winner">🏆 ${escHtml(w)}</span><span>·</span><span>${Number(d.score_a) || 0}-${Number(d.score_b) || 0}</span></div>

@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Plinko Gate Controller (TypeScript)
  *
- * Extracted from colosseum-plinko.html inline script.
+ * Extracted from moderator-plinko.html inline script.
  * Linear 4-step signup: OAuth/Email → Age Gate → Username → Enter.
  *
  * Migration: Session 128 (Phase 4)
@@ -171,7 +171,7 @@ document.getElementById('btn-age-next')?.addEventListener('click', () => {
 
   const age = getAge(parseInt(month), parseInt(day), parseInt(year));
   if (age < 13) {
-    showMsg('step2-msg', 'You must be at least 13 years old to use The Colosseum.', 'error');
+    showMsg('step2-msg', 'You must be at least 13 years old to use The Moderator.', 'error');
     return;
   }
 

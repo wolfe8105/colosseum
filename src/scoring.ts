@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Scoring Module (TypeScript)
  *
- * Runtime module (replaces colosseum-scoring.js).
+ * Runtime module (replaces moderator-scoring.js).
  * Voting + predictions — all server-side via safeRpc.
  *
  * Migration: Session 127 (Phase 3). ES imports: Session 140.

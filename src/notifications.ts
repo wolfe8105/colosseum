@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Notifications Module (TypeScript)
  *
- * Runtime module — replaces colosseum-notifications.js when Vite build is active.
+ * Runtime module — replaces moderator-notifications.js when Vite build is active.
  * Depends on: config.ts, auth.ts
  *
  * Migration: Session 127 (Phase 3), Session 138 (cutover — ES imports, zero globalThis reads)
@@ -117,7 +117,7 @@ function getPlaceholderNotifs(): Notification[] {
     { id: '4', type: 'stake_won', title: '🪙 Stake Won!', body: 'You won 45 tokens on "Is crypto dead?"', time: '3h ago', read: false },
     { id: '5', type: 'tier_up', title: '🏅 Tier Up!', body: 'You reached Spectator+! New perks unlocked.', time: '4h ago', read: false },
     { id: '6', type: 'follow', title: 'SHARPSHOOTER followed you', body: 'ELO 1,654 — 42 wins', time: '5h ago', read: true },
-    { id: '7', type: 'system', title: 'Welcome to The Colosseum', body: 'Post a hot take, watch a debate, or start one.', time: '1d ago', read: true },
+    { id: '7', type: 'system', title: 'Welcome to The Moderator', body: 'Post a hot take, watch a debate, or start one.', time: '1d ago', read: true },
   ];
 }
 

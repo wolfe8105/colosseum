@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Power-Up System (TypeScript)
  *
- * Runtime module (replaces colosseum-powerups.js).
+ * Runtime module (replaces moderator-powerups.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, getPowerUpSlots, getNextTier)
  *
  * Migration: Session 126 (Phase 2). Window bridge: Session 140.

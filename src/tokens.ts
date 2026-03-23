@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Token Earn System (TypeScript)
  *
- * Runtime module — replaces colosseum-tokens.js when Vite build is active.
+ * Runtime module — replaces moderator-tokens.js when Vite build is active.
  * Depends on: config.ts, auth.ts
  *
  * Migration: Session 126 (Phase 2), Session 138 (cutover — imports replace globalThis reads)
@@ -409,7 +409,7 @@ export function getBalance(): number | null {
 }
 
 // ============================================================
-// INIT (matches colosseum-tokens.js _init())
+// INIT (matches moderator-tokens.js _init())
 // ============================================================
 
 export function init(): void {

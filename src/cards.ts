@@ -1,10 +1,10 @@
 /**
  * THE COLOSSEUM — Cards Module (TypeScript)
  *
- * Typed mirror of colosseum-cards.js. ESPN-style debate result cards
+ * Typed mirror of moderator-cards.js. ESPN-style debate result cards
  * with watermark branding. Generates images in 4 sizes for sharing.
  *
- * Source of truth for runtime: colosseum-cards.js (until Phase 4 cutover)
+ * Source of truth for runtime: moderator-cards.js (until Phase 4 cutover)
  * Source of truth for types: this file
  *
  * Migration: Session 127 (Phase 3)
@@ -298,7 +298,7 @@ export function downloadCard(opts: GenerateCardOptions): void {
   const canvas = generateCard(opts);
   const sizeKey = validateSize(opts.size);
   const link = document.createElement('a');
-  link.download = `colosseum-debate-${sizeKey}.png`;
+  link.download = `moderator-debate-${sizeKey}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
@@ -308,11 +308,11 @@ export async function shareCard(opts: GenerateCardOptions): Promise<void> {
   try {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('toBlob returned null');
-    const file = new File([blob], 'colosseum-debate.png', { type: 'image/png' });
+    const file = new File([blob], 'moderator-debate.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title: opts.topic || 'Debate Result',
-        text: `${truncLabel(opts.topic || 'Debate Result', 200)} — Cast your vote at The Colosseum!`,
+        text: `${truncLabel(opts.topic || 'Debate Result', 200)} — Cast your vote at The Moderator!`,
         files: [file],
       });
       return;
@@ -327,7 +327,7 @@ export async function shareCard(opts: GenerateCardOptions): Promise<void> {
 // WINDOW GLOBAL BRIDGE (removed in Phase 4)
 // ============================================================
 
-export const ColosseumCards = {
+export const ModeratorCards = {
   generateCard,
   downloadCard,
   shareCard,

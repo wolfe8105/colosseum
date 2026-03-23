@@ -1,4 +1,4 @@
-# CLAUDE.md — The Colosseum
+# CLAUDE.md — The Moderator
 
 This file provides guidance to Claude Code when working with this repository.
 
@@ -12,7 +12,7 @@ Solo founder project. No build step, no bundler, no framework — plain JS modul
 
 **Three-zone model:**
 - **Ring 6 — Static Mirror** (Cloudflare Pages at `colosseum-f30.pages.dev`): Pure HTML, zero JS, zero auth. Bot army links route here.
-- **Plinko Gate** (`colosseum-plinko.html`): 4-step signup (OAuth → Age → Username → Done)
+- **Plinko Gate** (`moderator-plinko.html`): 4-step signup (OAuth → Age → Username → Done)
 - **Members Zone** (Vercel at `colosseum-six.vercel.app`): Full app, auto-deploys from GitHub
 
 **Backend:** Supabase project `faomczmipsccwbhpivmp`. 35 tables, 44+ server functions, RLS hardened.
@@ -25,7 +25,7 @@ Solo founder project. No build step, no bundler, no framework — plain JS modul
 Never use direct `INSERT`, `UPDATE`, or `DELETE` from client JS. Every write goes through `supabase.rpc('function_name', params)` calling a SECURITY DEFINER function on the server. This is the single most important architectural rule.
 
 ### XSS Protection: `escapeHTML()` on all user content
-Any user-supplied data entering `innerHTML` or template literals MUST pass through `ColosseumConfig.escapeHTML()`. This is a 5-character OWASP mapping: `&` `<` `>` `"` `'`. No exceptions.
+Any user-supplied data entering `innerHTML` or template literals MUST pass through `ModeratorConfig.escapeHTML()`. This is a 5-character OWASP mapping: `&` `<` `>` `"` `'`. No exceptions.
 
 ### Numeric casting before innerHTML
 Any numeric value displayed via innerHTML must be cast with `Number()` first to prevent injection through numeric fields.
@@ -49,30 +49,30 @@ This DB trigger silently reverts direct UPDATEs on 21 protected columns (elo_rat
 
 ## File Conventions
 
-### JS Modules (all use `window.X` global pattern)
+### TS Modules (all use `window.X` global pattern)
 | File | Purpose |
 |------|---------|
-| `colosseum-config.js` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
-| `colosseum-auth.js` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()` |
-| `colosseum-payments.js` | Stripe Checkout, token purchases |
-| `colosseum-notifications.js` | Notification center |
-| `colosseum-async.js` | Hot takes, predictions, rivals, react toggle, challenge modal |
-| `colosseum-arena.js` | Arena: lobby, 4 modes, matchmaking, debate room, AI sparring |
-| `colosseum-tokens.js` | Token economy: milestones, streak freeze, daily login, gold coin animation |
-| `colosseum-leaderboard.js` | Elo/Wins/Streak tabs |
-| `colosseum-scoring.js` | Elo, XP, leveling (SELECT reads only) |
-| `colosseum-share.js` | Web Share API, clipboard, referrals |
-| `colosseum-cards.js` | Canvas share card generator |
-| `colosseum-webrtc.js` | WebRTC audio via Supabase Realtime |
-| `colosseum-voicememo.js` | Voice memo mode |
-| `colosseum-analytics.js` | Funnel analytics: visitor UUID, page_view, UTM. **Uses raw `fetch()` to RPC endpoint instead of `safeRpc()` — intentional, analytics fires before auth init. Exception to the safeRpc rule.** |
-| `colosseum-home.js` | Home screen logic |
-| `colosseum-paywall.js` | Paywall gating logic |
-| `colosseum-staking.js` | Token staking system |
-| `colosseum-tiers.js` | Questionnaire tier lookup, badge rendering, progress calculation |
+| `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
+| `src/auth.ts` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()` |
+| `src/payments.ts` | Stripe Checkout, token purchases |
+| `src/notifications.ts` | Notification center |
+| `src/async.ts` | Hot takes, predictions, rivals, react toggle, challenge modal |
+| `src/arena.ts` | Arena: lobby, 4 modes, matchmaking, debate room, AI sparring |
+| `src/tokens.ts` | Token economy: milestones, streak freeze, daily login, gold coin animation |
+| `src/leaderboard.ts` | Elo/Wins/Streak tabs |
+| `src/scoring.ts` | Elo, XP, leveling (SELECT reads only) |
+| `src/share.ts` | Web Share API, clipboard, referrals |
+| `src/cards.ts` | Canvas share card generator |
+| `src/webrtc.ts` | WebRTC audio via Supabase Realtime |
+| `src/voicememo.ts` | Voice memo mode |
+| `src/analytics.ts` | Funnel analytics: visitor UUID, page_view, UTM. **Uses raw `fetch()` to RPC endpoint instead of `safeRpc()` — intentional, analytics fires before auth init. Exception to the safeRpc rule.** |
+| `src/pages/home.ts` | Home screen logic |
+| `src/paywall.ts` | Paywall gating logic |
+| `src/staking.ts` | Token staking system |
+| `src/tiers.ts` | Questionnaire tier lookup, badge rendering, progress calculation |
 
 ### HTML Pages
-All at repo root. Key pages: `index.html` (home), `colosseum-login.html`, `colosseum-plinko.html` (signup gate), `colosseum-auto-debate.html` (ungated AI debates), `colosseum-debate-landing.html` (ungated landing), `colosseum-profile-depth.html` (12 sections, 147 questions), `colosseum-groups.html`, `colosseum-settings.html`.
+All at repo root. Key pages: `index.html` (home), `moderator-login.html`, `moderator-plinko.html` (signup gate), `moderator-auto-debate.html` (ungated AI debates), `moderator-debate-landing.html` (ungated landing), `moderator-profile-depth.html` (12 sections, 147 questions), `moderator-groups.html`, `moderator-settings.html`.
 
 ### Vercel Serverless
 `api/profile.js` — public profile pages at `/u/username`, dynamic OG tags.
@@ -83,16 +83,16 @@ All at repo root. Key pages: `index.html` (home), `colosseum-login.html`, `colos
 ## Key Patterns
 
 - **`react_hot_take()`** is a toggle — single RPC handles both add and remove
-- **`safeRpc()`** wraps all RPC calls with 401 retry (migration complete — all `.rpc()` calls wrapped except within `colosseum-auth.js` where it's defined)
+- **`safeRpc()`** wraps all RPC calls with 401 retry (migration complete — all `.rpc()` calls wrapped except within `src/auth.ts` where it's defined)
 - **Tokens are earned only, never purchased** — displayed as prestige signal
 - **Full file replacement over patches** — always produce complete files, never diffs
 - **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned
 - **SRI hashes pin supabase-js to @2.98.0** — must regenerate hashes when upgrading
-- **Landing page votes** — `colosseum-debate-landing.html` has its own lightweight Supabase client (no auth). Votes go through `cast_landing_vote` / `get_landing_votes` RPCs (anon role). `voteCounted` flag prevents double-counting.
+- **Landing page votes** — `moderator-debate-landing.html` has its own lightweight Supabase client (no auth). Votes go through `cast_landing_vote` / `get_landing_votes` RPCs (anon role). `voteCounted` flag prevents double-counting.
 
 ## Development
 
-No build system. Serve the root directory with any static file server. The app needs Supabase credentials in `colosseum-config.js` to function. Node.js >= 18 required for bots and serverless functions.
+No build system. Serve the root directory with any static file server. The app needs Supabase credentials in `src/config.ts` to function. Node.js >= 18 required for bots and serverless functions.
 
 **GitHub workflow:** All files at repo root. Upload via GitHub web UI drag-and-drop.
 
@@ -115,12 +115,12 @@ No build system. Serve the root directory with any static file server. The app n
 
 ## Important Documentation
 
-- `THE-COLOSSEUM-NEW-TESTAMENT.md` — condensed project knowledge, key decisions, current state, prioritized roadmap
-- `THE-COLOSSEUM-OLD-TESTAMENT.md` — all session build logs (1-62), 502+ item inventory
-- `THE-COLOSSEUM-LAND-MINE-MAP.md` — 170+ documented pitfalls and fixes. **Read before any SQL, schema, auth, or deployment change.**
-- `THE-COLOSSEUM-WAR-CHEST.md` — B2B intelligence play
-- `THE-COLOSSEUM-WAR-PLAN.md` — 5-phase strategy, open decisions
-- `THE-COLOSSEUM-PRODUCT-VISION.md` — psychology framework, gamification design
+- `THE-MODERATOR-NEW-TESTAMENT.md` — condensed project knowledge, key decisions, current state, prioritized roadmap
+- `THE-MODERATOR-OLD-TESTAMENT.md` — all session build logs (1-62), 502+ item inventory
+- `THE-MODERATOR-LAND-MINE-MAP.md` — 170+ documented pitfalls and fixes. **Read before any SQL, schema, auth, or deployment change.**
+- `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play
+- `THE-MODERATOR-WAR-PLAN.md` — 5-phase strategy, open decisions
+- `THE-MODERATOR-PRODUCT-VISION.md` — psychology framework, gamification design
 - `THE-COLOSSEUM-IDEAS-MASTER-MAP.docx` — raw inventory of every unbuilt idea, organized by structural impact
 
 ## Server-ready RPCs (no client wiring yet)

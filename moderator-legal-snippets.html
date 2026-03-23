@@ -16,24 +16,24 @@
   
   PAGES (8 total):
     1. index.html
-    2. colosseum-login.html
-    3. colosseum-settings.html
-    4. colosseum-profile-depth.html
-    5. colosseum-terms.html        ← already has footer? replace it
-    6. colosseum-debate-landing.html
-    7. colosseum-auto-debate.html
-    8. colosseum-plinko.html
+    2. moderator-login.html
+    3. moderator-settings.html
+    4. moderator-profile-depth.html
+    5. moderator-terms.html        ← already has footer? replace it
+    6. moderator-debate-landing.html
+    7. moderator-auto-debate.html
+    8. moderator-plinko.html
   
-  NOTE: colosseum-privacy.html and the NEW colosseum-terms.html 
+  NOTE: moderator-privacy.html and the NEW moderator-terms.html 
   already have back-links built in. But still add the footer to 
-  colosseum-terms.html for consistency across pages.
+  moderator-terms.html for consistency across pages.
   ============================================================
 -->
 
 <!-- PASTE THIS CSS inside the existing <style> block on each page -->
 <style>
   /* === LEGAL FOOTER === */
-  .colosseum-legal-footer {
+  .moderator-legal-footer {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -53,36 +53,36 @@
     font-weight: 400;
     letter-spacing: 0.5px;
   }
-  .colosseum-legal-footer a {
+  .moderator-legal-footer a {
     color: #a0b8d0;
     text-decoration: none;
     transition: color 0.2s;
   }
-  .colosseum-legal-footer a:hover {
+  .moderator-legal-footer a:hover {
     color: #f0c040;
   }
-  .colosseum-legal-footer .footer-sep {
+  .moderator-legal-footer .footer-sep {
     color: rgba(240, 192, 64, 0.3);
     font-weight: 300;
   }
-  .colosseum-legal-footer .footer-copy {
+  .moderator-legal-footer .footer-copy {
     color: #5a7a96;
   }
 </style>
 
 <!-- PASTE THIS HTML right before </body> on each page -->
-<div class="colosseum-legal-footer">
-  <a href="colosseum-privacy.html">Privacy Policy</a>
+<div class="moderator-legal-footer">
+  <a href="moderator-privacy.html">Privacy Policy</a>
   <span class="footer-sep">|</span>
-  <a href="colosseum-terms.html">Terms of Service</a>
+  <a href="moderator-terms.html">Terms of Service</a>
   <span class="footer-sep">|</span>
-  <span class="footer-copy">&copy; 2026 The Colosseum</span>
+  <span class="footer-copy">&copy; 2026 The Moderator</span>
 </div>
 
 
 <!--
   ============================================================
-  SNIPPET 2: AI-GENERATED BADGE — PASTE ON colosseum-auto-debate.html ONLY
+  SNIPPET 2: AI-GENERATED BADGE — PASTE ON moderator-auto-debate.html ONLY
   ============================================================
   
   WHERE TO PASTE CSS: Inside the existing <style> block
@@ -92,7 +92,7 @@
   ============================================================
 -->
 
-<!-- PASTE THIS CSS inside the <style> block on colosseum-auto-debate.html -->
+<!-- PASTE THIS CSS inside the <style> block on moderator-auto-debate.html -->
 <style>
   /* === AI-GENERATED CONTENT BADGE === */
   .ai-generated-badge {
@@ -126,7 +126,7 @@
   }
 </style>
 
-<!-- PASTE THIS HTML below the debate topic heading on colosseum-auto-debate.html -->
+<!-- PASTE THIS HTML below the debate topic heading on moderator-auto-debate.html -->
 <div class="ai-generated-badge">
   <span class="ai-icon">AI</span>
   AI-Generated Debate — Not Real People
@@ -165,7 +165,7 @@
 
 <!--
   ============================================================
-  SNIPPET 4: AI BADGE ON colosseum-debate-landing.html
+  SNIPPET 4: AI BADGE ON moderator-debate-landing.html
   ============================================================
   
   The debate landing page can show both human and AI debates.
@@ -190,14 +190,14 @@
   FILE                              FOOTER    AI BADGE CSS    AI BADGE HTML
   ─────────────────────────────────────────────────────────────────────────
   index.html                          ✅         ✅*             —
-  colosseum-login.html                ✅          —              —
-  colosseum-settings.html             ✅          —              —
-  colosseum-profile-depth.html        ✅          —              —
-  colosseum-terms.html (NEW)          ✅          —              —
-  colosseum-debate-landing.html       ✅         ✅           conditional
-  colosseum-auto-debate.html          ✅         ✅              ✅
-  colosseum-plinko.html               ✅          —              —
-  colosseum-privacy.html (NEW)        ✅          —              —
+  moderator-login.html                ✅          —              —
+  moderator-settings.html             ✅          —              —
+  moderator-profile-depth.html        ✅          —              —
+  moderator-terms.html (NEW)          ✅          —              —
+  moderator-debate-landing.html       ✅         ✅           conditional
+  moderator-auto-debate.html          ✅         ✅              ✅
+  moderator-plinko.html               ✅          —              —
+  moderator-privacy.html (NEW)        ✅          —              —
   
   * index.html gets AI badge CSS because arena (AI sparring) renders there
   
@@ -214,8 +214,8 @@
      - legal@thecolosseum.app    →  (your personal email — set in email provider, not in code)
      - dmca@thecolosseum.app     →  (your personal email — set in email provider, not in code)
   
-  3. Upload colosseum-privacy.html to GitHub repo
-  4. Replace colosseum-terms.html in GitHub repo with new version
+  3. Upload moderator-privacy.html to GitHub repo
+  4. Replace moderator-terms.html in GitHub repo with new version
   5. Push to main → Vercel auto-deploys
   
   ============================================================

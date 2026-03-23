@@ -6,7 +6,7 @@
  * shop screen, hot takes feed wiring, leaderboard, predictions.
  *
  * Migration: Session 128 (Phase 4), Session 138 (cutover — auth/config/tokens use ES imports),
- *   Session 139 (ColosseumAsync ES import, 5 dead window globals removed,
+ *   Session 139 (ModeratorAsync ES import, 5 dead window globals removed,
  *     inline onclick handlers migrated to data-action + addEventListener),
  *   Session 142 (added side-effect imports for all 16 modules — removed
  *     legacy .js script tags from index.html)
@@ -19,7 +19,7 @@
 import { onChange, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient, logOut, getFollowCounts, getFollowers, getFollowing, showUserProfile, updateProfile, requireAuth, ready, safeRpc } from '../auth.ts';
 import { showToast, escapeHTML } from '../config.ts';
 import '../tokens.ts';
-import { ColosseumAsync } from '../async.ts';
+import { ModeratorAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
 
@@ -77,7 +77,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'HOT TAKES', action: () => openCategoryTab('politics', 'takes') },
       { label: 'PREDICTIONS', action: () => openCategoryTab('politics', 'predictions') },
       { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
-      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+      { label: 'GROUPS', action: () => { window.location.href = 'moderator-groups.html'; } },
     ]
   },
   {
@@ -86,7 +86,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'HOT TAKES', action: () => openCategoryTab('sports', 'takes') },
       { label: 'PREDICTIONS', action: () => openCategoryTab('sports', 'predictions') },
       { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
-      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+      { label: 'GROUPS', action: () => { window.location.href = 'moderator-groups.html'; } },
     ]
   },
   {
@@ -95,7 +95,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'HOT TAKES', action: () => openCategoryTab('entertainment', 'takes') },
       { label: 'PREDICTIONS', action: () => openCategoryTab('entertainment', 'predictions') },
       { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
-      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+      { label: 'GROUPS', action: () => { window.location.href = 'moderator-groups.html'; } },
     ]
   },
   {
@@ -104,7 +104,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'HOT TAKES', action: () => openCategoryTab('couples', 'takes') },
       { label: 'PREDICTIONS', action: () => openCategoryTab('couples', 'predictions') },
       { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
-      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+      { label: 'GROUPS', action: () => { window.location.href = 'moderator-groups.html'; } },
     ]
   },
   {
@@ -113,7 +113,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'HOT TAKES', action: () => openCategoryTab('music', 'takes') },
       { label: 'PREDICTIONS', action: () => openCategoryTab('music', 'predictions') },
       { label: 'TRENDING', action: () => openCategoryTab('trending', 'takes') },
-      { label: 'GROUPS', action: () => { window.location.href = 'colosseum-groups.html'; } },
+      { label: 'GROUPS', action: () => { window.location.href = 'moderator-groups.html'; } },
     ]
   },
   {
@@ -131,7 +131,7 @@ const RING_SEGMENTS: RingSegment[] = [
       { label: 'PROFILE', action: () => { collapseRing(); navigateTo('profile'); } },
       { label: 'RANKS', action: () => { collapseRing(); navigateTo('leaderboard'); } },
       { label: 'SHOP', action: () => { collapseRing(); navigateTo('shop'); } },
-      { label: 'SETTINGS', action: () => { window.location.href = 'colosseum-settings.html'; } },
+      { label: 'SETTINGS', action: () => { window.location.href = 'moderator-settings.html'; } },
       { label: 'ARSENAL', action: () => { collapseRing(); navigateTo('arsenal'); } },
     ]
   },
@@ -316,12 +316,12 @@ async function openCategory(cat: any){
   overlay.classList.add('open');
 
   try {
-    await ColosseumAsync.fetchTakes(cat.id);
-    takesTab.innerHTML = ColosseumAsync.getComposerHTML();
+    await ModeratorAsync.fetchTakes(cat.id);
+    takesTab.innerHTML = ModeratorAsync.getComposerHTML();
     const feedDiv = document.createElement('div');
     feedDiv.id = 'hot-takes-feed';
     takesTab.appendChild(feedDiv);
-    ColosseumAsync.loadHotTakes(cat.id);
+    ModeratorAsync.loadHotTakes(cat.id);
 
     const input = document.getElementById('hot-take-input');
     const counter = document.getElementById('take-char-count');
@@ -335,9 +335,9 @@ async function openCategory(cat: any){
   }
 
   try {
-    await ColosseumAsync.fetchPredictions();
-    await ColosseumAsync.fetchStandaloneQuestions?.();
-    ColosseumAsync.renderPredictions(predsTab);
+    await ModeratorAsync.fetchPredictions();
+    await ModeratorAsync.fetchStandaloneQuestions?.();
+    ModeratorAsync.renderPredictions(predsTab);
   } catch(e) {
     predsTab.innerHTML = '<div class="placeholder-text"><span class="emoji">⚠️</span>Failed to load predictions.</div>';
   }
@@ -421,12 +421,12 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
     ptr.style.transform = 'translateY(0)';
     ptr.style.opacity = 1;
     try {
-      await ColosseumAsync.fetchTakes(currentOverlayCat.id);
-      ColosseumAsync.loadHotTakes(currentOverlayCat.id);
-      await ColosseumAsync.fetchPredictions();
-      await ColosseumAsync.fetchStandaloneQuestions?.();
+      await ModeratorAsync.fetchTakes(currentOverlayCat.id);
+      ModeratorAsync.loadHotTakes(currentOverlayCat.id);
+      await ModeratorAsync.fetchPredictions();
+      await ModeratorAsync.fetchStandaloneQuestions?.();
       const predsTab = document.getElementById('overlay-predictions-tab');
-      if (predsTab) ColosseumAsync.renderPredictions(predsTab);
+      if (predsTab) ModeratorAsync.renderPredictions(predsTab);
     } catch(e) { /* non-critical */ }
     ptr.querySelector('.ptr-spinner').classList.remove('spinning');
     ptr.style.opacity = 0;
@@ -451,7 +451,7 @@ function navigateTo(screenId: string){
   try{localStorage.setItem('colosseum_last_screen',screenId);}catch(e){}
 
   if(screenId==='profile'){
-    ColosseumAsync?.renderRivals?.(document.getElementById('rivals-feed'));
+    ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed'));
     loadFollowCounts();
   }
   if(screenId==='arsenal'){
@@ -571,7 +571,7 @@ document.addEventListener('click',()=>{dropdown.classList.remove('open');});
 // --- Logout ---
 document.getElementById('logout-btn').addEventListener('click',async()=>{
   await logOut();
-  window.location.href='colosseum-plinko.html';
+  window.location.href='moderator-plinko.html';
 });
 
 
@@ -657,7 +657,7 @@ function updateUIFromProfile(user: any, profile: any){
   const shopBal=document.getElementById('shop-token-balance');if(shopBal)shopBal.textContent=(profile.token_balance||0).toLocaleString();
   const depth=profile.profile_depth_pct||0;
   document.getElementById('profile-depth-fill').style.width=depth+'%';
-  document.getElementById('profile-depth-text').innerHTML=`Profile ${depth}% complete — <a href="colosseum-profile-depth.html" style="color:var(--gold);">unlock rewards</a>`;
+  document.getElementById('profile-depth-text').innerHTML=`Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--gold);">unlock rewards</a>`;
   const bioEl=document.getElementById('profile-bio-display');
   if(bioEl){
     const bio=profile.bio||'';
@@ -829,7 +829,7 @@ async function appInit(){
   if(loading){loading.classList.add('fade-out');setTimeout(()=>loading.remove(),400);}
 
   if(!getCurrentUser() && !getIsPlaceholderMode()){
-    window.location.href='colosseum-plinko.html';
+    window.location.href='moderator-plinko.html';
     return;
   }
 

@@ -1,11 +1,11 @@
 /**
  * THE COLOSSEUM — Token Staking System (TypeScript)
  *
- * Runtime module (replaces colosseum-staking.js).
+ * Runtime module (replaces moderator-staking.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, canStake)
  *
  * THIS IS WHERE LM-185 DIES: `import { safeRpc }` replaces bare
- * `ColosseumAuth.safeRpc()` — scope bug is structurally impossible.
+ * `ModeratorAuth.safeRpc()` — scope bug is structurally impossible.
  *
  * Migration: Session 126 (Phase 2). Window bridge: Session 140.
  */
@@ -188,7 +188,7 @@ export function renderStakingPanel(
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:#8a879a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">TOKEN STAKING 🔒</div>
         <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">
           Answer ${remaining} more profile questions to unlock staking.
-          <a href="colosseum-profile-depth.html" style="color:var(--mod-text-heading);text-decoration:none;">Complete your profile →</a>
+          <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);text-decoration:none;">Complete your profile →</a>
         </div>
         ${totalPool > 0 ? _renderPoolBar(odds, totalPool, sideALabel, sideBLabel) : ''}
       </div>`;

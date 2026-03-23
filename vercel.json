@@ -4,14 +4,14 @@
   "framework": null,
   "rewrites": [
     { "source": "/u/:username", "destination": "/api/profile?username=:username" },
-    { "source": "/debate", "destination": "/colosseum-debate-landing.html" },
-    { "source": "/verdict", "destination": "/colosseum-auto-debate.html" },
-    { "source": "/login", "destination": "/colosseum-login.html" },
-    { "source": "/settings", "destination": "/colosseum-settings.html" },
-    { "source": "/terms", "destination": "/colosseum-terms.html" },
-    { "source": "/privacy", "destination": "/colosseum-privacy.html" },
-    { "source": "/profile-depth", "destination": "/colosseum-profile-depth.html" },
-    { "source": "/groups", "destination": "/colosseum-groups.html" }
+    { "source": "/debate", "destination": "/moderator-debate-landing.html" },
+    { "source": "/verdict", "destination": "/moderator-auto-debate.html" },
+    { "source": "/login", "destination": "/moderator-login.html" },
+    { "source": "/settings", "destination": "/moderator-settings.html" },
+    { "source": "/terms", "destination": "/moderator-terms.html" },
+    { "source": "/privacy", "destination": "/moderator-privacy.html" },
+    { "source": "/profile-depth", "destination": "/moderator-profile-depth.html" },
+    { "source": "/groups", "destination": "/moderator-groups.html" }
   ],
   "headers": [
     {

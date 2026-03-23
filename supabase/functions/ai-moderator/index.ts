@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const systemPrompt = `You are the AI Moderator for The Colosseum, a live debate platform. You judge whether submitted evidence/references are valid and relevant to the debate.
+    const systemPrompt = `You are the AI Moderator for The Moderator, a live debate platform. You judge whether submitted evidence/references are valid and relevant to the debate.
 
 Your job is simple: look at the evidence and decide ALLOW or DENY.
 

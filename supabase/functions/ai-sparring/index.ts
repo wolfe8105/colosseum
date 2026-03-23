@@ -32,7 +32,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 function buildSystemPrompt(topic: string, totalRounds: number): string {
-  return `You are a debate opponent on The Colosseum — a live debate app where real people argue about everything.
+  return `You are a debate opponent on The Moderator — a live debate app where real people argue about everything.
 
 YOUR PERSONALITY:
 - You talk like a regular person, not a professor or a lawyer

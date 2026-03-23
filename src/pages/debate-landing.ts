@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Debate Landing Page Controller (TypeScript)
  *
- * Extracted from colosseum-debate-landing.html inline script.
+ * Extracted from moderator-debate-landing.html inline script.
  * Ungated entry point. Anonymous voting with fingerprint dedup.
  * SESSION 103/107: Backend persistence via landing_vote_counts RPCs.
  *
@@ -39,7 +39,7 @@ interface DebateEntry {
 }
 
 // ============================================================
-// INIT SUPABASE (standalone — this page uses anon client, not ColosseumAuth)
+// INIT SUPABASE (standalone — this page uses anon client, not ModeratorAuth)
 // ============================================================
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
@@ -140,7 +140,7 @@ if (topicSlug && !DEBATES[topicSlug] && customTitle) {
     category: cat, catIcon, catLabel,
     yesVotes: 0, noVotes: 0,
     takes: [
-      { author: 'The Colosseum', text: 'This debate was started from ' + (source === 'telegram' || source === 'telegram-inline' ? 'Telegram' : 'a shared link') + '. Cast your vote and drop a hot take!', fire: 1, swords: 0 },
+      { author: 'The Moderator', text: 'This debate was started from ' + (source === 'telegram' || source === 'telegram-inline' ? 'Telegram' : 'a shared link') + '. Cast your vote and drop a hot take!', fire: 1, swords: 0 },
     ]
   };
 }
@@ -148,7 +148,7 @@ if (topicSlug && !DEBATES[topicSlug] && customTitle) {
 const debate = DEBATES[topicSlug] ?? DEBATES['mahomes-vs-allen'];
 const voteKey = 'colosseum_vote_' + topicSlug;
 
-document.title = debate.topic + ' — The Colosseum';
+document.title = debate.topic + ' — The Moderator';
 
 // ============================================================
 // RENDER
@@ -351,7 +351,7 @@ function showToast(msg: string): void {
 }
 
 function goSignup(): void {
-  window.location.href = 'colosseum-plinko.html';
+  window.location.href = 'moderator-plinko.html';
 }
 
 // ============================================================

@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Login Page Controller (TypeScript)
  *
- * Extracted from colosseum-login.html inline script.
+ * Extracted from moderator-login.html inline script.
  * OAuth-dominant login, email collapsed behind toggle, password reset modal.
  *
  * Migration: Session 128 (Phase 4)
@@ -212,7 +212,7 @@ signupForm?.addEventListener('submit', async (e: Event) => {
 
   const age = getAge(parseInt(month), parseInt(day), parseInt(year));
   if (age < 13) {
-    showMsg('signup-msg', 'You must be at least 13 years old to use The Colosseum.', 'error'); return;
+    showMsg('signup-msg', 'You must be at least 13 years old to use The Moderator.', 'error'); return;
   }
 
   if (isPlaceholder) {

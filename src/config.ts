@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Central Configuration (TypeScript)
  *
- * Runtime module — replaces colosseum-config.js when Vite build is active.
+ * Runtime module — replaces moderator-config.js when Vite build is active.
  * All constants, escapeHTML, showToast, friendlyError live here.
  *
  * Migration: Session 126 (Phase 1), Session 138 (cutover — window bridge added)
@@ -105,8 +105,8 @@ export interface PlaceholderMode {
   readonly deepgram: boolean;
 }
 
-/** Full typed shape of what colosseum-config.js exposes as window.ColosseumConfig */
-export interface ColosseumConfig {
+/** Full typed shape of what moderator-config.js exposes as window.ModeratorConfig */
+export interface ModeratorConfig {
   readonly SUPABASE_URL: string;
   readonly SUPABASE_ANON_KEY: string;
   readonly STRIPE_PUBLISHABLE_KEY: string;
@@ -168,7 +168,7 @@ const DEEPGRAM_API_KEY = 'PASTE_YOUR_DEEPGRAM_API_KEY_HERE' as const;
 // ============================================================
 
 const APP: AppSettings = {
-  name: 'The Colosseum',
+  name: 'The Moderator',
   tagline: 'Where opinions fight.',
   version: '2.2.0',
   baseUrl: 'https://colosseum-six.vercel.app',
@@ -448,10 +448,10 @@ export {
 };
 
 // ============================================================
-// DEFAULT EXPORT (full config object matching window.ColosseumConfig shape)
+// DEFAULT EXPORT (full config object matching window.ModeratorConfig shape)
 // ============================================================
 
-const config: ColosseumConfig = {
+const config: ModeratorConfig = {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   STRIPE_PUBLISHABLE_KEY,

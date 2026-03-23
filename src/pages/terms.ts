@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Terms Page Controller (TypeScript)
  *
- * Extracted from colosseum-terms.html inline script.
+ * Extracted from moderator-terms.html inline script.
  * Tab switching between ToS, Privacy, and Community Guidelines.
  *
  * Migration: Session 128 (Phase 4)

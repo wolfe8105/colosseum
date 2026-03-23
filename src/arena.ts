@@ -1,17 +1,17 @@
 /**
  * THE COLOSSEUM — Arena Module (TypeScript)
  *
- * Typed mirror of colosseum-arena.js. Debate arena, matchmaking, debate room.
+ * Typed mirror of moderator-arena.js. Debate arena, matchmaking, debate room.
  * 4 modes: Live Audio, Voice Memo, Text Battle, AI Sparring.
  * Ranked vs Casual, moderator UX, power-up integration, staking settlement.
  *
- * Source of truth for runtime: colosseum-arena.js (until Phase 4 cutover)
+ * Source of truth for runtime: moderator-arena.js (until Phase 4 cutover)
  * Source of truth for types: this file
  *
  * NOTE: The runtime .js file is 2500+ lines, largely CSS injection and HTML
  * templates. This TypeScript mirror types ALL function signatures, state, and
  * interfaces. Render functions reference the same HTML templates — full HTML
- * lives in colosseum-arena.js.
+ * lives in moderator-arena.js.
  *
  * Migration: Session 127 (Phase 3). ES imports: Session 141.
  */
@@ -789,7 +789,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const action = isLive ? 'SPECTATE' : 'VIEW';
   const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
-  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? 'colosseum-auto-debate.html' : 'colosseum-spectate.html'}?id=${encodeURIComponent(d.id)}">
+  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? 'moderator-auto-debate.html' : 'moderator-spectate.html'}?id=${encodeURIComponent(d.id)}">
     <div class="arena-card-top">${badge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">
@@ -803,7 +803,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
 }
 
 function renderAutoDebateCard(d: AutoDebateItem): string {
-  return `<div class="arena-card card-ai" data-link="colosseum-auto-debate.html?id=${encodeURIComponent(d.id)}">
+  return `<div class="arena-card card-ai" data-link="moderator-auto-debate.html?id=${encodeURIComponent(d.id)}">
     <div class="arena-card-top"><span class="arena-card-badge ai">AI DEBATE</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic)}</div>
     <div class="arena-card-vs">
@@ -843,7 +843,7 @@ function renderPlaceholderCards(type: string): string {
 
 export function showPowerUpShop(): void {
   if (!getCurrentUser() && !isPlaceholder()) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
   view = 'powerUpShop' as ArenaView;
@@ -897,7 +897,7 @@ export function showPowerUpShop(): void {
 
 export function showRankedPicker(): void {
   if (!getCurrentUser() && !isPlaceholder()) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
 
@@ -954,7 +954,7 @@ export function showRankedPicker(): void {
           if (!result.eligible) {
             closeRankedPicker();
             if (confirm('Ranked mode requires at least 25% profile completion. Your profile is at ' + result.profile_pct + '%. Go fill it out?')) {
-              window.location.href = 'colosseum-profile-depth.html';
+              window.location.href = 'moderator-profile-depth.html';
             }
             return;
           }
@@ -988,7 +988,7 @@ export function closeRankedPicker(forward?: boolean): void {
 
 export function showModeSelect(): void {
   if (!getCurrentUser() && !isPlaceholder()) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
 

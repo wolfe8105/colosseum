@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Voice Memo Module (TypeScript)
  *
- * Runtime module (replaces colosseum-voicememo.js). SURVIVAL-CRITICAL: Solves empty
+ * Runtime module (replaces moderator-voicememo.js). SURVIVAL-CRITICAL: Solves empty
  * lobby problem. Record take → opponent records reply → async voice debate.
  * Uses MediaRecorder API, Supabase Storage, placeholder fallback.
  *
@@ -302,11 +302,11 @@ export async function uploadVoiceMemo(blob: Blob, debateId: string | null): Prom
 // ============================================================
 // RECORDER UI (Bottom Sheet) — Stubs for type completeness
 // The actual UI is heavy inline HTML/CSS in the .js file.
-// Full implementation carries over from colosseum-voicememo.js.
+// Full implementation carries over from moderator-voicememo.js.
 // ============================================================
 
 export function openRecorderSheet(_context: RecorderContext = {}): void {
-  // Full implementation in colosseum-voicememo.js
+  // Full implementation in moderator-voicememo.js
   // This typed mirror provides the function signatures for compile-time checking
   void _context;
 }

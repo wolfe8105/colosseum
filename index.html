@@ -181,11 +181,11 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
 .bottom-nav-btn.action-btn:active .action-circle{transform:scale(0.92)}
 
 /* === LEGAL FOOTER === */
-.colosseum-legal-footer{position:fixed;bottom:calc(var(--bottom-nav-height) + var(--safe-bottom));left:0;right:0;background:var(--mod-bg-overlay);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--mod-border-subtle);padding:10px 20px;display:flex;justify-content:center;align-items:center;gap:24px;z-index:50;font-family:var(--mod-font-ui);font-size:0.85rem;font-weight:400;letter-spacing:0.5px}
-.colosseum-legal-footer a{color:var(--mod-text-muted);text-decoration:none;transition:color 0.2s}
-.colosseum-legal-footer a:hover{color:var(--mod-text-heading)}
-.colosseum-legal-footer .footer-sep{color:var(--mod-border-primary);font-weight:300}
-.colosseum-legal-footer .footer-copy{color:var(--mod-text-muted)}
+.moderator-legal-footer{position:fixed;bottom:calc(var(--bottom-nav-height) + var(--safe-bottom));left:0;right:0;background:var(--mod-bg-overlay);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--mod-border-subtle);padding:10px 20px;display:flex;justify-content:center;align-items:center;gap:24px;z-index:50;font-family:var(--mod-font-ui);font-size:0.85rem;font-weight:400;letter-spacing:0.5px}
+.moderator-legal-footer a{color:var(--mod-text-muted);text-decoration:none;transition:color 0.2s}
+.moderator-legal-footer a:hover{color:var(--mod-text-heading)}
+.moderator-legal-footer .footer-sep{color:var(--mod-border-primary);font-weight:300}
+.moderator-legal-footer .footer-copy{color:var(--mod-text-muted)}
 
 /* === AI-GENERATED CONTENT BADGE === */
 .ai-generated-badge{display:inline-flex;align-items:center;gap:8px;background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);border-radius:6px;padding:6px 14px;font-family:var(--mod-font-ui);font-size:0.8rem;font-weight:500;color:var(--mod-accent-text);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:16px}
@@ -334,9 +334,9 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
     <div style="font-weight:700;" id="dropdown-name">Debater</div>
     <div style="font-size:12px;color:var(--mod-text-muted);" id="dropdown-tier">Free Tier</div>
   </div>
-  <a href="colosseum-groups.html" class="dropdown-item">👥 Groups</a>
-  <a href="colosseum-settings.html" class="dropdown-item">⚙️ Settings</a>
-  <a href="colosseum-profile-depth.html" class="dropdown-item">📊 Complete Profile</a>
+  <a href="moderator-groups.html" class="dropdown-item">👥 Groups</a>
+  <a href="moderator-settings.html" class="dropdown-item">⚙️ Settings</a>
+  <a href="moderator-profile-depth.html" class="dropdown-item">📊 Complete Profile</a>
   <div class="dropdown-divider"></div>
   <button class="dropdown-item danger" id="logout-btn">🚪 Log Out</button>
 </div>
@@ -371,7 +371,7 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
         </div>
       </div>
       <div class="profile-depth-bar"><div class="profile-depth-fill" id="profile-depth-fill" style="width:0%"></div></div>
-      <div class="profile-depth-text" id="profile-depth-text">Profile 0% complete — <a href="colosseum-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a></div>
+      <div class="profile-depth-text" id="profile-depth-text">Profile 0% complete — <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a></div>
     </div>
     <div class="stat-grid">
       <div class="stat-box" style="border-color:var(--mod-accent-border);"><div class="stat-value" id="stat-tokens" data-token-balance style="color:var(--mod-text-heading)">50</div><div class="stat-label" style="color:var(--mod-text-heading)">🪙 TOKENS</div></div>
@@ -384,8 +384,8 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
     <!-- SESSION 23: Rivals section -->
     <div style="padding:0 16px 8px;"><div id="rivals-feed"></div></div>
     <div class="profile-link-list">
-      <a href="colosseum-profile-depth.html" class="profile-link"><span class="link-label">📊 Complete Your Profile</span><span class="link-arrow">→</span></a>
-      <a href="colosseum-settings.html" class="profile-link"><span class="link-label">⚙️ Settings</span><span class="link-arrow">→</span></a>
+      <a href="moderator-profile-depth.html" class="profile-link"><span class="link-label">📊 Complete Your Profile</span><span class="link-arrow">→</span></a>
+      <a href="moderator-settings.html" class="profile-link"><span class="link-label">⚙️ Settings</span><span class="link-arrow">→</span></a>
       <div class="profile-link" data-action="powerup-shop"><span class="link-label">⚡ Power-Up Shop</span><span class="link-arrow">→</span></div>
       <div class="profile-link" data-action="arsenal"><span class="link-label">⚔️ Reference Arsenal</span><span class="link-arrow">→</span></div>
       <div class="profile-link" onclick="navigateTo('shop')"><span class="link-label">🛒 Cosmetics Shop</span><span class="link-arrow">→</span></div>
@@ -443,9 +443,9 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
 <div class="mod-sweep-bottom"></div>
 
 <footer class="mod-footer">
-  <a href="colosseum-privacy.html">Privacy Policy</a>
+  <a href="moderator-privacy.html">Privacy Policy</a>
   <span class="mod-footer-sep">|</span>
-  <a href="colosseum-terms.html">Terms of Service</a>
+  <a href="moderator-terms.html">Terms of Service</a>
   <span class="mod-footer-sep">|</span>
   <span class="mod-footer-copy">&copy; 2026 The Moderator</span>
 </footer>

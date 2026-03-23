@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Questionnaire Tier System (TypeScript)
  *
- * Runtime module (replaces colosseum-tiers.js). Pure utility — zero dependencies.
+ * Runtime module (replaces moderator-tiers.js). Pure utility — zero dependencies.
  * Client-side is DISPLAY ONLY — all RPCs enforce server-side.
  *
  * Migration: Session 126 (Phase 2). Window bridge: Session 140.

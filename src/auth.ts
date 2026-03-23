@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Authentication Module (TypeScript)
  *
- * Runtime module — replaces colosseum-auth.js when Vite build is active.
+ * Runtime module — replaces moderator-auth.js when Vite build is active.
  * Depends on: config.ts, @supabase/supabase-js (npm)
  *
  * Migration: Session 126 (Phase 1), Session 138 (cutover — npm import, zero globalThis reads)
@@ -212,7 +212,7 @@ function _notify(user: User | null, profile: Profile | null): void {
  * On refresh failure: triggers sign-out.
  *
  * THIS IS THE ENTRY POINT FOR ALL FRONTEND RPC CALLS.
- * Every module must use this (via ColosseumAuth.safeRpc) — never bare supabase.rpc().
+ * Every module must use this (via ModeratorAuth.safeRpc) — never bare supabase.rpc().
  *
  * Usage: const { data, error } = await safeRpc('fn_name', { p_param: value });
  */
@@ -256,7 +256,7 @@ export async function safeRpc<T = unknown>(
 
 function _enterPlaceholderMode(): void {
   isPlaceholderMode = true;
-  currentUser = { id: 'placeholder-user', email: 'gladiator@colosseum.app' } as User;
+  currentUser = { id: 'placeholder-user', email: 'gladiator@moderator.app' } as User;
   currentProfile = {
     id: 'placeholder-user',
     username: 'gladiator',
@@ -307,7 +307,7 @@ async function _loadProfile(userId: string): Promise<void> {
     currentProfile = data as Profile;
     _notify(currentUser, currentProfile);
   } catch (e) {
-    console.error('ColosseumAuth: load profile failed', e);
+    console.error('ModeratorAuth: load profile failed', e);
   }
 }
 
@@ -323,7 +323,7 @@ export function init(): void {
   // Config is always available via ES import — no globalThis check needed
 
   if (placeholderMode.supabase) {
-    console.warn('ColosseumAuth: Supabase credentials missing, placeholder mode');
+    console.warn('ModeratorAuth: Supabase credentials missing, placeholder mode');
     _enterPlaceholderMode();
     return;
   }
@@ -344,7 +344,7 @@ export function init(): void {
     // Safety timeout — if INITIAL_SESSION never fires, resolve ready as guest
     const safetyTimeout = setTimeout(() => {
       if (!currentUser && !currentProfile) {
-        console.warn('ColosseumAuth: INITIAL_SESSION never fired after 5s — continuing as guest');
+        console.warn('ModeratorAuth: INITIAL_SESSION never fired after 5s — continuing as guest');
         _resolveReady();
       }
     }, 5000);
@@ -359,7 +359,7 @@ export function init(): void {
           setTimeout(() => {
             _loadProfile(session.user.id)
               .then(() => _resolveReady())
-              .catch(e => { console.error('ColosseumAuth: profile load failed', e); _resolveReady(); });
+              .catch(e => { console.error('ModeratorAuth: profile load failed', e); _resolveReady(); });
           }, 0);
         } else {
           _resolveReady();
@@ -379,7 +379,7 @@ export function init(): void {
       }
     });
   } catch (e) {
-    console.error('ColosseumAuth: Supabase init failed', e);
+    console.error('ModeratorAuth: Supabase init failed', e);
     _enterPlaceholderMode();
   }
 }
@@ -392,7 +392,7 @@ export async function signUp({ email, password, username, displayName, dob }: Si
   if (isPlaceholderMode) return { success: true, placeholder: true };
 
   try {
-    const redirectTo = APP.baseUrl + '/colosseum-login.html';
+    const redirectTo = APP.baseUrl + '/moderator-login.html';
 
     const { data, error } = await supabaseClient!.auth.signUp({
       email,
@@ -443,12 +443,12 @@ export async function logOut(): Promise<AuthResult> {
     await Promise.race([
       supabaseClient!.auth.signOut(),
       new Promise<void>(resolve => setTimeout(() => {
-        console.warn('ColosseumAuth: signOut timed out after 3s — forcing local cleanup');
+        console.warn('ModeratorAuth: signOut timed out after 3s — forcing local cleanup');
         resolve();
       }, 3000)),
     ]);
   } catch (e) {
-    console.error('ColosseumAuth: signOut error (continuing anyway)', e);
+    console.error('ModeratorAuth: signOut error (continuing anyway)', e);
   }
 
   currentUser = null;
@@ -462,7 +462,7 @@ export async function resetPassword(email: string): Promise<AuthResult> {
 
   try {
     const { error } = await supabaseClient!.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/colosseum-login.html?reset=true`,
+      redirectTo: `${window.location.origin}/moderator-login.html?reset=true`,
     });
     if (error) throw error;
     return { success: true };
@@ -980,8 +980,8 @@ export function requireAuth(actionLabel?: string): boolean {
       <div style="font-size:32px;margin-bottom:12px;">⚔️</div>
       <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#D4A843;margin-bottom:8px;">JOIN THE ARENA</div>
       <div style="font-size:14px;color:#ccc;margin-bottom:20px;">Sign in to ${safeLabel}</div>
-      <a href="colosseum-plinko.html?returnTo=${returnTo}" style="display:block;background:#D4A843;color:#0A0A1A;font-family:'Cinzel',serif;font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
-      <a href="colosseum-login.html?returnTo=${returnTo}" style="display:block;color:#D4A843;font-size:14px;text-decoration:none;">Already have an account? Log in</a>
+      <a href="moderator-plinko.html?returnTo=${returnTo}" style="display:block;background:#D4A843;color:#0A0A1A;font-family:'Cinzel',serif;font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
+      <a href="moderator-login.html?returnTo=${returnTo}" style="display:block;color:#D4A843;font-size:14px;text-decoration:none;">Already have an account? Log in</a>
       <button onclick="this.closest('#auth-gate-modal').remove()" style="margin-top:14px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;">Maybe later</button>
     </div>
   `;
@@ -1003,7 +1003,7 @@ export function getSupabaseClient(): SupabaseClient | null { return supabaseClie
 export const ready: Promise<void> = readyPromise;
 
 // ============================================================
-// DEFAULT EXPORT (full auth object matching window.ColosseumAuth shape)
+// DEFAULT EXPORT (full auth object matching window.ModeratorAuth shape)
 // ============================================================
 
 const auth = {

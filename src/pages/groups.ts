@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Groups Page Controller (TypeScript)
  *
- * Extracted from colosseum-groups.html inline script.
+ * Extracted from moderator-groups.html inline script.
  * Groups: discover, my groups, rankings, detail view, hot takes,
  * GvG challenges (Session 116), group hot take composer (Session 105).
  *
@@ -312,7 +312,7 @@ async function postGroupHotTake(groupId: string) {
     return;
   }
   if (!currentUser) {
-    window.location.href = 'colosseum-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + groupId);
+    window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + groupId);
     return;
   }
 
@@ -396,7 +396,7 @@ let selectedGvGFormat = '1v1';
 
 function openGvGModal() {
   if (!currentUser) {
-    window.location.href = 'colosseum-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
+    window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
     return;
   }
   selectedOpponentGroup = null;
@@ -641,7 +641,7 @@ async function respondToChallenge(challengeId: string, action: string) {
 // ── JOIN / LEAVE ──────────────────────────────────────────
 async function toggleMembership() {
   if (!currentUser) {
-    window.location.href = 'colosseum-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
+    window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
     return;
   }
   const btn = document.getElementById('join-btn');
@@ -683,7 +683,7 @@ function showLobby() {
 // ── CREATE MODAL ──────────────────────────────────────────
 function openCreateModal() {
   if (!currentUser) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
   document.getElementById('create-modal').classList.add('open');

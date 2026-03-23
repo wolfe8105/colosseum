@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Settings Page Controller (TypeScript)
  *
- * Extracted from colosseum-settings.html inline script.
+ * Extracted from moderator-settings.html inline script.
  * Account settings, toggles, moderator panel, logout, delete account.
  *
  * Migration: Session 128 (Phase 4)
@@ -223,7 +223,7 @@ getEl<HTMLTextAreaElement>('set-bio')?.addEventListener('input', (e: Event) => {
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
   await logOut();
   localStorage.removeItem('colosseum_settings');
-  window.location.href = 'colosseum-plinko.html';
+  window.location.href = 'moderator-plinko.html';
 });
 
 // ============================================================
@@ -285,7 +285,7 @@ document.getElementById('delete-confirm')?.addEventListener('click', async () =>
     }
   }
   localStorage.clear();
-  window.location.href = 'colosseum-plinko.html';
+  window.location.href = 'moderator-plinko.html';
 });
 
 // ============================================================
@@ -369,7 +369,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
 
   if (!getCurrentUser() && !getIsPlaceholderMode()) {
-    window.location.href = 'colosseum-plinko.html';
+    window.location.href = 'moderator-plinko.html';
     return;
   }
 

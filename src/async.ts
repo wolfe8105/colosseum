@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — Async Module (TypeScript)
  *
- * Runtime module — replaces colosseum-async.js when Vite build is active.
+ * Runtime module — replaces moderator-async.js when Vite build is active.
  * Hot takes, predictions, rivals, challenges.
  * Depends on: config.ts, auth.ts, share.ts
  *
@@ -101,14 +101,14 @@ export type CategoryFilter = 'all' | 'politics' | 'sports' | 'entertainment' | '
 // MODULE EXPORTS
 // ============================================================
 
-declare const ColosseumTokens: {
+declare const ModeratorTokens: {
   claimHotTake: (id: string) => void;
   claimReaction: (id: string) => void;
   claimPrediction: (id: string) => void;
   requireTokens: (amount: number, label: string) => boolean;
 } | undefined;
 
-declare const ColosseumArena: {
+declare const ModeratorArena: {
   enterQueue: (mode: string, topic: string) => void;
 } | undefined;
 
@@ -184,8 +184,8 @@ function _enterArenaWithTopic(topic: string): void {
   setTimeout(() => {
     const nav = (window as unknown as { navigateTo?: (screen: string) => void }).navigateTo;
     if (typeof nav === 'function') nav('arena');
-    if (typeof ColosseumArena !== 'undefined' && ColosseumArena?.enterQueue) {
-      ColosseumArena.enterQueue('ai', topic);
+    if (typeof ModeratorArena !== 'undefined' && ModeratorArena?.enterQueue) {
+      ModeratorArena.enterQueue('ai', topic);
     }
   }, 800);
 }
@@ -598,7 +598,7 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
 
 export async function placePrediction(debateId: string, side: string): Promise<void> {
   if (!requireAuth('place predictions')) return;
-  if (typeof ColosseumTokens !== 'undefined' && !ColosseumTokens.requireTokens(100, 'place predictions')) return;
+  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(100, 'place predictions')) return;
 
   const pred = predictions.find((p) => p.debate_id === debateId);
   if (!pred) return;
@@ -631,7 +631,7 @@ export async function placePrediction(debateId: string, side: string): Promise<v
         if (predContainer) renderPredictions(predContainer);
         return;
       }
-      if (typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimPrediction(debateId);
+      if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimPrediction(debateId);
     } catch (e) {
       console.error('place_prediction exception:', e);
     }
@@ -834,7 +834,7 @@ export async function react(takeId: string): Promise<void> {
         take.reactions = (data as ReactResult).reaction_count;
         take.userReacted = (data as ReactResult).reacted;
         loadHotTakes(currentFilter);
-        if ((data as ReactResult).reacted && typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimReaction(takeId);
+        if ((data as ReactResult).reacted && typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimReaction(takeId);
       }
     } catch { /* handled */ }
   }
@@ -844,7 +844,7 @@ export async function react(takeId: string): Promise<void> {
 
 export function challenge(takeId: string): void {
   if (!requireAuth('challenge someone to a debate')) return;
-  if (typeof ColosseumTokens !== 'undefined' && !ColosseumTokens.requireTokens(50, 'challenge someone')) return;
+  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(50, 'challenge someone')) return;
 
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
@@ -951,7 +951,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
 
 export async function postTake(): Promise<void> {
   if (!requireAuth('post hot takes')) return;
-  if (typeof ColosseumTokens !== 'undefined' && !ColosseumTokens.requireTokens(25, 'post hot takes')) return;
+  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(25, 'post hot takes')) return;
 
   const input = document.getElementById('hot-take-input') as HTMLTextAreaElement | null;
   if (!input) return;
@@ -992,7 +992,7 @@ export async function postTake(): Promise<void> {
         showToast('Post failed — try again', 'error');
       } else if (data && (data as CreateHotTakeResult).id) {
         newTake.id = (data as CreateHotTakeResult).id;
-        if (typeof ColosseumTokens !== 'undefined') ColosseumTokens.claimHotTake((data as CreateHotTakeResult).id);
+        if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimHotTake((data as CreateHotTakeResult).id);
       }
     } catch {
       hotTakes = snapshot;
@@ -1081,7 +1081,7 @@ export function getComposerHTML(): string {
 }
 
 // ============================================================
-export const ColosseumAsync = {
+export const ModeratorAsync = {
   loadHotTakes,
   fetchTakes,
   fetchPredictions,

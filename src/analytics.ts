@@ -1,11 +1,11 @@
 /**
  * THE COLOSSEUM — Funnel Analytics Module (TypeScript)
  *
- * Typed mirror of colosseum-analytics.js. Zero-dependency event tracker.
+ * Typed mirror of moderator-analytics.js. Zero-dependency event tracker.
  * Works on any page. Generates visitor UUID in localStorage, fires events
  * via raw fetch to Supabase RPC. Never blocks the page. Swallows all errors.
  *
- * Source of truth for runtime: colosseum-analytics.js (until Phase 4 cutover)
+ * Source of truth for runtime: moderator-analytics.js (until Phase 4 cutover)
  * Source of truth for types: this file
  *
  * Migration: Session 127 (Phase 3)
@@ -178,7 +178,7 @@ export function checkSignup(): void {
 // ============================================================
 
 /** Runtime exposure: window.coloTrack = trackEvent */
-export const ColosseumAnalytics = {
+export const ModeratorAnalytics = {
   trackEvent,
   checkSignup,
   getVisitorId,

@@ -1,7 +1,7 @@
 /**
  * THE COLOSSEUM — WebRTC Module (TypeScript)
  *
- * Runtime module (replaces colosseum-webrtc.js). Live audio debate engine.
+ * Runtime module (replaces moderator-webrtc.js). Live audio debate engine.
  * Uses Supabase Realtime channels for signaling (no separate server).
  *
  * Migration: Session 127 (Phase 3). ES imports: Session 140.
