@@ -4,26 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a1628">
+<meta name="theme-color" content="var(--mod-bg-base)">
 <title>Settings — The Colosseum</title>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap');
 
   :root {
-    --navy: #0a1628;
-    --navy-light: #132240;
-    --navy-mid: #1a2d4a;
-    --red: #cc2936;
-    --red-hover: #e63946;
-    --gold: #d4a843;
-    --gold-dim: #b8922e;
-    --white: #f0f0f0;
-    --white-dim: #a0a8b8;
-    --error: #e74c3c;
-    --success: #2ecc71;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Source Sans 3', sans-serif;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -31,9 +18,9 @@
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: var(--font-body);
-    background: var(--navy);
-    color: var(--white);
+    font-family: var(--mod-font-ui);
+    background: var(--mod-bg-base);
+    color: var(--mod-text-primary);
     min-height: 100dvh;
     padding: calc(16px + var(--safe-top)) 16px calc(80px + var(--safe-bottom));
     -webkit-font-smoothing: antialiased;
@@ -52,18 +39,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 10px;
-    color: var(--white);
+    color: var(--mod-text-primary);
     font-size: 20px;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .back-btn:active { background: var(--navy-mid); }
+  .back-btn:active { background: var(--mod-bg-base); }
 
   .page-title {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 24px;
     letter-spacing: 3px;
   }
@@ -73,16 +60,16 @@
     margin-bottom: 24px;
   }
   .section-label {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 14px;
     letter-spacing: 2px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     margin-bottom: 10px;
     padding-left: 2px;
   }
 
   .settings-card {
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     overflow: hidden;
@@ -112,7 +99,7 @@
   }
   .row-desc {
     font-size: 12px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
   }
 
   /* === TOGGLE === */
@@ -126,7 +113,7 @@
   .toggle-track {
     position: absolute;
     inset: 0;
-    background: var(--navy-mid);
+    background: var(--mod-bg-base);
     border-radius: 14px;
     cursor: pointer;
     transition: background 0.25s;
@@ -136,24 +123,24 @@
     position: absolute;
     top: 3px; left: 3px;
     width: 22px; height: 22px;
-    background: var(--white-dim);
+    background: var(--mod-text-muted);
     border-radius: 50%;
     transition: transform 0.25s, background 0.25s;
   }
-  .toggle input:checked + .toggle-track { background: var(--gold-dim); }
+  .toggle input:checked + .toggle-track { background: var(--mod-bar-secondary); }
   .toggle input:checked + .toggle-track::after {
     transform: translateX(20px);
-    background: var(--white);
+    background: var(--mod-text-primary);
   }
 
   /* === INPUT === */
   .settings-input {
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
     padding: 8px 12px;
-    color: var(--white);
-    font-family: var(--font-body);
+    color: var(--mod-text-primary);
+    font-family: var(--mod-font-ui);
     font-size: 15px;
     width: 180px;
     text-align: right;
@@ -161,22 +148,22 @@
     flex-shrink: 0;
     margin-left: 12px;
   }
-  .settings-input:focus { border-color: var(--gold-dim); }
+  .settings-input:focus { border-color: var(--mod-bar-secondary); }
 
   /* === TIER BADGE === */
   .tier-badge {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 6px;
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 14px;
     letter-spacing: 2px;
-    background: var(--navy-mid);
-    color: var(--white-dim);
+    background: var(--mod-bg-base);
+    color: var(--mod-text-muted);
   }
-  .tier-badge.contender { background: rgba(212,168,67,0.15); color: var(--gold); }
-  .tier-badge.champion { background: rgba(212,168,67,0.25); color: var(--gold); border: 1px solid var(--gold-dim); }
-  .tier-badge.creator { background: linear-gradient(135deg, rgba(212,168,67,0.3), rgba(204,41,54,0.2)); color: var(--gold); }
+  .tier-badge.contender { background: var(--mod-accent-border); color: var(--mod-text-heading); }
+  .tier-badge.champion { background: var(--mod-accent-border); color: var(--mod-text-heading); border: 1px solid var(--mod-bar-secondary); }
+  .tier-badge.creator { background: linear-gradient(135deg, var(--mod-accent-border), rgba(231,68,42,0.2)); color: var(--mod-text-heading); }
 
   /* === BUTTONS === */
   .settings-btn {
@@ -185,7 +172,7 @@
     padding: 12px;
     border: none;
     border-radius: 10px;
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 16px;
     letter-spacing: 2px;
     cursor: pointer;
@@ -194,13 +181,13 @@
   }
   .settings-btn.outline {
     background: transparent;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     border: 1px solid rgba(255,255,255,0.1);
   }
-  .settings-btn.outline:active { background: var(--navy-mid); }
+  .settings-btn.outline:active { background: var(--mod-bg-base); }
   .settings-btn.danger {
     background: transparent;
-    color: var(--error);
+    color: var(--mod-accent);
     border: 1px solid rgba(231,76,60,0.3);
   }
   .settings-btn.danger:active { background: rgba(231,76,60,0.1); }
@@ -215,7 +202,7 @@
   }
   .modal-overlay.open { display: flex; }
   .modal-card {
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(231,76,60,0.3);
     border-radius: 14px;
     padding: 24px 20px;
@@ -224,27 +211,27 @@
     text-align: center;
   }
   .modal-card h3 {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 20px;
     letter-spacing: 2px;
-    color: var(--error);
+    color: var(--mod-accent);
     margin-bottom: 8px;
   }
   .modal-card p {
     font-size: 14px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-bottom: 20px;
   }
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions button { flex: 1; min-height: 44px; border-radius: 8px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .modal-cancel { background: var(--navy-mid); color: var(--white-dim); }
-  .modal-confirm { background: var(--error); color: #fff; }
+  .modal-cancel { background: var(--mod-bg-base); color: var(--mod-text-muted); }
+  .modal-confirm { background: var(--mod-accent); color: #fff; }
 
   /* === TOAST === */
   .toast {
     position: fixed;
     bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: var(--success);
+    background: var(--mod-status-open);
     color: #fff;
     padding: 10px 20px;
     border-radius: 8px;
@@ -280,27 +267,28 @@
     align-items: center;
     gap: 24px;
     z-index: 9999;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--mod-font-ui);
     font-size: 0.85rem;
     font-weight: 400;
     letter-spacing: 0.5px;
   }
   .colosseum-legal-footer a {
-    color: #a0b8d0;
+    color: var(--mod-text-muted);
     text-decoration: none;
     transition: color 0.2s;
   }
   .colosseum-legal-footer a:hover {
-    color: #f0c040;
+    color: var(--mod-accent-text);
   }
   .colosseum-legal-footer .footer-sep {
     color: rgba(240, 192, 64, 0.3);
     font-weight: 300;
   }
   .colosseum-legal-footer .footer-copy {
-    color: #5a7a96;
+    color: var(--mod-text-muted);
   }
 </style>
+<link rel="stylesheet" href="/src/moderator-tokens.css">
 </head>
 <body>
 
@@ -324,12 +312,12 @@
       <div class="row-left">
         <div class="row-label">Username</div>
       </div>
-      <input class="settings-input" id="set-username" type="text" placeholder="yourname42" maxlength="20" style="color:var(--white-dim);">
+      <input class="settings-input" id="set-username" type="text" placeholder="yourname42" maxlength="20" style="color:var(--mod-text-muted);">
     </div>
     <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:6px;">
       <div class="row-label">Bio</div>
-      <textarea id="set-bio" class="settings-input" placeholder="Tell people about yourself…" maxlength="160" style="resize:vertical;min-height:56px;font-family:var(--font-body);font-size:14px;line-height:1.4;padding:10px 12px;"></textarea>
-      <div style="text-align:right;font-size:11px;color:var(--white-dim);" id="set-bio-count">0/160</div>
+      <textarea id="set-bio" class="settings-input" placeholder="Tell people about yourself…" maxlength="160" style="resize:vertical;min-height:56px;font-family:var(--mod-font-ui);font-size:14px;line-height:1.4;padding:10px 12px;"></textarea>
+      <div style="text-align:right;font-size:11px;color:var(--mod-text-muted);" id="set-bio-count">0/160</div>
     </div>
     <div class="settings-row">
       <div class="row-left">
@@ -421,7 +409,7 @@
         <div class="row-desc">Show as online for assignments</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span id="mod-dot" style="width:10px;height:10px;border-radius:50%;background:var(--white-dim);"></span>
+        <span id="mod-dot" style="width:10px;height:10px;border-radius:50%;background:var(--mod-text-muted);"></span>
         <label class="toggle"><input type="checkbox" id="set-mod-available"><span class="toggle-track"></span></label>
       </div>
     </div>
@@ -433,25 +421,25 @@
         <div class="row-left">
           <div class="row-label">Mod Rating</div>
         </div>
-        <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);letter-spacing:1px;" id="mod-stat-rating">50.0</div>
+        <div style="font-family:var(--mod-font-ui);font-size:18px;color:var(--mod-text-heading);letter-spacing:1px;" id="mod-stat-rating">50.0</div>
       </div>
       <div class="settings-row">
         <div class="row-left">
           <div class="row-label">Debates Moderated</div>
         </div>
-        <div style="font-size:15px;color:var(--white);" id="mod-stat-debates">0</div>
+        <div style="font-size:15px;color:var(--mod-text-primary);" id="mod-stat-debates">0</div>
       </div>
       <div class="settings-row">
         <div class="row-left">
           <div class="row-label">Total Rulings</div>
         </div>
-        <div style="font-size:15px;color:var(--white);" id="mod-stat-rulings">0</div>
+        <div style="font-size:15px;color:var(--mod-text-primary);" id="mod-stat-rulings">0</div>
       </div>
       <div class="settings-row">
         <div class="row-left">
           <div class="row-label">Approval Rate</div>
         </div>
-        <div style="font-size:15px;color:var(--success);" id="mod-stat-approval">0%</div>
+        <div style="font-size:15px;color:var(--mod-status-open);" id="mod-stat-approval">0%</div>
       </div>
     </div>
   </div>
@@ -503,7 +491,7 @@
     <!-- SESSION 64 FIX: Require typed confirmation per OWASP re-auth guidance.
          Works for both OAuth and email users. Prevents accidental/hijacked deletion. -->
     <div style="margin:12px 0;">
-      <div style="font-size:12px;color:var(--white-dim);margin-bottom:6px;">Type <strong style="color:var(--error);">DELETE</strong> to confirm:</div>
+      <div style="font-size:12px;color:var(--mod-text-muted);margin-bottom:6px;">Type <strong style="color:var(--mod-accent);">DELETE</strong> to confirm:</div>
       <input type="text" id="delete-confirm-input" class="settings-input" style="width:100%;text-align:center;font-size:16px;letter-spacing:2px;" placeholder="Type DELETE" autocomplete="off">
     </div>
     <div class="modal-actions">

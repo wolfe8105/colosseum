@@ -10,12 +10,12 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--mod-font-ui);
       font-weight: 400;
       font-size: 17px;
       line-height: 1.7;
       color: #e0e6ed;
-      background: linear-gradient(135deg, #1a2d4a 0%, #2d5a8e 25%, #5b8abf 50%, #7aa3d4 75%, #3d5a80 100%);
+      background: var(--mod-bg-base);
       min-height: 100vh;
     }
 
@@ -31,10 +31,10 @@
     }
 
     .legal-header h1 {
-      font-family: 'Cinzel', serif;
+      font-family: var(--mod-font-ui);
       font-weight: 700;
       font-size: 2rem;
-      color: #f0c040;
+      color: var(--mod-accent-text);
       letter-spacing: 2px;
       text-transform: uppercase;
       margin-bottom: 8px;
@@ -43,7 +43,7 @@
     .legal-header .subtitle {
       font-weight: 300;
       font-size: 1rem;
-      color: #a0b8d0;
+      color: var(--mod-text-muted);
       letter-spacing: 1px;
     }
 
@@ -58,10 +58,10 @@
     }
 
     .legal-card h2 {
-      font-family: 'Cinzel', serif;
+      font-family: var(--mod-font-ui);
       font-weight: 600;
       font-size: 1.15rem;
-      color: #f0c040;
+      color: var(--mod-accent-text);
       letter-spacing: 1px;
       text-transform: uppercase;
       margin-bottom: 16px;
@@ -97,7 +97,7 @@
 
     .legal-card ul li::before {
       content: '•';
-      color: #f0c040;
+      color: var(--mod-accent-text);
       position: absolute;
       left: 4px;
       font-weight: 700;
@@ -115,7 +115,7 @@
     .back-link {
       display: inline-block;
       margin-bottom: 24px;
-      color: #f0c040;
+      color: var(--mod-accent-text);
       text-decoration: none;
       font-weight: 500;
       font-size: 0.95rem;
@@ -124,7 +124,7 @@
 
     .back-link:hover { text-decoration: underline; }
 
-    a { color: #f0c040; }
+    a { color: var(--mod-accent-text); }
 
     /* === LEGAL FOOTER === */
     .colosseum-legal-footer {
@@ -142,25 +142,25 @@
       align-items: center;
       gap: 24px;
       z-index: 9999;
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--mod-font-ui);
       font-size: 0.85rem;
       font-weight: 400;
       letter-spacing: 0.5px;
     }
     .colosseum-legal-footer a {
-      color: #a0b8d0;
+      color: var(--mod-text-muted);
       text-decoration: none;
       transition: color 0.2s;
     }
     .colosseum-legal-footer a:hover {
-      color: #f0c040;
+      color: var(--mod-accent-text);
     }
     .colosseum-legal-footer .footer-sep {
       color: rgba(240, 192, 64, 0.3);
       font-weight: 300;
     }
     .colosseum-legal-footer .footer-copy {
-      color: #5a7a96;
+      color: var(--mod-text-muted);
     }
 
     @media (max-width: 600px) {
@@ -169,6 +169,7 @@
       .legal-header h1 { font-size: 1.5rem; }
     }
   </style>
+<link rel="stylesheet" href="/src/moderator-tokens.css">
 </head>
 <body>
   <div class="legal-container">

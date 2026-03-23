@@ -5,30 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a1628">
+<meta name="theme-color" content="var(--mod-bg-base)">
 <title>The Colosseum — Terms of Service</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap');
 
-  :root {
-    --navy: #0a1628;
-    --navy-light: #132240;
-    --navy-mid: #1a2d4a;
-    --red: #cc2936;
-    --gold: #d4a843;
-    --gold-dim: #b8922e;
-    --white: #f0f0f0;
-    --white-dim: #a0a8b8;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Source Sans 3', sans-serif;
-  }
+  
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: var(--font-body);
-    background: var(--navy);
-    color: var(--white-dim);
+    font-family: var(--mod-font-ui);
+    background: var(--mod-bg-base);
+    color: var(--mod-text-muted);
     line-height: 1.7;
   }
 
@@ -36,8 +25,8 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: var(--navy-light);
-    border-bottom: 1px solid rgba(212,168,67,0.15);
+    background: var(--mod-bg-base);
+    border-bottom: 1px solid var(--mod-accent-border);
     padding: 10px max(12px, env(safe-area-inset-left, 0px));
     padding-top: calc(10px + env(safe-area-inset-top, 0px));
     padding-right: max(12px, env(safe-area-inset-right, 0px));
@@ -46,15 +35,15 @@
     justify-content: space-between;
   }
   .legal-nav .logo {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 22px;
     letter-spacing: 3px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     text-decoration: none;
   }
-  .legal-nav .logo span { color: var(--red); }
+  .legal-nav .logo span { color: var(--mod-accent); }
   .legal-nav .back-link {
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     text-decoration: none;
     font-size: 14px;
     padding: 8px 4px;
@@ -63,11 +52,11 @@
     align-items: center;
     -webkit-tap-highlight-color: transparent;
   }
-  .legal-nav .back-link:active { color: var(--white); }
+  .legal-nav .back-link:active { color: var(--mod-text-primary); }
 
   .legal-tabs {
     display: flex;
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border-bottom: 1px solid rgba(255,255,255,0.06);
     overflow-x: auto;
     scrollbar-width: none;
@@ -76,10 +65,10 @@
   .legal-tab {
     padding: 0 16px;
     min-height: 44px;
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 13px;
     letter-spacing: 1.5px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     background: none;
     border: none;
     cursor: pointer;
@@ -89,11 +78,11 @@
     align-items: center;
     -webkit-tap-highlight-color: transparent;
   }
-  .legal-tab:active { color: var(--white); }
-  @media (hover: hover) { .legal-tab:hover { color: var(--white); } }
+  .legal-tab:active { color: var(--mod-text-primary); }
+  @media (hover: hover) { .legal-tab:hover { color: var(--mod-text-primary); } }
   .legal-tab.active {
-    color: var(--white);
-    border-bottom-color: var(--gold);
+    color: var(--mod-text-primary);
+    border-bottom-color: var(--mod-text-heading);
   }
 
   .legal-container {
@@ -109,17 +98,17 @@
   .legal-page.active { display: block; }
 
   .legal-title {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 26px;
     letter-spacing: 2px;
-    color: var(--white);
+    color: var(--mod-text-primary);
     margin-bottom: 4px;
   }
   @media (min-width: 768px) { .legal-title { font-size: 32px; letter-spacing: 3px; } }
 
   .legal-updated {
     font-size: 13px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     margin-bottom: 32px;
   }
 
@@ -128,13 +117,13 @@
   }
 
   .legal-section h2 {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 20px;
     letter-spacing: 2px;
-    color: var(--white);
+    color: var(--mod-text-primary);
     margin-bottom: 8px;
     padding-left: 12px;
-    border-left: 3px solid var(--gold);
+    border-left: 3px solid var(--mod-text-heading);
   }
 
   .legal-section p {
@@ -143,11 +132,11 @@
   }
 
   .legal-section strong {
-    color: var(--white);
+    color: var(--mod-text-primary);
   }
 
   .legal-section a {
-    color: var(--gold);
+    color: var(--mod-text-heading);
     text-decoration: underline;
   }
 
@@ -155,7 +144,7 @@
     text-align: center;
     padding: 24px;
     font-size: 12px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     border-top: 1px solid rgba(255,255,255,0.06);
   }
 
@@ -175,27 +164,28 @@
     align-items: center;
     gap: 24px;
     z-index: 9999;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--mod-font-ui);
     font-size: 0.85rem;
     font-weight: 400;
     letter-spacing: 0.5px;
   }
   .colosseum-legal-footer a {
-    color: #a0b8d0;
+    color: var(--mod-text-muted);
     text-decoration: none;
     transition: color 0.2s;
   }
   .colosseum-legal-footer a:hover {
-    color: #f0c040;
+    color: var(--mod-accent-text);
   }
   .colosseum-legal-footer .footer-sep {
     color: rgba(240, 192, 64, 0.3);
     font-weight: 300;
   }
   .colosseum-legal-footer .footer-copy {
-    color: #5a7a96;
+    color: var(--mod-text-muted);
   }
 </style>
+<link rel="stylesheet" href="/src/moderator-tokens.css">
 </head>
 <body>
 

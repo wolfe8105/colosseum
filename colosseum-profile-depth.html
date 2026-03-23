@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a1628">
+<meta name="theme-color" content="var(--mod-bg-base)">
 <title>Complete Your Profile — The Colosseum</title>
 
 
@@ -12,19 +12,6 @@
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap');
 
   :root {
-    --navy: #0a1628;
-    --navy-light: #132240;
-    --navy-mid: #1a2d4a;
-    --red: #cc2936;
-    --red-hover: #e63946;
-    --gold: #d4a843;
-    --gold-dim: #b8922e;
-    --white: #f0f0f0;
-    --white-dim: #a0a8b8;
-    --error: #e74c3c;
-    --success: #2ecc71;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Source Sans 3', sans-serif;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -32,9 +19,9 @@
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: var(--font-body);
-    background: var(--navy);
-    color: var(--white);
+    font-family: var(--mod-font-ui);
+    background: var(--mod-bg-base);
+    color: var(--mod-text-primary);
     min-height: 100dvh;
     padding: calc(16px + var(--safe-top)) 16px calc(80px + var(--safe-bottom));
     -webkit-font-smoothing: antialiased;
@@ -50,64 +37,64 @@
   .back-btn {
     min-width: 44px; min-height: 44px;
     display: flex; align-items: center; justify-content: center;
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 10px;
-    color: var(--white);
+    color: var(--mod-text-primary);
     font-size: 20px;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
   .page-title {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 22px;
     letter-spacing: 3px;
   }
 
   /* === DISCOUNT BANNER === */
   .discount-banner {
-    background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
-    border: 1px solid var(--gold-dim);
+    background: linear-gradient(135deg, var(--mod-bg-base), var(--mod-bg-base));
+    border: 1px solid var(--mod-bar-secondary);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 20px;
     text-align: center;
   }
   .discount-current {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 32px;
     letter-spacing: 2px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     line-height: 1;
   }
   .discount-original {
     font-size: 14px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     text-decoration: line-through;
     margin-top: 2px;
   }
   .discount-label {
     font-size: 13px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-top: 6px;
   }
   .discount-progress {
     width: 100%;
     height: 8px;
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border-radius: 4px;
     margin-top: 10px;
     overflow: hidden;
   }
   .discount-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    background: linear-gradient(90deg, var(--mod-bar-secondary), var(--mod-text-heading));
     border-radius: 4px;
     transition: width 0.6s ease;
   }
   .discount-pct {
     font-size: 12px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-top: 4px;
   }
 
@@ -121,7 +108,7 @@
   @media (min-width: 480px) { .section-grid { grid-template-columns: repeat(3, 1fr); } }
 
   .section-tile {
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     padding: 14px 10px;
@@ -131,16 +118,16 @@
     position: relative;
     transition: border-color 0.2s;
   }
-  .section-tile:active { background: var(--navy-mid); }
-  .section-tile.complete { border-color: var(--success); }
-  .section-tile.active-section { border-color: var(--gold); }
+  .section-tile:active { background: var(--mod-bg-base); }
+  .section-tile.complete { border-color: var(--mod-status-open); }
+  .section-tile.active-section { border-color: var(--mod-text-heading); }
 
   .section-icon { font-size: 24px; margin-bottom: 4px; }
   .section-name {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 12px;
     letter-spacing: 1px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
   }
 
   /* Mini progress ring */
@@ -155,8 +142,8 @@
     stroke-width: 3;
     cx: 11; cy: 11; r: 9;
   }
-  .ring-bg { stroke: var(--navy-mid); }
-  .ring-fill { stroke: var(--gold); stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+  .ring-bg { stroke: var(--mod-bg-base); }
+  .ring-fill { stroke: var(--mod-text-heading); stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
 
   .section-check {
     position: absolute;
@@ -178,20 +165,20 @@
     margin-bottom: 12px;
   }
   .panel-title {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 18px;
     letter-spacing: 2px;
   }
   .panel-reward {
     font-size: 12px;
-    color: var(--gold);
-    background: rgba(212,168,67,0.1);
+    color: var(--mod-text-heading);
+    background: var(--mod-accent-muted);
     padding: 4px 10px;
     border-radius: 6px;
   }
 
   .question-card {
-    background: var(--navy-light);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 10px;
     padding: 14px 16px;
@@ -208,30 +195,30 @@
   .chip {
     padding: 6px 14px;
     border-radius: 20px;
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.1);
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     font-size: 13px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: all 0.15s;
   }
-  .chip.selected { background: rgba(212,168,67,0.2); border-color: var(--gold-dim); color: var(--gold); }
+  .chip.selected { background: var(--mod-accent-border); border-color: var(--mod-bar-secondary); color: var(--mod-text-heading); }
 
   /* Input */
   .q-input {
     width: 100%;
     min-height: 44px;
     padding: 10px 14px;
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
-    color: var(--white);
-    font-family: var(--font-body);
+    color: var(--mod-text-primary);
+    font-family: var(--mod-font-ui);
     font-size: 16px;
     outline: none;
   }
-  .q-input:focus { border-color: var(--gold-dim); }
+  .q-input:focus { border-color: var(--mod-bar-secondary); }
 
   /* Slider */
   .slider-row { display: flex; align-items: center; gap: 10px; }
@@ -240,21 +227,21 @@
     -webkit-appearance: none;
     appearance: none;
     height: 6px;
-    background: var(--navy-mid);
+    background: var(--mod-bg-base);
     border-radius: 3px;
     outline: none;
   }
   .q-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 22px; height: 22px;
-    background: var(--gold);
+    background: var(--mod-text-heading);
     border-radius: 50%;
     cursor: pointer;
   }
   .slider-val {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 16px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     min-width: 30px;
     text-align: center;
   }
@@ -264,11 +251,11 @@
     width: 100%;
     min-height: 44px;
     padding: 10px 14px;
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
-    color: var(--white);
-    font-family: var(--font-body);
+    color: var(--mod-text-primary);
+    font-family: var(--mod-font-ui);
     font-size: 15px;
     outline: none;
     -webkit-appearance: none;
@@ -279,25 +266,25 @@
     width: 100%;
     min-height: 44px;
     padding: 10px;
-    background: var(--gold-dim);
-    color: var(--navy);
+    background: var(--mod-bar-secondary);
+    color: var(--mod-bg-base);
     border: none;
     border-radius: 8px;
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 16px;
     letter-spacing: 2px;
     cursor: pointer;
     margin-top: 10px;
   }
-  .save-section-btn:active { background: var(--gold); }
+  .save-section-btn:active { background: var(--mod-text-heading); }
 
   /* === REWARD TOAST === */
   .reward-toast {
     position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.8);
-    background: var(--navy-light);
-    border: 2px solid var(--gold);
+    background: var(--mod-bg-base);
+    border: 2px solid var(--mod-text-heading);
     border-radius: 16px;
     padding: 24px 32px;
     text-align: center;
@@ -312,20 +299,20 @@
   }
   .reward-toast .reward-icon { font-size: 40px; margin-bottom: 8px; }
   .reward-toast .reward-text {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 18px;
     letter-spacing: 2px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
   }
   .reward-toast .reward-desc {
     font-size: 13px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-top: 4px;
   }
 
   /* === TIER DISPLAY === */
   .tier-banner {
-    background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
+    background: linear-gradient(135deg, var(--mod-bg-base), var(--mod-bg-base));
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px;
     padding: 14px 16px;
@@ -343,56 +330,56 @@
     gap: 8px;
   }
   .tier-rank-label {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 14px;
     letter-spacing: 1.5px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
   }
   .tier-badge {
     font-weight: 600;
   }
   .tier-unlock-hint {
     font-size: 12px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-bottom: 6px;
   }
   .tier-unlock-hint strong {
-    color: var(--gold);
+    color: var(--mod-text-heading);
   }
   .tier-progress {
     margin-top: 2px;
   }
   .tier-progress-label {
     font-size: 12px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
     margin-bottom: 4px;
   }
   .tier-progress-bar {
     width: 100%;
     height: 6px;
-    background: var(--navy);
+    background: var(--mod-bg-base);
     border-radius: 3px;
     overflow: hidden;
   }
   .tier-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    background: linear-gradient(90deg, var(--mod-bar-secondary), var(--mod-text-heading));
     border-radius: 3px;
     transition: width 0.6s ease;
   }
   .tier-progress-complete {
-    font-family: var(--font-display);
+    font-family: var(--mod-font-ui);
     font-size: 14px;
-    color: var(--gold);
+    color: var(--mod-text-heading);
     letter-spacing: 1px;
   }
   .tier-perks {
     margin-top: 8px;
     font-size: 11px;
-    color: var(--white-dim);
+    color: var(--mod-text-muted);
   }
   .tier-perks span {
-    color: var(--gold);
+    color: var(--mod-text-heading);
   }
 
   /* === LEGAL FOOTER === */
@@ -411,27 +398,28 @@
     align-items: center;
     gap: 24px;
     z-index: 9999;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--mod-font-ui);
     font-size: 0.85rem;
     font-weight: 400;
     letter-spacing: 0.5px;
   }
   .colosseum-legal-footer a {
-    color: #a0b8d0;
+    color: var(--mod-text-muted);
     text-decoration: none;
     transition: color 0.2s;
   }
   .colosseum-legal-footer a:hover {
-    color: #f0c040;
+    color: var(--mod-accent-text);
   }
   .colosseum-legal-footer .footer-sep {
     color: rgba(240, 192, 64, 0.3);
     font-weight: 300;
   }
   .colosseum-legal-footer .footer-copy {
-    color: #5a7a96;
+    color: var(--mod-text-muted);
   }
 </style>
+<link rel="stylesheet" href="/src/moderator-tokens.css">
 </head>
 <body>
 
@@ -443,7 +431,7 @@
 <!-- Discount waterfall banner -->
 <div class="discount-banner">
   <div class="discount-original">$14.99/mo</div>
-  <div class="discount-current" id="discount-price">$14.99<span style="font-size:14px;color:var(--white-dim);">/mo</span></div>
+  <div class="discount-current" id="discount-price">$14.99<span style="font-size:14px;color:var(--mod-text-muted);">/mo</span></div>
   <div class="discount-label">Complete sections to unlock your discount</div>
   <div class="discount-progress">
     <div class="discount-fill" id="discount-fill" style="width:0%"></div>
