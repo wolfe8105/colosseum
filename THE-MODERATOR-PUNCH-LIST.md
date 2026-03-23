@@ -15,7 +15,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| H-01 | 3 page modules have `any` annotations (`spectate.ts`, `groups.ts`, `home.ts`) | ⏳ | Compile but no real type safety. Any new feature touching these risks type bugs. |
+| H-01 | 3 page modules have `any` annotations (`spectate.ts`, `groups.ts`, `home.ts`) | ✅ | Session 165–166. `home.ts`: 4 `any` → `Category`, `Profile`, `User`. `groups.ts`: 4 `any` → `SupabaseClient`, `User`, `GroupListItem`. `spectate.ts`: 14 `any` → `SpectateDebate`, `DebateMessage`, `SpectatorChatMessage`. All eslint-disables removed. Vite build clean. |
 | H-02 | `(window as any).navigateTo` in `home.ts` | ✅ | Session 163. Created `src/navigation.ts` with register/call pattern. 4 consumers updated. Zero `window.navigateTo` refs remain. |
 | H-03 | Bible docs stale after Colosseum→Moderator rename | ⏳ | NT, OT, War Plan, Wiring Manifest, Land Mine Map all have old "Colosseum" references in content. Session 160 renamed files but internal content varies. |
 | H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ✅ | Session 163. Non-issue — stale Wiring Manifest reference. Arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
@@ -39,7 +39,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | B-04 | `claim_milestone` — column 'action' does not exist | ✅ | Fixed Session 124. |
 | B-05 | Tier threshold gap — Tiers 3-5 unreachable | ✅ | Session 164. Expanded questionnaire from 39→100 questions (12→20 sections). 8 new B2B-driven sections added. All tier thresholds (10/25/50/75/100) now reachable. |
 | B-06 | AI Sparring pre-debate navigation bug | ✅ | Session 163. Not reproducible — killed by TS migration Session 142. |
-| B-07 | No responsive breakpoints | ⏳ | Session 163. Desktop layout has text overflow, no tablet adaptation. |
+| B-07 | No responsive breakpoints | ✅ | Session 165. `@media (min-width: 768px)` content constraint: `.screen` capped at `max-width: 640px` + centered. Home screen (ring nav) exempted. Profile-depth grid 4-col on desktop. Groups/settings get body constraint. CSS only. |
 
 ---
 
@@ -59,6 +59,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-06 | Debate analytics overlay | | ✅ Attack Plan 3.1 | Speaking time, argument count, interruption count, score timeline. |
 | F-07 | Spectator features (pulse, chat, live share) | | ❌ No spec | Conceptual. |
 | F-08 | Tournament system | | ❌ No spec | Brackets, elimination, Swiss. Feature Room Map "New E". |
+| F-45 | Desktop-optimized arena layout | | ❌ No spec | Two-column, sidebar stats. Currently phone UI centered with empty space on desktop. |
 
 ## 3B. Token Economy / Staking
 
@@ -78,10 +79,10 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-15 | Kick/ban/promote | | ✅ Research doc §3 | Tied to role hierarchy. |
 | F-16 | Group settings (edit name, description, type, requirements) | | ✅ Research doc §4 | Post-creation editing. |
 | F-17 | Entry requirements (min Elo, tier, profile completion) | | ✅ Research doc §5 | Gate group membership. |
-| F-18 | Audition system (debate-based entry with group vote) | | ✅ Research doc §5 | Audition IS a debate. Cross-system connection to Arena. |
-| F-19 | Three-tier banner progression | | ✅ Research doc §6 | Presets → custom static → custom animated. |
-| F-20 | Shared fate mechanic | | 🔶 Concept in research doc | Group performance moves individual token balance. Formula TBD. |
-| F-21 | Battle cries (personal + group, 3 tiers) | | 🔶 Concept in research doc | Audio format and duration constraints TBD. |
+| F-18 | Audition system (debate-based entry with group vote) | | ✅ Research doc §5 | Exhibition only (no Elo). Leader sets entry rule via dropdown: allowed by leader, must debate leader, must debate member, must win vs leader, must win vs member. Session 166. |
+| F-19 | Three-tier banner progression | | ✅ Research doc §6 | Avg group win %: 0–25% standard icons, 26–50% custom static, 51%+ custom animated (10s max, 1080p small-space). Auto-unlock, permanent. Same rules for battle animations. Session 166. |
+| F-20 | Shared fate mechanic | | ✅ Session 166 | Token multiplier: `floor(avg_questions / 100 × win_pct × 80)`. 25Q × 50% = 10%. Max 80%. Permanent once reached. Lookup table in Session 166 chat. |
+| F-21 | Intro music (personal + group, 2 tiers) | | ✅ Session 166 | Renamed from "battle cries." Tier 1: 10 standard intros for everyone. Tier 2: custom 10-sec upload unlocked at 35%+ profile questions answered. |
 | F-22 | GvG battle animations | | 🔶 Concept in research doc | 4 tracks, 3 tiers each. Ties to entrance sequence. |
 
 ## 3D. Social
@@ -140,15 +141,17 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 # OPEN QUESTIONS FROM RESEARCH DOCS
 
+# OPEN QUESTIONS FROM RESEARCH DOCS
+
 These are unresolved design questions that block specific features. Captured here so they don't get lost.
 
-1. What milestones trigger each group banner tier unlock? (F-19)
-2. Does the group leader spend tokens to unlock tiers, or automatic at threshold? (F-19)
-3. Animated banner format constraints — GIF size limit, loop duration? (F-19)
-4. Battle cry audio format and duration constraints? (F-21)
-5. Exact shared fate calculation formula — percentage, flat, scaled by group size? (F-20)
-6. Audition debate: affects Elo or exhibition only? (F-18)
-7. Member contribution tracking: what metrics, how displayed? (F-14)
+1. ~~What milestones trigger each group banner tier unlock? (F-19)~~ ✅ Session 166. Avg group win %: 0–25% = standard icons we provide, 26–50% = custom static flag, 51%+ = custom animated flag (max 10s, 1080p small-space equivalent).
+2. ~~Does the group leader spend tokens to unlock tiers, or automatic at threshold? (F-19)~~ ✅ Session 166. Automatic at threshold. Permanent unlock — once crossed, never revoked.
+3. ~~Animated banner format constraints — GIF size limit, loop duration? (F-19)~~ ✅ Session 166. Answered by Q1: max 10 sec, sized for 1080p equivalent in a small space. Same rules for battle animations.
+4. ~~Battle cry audio format and duration constraints? (F-21)~~ ✅ Session 166. Renamed to "intro music." Two tiers: (a) 10 standard intros we provide for everyone, (b) custom 10-sec intro music upload unlocked at 35%+ profile questions answered.
+5. ~~Exact shared fate calculation formula — percentage, flat, scaled by group size? (F-20)~~ ✅ Session 166. Formula: `floor(avg_questions / 100 × win_pct × 80)`. Anchor: 25 avg Q's × 50% win rate = 10% token multiplier. Max: 80% at 100 Q's × 100% wins. Permanent once reached.
+6. ~~Audition debate: affects Elo or exhibition only? (F-18)~~ ✅ Session 166. Exhibition only. Group leader sets entry rule via dropdown: allowed by leader, must debate leader, must debate member, must win vs leader, must win vs member.
+7. Member contribution tracking: what metrics, how displayed? (F-14) — **Still open.**
 
 ---
 
@@ -175,3 +178,5 @@ This punch list was compiled from:
 | 2026-03-23 | 162 | Initial creation. 11 housekeeping, 6 bugs, 44 features, 7 open questions. |
 | 2026-03-23 | 163 | B-01/B-02/B-03/B-04/B-06 closed. H-02/H-04/H-09/H-10/H-11 closed. B-07 added. |
 | 2026-03-23 | 164 | B-05 closed. Profile depth expanded 39→100 questions (12→20 sections) for B2B data coverage. |
+| 2026-03-23 | 165 | B-07 closed (responsive breakpoints, CSS only). H-01 partial: home.ts + groups.ts `any` removed. F-45 added. |
+| 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
