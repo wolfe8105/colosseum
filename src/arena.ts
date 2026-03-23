@@ -179,7 +179,8 @@ export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
   ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#5DCAA5' },
 } as const;
 
-const QUEUE_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 90, voicememo: 10, text: 10, ai: 0 };
+const QUEUE_AI_PROMPT_SEC: Readonly<Record<DebateMode, number>> = { live: 60, voicememo: 60, text: 60, ai: 0 };
+const QUEUE_HARD_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 180, voicememo: 180, text: 180, ai: 0 };
 const ROUND_DURATION = 120;
 export const TEXT_MAX_CHARS = 2000;
 
@@ -223,6 +224,8 @@ let selectedMode: DebateMode | null = null;
 let queuePollTimer: ReturnType<typeof setInterval> | null = null;
 let queueElapsedTimer: ReturnType<typeof setInterval> | null = null;
 let queueSeconds = 0;
+let queueErrorState = false;
+let aiFallbackShown = false;
 let currentDebate: CurrentDebate | null = null;
 let roundTimer: ReturnType<typeof setInterval> | null = null;
 let roundTimeLeft = 0;
@@ -391,14 +394,22 @@ function injectCSS(): void {
 
     /* QUEUE */
     .arena-queue { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 20px; text-align: center; }
-    .arena-queue-icon { font-size: 56px; margin-bottom: 16px; animation: queueBreathe 2.5s ease-in-out infinite; }
+    .arena-queue-search-ring { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .arena-queue-search-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--mod-border-primary); border-top-color: var(--mod-accent); animation: queueSpin 1.5s linear infinite; }
+    .arena-queue-search-ring::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid var(--mod-border-subtle); border-bottom-color: var(--mod-accent); animation: queueSpin 2.2s linear infinite reverse; }
+    .arena-queue-search-ring.stopped::before, .arena-queue-search-ring.stopped::after { animation: none; border-color: var(--mod-border-subtle); }
+    @keyframes queueSpin { to { transform: rotate(360deg); } }
+    .arena-queue-icon { font-size: 48px; animation: queueBreathe 2.5s ease-in-out infinite; position: relative; z-index: 1; }
     @keyframes queueBreathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } }
     .arena-queue-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: 6px; }
-    .arena-queue-status { font-size: 14px; color: var(--mod-text-body); margin-bottom: 20px; }
-    .arena-queue-timer { font-family: var(--mod-font-ui); font-size: 48px; font-weight: 700; color: var(--mod-text-primary); letter-spacing: 4px; margin-bottom: 24px; }
-    .arena-queue-elo { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 24px; }
-    .arena-queue-cancel { padding: 12px 32px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; cursor: pointer; }
+    .arena-queue-timer { font-family: var(--mod-font-ui); font-size: 48px; font-weight: 700; color: var(--mod-text-primary); letter-spacing: 4px; margin-bottom: 8px; }
+    .arena-queue-status { font-size: 14px; color: var(--mod-text-body); margin-bottom: 16px; min-height: 20px; }
+    .arena-queue-elo { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 20px; }
+    .arena-queue-cancel { padding: 12px 32px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; cursor: pointer; min-height: 44px; min-width: 44px; letter-spacing: 1px; }
     .arena-queue-cancel:active { background: var(--mod-bg-card-active); }
+    .arena-queue-ai-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--mod-border-primary); border-radius: var(--mod-radius-card, 8px); background: var(--mod-bg-card); width: 100%; max-width: 300px; }
+    .arena-queue-ai-fallback-text { font-size: 13px; color: var(--mod-text-body); line-height: 1.4; }
+    .arena-queue-timeout-options { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 8px; }
 
     /* DEBATE ROOM */
     .arena-room { display: flex; flex-direction: column; height: 100%; }
@@ -1154,6 +1165,8 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
 
   if (screenEl) screenEl.innerHTML = '';
   queueSeconds = 0;
+  queueErrorState = false;
+  aiFallbackShown = false;
 
   const modeInfo = MODES[mode as DebateMode];
   const profile = getCurrentProfile();
@@ -1163,24 +1176,38 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   queueEl.className = 'arena-queue arena-fade-in';
   queueEl.innerHTML = `
     <div class="arena-rank-badge ${selectedRanked ? 'ranked' : 'casual'}">${selectedRanked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
-    <div class="arena-queue-icon">${modeInfo.icon}</div>
+    <div class="arena-queue-search-ring" id="arena-queue-ring">
+      <div class="arena-queue-icon">${modeInfo.icon}</div>
+    </div>
     <div class="arena-queue-title">${modeInfo.name}</div>
-    <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
+    <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     <div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>
-    <button class="arena-queue-cancel" id="arena-queue-cancel">Cancel</button>
+    <div id="arena-queue-ai-prompt"></div>
+    <button class="arena-queue-cancel" id="arena-queue-cancel">\u2715 CANCEL</button>
   `;
   screenEl?.appendChild(queueEl);
 
   document.getElementById('arena-queue-cancel')?.addEventListener('click', leaveQueue);
 
   queueElapsedTimer = setInterval(() => {
+    if (queueErrorState) return;
     queueSeconds++;
     const timerEl = document.getElementById('arena-queue-timer');
     if (timerEl) timerEl.textContent = formatTimer(queueSeconds);
 
-    const timeout = QUEUE_TIMEOUT_SEC[mode as DebateMode] ?? 60;
-    if (queueSeconds >= timeout) {
+    // Status text progression
+    updateQueueStatus(queueSeconds);
+
+    // AI Sparring prompt at 60s (queue keeps running)
+    const aiPromptSec = QUEUE_AI_PROMPT_SEC[mode as DebateMode] ?? 60;
+    if (aiPromptSec > 0 && queueSeconds === aiPromptSec && !aiFallbackShown) {
+      showAIFallbackPrompt();
+    }
+
+    // Hard timeout — give up
+    const hardTimeout = QUEUE_HARD_TIMEOUT_SEC[mode as DebateMode] ?? 180;
+    if (hardTimeout > 0 && queueSeconds >= hardTimeout) {
       onQueueTimeout();
     }
   }, 1000);
@@ -1201,6 +1228,40 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
       }
     }, 3000 + Math.random() * 4000);
   }
+}
+
+function updateQueueStatus(seconds: number): void {
+  const statusEl = document.getElementById('arena-queue-status');
+  if (!statusEl) return;
+
+  if (aiFallbackShown) {
+    statusEl.textContent = 'Queue still active \u2014 searching...';
+  } else if (seconds <= 15) {
+    statusEl.textContent = 'Searching for a worthy opponent...';
+  } else if (seconds <= 30) {
+    statusEl.textContent = 'Expanding search range...';
+  } else if (seconds <= 45) {
+    statusEl.textContent = 'Searching all regions...';
+  } else {
+    statusEl.textContent = 'Still looking...';
+  }
+}
+
+function showAIFallbackPrompt(): void {
+  aiFallbackShown = true;
+  const promptEl = document.getElementById('arena-queue-ai-prompt');
+  if (!promptEl) return;
+
+  promptEl.innerHTML = `
+    <div class="arena-queue-ai-fallback arena-fade-in">
+      <div class="arena-queue-ai-fallback-text">\uD83E\uDD16 No opponents yet. Sharpen your skills while you wait?</div>
+      <button class="arena-post-btn primary" id="arena-queue-ai-spar">SPAR WITH AI</button>
+    </div>
+  `;
+  document.getElementById('arena-queue-ai-spar')?.addEventListener('click', () => {
+    leaveQueue();
+    enterQueue('ai', '');
+  });
 }
 
 async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
@@ -1229,6 +1290,7 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
     }
   } catch (err) {
     console.error('[Arena] Queue join error:', err);
+    queueErrorState = true;
     const statusEl = document.getElementById('arena-queue-status');
     if (statusEl) statusEl.textContent = friendlyError(err) || 'Queue error \u2014 try again';
   }
@@ -1265,16 +1327,26 @@ function onMatchFound(data: MatchData): void {
 
 function onQueueTimeout(): void {
   clearQueueTimers();
+
+  // Stop the search ring animation
+  const ringEl = document.getElementById('arena-queue-ring');
+  if (ringEl) ringEl.classList.add('stopped');
+
   const statusEl = document.getElementById('arena-queue-status');
   if (statusEl) {
-    statusEl.innerHTML = 'No opponents found.<br><br>';
+    statusEl.textContent = 'No opponents available right now.';
+    statusEl.style.color = 'var(--mod-muted, #8890A8)';
   }
 
-  // Offer alternatives
+  // Clear AI prompt if it was showing
+  const promptEl = document.getElementById('arena-queue-ai-prompt');
+  if (promptEl) promptEl.innerHTML = '';
+
+  // Show final options
   const queueEl = screenEl?.querySelector('.arena-queue');
   if (queueEl) {
     const alt = document.createElement('div');
-    alt.style.cssText = 'display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;';
+    alt.className = 'arena-queue-timeout-options arena-fade-in';
     alt.innerHTML = `
       <button class="arena-post-btn primary" id="arena-try-ai">\uD83E\uDD16 SPAR WITH AI INSTEAD</button>
       <button class="arena-post-btn secondary" id="arena-try-again">\uD83D\uDD04 TRY AGAIN</button>
