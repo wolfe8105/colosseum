@@ -539,8 +539,20 @@ body::before, body::after { display: none; }
 
 
 /* ============================================================
-   DESKTOP WIDE (≥1440px)
+   CONTENT WIDTH CONSTRAINT (≥768px)
+   Phone-designed cards/buttons stretch absurdly wide on desktop.
+   Cap inner screens at 640px and center within mod-content.
+   Home screen (ring nav) exempt — uses full width.
+   Session 165: B-07 fix.
    ============================================================ */
-@media (min-width: 1440px) {
-  .mod-content { max-width: 1200px; }
+@media (min-width: 768px) {
+  .screen {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+  #screen-home {
+    max-width: none;
+  }
 }
