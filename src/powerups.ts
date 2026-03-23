@@ -139,18 +139,18 @@ export function renderShop(tokenBalance: number): string {
       <div class="powerup-shop-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:#1a1a2e;border:1px solid #2a2a3e;border-radius:8px;margin-bottom:8px;">
         <div style="font-size:28px;width:40px;text-align:center;">${pu.icon}</div>
         <div style="flex:1;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;color:#fff;">${pu.name}</div>
-          <div style="font-family:'Barlow',sans-serif;font-size:12px;color:#999;">${pu.desc}</div>
+          <div style="font-family:var(--mod-font-ui);font-size:15px;font-weight:600;color:var(--mod-text-primary);">${pu.name}</div>
+          <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);">${pu.desc}</div>
         </div>
-        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,#D4AF37,#B8860B)' : '#2a2a3e'};color:${canAfford ? '#0f0f1a' : '#666'};font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${pu.cost} 🪙</button>
+        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,var(--mod-text-heading),#B8860B)' : '#2a2a3e'};color:${canAfford ? '#0f0f1a' : '#666'};font-family:var(--mod-font-ui);font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${pu.cost} 🪙</button>
       </div>`;
   });
 
   return `
     <div class="powerup-shop" style="padding:4px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#D4AF37;letter-spacing:1px;text-transform:uppercase;">POWER-UP SHOP</div>
-        <div style="font-family:'Barlow',sans-serif;font-size:12px;color:#999;">Balance: <span style="color:#D4AF37;font-weight:600;">${balance} 🪙</span></div>
+        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">POWER-UP SHOP</div>
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);">Balance: <span style="color:var(--mod-text-heading);font-weight:600;">${balance} 🪙</span></div>
       </div>
       ${items.join('')}
     </div>`;
@@ -176,7 +176,7 @@ export function renderLoadout(
     return `
       <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
         <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#8a879a;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">POWER-UPS 🔒</div>
-        <div style="font-family:'Barlow',sans-serif;font-size:13px;color:#999;">Answer ${remaining} more questions to unlock power-up slots.</div>
+        <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">Answer ${remaining} more questions to unlock power-up slots.</div>
       </div>`;
   }
 
@@ -193,15 +193,15 @@ export function renderLoadout(
     if (eq) {
       const cat = CATALOG[eq.power_up_id as PowerUpId];
       slots.push(`
-        <div class="powerup-slot filled" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:#D4AF3711;border:1px solid #D4AF3744;border-radius:8px;text-align:center;cursor:default;">
+        <div class="powerup-slot filled" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:var(--mod-text-heading)11;border:1px solid var(--mod-text-heading)44;border-radius:8px;text-align:center;cursor:default;">
           <div style="font-size:24px;">${eq.icon ?? cat?.icon ?? '?'}</div>
-          <div style="font-family:'Barlow',sans-serif;font-size:10px;color:#D4AF37;margin-top:4px;">${eq.name ?? cat?.name ?? ''}</div>
+          <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-heading);margin-top:4px;">${eq.name ?? cat?.name ?? ''}</div>
         </div>`);
     } else {
       slots.push(`
         <div class="powerup-slot empty" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:#0f0f1a;border:1px dashed #2a2a3e;border-radius:8px;text-align:center;cursor:pointer;">
           <div style="font-size:24px;opacity:0.3;">+</div>
-          <div style="font-family:'Barlow',sans-serif;font-size:10px;color:#666;margin-top:4px;">Slot ${i}</div>
+          <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-muted);margin-top:4px;">Slot ${i}</div>
         </div>`);
     }
   }
@@ -212,23 +212,23 @@ export function renderLoadout(
     return `
       <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:6px;cursor:pointer;margin-bottom:4px;">
         <span style="font-size:20px;">${item.icon ?? cat?.icon ?? '?'}</span>
-        <span style="font-family:'Barlow',sans-serif;font-size:13px;color:#fff;flex:1;">${item.name ?? cat?.name ?? ''}</span>
-        <span style="font-family:'Barlow',sans-serif;font-size:11px;color:#999;">x${item.quantity}</span>
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);flex:1;">${item.name ?? cat?.name ?? ''}</span>
+        <span style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">x${item.quantity}</span>
       </div>`;
   });
 
   return `
     <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#D4AF37;letter-spacing:1px;text-transform:uppercase;">POWER-UPS</div>
-        <div style="font-family:'Barlow',sans-serif;font-size:11px;color:#666;">${tier.icon} ${tier.name} · ${maxSlots} slot${maxSlots !== 1 ? 's' : ''}</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">POWER-UPS</div>
+        <div style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">${tier.icon} ${tier.name} · ${maxSlots} slot${maxSlots !== 1 ? 's' : ''}</div>
       </div>
       <div class="powerup-slots" style="display:flex;gap:8px;margin-bottom:8px;">${slots.join('')}</div>
       <div id="powerup-inventory-picker" style="display:none;margin-top:8px;">
-        <div style="font-family:'Barlow',sans-serif;font-size:12px;color:#999;margin-bottom:6px;">Choose a power-up:</div>
-        ${invItems.length > 0 ? invItems.join('') : '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#666;">No power-ups owned. <a href="#" class="powerup-open-shop" style="color:#D4AF37;text-decoration:none;">Buy some →</a></div>'}
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-bottom:6px;">Choose a power-up:</div>
+        ${invItems.length > 0 ? invItems.join('') : '<div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);">No power-ups owned. <a href="#" class="powerup-open-shop" style="color:var(--mod-text-heading);text-decoration:none;">Buy some →</a></div>'}
       </div>
-      <div id="powerup-equip-error" style="font-family:'Barlow',sans-serif;font-size:12px;color:#cc0000;margin-top:4px;display:none;"></div>
+      <div id="powerup-equip-error" style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-accent);margin-top:4px;display:none;"></div>
     </div>`;
 }
 
@@ -247,7 +247,7 @@ export function wireLoadout(debateId: string, onEquipped?: (result: PowerUpResul
       if (picker) picker.style.display = 'block';
 
       document.querySelectorAll('.powerup-slot').forEach(s => {
-        (s as HTMLElement).style.borderColor = s === slot ? '#D4AF37' : (s.classList.contains('filled') ? '#D4AF3744' : '#2a2a3e');
+        (s as HTMLElement).style.borderColor = s === slot ? 'var(--mod-text-heading)' : (s.classList.contains('filled') ? 'var(--mod-text-heading)44' : '#2a2a3e');
       });
     });
   });
@@ -294,15 +294,15 @@ export function renderActivationBar(equipped: EquippedItem[]): string {
       <button class="powerup-activate-btn ${isPassive ? 'passive' : ''}"
         data-id="${eq.power_up_id}" data-slot="${eq.slot_number}"
         ${isPassive ? 'disabled title="Active — doubles staking payout"' : ''}
-        style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid ${isPassive ? '#D4AF3744' : '#D4AF3766'};background:${isPassive ? '#D4AF3711' : 'rgba(15,15,26,0.9)'};color:${isPassive ? '#D4AF37' : '#fff'};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;cursor:${isPassive ? 'default' : 'pointer'};white-space:nowrap;transition:all 0.2s;">
+        style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid ${isPassive ? 'var(--mod-text-heading)44' : 'var(--mod-text-heading)66'};background:${isPassive ? 'var(--mod-text-heading)11' : 'rgba(15,15,26,0.9)'};color:${isPassive ? 'var(--mod-text-heading)' : '#fff'};font-family:var(--mod-font-ui);font-size:12px;font-weight:600;cursor:${isPassive ? 'default' : 'pointer'};white-space:nowrap;transition:all 0.2s;">
         <span style="font-size:18px;">${eq.icon ?? cat?.icon ?? '?'}</span>
         <span>${isPassive ? 'ACTIVE' : 'USE'}</span>
       </button>`;
   });
 
   return `
-    <div id="powerup-activation-bar" style="display:flex;gap:8px;padding:8px 16px;overflow-x:auto;flex-shrink:0;border-top:1px solid rgba(212,168,67,0.15);background:rgba(10,17,40,0.6);">
-      <div style="font-family:'Oswald',sans-serif;font-size:10px;color:#D4AF37;letter-spacing:1.5px;display:flex;align-items:center;margin-right:4px;text-transform:uppercase;white-space:nowrap;">POWER-UPS</div>
+    <div id="powerup-activation-bar" style="display:flex;gap:8px;padding:8px 16px;overflow-x:auto;flex-shrink:0;border-top:1px solid var(--mod-accent-border);background:var(--mod-bg-card);">
+      <div style="font-family:'Oswald',sans-serif;font-size:10px;color:var(--mod-text-heading);letter-spacing:1.5px;display:flex;align-items:center;margin-right:4px;text-transform:uppercase;white-space:nowrap;">POWER-UPS</div>
       ${buttons.join('')}
     </div>`;
 }
@@ -350,11 +350,11 @@ export function wireActivationBar(debateId: string, callbacks: ActivationCallbac
 export function renderSilenceOverlay(opponentName?: string): ReturnType<typeof setInterval> {
   const overlay = document.createElement('div');
   overlay.id = 'powerup-silence-overlay';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,rgba(212,168,67,0.15),rgba(204,41,54,0.1));border-bottom:1px solid rgba(212,168,67,0.3);z-index:200;animation:arenaFadeIn 0.3s ease;';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,var(--mod-accent-border),rgba(231,68,42,0.1));border-bottom:1px solid var(--mod-accent-border);z-index:200;animation:arenaFadeIn 0.3s ease;';
   overlay.innerHTML = `
     <span style="font-size:22px;">🤫</span>
-    <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#D4AF37;letter-spacing:1px;">${opponentName ?? 'Opponent'} SILENCED</span>
-    <span id="silence-countdown" style="font-family:'Oswald',sans-serif;font-size:18px;color:#fff;min-width:30px;text-align:center;">10</span>
+    <span style="font-family:var(--mod-font-ui);font-size:14px;font-weight:600;color:var(--mod-text-heading);letter-spacing:1px;">${opponentName ?? 'Opponent'} SILENCED</span>
+    <span id="silence-countdown" style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--mod-text-primary);min-width:30px;text-align:center;">10</span>
   `;
   document.body.appendChild(overlay);
 
@@ -381,7 +381,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
     return `
       <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:8px;">
         <span style="font-size:22px;">${eq.icon ?? cat?.icon ?? '?'}</span>
-        <span style="font-family:'Barlow',sans-serif;font-size:13px;color:#fff;">${eq.name ?? cat?.name ?? eq.power_up_id}</span>
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);">${eq.name ?? cat?.name ?? eq.power_up_id}</span>
       </div>`;
   });
 
@@ -389,12 +389,12 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
   popup.id = 'powerup-reveal-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);animation:arenaFadeIn 0.3s ease;';
   popup.innerHTML = `
-    <div style="background:#12122a;border:1px solid #D4AF3744;border-radius:14px;padding:20px;max-width:280px;width:90%;">
-      <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#D4AF37;letter-spacing:2px;text-align:center;margin-bottom:12px;">👁️ OPPONENT'S LOADOUT</div>
+    <div style="background:#12122a;border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
+      <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:2px;text-align:center;margin-bottom:12px;">👁️ OPPONENT'S LOADOUT</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        ${items.length > 0 ? items.join('') : '<div style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#999;text-align:center;">No power-ups equipped</div>'}
+        ${items.length > 0 ? items.join('') : '<div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);text-align:center;">No power-ups equipped</div>'}
       </div>
-      <button id="reveal-close-btn" style="display:block;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:#999;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;">DISMISS</button>
+      <button id="reveal-close-btn" style="display:block;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-size:13px;cursor:pointer;">DISMISS</button>
     </div>
   `;
   document.body.appendChild(popup);
@@ -410,7 +410,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
 export function renderShieldIndicator(): HTMLDivElement {
   const indicator = document.createElement('div');
   indicator.id = 'powerup-shield-indicator';
-  indicator.style.cssText = 'position:fixed;top:0;right:16px;padding:6px 12px;background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.3);border-radius:0 0 8px 8px;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:600;color:#D4AF37;letter-spacing:1px;z-index:100;';
+  indicator.style.cssText = 'position:fixed;top:0;right:16px;padding:6px 12px;background:var(--mod-accent-border);border:1px solid var(--mod-accent-border);border-radius:0 0 8px 8px;font-family:var(--mod-font-ui);font-size:11px;font-weight:600;color:var(--mod-text-heading);letter-spacing:1px;z-index:100;';
   indicator.textContent = '🛡️ SHIELD ACTIVE';
   document.body.appendChild(indicator);
   return indicator;
