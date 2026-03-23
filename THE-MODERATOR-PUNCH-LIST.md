@@ -52,7 +52,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
-| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback prompt, 180s hard timeout, cancel button. Layers 2-3 open. |
+| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback, 180s hard timeout, cancel button. Layer 2 ✅ Session 169: queue population count (server→client), spectator feed in queue (live debate cards). Layer 3 open: mode-scoped rooms, LCARS visual variety, audio/haptic feedback. |
 | F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | ✅ Session 168. 12s countdown, accept/decline buttons, respond_to_match + check_match_acceptance RPCs, player_a_ready/player_b_ready columns. |
 | F-03 | Entrance sequence / battle animations | | 🔶 Concept only | Plays on debate entry. Ties to group identity system. |
 | F-04 | Instant rematch from post-debate | | ❌ No spec | Button exists in nav map, no design. |
@@ -183,4 +183,4 @@ This punch list was compiled from:
 | 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
 | 2026-03-23 | 167 | F-01 Layer 1 done. Queue screen upgrade: dual search ring, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button. F-02 JS started (not uploaded). |
 | 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |
-| 2026-03-23 | 169 | B-08 fixed. AI sparring badge moved out of debate room header flex row — was overlapping topic/round on mobile. |
+| 2026-03-23 | 169 | B-08 fixed (AI sparring badge mobile overlap). F-01 Layer 2 done: queue population count via check_queue_status RPC, spectator feed (live debate cards) in queue screen. |
