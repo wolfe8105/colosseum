@@ -426,6 +426,10 @@ function injectCSS(): void {
     .arena-queue-ai-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--mod-border-primary); border-radius: var(--mod-radius-card, 8px); background: var(--mod-bg-card); width: 100%; max-width: 300px; }
     .arena-queue-ai-fallback-text { font-size: 13px; color: var(--mod-text-body); line-height: 1.4; }
     .arena-queue-timeout-options { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 8px; }
+    .arena-queue-pop { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 12px; letter-spacing: 0.5px; min-height: 16px; }
+    .arena-queue-feed { width: 100%; max-width: 360px; margin-top: 12px; }
+    .arena-queue-feed-label { font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: 8px; text-align: left; }
+    .arena-queue-feed .arena-card { margin-bottom: 8px; pointer-events: none; opacity: 0.85; }
 
     /* MATCH FOUND */
     .arena-match-found { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:40px 20px; text-align:center; }
@@ -1216,12 +1220,33 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
     <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     <div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>
+    <div class="arena-queue-pop" id="arena-queue-pop"></div>
     <div id="arena-queue-ai-prompt"></div>
     <button class="arena-queue-cancel" id="arena-queue-cancel">\u2715 CANCEL</button>
+    <div class="arena-queue-feed" id="arena-queue-feed"></div>
   `;
   screenEl?.appendChild(queueEl);
 
   document.getElementById('arena-queue-cancel')?.addEventListener('click', leaveQueue);
+
+  // Fetch live debates for spectator feed (fire-and-forget)
+  (async () => {
+    try {
+      const { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5 });
+      const feedEl = document.getElementById('arena-queue-feed');
+      if (!feedEl || view !== 'queue') return;
+      const items = data as ArenaFeedItem[] | null;
+      if (items && items.length > 0) {
+        const live = items.filter((d: ArenaFeedItem) => d.status === 'live');
+        const recent = items.filter((d: ArenaFeedItem) => d.status !== 'live').slice(0, 3);
+        const cards = [...live, ...recent].slice(0, 4);
+        if (cards.length > 0) {
+          feedEl.innerHTML = `<div class="arena-queue-feed-label">\uD83D\uDC41\uFE0F Live in the Arena</div>`
+            + cards.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('');
+        }
+      }
+    } catch { /* feed is optional */ }
+  })();
 
   queueElapsedTimer = setInterval(() => {
     if (queueErrorState) return;
@@ -1315,6 +1340,15 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
           const { data: status, error: pollErr } = await safeRpc<MatchData>('check_queue_status');
           if (pollErr) throw pollErr;
           if (view !== 'queue') return;
+
+          // Update queue population count
+          const qc = (status as Record<string, unknown>)?.queue_count;
+          const popEl = document.getElementById('arena-queue-pop');
+          if (popEl) {
+            const count = typeof qc === 'number' ? qc : 0;
+            popEl.textContent = count > 0 ? `${count} other${count !== 1 ? 's' : ''} searching` : '';
+          }
+
           if (status && (status as MatchData).status === 'matched') {
             onMatchFound(status as MatchData);
           }
