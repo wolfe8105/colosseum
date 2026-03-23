@@ -51,8 +51,8 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
-| F-01 | Waiting room | | ✅ Full research doc | Timer, cancel, spectate in queue, AI sparring fallback after 60s. |
-| F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | Between queue and pre-debate. |
+| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback prompt, 180s hard timeout, cancel button. Layers 2-3 open. |
+| F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | ✅ Session 168. 12s countdown, accept/decline buttons, respond_to_match + check_match_acceptance RPCs, player_a_ready/player_b_ready columns. |
 | F-03 | Entrance sequence / battle animations | | 🔶 Concept only | Plays on debate entry. Ties to group identity system. |
 | F-04 | Instant rematch from post-debate | | ❌ No spec | Button exists in nav map, no design. |
 | F-05 | Debate recording + replay | | ✅ Attack Plan 3.1 | Synced transcript, timestamp comments, analytics overlay. |
@@ -180,3 +180,5 @@ This punch list was compiled from:
 | 2026-03-23 | 164 | B-05 closed. Profile depth expanded 39→100 questions (12→20 sections) for B2B data coverage. |
 | 2026-03-23 | 165 | B-07 closed (responsive breakpoints, CSS only). H-01 partial: home.ts + groups.ts `any` removed. F-45 added. |
 | 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
+| 2026-03-23 | 167 | F-01 Layer 1 done. Queue screen upgrade: dual search ring, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button. F-02 JS started (not uploaded). |
+| 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |

@@ -2980,3 +2980,37 @@ FIX: Re-enable Google provider in Supabase Auth → Providers → Google.
   Separate login and signup into distinct, clear paths.
 SESSION: 150 (discovered).
 ```
+
+---
+
+## LM-190: arena_debates.player_a_ready / player_b_ready — match accept gate
+```
+DECISION (Session 168): F-02 adds player_a_ready (BOOLEAN DEFAULT NULL)
+  and player_b_ready (BOOLEAN DEFAULT NULL) to arena_debates.
+  Two new RPCs: respond_to_match(p_debate_id, p_accept) and
+  check_match_acceptance(p_debate_id). Both are SECURITY DEFINER
+  with auth check (caller must be player_a or player_b).
+PROTECTS: Both players must explicitly accept before entering a debate.
+  Prevents one-sided matches where opponent already left.
+BITES YOU WHEN:
+  - You query arena_debates and assume all 'pending' debates are waiting
+    for content. Some are now waiting for accept/decline.
+  - You add a new debate creation path that skips the accept flow.
+    AI debates bypass this (no opponent to accept), but any new human
+    match path must route through showMatchFound().
+  - respond_to_match is idempotent (second call is no-op). But if you
+    call it after the debate has moved past 'pending' status, the
+    cancellation UPDATE won't fire (WHERE status = 'pending' guard).
+  - check_match_acceptance returns player_a_ready/player_b_ready/status.
+    Client uses MatchData.role ('a' or 'b') to know which column is
+    "mine" vs "opponent." If role assignment changes in join_debate_queue,
+    this mapping breaks silently.
+SYMPTOM: Debate starts with only one player ready. Or: accept screen
+  shows "opponent declined" immediately because columns are read wrong.
+FIX: role comes from join_debate_queue → MatchData.role. player_a = role 'a',
+  player_b = role 'b'. If changing queue assignment logic, update the
+  client-side column mapping in onMatchAccept() poll handler.
+RULE: AI debates (no opponent_id) skip the match found screen entirely.
+  Human debates MUST go through showMatchFound() → respond_to_match().
+SESSION: 168.
+```
