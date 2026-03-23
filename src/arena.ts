@@ -1714,13 +1714,13 @@ export function enterRoom(debate: CurrentDebate): void {
     <div class="arena-room-header">
       <div class="arena-rank-badge ${debate.ranked ? 'ranked' : 'casual'}" style="margin-bottom:6px">${debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
       <div class="arena-room-topic">${escapeHTML(debate.topic)}</div>
-      ${isAI ? `<div class="ai-generated-badge" style="margin-top:8px">
-        <span class="ai-icon">AI</span>
-        AI Sparring Partner \u2014 Not a Real Person
-      </div>` : ''}
       <div class="arena-room-round" id="arena-round-label">ROUND ${debate.round}/${debate.totalRounds}</div>
       ${debate.mode === 'live' ? `<div class="arena-room-timer" id="arena-room-timer">${formatTimer(ROUND_DURATION)}</div>` : ''}
     </div>
+    ${isAI ? `<div class="ai-generated-badge" style="align-self:center;margin:0 0 4px;">
+      <span class="ai-icon">AI</span>
+      AI Sparring Partner \u2014 Not a Real Person
+    </div>` : ''}
     <div class="arena-vs-bar">
       <div class="arena-debater">
         <div class="arena-debater-avatar">${myInitial}</div>
