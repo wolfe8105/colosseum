@@ -366,7 +366,7 @@ getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (
 
 window.addEventListener('DOMContentLoaded', async () => {
   // SESSION 32: Members Zone auth gate
-  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
+  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 6000))]);
 
   if (!getCurrentUser() && !getIsPlaceholderMode()) {
     window.location.href = 'moderator-plinko.html';

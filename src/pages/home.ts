@@ -821,7 +821,7 @@ async function appInit(){
   try {
     await Promise.race([
       ready,
-      new Promise(r => setTimeout(r, 4000))
+      new Promise(r => setTimeout(r, 6000))
     ]);
   } catch(e) { /* auth init rejected */ }
 

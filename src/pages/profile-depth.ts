@@ -596,7 +596,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const isPlaceholder = getIsPlaceholderMode();
 
   // SESSION 32: Members Zone auth gate
-  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 4000))]);
+  await Promise.race([ready, new Promise<void>(r => setTimeout(r, 6000))]);
   if (!getCurrentUser() && !isPlaceholder) {
     window.location.href = 'moderator-plinko.html';
     return;
