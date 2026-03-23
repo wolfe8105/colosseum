@@ -49,7 +49,7 @@ import { navigateTo } from './navigation.ts';
 // TYPE DEFINITIONS
 // ============================================================
 
-export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'room' | 'preDebate' | 'postDebate';
+export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate';
 export type DebateMode = 'live' | 'voicememo' | 'text' | 'ai';
 export type DebateStatus = 'pending' | 'lobby' | 'matched' | 'live' | 'completed' | 'complete';
 export type DebateRole = 'a' | 'b';
@@ -103,6 +103,12 @@ export interface MatchData {
   opponent_id?: string | null;
   opponent_elo?: number;
   status?: string;
+}
+
+interface MatchAcceptResponse {
+  player_a_ready: boolean | null;
+  player_b_ready: boolean | null;
+  status: string;
 }
 
 export interface ArenaFeedItem {
@@ -181,6 +187,8 @@ export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
 
 const QUEUE_AI_PROMPT_SEC: Readonly<Record<DebateMode, number>> = { live: 60, voicememo: 60, text: 60, ai: 0 };
 const QUEUE_HARD_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 180, voicememo: 180, text: 180, ai: 0 };
+const MATCH_ACCEPT_SEC = 12;
+const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 const ROUND_DURATION = 120;
 export const TEXT_MAX_CHARS = 2000;
 
@@ -226,6 +234,10 @@ let queueElapsedTimer: ReturnType<typeof setInterval> | null = null;
 let queueSeconds = 0;
 let queueErrorState = false;
 let aiFallbackShown = false;
+let matchAcceptTimer: ReturnType<typeof setInterval> | null = null;
+let matchAcceptPollTimer: ReturnType<typeof setInterval> | null = null;
+let matchAcceptSeconds = 0;
+let matchFoundDebate: CurrentDebate | null = null;
 let currentDebate: CurrentDebate | null = null;
 let roundTimer: ReturnType<typeof setInterval> | null = null;
 let roundTimeLeft = 0;
@@ -291,6 +303,10 @@ window.addEventListener('popstate', () => {
   if (view === 'queue') {
     clearQueueTimers();
     if (!isPlaceholder()) safeRpc('leave_debate_queue').catch(() => {});
+  }
+  if (view === 'matchFound') {
+    clearMatchAcceptTimers();
+    matchFoundDebate = null;
   }
 
   // All back navigation returns to lobby
@@ -410,6 +426,23 @@ function injectCSS(): void {
     .arena-queue-ai-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--mod-border-primary); border-radius: var(--mod-radius-card, 8px); background: var(--mod-bg-card); width: 100%; max-width: 300px; }
     .arena-queue-ai-fallback-text { font-size: 13px; color: var(--mod-text-body); line-height: 1.4; }
     .arena-queue-timeout-options { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 8px; }
+
+    /* MATCH FOUND */
+    .arena-match-found { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:40px 20px; text-align:center; }
+    .arena-mf-label { font-family:var(--mod-font-display); font-size:20px; font-weight:700; color:var(--mod-accent); letter-spacing:3px; text-transform:uppercase; margin-bottom:24px; }
+    .arena-mf-opponent { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:20px; }
+    .arena-mf-avatar { width:72px; height:72px; border-radius:50%; border:3px solid var(--mod-accent); background:var(--mod-bg-card); font-family:var(--mod-font-ui); font-size:28px; font-weight:700; color:var(--mod-accent); display:flex; align-items:center; justify-content:center; }
+    .arena-mf-name { font-family:var(--mod-font-ui); font-size:18px; font-weight:600; color:var(--mod-text-primary); }
+    .arena-mf-elo { font-size:13px; color:var(--mod-text-muted); }
+    .arena-mf-topic { font-size:14px; color:var(--mod-text-body); margin-bottom:20px; padding:8px 16px; border:1px solid var(--mod-border-subtle); border-radius:var(--mod-radius-card,8px); max-width:300px; }
+    .arena-mf-countdown { font-family:var(--mod-font-ui); font-size:56px; font-weight:700; color:var(--mod-text-primary); margin-bottom:8px; }
+    .arena-mf-status { font-size:14px; color:var(--mod-text-body); margin-bottom:20px; min-height:20px; }
+    .arena-mf-buttons { display:flex; gap:12px; width:100%; max-width:300px; }
+    .arena-mf-btn { flex:1; padding:14px 0; border-radius:var(--mod-radius-pill); font-family:var(--mod-font-ui); font-size:14px; font-weight:600; cursor:pointer; border:none; min-height:44px; letter-spacing:1px; }
+    .arena-mf-btn.accept { background:var(--mod-accent); color:#fff; }
+    .arena-mf-btn.accept:active { opacity:0.8; }
+    .arena-mf-btn.decline { background:var(--mod-bg-card); color:var(--mod-text-muted); border:1px solid var(--mod-border-primary); }
+    .arena-mf-btn.decline:active { background:var(--mod-bg-card-active); }
 
     /* DEBATE ROOM */
     .arena-room { display: flex; flex-direction: column; height: 100%; }
@@ -1320,7 +1353,7 @@ function onMatchFound(data: MatchData): void {
     if (selectedMode === 'ai' || !data.opponent_id) {
       enterRoom(debateData);
     } else {
-      void showPreDebate(debateData);
+      showMatchFound(debateData);
     }
   }, 1200);
 }
@@ -1374,6 +1407,143 @@ export function leaveQueue(): void {
 function clearQueueTimers(): void {
   if (queuePollTimer) { clearInterval(queuePollTimer); queuePollTimer = null; }
   if (queueElapsedTimer) { clearInterval(queueElapsedTimer); queueElapsedTimer = null; }
+}
+
+// ============================================================
+// MATCH FOUND — ACCEPT/DECLINE (F-02)
+// ============================================================
+
+function clearMatchAcceptTimers(): void {
+  if (matchAcceptTimer) { clearInterval(matchAcceptTimer); matchAcceptTimer = null; }
+  if (matchAcceptPollTimer) { clearInterval(matchAcceptPollTimer); matchAcceptPollTimer = null; }
+}
+
+function showMatchFound(debateData: CurrentDebate): void {
+  clearMatchAcceptTimers();
+  matchFoundDebate = debateData;
+  view = 'matchFound';
+  pushArenaState('matchFound');
+  if (screenEl) screenEl.innerHTML = '';
+
+  matchAcceptSeconds = MATCH_ACCEPT_SEC;
+
+  const opInitial = (debateData.opponentName[0] || '?').toUpperCase();
+  const mf = document.createElement('div');
+  mf.className = 'arena-match-found arena-fade-in';
+  mf.innerHTML = `
+    <div class="arena-mf-label">\u2694\uFE0F MATCH FOUND</div>
+    <div class="arena-mf-opponent">
+      <div class="arena-mf-avatar">${opInitial}</div>
+      <div class="arena-mf-name">${escapeHTML(debateData.opponentName)}</div>
+      <div class="arena-mf-elo">${debateData.opponentElo} ELO</div>
+    </div>
+    <div class="arena-mf-topic">${escapeHTML(debateData.topic)}</div>
+    <div class="arena-mf-countdown" id="mf-countdown">${matchAcceptSeconds}</div>
+    <div class="arena-mf-status" id="mf-status">Accept before time runs out</div>
+    <div class="arena-mf-buttons">
+      <button class="arena-mf-btn accept" id="mf-accept-btn">ACCEPT</button>
+      <button class="arena-mf-btn decline" id="mf-decline-btn">DECLINE</button>
+    </div>
+  `;
+  screenEl?.appendChild(mf);
+
+  document.getElementById('mf-accept-btn')?.addEventListener('click', () => onMatchAccept());
+  document.getElementById('mf-decline-btn')?.addEventListener('click', () => onMatchDecline());
+
+  matchAcceptTimer = setInterval(() => {
+    matchAcceptSeconds--;
+    const cdEl = document.getElementById('mf-countdown');
+    if (cdEl) cdEl.textContent = String(matchAcceptSeconds);
+    if (matchAcceptSeconds <= 0) {
+      onMatchDecline();
+    }
+  }, 1000);
+}
+
+async function onMatchAccept(): Promise<void> {
+  clearInterval(matchAcceptTimer!);
+  matchAcceptTimer = null;
+  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
+  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
+  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
+  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
+
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = 'Waiting for opponent\u2026';
+
+  if (!isPlaceholder() && matchFoundDebate) {
+    const { error } = await safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: true });
+    if (error) {
+      if (statusEl) statusEl.textContent = 'Error \u2014 retrying\u2026';
+      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.style.opacity = '1'; }
+      if (declineBtn) { declineBtn.disabled = false; declineBtn.style.opacity = '1'; }
+      return;
+    }
+  }
+
+  // Start polling for opponent acceptance
+  let pollElapsed = 0;
+  matchAcceptPollTimer = setInterval(async () => {
+    pollElapsed += 1.5;
+    if (pollElapsed >= MATCH_ACCEPT_POLL_TIMEOUT_SEC) {
+      onOpponentDeclined();
+      return;
+    }
+    if (!matchFoundDebate || isPlaceholder()) {
+      onMatchConfirmed();
+      return;
+    }
+    try {
+      const { data, error } = await safeRpc<MatchAcceptResponse>('check_match_acceptance', { p_debate_id: matchFoundDebate.id });
+      if (error || !data) return;
+      const resp = data as MatchAcceptResponse;
+      if (resp.status === 'cancelled') {
+        onOpponentDeclined();
+        return;
+      }
+      const myCol = matchFoundDebate.role === 'a' ? resp.player_a_ready : resp.player_b_ready;
+      const opCol = matchFoundDebate.role === 'a' ? resp.player_b_ready : resp.player_a_ready;
+      if (opCol === false) { onOpponentDeclined(); return; }
+      if (myCol === true && opCol === true) { onMatchConfirmed(); return; }
+    } catch { /* retry next tick */ }
+  }, 1500);
+}
+
+function onMatchDecline(): void {
+  clearMatchAcceptTimers();
+  if (!isPlaceholder() && matchFoundDebate) {
+    safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: false }).catch(() => {});
+  }
+  returnToQueueAfterDecline();
+}
+
+function onMatchConfirmed(): void {
+  clearMatchAcceptTimers();
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = '\u2705 Both ready \u2014 entering battle!';
+  if (matchFoundDebate) {
+    setTimeout(() => { void showPreDebate(matchFoundDebate!); }, 800);
+  }
+}
+
+function onOpponentDeclined(): void {
+  clearMatchAcceptTimers();
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = 'Opponent declined \u2014 returning to queue\u2026';
+  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
+  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
+  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
+  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
+  setTimeout(() => returnToQueueAfterDecline(), 1500);
+}
+
+function returnToQueueAfterDecline(): void {
+  matchFoundDebate = null;
+  if (selectedMode) {
+    enterQueue(selectedMode, '');
+  } else {
+    renderLobby();
+  }
 }
 
 // ============================================================
