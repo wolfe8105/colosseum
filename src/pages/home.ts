@@ -22,6 +22,7 @@ import '../tokens.ts';
 import { ModeratorAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
+import { registerNavigate } from '../navigation.ts';
 
 // --- Side-effect imports ---
 import { showPowerUpShop } from '../arena.ts';
@@ -459,7 +460,7 @@ function navigateTo(screenId: string){
   }
 }
 document.querySelectorAll('.bottom-nav-btn').forEach(btn=>{btn.addEventListener('click',()=>navigateTo(btn.dataset.screen));});
-(window as any).navigateTo = navigateTo;
+registerNavigate(navigateTo);
 
 
 // --- data-action wiring ---
