@@ -12,6 +12,7 @@
 
 import { APP } from './config.ts';
 import { getCurrentUser, ready } from './auth.ts';
+import { navigateTo } from './navigation.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -230,8 +231,7 @@ export function handleDeepLink(): void {
 
   if (debate) {
     setTimeout(() => {
-      const nav = (window as unknown as { navigateTo?: (screen: string) => void }).navigateTo;
-      if (typeof nav === 'function') nav('arena');
+      navigateTo('arena');
     }, 500);
   }
 

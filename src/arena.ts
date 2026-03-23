@@ -43,6 +43,7 @@ import { shareResult } from './share.ts';
 import type { SafeRpcResult } from './auth.ts';
 import type { SettleResult, PoolData, StakeResult } from './staking.ts';
 import type { EquippedItem, InventoryItem, PowerUpResult } from './powerups.ts';
+import { navigateTo } from './navigation.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -711,9 +712,7 @@ export function renderLobby(): void {
 
   // Wire challenge CTA — navigate to home carousel
   document.getElementById('arena-challenge-cta')?.addEventListener('click', () => {
-    if (typeof (window as unknown as Record<string, unknown>).navigateTo === 'function') {
-      (window as unknown as Record<string, unknown> & { navigateTo: (s: string) => void }).navigateTo('home');
-    }
+    navigateTo('home');
   });
 
   // Load lobby content

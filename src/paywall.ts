@@ -13,6 +13,7 @@
 
 import { escapeHTML } from './config.ts';
 import { getCurrentProfile } from './auth.ts';
+import { navigateTo } from './navigation.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -120,7 +121,6 @@ export function show(variant: PaywallVariant = 'general'): void {
     display:flex;align-items:flex-end;justify-content:center;padding:0;
   `;
 
-  // NOTE: navigateTo('shop') in onclick runs in global scope — finds window.navigateTo at runtime
   modal.innerHTML = `
     <div id="paywall-sheet" style="
       background:linear-gradient(180deg,#132240 0%,#0a1628 100%);
@@ -148,12 +148,12 @@ export function show(variant: PaywallVariant = 'general'): void {
           <span style="color:#f0f0f0;font-size:13px;">Priority matchmaking & more</span>
         </div>
       </div>
-      <button onclick="navigateTo('shop');document.getElementById('paywall-modal')?.remove();" style="
+      <button id="paywall-cta-btn" style="
         width:100%;padding:14px;background:#cc2936;color:#fff;border:none;border-radius:10px;
         font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;
         margin-bottom:8px;
       ">${escapeHTML(v.cta)}</button>
-      <button onclick="document.getElementById('paywall-modal')?.remove();" style="
+      <button id="paywall-dismiss-btn" style="
         width:100%;padding:12px;background:none;color:#a0a8b8;border:none;
         font-size:13px;cursor:pointer;
       ">Maybe later</button>
@@ -165,6 +165,14 @@ export function show(variant: PaywallVariant = 'general'): void {
   });
 
   document.body.appendChild(modal);
+
+  document.getElementById('paywall-cta-btn')?.addEventListener('click', () => {
+    navigateTo('shop');
+    document.getElementById('paywall-modal')?.remove();
+  });
+  document.getElementById('paywall-dismiss-btn')?.addEventListener('click', () => {
+    document.getElementById('paywall-modal')?.remove();
+  });
 
   // Animate in
   requestAnimationFrame(() => {

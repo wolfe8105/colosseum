@@ -26,6 +26,7 @@ import {
 } from './auth.ts';
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
+import { navigateTo } from './navigation.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -182,8 +183,7 @@ function _timeAgo(dateStr: string | undefined | null): string {
 
 function _enterArenaWithTopic(topic: string): void {
   setTimeout(() => {
-    const nav = (window as unknown as { navigateTo?: (screen: string) => void }).navigateTo;
-    if (typeof nav === 'function') nav('arena');
+    navigateTo('arena');
     if (typeof ModeratorArena !== 'undefined' && ModeratorArena?.enterQueue) {
       ModeratorArena.enterQueue('ai', topic);
     }
