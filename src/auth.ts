@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Authentication Module (TypeScript)
+ * THE MODERATOR — Authentication Module (TypeScript)
  *
  * Runtime module — replaces moderator-auth.js when Vite build is active.
  * Depends on: config.ts, @supabase/supabase-js (npm)

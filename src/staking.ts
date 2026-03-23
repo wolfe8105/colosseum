@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Token Staking System (TypeScript)
+ * THE MODERATOR — Token Staking System (TypeScript)
  *
  * Runtime module (replaces moderator-staking.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, canStake)

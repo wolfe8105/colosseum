@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Questionnaire Tier System (TypeScript)
+ * THE MODERATOR — Questionnaire Tier System (TypeScript)
  *
  * Runtime module (replaces moderator-tiers.js). Pure utility — zero dependencies.
  * Client-side is DISPLAY ONLY — all RPCs enforce server-side.

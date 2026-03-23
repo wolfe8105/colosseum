@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Central Configuration (TypeScript)
+ * THE MODERATOR — Central Configuration (TypeScript)
  *
  * Runtime module — replaces moderator-config.js when Vite build is active.
  * All constants, escapeHTML, showToast, friendlyError live here.

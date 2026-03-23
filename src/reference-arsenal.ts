@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Reference Arsenal Module (TypeScript)
+ * THE MODERATOR — Reference Arsenal Module (TypeScript)
  *
  * Runtime module. New file — no legacy JS predecessor.
  * Depends on: auth.ts (safeRpc, getCurrentUser), config.ts (escapeHTML, showToast)

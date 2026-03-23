@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Home Page Controller (TypeScript)
+ * THE MODERATOR — Home Page Controller (TypeScript)
  *
  * Runtime module — entry point for index.html via Vite.
  * LCARS ring nav, category overlays, pull-to-refresh, activity indicators,

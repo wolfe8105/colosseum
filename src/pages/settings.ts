@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Settings Page Controller (TypeScript)
+ * THE MODERATOR — Settings Page Controller (TypeScript)
  *
  * Extracted from moderator-settings.html inline script.
  * Account settings, toggles, moderator panel, logout, delete account.

@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Arena Module (TypeScript)
+ * THE MODERATOR — Arena Module (TypeScript)
  *
  * Typed mirror of moderator-arena.js. Debate arena, matchmaking, debate room.
  * 4 modes: Live Audio, Voice Memo, Text Battle, AI Sparring.

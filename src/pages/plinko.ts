@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Plinko Gate Controller (TypeScript)
+ * THE MODERATOR — Plinko Gate Controller (TypeScript)
  *
  * Extracted from moderator-plinko.html inline script.
  * Linear 4-step signup: OAuth/Email → Age Gate → Username → Enter.

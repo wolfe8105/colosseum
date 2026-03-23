@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Notifications Module (TypeScript)
+ * THE MODERATOR — Notifications Module (TypeScript)
  *
  * Runtime module — replaces moderator-notifications.js when Vite build is active.
  * Depends on: config.ts, auth.ts

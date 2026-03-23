@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Funnel Analytics Module (TypeScript)
+ * THE MODERATOR — Funnel Analytics Module (TypeScript)
  *
  * Typed mirror of moderator-analytics.js. Zero-dependency event tracker.
  * Works on any page. Generates visitor UUID in localStorage, fires events

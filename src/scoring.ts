@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Scoring Module (TypeScript)
+ * THE MODERATOR — Scoring Module (TypeScript)
  *
  * Runtime module (replaces moderator-scoring.js).
  * Voting + predictions — all server-side via safeRpc.

@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Terms Page Controller (TypeScript)
+ * THE MODERATOR — Terms Page Controller (TypeScript)
  *
  * Extracted from moderator-terms.html inline script.
  * Tab switching between ToS, Privacy, and Community Guidelines.

@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — WebRTC Module (TypeScript)
+ * THE MODERATOR — WebRTC Module (TypeScript)
  *
  * Runtime module (replaces moderator-webrtc.js). Live audio debate engine.
  * Uses Supabase Realtime channels for signaling (no separate server).

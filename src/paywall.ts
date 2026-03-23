@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Paywall Module (TypeScript)
+ * THE MODERATOR — Paywall Module (TypeScript)
  *
  * Runtime module — replaces moderator-paywall.js when Vite build is active.
  * 4 contextual paywall variants. gate() checks access, dismissible, non-aggressive.

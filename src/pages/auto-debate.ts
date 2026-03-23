@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Auto-Debate Page Controller (TypeScript)
+ * THE MODERATOR — Auto-Debate Page Controller (TypeScript)
  *
  * Extracted from moderator-auto-debate.html inline script.
  * AI vs AI debate page. Ungated voting with fingerprint dedup.

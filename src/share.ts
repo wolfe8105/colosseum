@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Share Module (TypeScript)
+ * THE MODERATOR — Share Module (TypeScript)
  *
  * Runtime module — replaces moderator-share.js when Vite build is active.
  * Depends on: config.ts, auth.ts

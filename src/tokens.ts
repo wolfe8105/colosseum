@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Token Earn System (TypeScript)
+ * THE MODERATOR — Token Earn System (TypeScript)
  *
  * Runtime module — replaces moderator-tokens.js when Vite build is active.
  * Depends on: config.ts, auth.ts

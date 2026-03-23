@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Payments Module (TypeScript)
+ * THE MODERATOR — Payments Module (TypeScript)
  *
  * Runtime module — replaces moderator-payments.js when Vite build is active.
  * Depends on: config.ts, auth.ts, Stripe.js (CDN)

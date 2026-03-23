@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Async Module (TypeScript)
+ * THE MODERATOR — Async Module (TypeScript)
  *
  * Runtime module — replaces moderator-async.js when Vite build is active.
  * Hot takes, predictions, rivals, challenges.

@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Debate Landing Page Controller (TypeScript)
+ * THE MODERATOR — Debate Landing Page Controller (TypeScript)
  *
  * Extracted from moderator-debate-landing.html inline script.
  * Ungated entry point. Anonymous voting with fingerprint dedup.

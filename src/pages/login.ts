@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Login Page Controller (TypeScript)
+ * THE MODERATOR — Login Page Controller (TypeScript)
  *
  * Extracted from moderator-login.html inline script.
  * OAuth-dominant login, email collapsed behind toggle, password reset modal.

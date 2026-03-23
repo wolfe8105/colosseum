@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Power-Up System (TypeScript)
+ * THE MODERATOR — Power-Up System (TypeScript)
  *
  * Runtime module (replaces moderator-powerups.js).
  * Depends on: auth.ts (safeRpc), tiers.ts (getTier, getPowerUpSlots, getNextTier)

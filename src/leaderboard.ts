@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Leaderboard Module (TypeScript)
+ * THE MODERATOR — Leaderboard Module (TypeScript)
  *
  * Runtime module — replaces moderator-leaderboard.js when Vite build is active.
  * Depends on: config.ts, auth.ts

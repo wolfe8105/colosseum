@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Spectator View Controller (TypeScript)
+ * THE MODERATOR — Spectator View Controller (TypeScript)
  *
  * Extracted from moderator-spectate.html inline script.
  * Live/completed debate spectating, message stream, spectator chat,

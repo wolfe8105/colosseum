@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Voice Memo Module (TypeScript)
+ * THE MODERATOR — Voice Memo Module (TypeScript)
  *
  * Runtime module (replaces moderator-voicememo.js). SURVIVAL-CRITICAL: Solves empty
  * lobby problem. Record take → opponent records reply → async voice debate.

@@ -1,5 +1,5 @@
 // ============================================================
-// THE COLOSSEUM — AI SPARRING Edge Function
+// THE MODERATOR — AI SPARRING Edge Function
 // Session 40: A08 hardened — removed deno.land import, CORS allowlist
 //
 // CHANGES FROM SESSION 25:

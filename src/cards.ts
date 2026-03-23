@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Cards Module (TypeScript)
+ * THE MODERATOR — Cards Module (TypeScript)
  *
  * Typed mirror of moderator-cards.js. ESPN-style debate result cards
  * with watermark branding. Generates images in 4 sizes for sharing.
@@ -181,7 +181,7 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
   ctx.fillText('THE', W / 2, brandY);
   ctx.fillStyle = COLORS.gold;
   ctx.font = `700 ${22 * scale}px serif`;
-  ctx.fillText('COLOSSEUM', W / 2, brandY + 24 * scale);
+  ctx.fillText('MODERATOR', W / 2, brandY + 24 * scale);
   (ctx as unknown as Record<string, string>)['letterSpacing'] = '0px';
 
   // --- Divider ---

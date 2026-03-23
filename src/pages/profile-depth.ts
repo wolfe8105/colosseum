@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Profile Depth Engine (TypeScript)
+ * THE MODERATOR — Profile Depth Engine (TypeScript)
  *
  * Extracted from moderator-profile-depth.html inline script.
  * 12 sections, 39+ questions, tier system integration, discount waterfall.

@@ -1,5 +1,5 @@
 /**
- * THE COLOSSEUM — Groups Page Controller (TypeScript)
+ * THE MODERATOR — Groups Page Controller (TypeScript)
  *
  * Extracted from moderator-groups.html inline script.
  * Groups: discover, my groups, rankings, detail view, hot takes,
