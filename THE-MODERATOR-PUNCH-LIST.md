@@ -40,6 +40,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | B-05 | Tier threshold gap — Tiers 3-5 unreachable | ✅ | Session 164. Expanded questionnaire from 39→100 questions (12→20 sections). 8 new B2B-driven sections added. All tier thresholds (10/25/50/75/100) now reachable. |
 | B-06 | AI Sparring pre-debate navigation bug | ✅ | Session 163. Not reproducible — killed by TS migration Session 142. |
 | B-07 | No responsive breakpoints | ✅ | Session 165. `@media (min-width: 768px)` content constraint: `.screen` capped at `max-width: 640px` + centered. Home screen (ring nav) exempted. Profile-depth grid 4-col on desktop. Groups/settings get body constraint. CSS only. |
+| B-08 | AI sparring badge overlaps debate room header on mobile | ✅ | Session 169. Badge was inside `.arena-room-header` flex row — too wide for mobile, covered topic text and round counter. Fix: moved badge out of header, placed between header and vs-bar as its own centered element. |
 
 ---
 
@@ -182,3 +183,4 @@ This punch list was compiled from:
 | 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
 | 2026-03-23 | 167 | F-01 Layer 1 done. Queue screen upgrade: dual search ring, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button. F-02 JS started (not uploaded). |
 | 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |
+| 2026-03-23 | 169 | B-08 fixed. AI sparring badge moved out of debate room header flex row — was overlapping topic/round on mobile. |
