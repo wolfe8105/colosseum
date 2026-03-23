@@ -8,20 +8,59 @@
  * Migration: Session 128 (Phase 4), Session 139 (ES imports, 9 window globals removed)
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from '../auth.ts';
+import type { SafeRpcResult } from '../auth.ts';
 import { claimVote } from '../tokens.ts';
 import '../analytics.ts';
+
+/** Debate shape returned by get_arena_debate_spectator RPC or direct query */
+interface SpectateDebate {
+  status: string | null;
+  mode: string | null;
+  topic: string | null;
+  debater_a_name: string | null;
+  debater_a_elo: number | null;
+  debater_a_avatar: string | null;
+  debater_b_name: string | null;
+  debater_b_elo: number | null;
+  debater_b_avatar: string | null;
+  moderator_type: string | null;
+  spectator_count: number | null;
+  current_round: number | null;
+  total_rounds: number | null;
+  vote_count_a: number | null;
+  vote_count_b: number | null;
+  score_a: number | null;
+  score_b: number | null;
+  winner: string | null;
+}
+
+/** Single debate message (argument in a round) */
+interface DebateMessage {
+  round: number | null;
+  side: string | null;
+  is_ai: boolean | null;
+  content: string | null;
+  created_at: string | null;
+}
+
+/** Spectator chat message */
+interface SpectatorChatMessage {
+  display_name: string | null;
+  message: string | null;
+  created_at: string | null;
+  user_id: string | null;
+}
 
 (async function init() {
 
   // ---- Wait for auth init, then use its Supabase client ----
   await ready;
-  const sb: any = getSupabaseClient();
+  const sb: SupabaseClient | null = getSupabaseClient();
 
   // Wrapper: safeRpc with 401 recovery
-  async function rpc(name: string, params?: Record<string, unknown>): Promise<any> {
+  async function rpc(name: string, params?: Record<string, unknown>): Promise<SafeRpcResult> {
     return safeRpc(name, params);
   }
 
@@ -30,8 +69,8 @@ import '../analytics.ts';
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let chatPollTimer: ReturnType<typeof setInterval> | null = null;
   let lastMessageTime: string | null = null;
-  let debateData: any = null;
-  let chatMessages: any[] = [];
+  let debateData: SpectateDebate | null = null;
+  let chatMessages: SpectatorChatMessage[] = [];
   let chatOpen = true;
   const isLoggedIn = !!(getCurrentUser() && !getIsPlaceholderMode());
 
@@ -68,7 +107,7 @@ import '../analytics.ts';
   }
 
   // ---- Helpers ----
-  function escHtml(str: any) {
+  function escHtml(str: unknown) {
     if (!str) return '';
     return String(str)
       .replace(/&/g, '&amp;')
@@ -213,7 +252,7 @@ import '../analytics.ts';
       }
     } catch (err) {
       console.error('[Spectate] Load error:', err);
-      showError('Failed to load debate: ' + (err.message || 'Unknown error'));
+      showError('Failed to load debate: ' + ((err as Error).message || 'Unknown error'));
     }
   }
 
@@ -223,7 +262,7 @@ import '../analytics.ts';
   }
 
   // ---- Render ----
-  function renderSpectateView(d: any, messages: any[]) {
+  function renderSpectateView(d: SpectateDebate, messages: DebateMessage[]) {
     loading.style.display = 'none';
     const isLive = d.status === 'live' || d.status === 'pending' || d.status === 'round_break' || d.status === 'voting';
     let html = '';
@@ -387,7 +426,7 @@ import '../analytics.ts';
   }
 
   // ---- Debate Messages ----
-  function renderMessages(messages: any[], d: any) {
+  function renderMessages(messages: DebateMessage[], d: SpectateDebate) {
     let html = '';
     let lastRound = 0;
     for (const m of messages) {
@@ -413,7 +452,7 @@ import '../analytics.ts';
   }
 
   // ---- Spectator Chat Messages ----
-  function renderChatMessages(msgs: any[]) {
+  function renderChatMessages(msgs: SpectatorChatMessage[]) {
     let html = '';
     for (const m of msgs) {
       html += '<div class="sc-msg">';
@@ -426,7 +465,7 @@ import '../analytics.ts';
   }
 
   // ---- Chat UI ----
-  function wireChatUI(d: any) {
+  function wireChatUI(d: SpectateDebate) {
     const header = document.getElementById('spec-chat-header');
     if (header) {
       header.addEventListener('click', () => {
@@ -440,8 +479,8 @@ import '../analytics.ts';
 
     if (!isLoggedIn) return;
 
-    const input = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('chat-send');
+    const input = document.getElementById('chat-input') as HTMLInputElement | null;
+    const sendBtn = document.getElementById('chat-send') as HTMLButtonElement | null;
     if (!input || !sendBtn) return;
 
     let sending = false;
@@ -621,7 +660,7 @@ import '../analytics.ts';
   }
 
   // ---- Voting ----
-  function wireVoteButtons(d: any) {
+  function wireVoteButtons(d: SpectateDebate) {
     const btnA = document.getElementById('vote-a');
     const btnB = document.getElementById('vote-b');
     if (!btnA || !btnB) return;
@@ -629,7 +668,7 @@ import '../analytics.ts';
     btnB.addEventListener('click', () => castVote('b', d));
   }
 
-  async function castVote(side: string, d: any) {
+  async function castVote(side: string, d: SpectateDebate) {
     const btnA = document.getElementById('vote-a');
     const btnB = document.getElementById('vote-b');
 
@@ -683,7 +722,7 @@ import '../analytics.ts';
   }
 
   // ---- Sharing (social proof + WhatsApp) ----
-  function wireShareButtons(d: any) {
+  function wireShareButtons(d: SpectateDebate) {
     const url = window.location.href;
     const specCount = Number(d.spectator_count) || 0;
     const proofText = specCount > 1 ? specCount + ' watching — ' : '';
