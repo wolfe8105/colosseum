@@ -16,16 +16,16 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | # | Item | Status | Notes |
 |---|------|--------|-------|
 | H-01 | 3 page modules have `any` annotations (`spectate.ts`, `groups.ts`, `home.ts`) | ⏳ | Compile but no real type safety. Any new feature touching these risks type bugs. |
-| H-02 | `(window as any).navigateTo` in `home.ts` | ⏳ | Last remaining window global. Final Migration Plan loose end. |
+| H-02 | `(window as any).navigateTo` in `home.ts` | ✅ | Session 163. Created `src/navigation.ts` with register/call pattern. 4 consumers updated. Zero `window.navigateTo` refs remain. |
 | H-03 | Bible docs stale after Colosseum→Moderator rename | ⏳ | NT, OT, War Plan, Wiring Manifest, Land Mine Map all have old "Colosseum" references in content. Session 160 renamed files but internal content varies. |
-| H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ⏳ | Flagged Session 143. Never investigated. Either dead reference in Manifest or missing from Vite. |
+| H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ✅ | Session 163. Non-issue — stale Wiring Manifest reference. Arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
 | H-05 | Bot army quarantined from rename | ⏳ | `bot-config.ts`, `bot-engine.ts`, `lib/*`, `tests/*` still say "Colosseum" internally. Intentional during Session 160 but needs eventual cleanup. |
 | H-06 | Stripe Edge Function templates use old imports | ⏳ | Not urgent until Stripe goes live. Will block monetization when that time comes. |
 | H-07 | Edge Function CORS allowlist missing mirror domain | ⏳ | OK since mirror is pure HTML. Cleanup item. |
 | H-08 | 3 older RLS policies still have `{public}` scope | ⏳ | Low priority security hygiene. |
-| H-09 | `bot-engine.js` straggler in repo root | ⏳ | Should have been deleted Session 144. One file, GitHub web UI delete. |
-| H-10 | TS Migration Plan — remove from project knowledge | ⏳ | Migration complete (confirmed Session 162). Doc is historical. Keep in repo, remove from project knowledge to free context. |
-| H-11 | Navigation Architecture — remove from project knowledge | ⏳ | Reference doc, not operational. Keep in repo, remove from project knowledge. |
+| H-09 | `bot-engine.js` straggler in repo root | ✅ | Session 163. Already deleted. |
+| H-10 | TS Migration Plan — remove from project knowledge | ✅ | Session 163. Removed. |
+| H-11 | Navigation Architecture — remove from project knowledge | ✅ | Session 163. Removed. |
 
 ---
 
@@ -33,12 +33,13 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| B-01 | Arena view renders blank | ⏳ | Discovered Session 144. Gradient only, no lobby UI. Likely pre-existing from Session 142 script tag removal. Never investigated. |
-| B-02 | Auth redirect loop on cold visit | ⏳ | Long-standing since Session 26. Workaround: click Log In link. |
-| B-03 | `get_my_milestones` — column 'action' does not exist | ⏳ | Fires on every page load. Wrong column name in RPC. |
-| B-04 | `claim_milestone` — column 'action' does not exist | ⏳ | Same pattern as B-03. Fires on tier threshold cross. |
-| B-05 | Tier threshold gap — Tiers 3-5 unreachable | ⏳ | 39 questions max = Tier 2 ceiling. Need more profile depth content or adjust thresholds. |
-| B-06 | AI Sparring pre-debate navigation bug | ⏳ | Pre-debate screen clobbered by multiple `init()` calls. Debug logs added, root cause not confirmed. |
+| B-01 | Arena view renders blank | ✅ | Session 163. Not a bug — arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
+| B-02 | Auth redirect loop on cold visit | ✅ | Session 163. Root cause: 4000ms page timeout vs 5000ms auth timeout = 1s gap. Fix: 4000→6000ms in home.ts, profile-depth.ts, settings.ts. |
+| B-03 | `get_my_milestones` — column 'action' does not exist | ✅ | Fixed Session 124. |
+| B-04 | `claim_milestone` — column 'action' does not exist | ✅ | Fixed Session 124. |
+| B-05 | Tier threshold gap — Tiers 3-5 unreachable | ✅ | Session 164. Expanded questionnaire from 39→100 questions (12→20 sections). 8 new B2B-driven sections added. All tier thresholds (10/25/50/75/100) now reachable. |
+| B-06 | AI Sparring pre-debate navigation bug | ✅ | Session 163. Not reproducible — killed by TS migration Session 142. |
+| B-07 | No responsive breakpoints | ⏳ | Session 163. Desktop layout has text overflow, no tablet adaptation. |
 
 ---
 
@@ -163,7 +164,7 @@ This punch list was compiled from:
 - SESSION-RESEARCH-WAITING-ROOM-AND-GROUPS.md (waiting room + groups deep design)
 - TOKEN-STAKING-POWERUP-PLAN.docx (staking + power-up implementation plan)
 - THE-MODERATOR-ATTACK-PLAN.md (original roadmap — DMs, search, replay, AI coach)
-- Session handoffs 143, 144, 160, 161
+- Session handoffs 143, 144, 160, 161, 163, 164
 
 ---
 
@@ -172,3 +173,5 @@ This punch list was compiled from:
 | Date | Session | What |
 |------|---------|------|
 | 2026-03-23 | 162 | Initial creation. 11 housekeeping, 6 bugs, 44 features, 7 open questions. |
+| 2026-03-23 | 163 | B-01/B-02/B-03/B-04/B-06 closed. H-02/H-04/H-09/H-10/H-11 closed. B-07 added. |
+| 2026-03-23 | 164 | B-05 closed. Profile depth expanded 39→100 questions (12→20 sections) for B2B data coverage. |
