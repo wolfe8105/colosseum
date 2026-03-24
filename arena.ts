@@ -43,12 +43,13 @@ import { shareResult } from './share.ts';
 import type { SafeRpcResult } from './auth.ts';
 import type { SettleResult, PoolData, StakeResult } from './staking.ts';
 import type { EquippedItem, InventoryItem, PowerUpResult } from './powerups.ts';
+import { navigateTo } from './navigation.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================
 
-export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'room' | 'preDebate' | 'postDebate';
+export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate';
 export type DebateMode = 'live' | 'voicememo' | 'text' | 'ai';
 export type DebateStatus = 'pending' | 'lobby' | 'matched' | 'live' | 'completed' | 'complete';
 export type DebateRole = 'a' | 'b';
@@ -102,6 +103,12 @@ export interface MatchData {
   opponent_id?: string | null;
   opponent_elo?: number;
   status?: string;
+}
+
+interface MatchAcceptResponse {
+  player_a_ready: boolean | null;
+  player_b_ready: boolean | null;
+  status: string;
 }
 
 export interface ArenaFeedItem {
@@ -172,13 +179,26 @@ interface ReferenceItem {
 // ============================================================
 
 export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
-  live: { id: 'live', icon: '🎙️', name: 'LIVE AUDIO', desc: 'Real-time voice debate. 2 min rounds.', available: 'Opponent needed', color: '#cc2936' },
-  voicememo: { id: 'voicememo', icon: '🎤', name: 'VOICE MEMO', desc: 'Record & send. Debate on your schedule.', available: 'Async — anytime', color: '#d4a843' },
-  text: { id: 'text', icon: '⌨️', name: 'TEXT BATTLE', desc: 'Written arguments. Think before you speak.', available: 'Async — anytime', color: '#5b8abf' },
-  ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#2ecc71' },
+  live: { id: 'live', icon: '🎙️', name: 'LIVE AUDIO', desc: 'Real-time voice debate. 2 min rounds.', available: 'Opponent needed', color: '#E7442A' },
+  voicememo: { id: 'voicememo', icon: '🎤', name: 'VOICE MEMO', desc: 'Record & send. Debate on your schedule.', available: 'Async — anytime', color: '#8890A8' },
+  text: { id: 'text', icon: '⌨️', name: 'TEXT BATTLE', desc: 'Written arguments. Think before you speak.', available: 'Async — anytime', color: '#555E78' },
+  ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#5DCAA5' },
 } as const;
 
-const QUEUE_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 90, voicememo: 10, text: 10, ai: 0 };
+const QUEUE_AI_PROMPT_SEC: Readonly<Record<DebateMode, number>> = { live: 60, voicememo: 60, text: 60, ai: 0 };
+const QUEUE_HARD_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 180, voicememo: 180, text: 180, ai: 0 };
+
+interface QueueCategory { readonly id: string; readonly icon: string; readonly label: string; }
+const QUEUE_CATEGORIES: readonly QueueCategory[] = [
+  { id: 'politics',      icon: '🏛️', label: 'Politics' },
+  { id: 'sports',        icon: '🏈', label: 'Sports' },
+  { id: 'entertainment', icon: '🎬', label: 'Film & TV' },
+  { id: 'couples',       icon: '💔', label: 'Couples Court' },
+  { id: 'music',         icon: '🎵', label: 'Music' },
+  { id: 'trending',      icon: '🔥', label: 'Trending' },
+] as const;
+const MATCH_ACCEPT_SEC = 12;
+const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 const ROUND_DURATION = 120;
 export const TEXT_MAX_CHARS = 2000;
 
@@ -222,6 +242,12 @@ let selectedMode: DebateMode | null = null;
 let queuePollTimer: ReturnType<typeof setInterval> | null = null;
 let queueElapsedTimer: ReturnType<typeof setInterval> | null = null;
 let queueSeconds = 0;
+let queueErrorState = false;
+let aiFallbackShown = false;
+let matchAcceptTimer: ReturnType<typeof setInterval> | null = null;
+let matchAcceptPollTimer: ReturnType<typeof setInterval> | null = null;
+let matchAcceptSeconds = 0;
+let matchFoundDebate: CurrentDebate | null = null;
 let currentDebate: CurrentDebate | null = null;
 let roundTimer: ReturnType<typeof setInterval> | null = null;
 let roundTimeLeft = 0;
@@ -229,6 +255,7 @@ let screenEl: HTMLElement | null = null;
 let cssInjected = false;
 let selectedModerator: SelectedModerator | null = null;
 let selectedRanked = false;
+let selectedCategory: string | null = null;
 export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
@@ -287,6 +314,10 @@ window.addEventListener('popstate', () => {
   if (view === 'queue') {
     clearQueueTimers();
     if (!isPlaceholder()) safeRpc('leave_debate_queue').catch(() => {});
+  }
+  if (view === 'matchFound') {
+    clearMatchAcceptTimers();
+    matchFoundDebate = null;
   }
 
   // All back navigation returns to lobby
@@ -364,132 +395,161 @@ function injectCSS(): void {
     /* MODE SELECT OVERLAY */
     .arena-mode-overlay { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; justify-content: flex-end; }
     .arena-mode-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
-    .arena-mode-sheet { position: relative; background: var(--navy); border-top: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; transform: translateY(0); animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .arena-mode-sheet { position: relative; background: var(--mod-bg-base); border-top: 1px solid var(--mod-border-primary); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; transform: translateY(0); animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
     @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .arena-mode-handle { width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); margin: 0 auto 16px; }
-    .arena-mode-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; text-align: center; margin-bottom: 4px; }
-    .arena-mode-subtitle { font-size: 13px; color: var(--white-dim); text-align: center; margin-bottom: 16px; }
+    .arena-mode-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--mod-border-secondary); margin: 0 auto 16px; }
+    .arena-mode-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; text-align: center; margin-bottom: 4px; }
+    .arena-mode-subtitle { font-size: 13px; color: var(--mod-text-body); text-align: center; margin-bottom: 16px; }
 
     /* MODE CARDS */
-    .arena-mode-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.2s, background 0.2s; -webkit-tap-highlight-color: transparent; }
-    .arena-mode-card:active { border-color: var(--card-border-hover); background: rgba(255,255,255,0.03); }
-    .arena-mode-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .arena-mode-card { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-left: var(--mod-card-bar-width) solid var(--mod-bar-secondary); border-radius: var(--mod-radius-md); padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: background var(--mod-transition-fast); -webkit-tap-highlight-color: transparent; }
+    .arena-mode-card:active { background: var(--mod-bg-card-hover); }
+    .arena-mode-icon { width: 50px; height: 50px; border-radius: var(--mod-radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
     .arena-mode-info { flex: 1; }
-    .arena-mode-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: 2px; color: var(--white); }
-    .arena-mode-desc { font-size: 12px; color: var(--white-dim); margin-top: 2px; }
+    .arena-mode-name { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size); font-weight: var(--mod-font-card-title-weight); letter-spacing: var(--mod-font-card-title-spacing); color: var(--mod-text-primary); }
+    .arena-mode-desc { font-size: 12px; color: var(--mod-text-body); margin-top: 2px; }
     .arena-mode-avail { font-size: 11px; margin-top: 4px; font-weight: 600; }
-    .arena-mode-arrow { color: var(--white-dim); font-size: 18px; }
-    .arena-mode-cancel { display: block; width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.1); background: none; border-radius: 12px; color: var(--white-dim); font-family: var(--font-body); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
+    .arena-mode-arrow { color: var(--mod-text-muted); font-size: 18px; }
+    .arena-mode-cancel { display: block; width: 100%; padding: 14px; border: 1px solid var(--mod-border-primary); background: none; border-radius: var(--mod-radius-md); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
 
     /* TOPIC INPUT */
-    .arena-topic-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
-    .arena-topic-label { font-size: 11px; color: var(--white-dim); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-    .arena-topic-input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: var(--white); font-family: var(--font-body); font-size: 14px; outline: none; }
-    .arena-topic-input::placeholder { color: var(--white-dim); }
-    .arena-topic-input:focus { border-color: rgba(212,168,67,0.3); }
+    .arena-topic-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mod-border-subtle); }
+    .arena-topic-label { font-size: 11px; color: var(--mod-text-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; font-family: var(--mod-font-ui); }
+    .arena-topic-input { width: 100%; padding: 10px 14px; border-radius: var(--mod-radius-md); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-primary); font-family: var(--mod-font-ui); font-size: 14px; outline: none; }
+    .arena-topic-input::placeholder { color: var(--mod-text-muted); }
+    .arena-topic-input:focus { border-color: var(--mod-accent-border); }
 
     /* QUEUE */
     .arena-queue { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 20px; text-align: center; }
-    .arena-queue-icon { font-size: 56px; margin-bottom: 16px; animation: queueBreathe 2.5s ease-in-out infinite; }
+    .arena-queue-search-ring { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .arena-queue-search-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--mod-border-primary); border-top-color: var(--mod-accent); animation: queueSpin 1.5s linear infinite; }
+    .arena-queue-search-ring::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid var(--mod-border-subtle); border-bottom-color: var(--mod-accent); animation: queueSpin 2.2s linear infinite reverse; }
+    .arena-queue-search-ring.stopped::before, .arena-queue-search-ring.stopped::after { animation: none; border-color: var(--mod-border-subtle); }
+    @keyframes queueSpin { to { transform: rotate(360deg); } }
+    .arena-queue-icon { font-size: 48px; animation: queueBreathe 2.5s ease-in-out infinite; position: relative; z-index: 1; }
     @keyframes queueBreathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } }
-    .arena-queue-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 6px; }
-    .arena-queue-status { font-size: 14px; color: var(--white-dim); margin-bottom: 20px; }
-    .arena-queue-timer { font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--white); letter-spacing: 4px; margin-bottom: 24px; }
-    .arena-queue-elo { font-size: 12px; color: var(--white-dim); margin-bottom: 24px; }
-    .arena-queue-cancel { padding: 12px 32px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); color: var(--white-dim); font-family: var(--font-body); font-size: 14px; cursor: pointer; }
-    .arena-queue-cancel:active { background: rgba(255,255,255,0.08); }
+    .arena-queue-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .arena-queue-timer { font-family: var(--mod-font-ui); font-size: 48px; font-weight: 700; color: var(--mod-text-primary); letter-spacing: 4px; margin-bottom: 8px; }
+    .arena-queue-status { font-size: 14px; color: var(--mod-text-body); margin-bottom: 16px; min-height: 20px; }
+    .arena-queue-elo { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 20px; }
+    .arena-queue-cancel { padding: 12px 32px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; cursor: pointer; min-height: 44px; min-width: 44px; letter-spacing: 1px; }
+    .arena-queue-cancel:active { background: var(--mod-bg-card-active); }
+    .arena-queue-ai-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--mod-border-primary); border-radius: var(--mod-radius-card, 8px); background: var(--mod-bg-card); width: 100%; max-width: 300px; }
+    .arena-queue-ai-fallback-text { font-size: 13px; color: var(--mod-text-body); line-height: 1.4; }
+    .arena-queue-timeout-options { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 8px; }
+    .arena-queue-pop { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 12px; letter-spacing: 0.5px; min-height: 16px; }
+    .arena-queue-feed { width: 100%; max-width: 360px; margin-top: 12px; }
+    .arena-queue-feed-label { font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: 8px; text-align: left; }
+    .arena-queue-feed .arena-card { margin-bottom: 8px; pointer-events: none; opacity: 0.85; }
+
+    /* MATCH FOUND */
+    .arena-match-found { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:40px 20px; text-align:center; }
+    .arena-mf-label { font-family:var(--mod-font-display); font-size:20px; font-weight:700; color:var(--mod-accent); letter-spacing:3px; text-transform:uppercase; margin-bottom:24px; }
+    .arena-mf-opponent { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:20px; }
+    .arena-mf-avatar { width:72px; height:72px; border-radius:50%; border:3px solid var(--mod-accent); background:var(--mod-bg-card); font-family:var(--mod-font-ui); font-size:28px; font-weight:700; color:var(--mod-accent); display:flex; align-items:center; justify-content:center; }
+    .arena-mf-name { font-family:var(--mod-font-ui); font-size:18px; font-weight:600; color:var(--mod-text-primary); }
+    .arena-mf-elo { font-size:13px; color:var(--mod-text-muted); }
+    .arena-mf-topic { font-size:14px; color:var(--mod-text-body); margin-bottom:20px; padding:8px 16px; border:1px solid var(--mod-border-subtle); border-radius:var(--mod-radius-card,8px); max-width:300px; }
+    .arena-mf-countdown { font-family:var(--mod-font-ui); font-size:56px; font-weight:700; color:var(--mod-text-primary); margin-bottom:8px; }
+    .arena-mf-status { font-size:14px; color:var(--mod-text-body); margin-bottom:20px; min-height:20px; }
+    .arena-mf-buttons { display:flex; gap:12px; width:100%; max-width:300px; }
+    .arena-mf-btn { flex:1; padding:14px 0; border-radius:var(--mod-radius-pill); font-family:var(--mod-font-ui); font-size:14px; font-weight:600; cursor:pointer; border:none; min-height:44px; letter-spacing:1px; }
+    .arena-mf-btn.accept { background:var(--mod-accent); color:#fff; }
+    .arena-mf-btn.accept:active { opacity:0.8; }
+    .arena-mf-btn.decline { background:var(--mod-bg-card); color:var(--mod-text-muted); border:1px solid var(--mod-border-primary); }
+    .arena-mf-btn.decline:active { background:var(--mod-bg-card-active); }
 
     /* DEBATE ROOM */
     .arena-room { display: flex; flex-direction: column; height: 100%; }
-    .arena-room-header { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .arena-room-topic { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--white); letter-spacing: 1px; flex: 1; }
-    .arena-room-round { font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 1px; }
-    .arena-room-timer { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: 2px; min-width: 60px; text-align: right; }
-    .arena-room-timer.warning { color: var(--red); animation: timerPulse 1s ease-in-out infinite; }
+    .arena-room-header { padding: 12px 16px; border-bottom: 1px solid var(--mod-border-subtle); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .arena-room-topic { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size); font-weight: var(--mod-font-card-title-weight); color: var(--mod-text-primary); letter-spacing: var(--mod-font-card-title-spacing); flex: 1; }
+    .arena-room-round { font-size: 11px; color: var(--mod-accent); font-weight: 600; letter-spacing: 1px; }
+    .arena-room-timer { font-family: var(--mod-font-ui); font-size: 22px; font-weight: 700; color: var(--mod-text-primary); letter-spacing: 2px; min-width: 60px; text-align: right; }
+    .arena-room-timer.warning { color: var(--mod-accent); animation: timerPulse 1s ease-in-out infinite; }
     @keyframes timerPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
     /* VS BANNER */
-    .arena-vs-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; background: rgba(10,17,40,0.4); flex-shrink: 0; }
+    .arena-vs-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; background: var(--mod-bg-card); flex-shrink: 0; }
     .arena-debater { display: flex; align-items: center; gap: 8px; }
     .arena-debater.right { flex-direction: row-reverse; }
-    .arena-debater-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--gold-dim); background: var(--card-bg); font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--gold); display: flex; align-items: center; justify-content: center; }
-    .arena-debater-avatar.ai-avatar { border-color: var(--success); color: var(--success); }
+    .arena-debater-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--mod-bar-secondary); background: var(--mod-bg-card); font-family: var(--mod-font-ui); font-size: 14px; font-weight: 700; color: var(--mod-bar-secondary); display: flex; align-items: center; justify-content: center; }
+    .arena-debater-avatar.ai-avatar { border-color: var(--mod-status-open); color: var(--mod-status-open); }
     .arena-debater-info { }
-    .arena-debater-name { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--white); }
-    .arena-debater-elo { font-size: 10px; color: var(--white-dim); }
-    .arena-vs-text { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 2px; }
+    .arena-debater-name { font-family: var(--mod-font-ui); font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--mod-text-primary); }
+    .arena-debater-elo { font-size: 10px; color: var(--mod-text-muted); }
+    .arena-vs-text { font-family: var(--mod-font-ui); font-size: 16px; font-weight: 700; color: var(--mod-accent); letter-spacing: 2px; }
 
     /* MESSAGES AREA */
     .arena-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
-    .arena-msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; word-break: break-word; }
-    .arena-msg.side-a { align-self: flex-start; background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.15); color: var(--white); border-bottom-left-radius: 4px; }
-    .arena-msg.side-b { align-self: flex-end; background: rgba(91,138,191,0.1); border: 1px solid rgba(91,138,191,0.15); color: var(--white); border-bottom-right-radius: 4px; }
+    .arena-msg { max-width: 85%; padding: 10px 14px; border-radius: var(--mod-radius-lg); font-size: 14px; line-height: 1.5; word-break: break-word; }
+    .arena-msg.side-a { align-self: flex-start; background: var(--mod-accent-muted); border: 1px solid var(--mod-accent-border); color: var(--mod-text-primary); border-bottom-left-radius: var(--mod-radius-sm); }
+    .arena-msg.side-b { align-self: flex-end; background: rgba(85,94,120,0.12); border: 1px solid rgba(85,94,120,0.2); color: var(--mod-text-primary); border-bottom-right-radius: var(--mod-radius-sm); }
     .arena-msg .msg-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-    .arena-msg.side-a .msg-label { color: var(--gold); }
-    .arena-msg.side-b .msg-label { color: #7aa3d4; }
-    .arena-msg .msg-round { font-size: 10px; color: var(--white-dim); margin-top: 4px; }
-    .arena-msg.system { align-self: center; max-width: 90%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); color: var(--white-dim); font-size: 12px; text-align: center; border-radius: 10px; }
+    .arena-msg.side-a .msg-label { color: var(--mod-accent); }
+    .arena-msg.side-b .msg-label { color: var(--mod-bar-secondary); }
+    .arena-msg .msg-round { font-size: 10px; color: var(--mod-text-muted); margin-top: 4px; }
+    .arena-msg.system { align-self: center; max-width: 90%; background: var(--mod-bg-card); border: 1px solid var(--mod-border-subtle); color: var(--mod-text-muted); font-size: 12px; text-align: center; border-radius: var(--mod-radius-md); }
 
     /* AI TYPING INDICATOR */
-    .arena-typing { align-self: flex-end; padding: 10px 18px; background: rgba(91,138,191,0.08); border: 1px solid rgba(91,138,191,0.1); border-radius: 14px; border-bottom-right-radius: 4px; display: flex; gap: 4px; }
-    .arena-typing .dot { width: 6px; height: 6px; border-radius: 50%; background: #7aa3d4; animation: typingDot 1.4s ease-in-out infinite; }
+    .arena-typing { align-self: flex-end; padding: 10px 18px; background: rgba(85,94,120,0.08); border: 1px solid rgba(85,94,120,0.12); border-radius: var(--mod-radius-lg); border-bottom-right-radius: var(--mod-radius-sm); display: flex; gap: 4px; }
+    .arena-typing .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mod-bar-secondary); animation: typingDot 1.4s ease-in-out infinite; }
     .arena-typing .dot:nth-child(2) { animation-delay: 0.2s; }
     .arena-typing .dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes typingDot { 0%,60%,100% { opacity: 0.3; transform: scale(1); } 30% { opacity: 1; transform: scale(1.2); } }
 
     /* INPUT AREA */
-    .arena-input-area { padding: 10px 16px calc(10px + var(--safe-bottom)); border-top: 1px solid rgba(255,255,255,0.08); background: rgba(10,17,40,0.5); backdrop-filter: blur(10px); flex-shrink: 0; }
+    .arena-input-area { padding: 10px 16px calc(10px + var(--safe-bottom)); border-top: 1px solid var(--mod-border-subtle); background: var(--mod-bg-base); backdrop-filter: blur(10px); flex-shrink: 0; }
     .arena-text-row { display: flex; gap: 8px; align-items: flex-end; }
-    .arena-text-input { flex: 1; min-height: 44px; max-height: 120px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: var(--white); font-family: var(--font-body); font-size: 14px; resize: none; outline: none; }
-    .arena-text-input::placeholder { color: var(--white-dim); }
-    .arena-text-input:focus { border-color: rgba(212,168,67,0.3); }
-    .arena-send-btn { width: 44px; height: 44px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--navy); font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .arena-text-input { flex: 1; min-height: 44px; max-height: 120px; padding: 10px 14px; border-radius: var(--mod-radius-md); border: 1px solid var(--mod-border-primary); background: var(--mod-bg-card); color: var(--mod-text-primary); font-family: var(--mod-font-ui); font-size: 14px; resize: none; outline: none; }
+    .arena-text-input::placeholder { color: var(--mod-text-muted); }
+    .arena-text-input:focus { border-color: var(--mod-accent-border); }
+    .arena-send-btn { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--mod-bar-accent); background-image: var(--mod-gloss); color: var(--mod-text-on-accent); font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .arena-send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .arena-send-btn:active:not(:disabled) { transform: scale(0.94); }
-    .arena-char-count { font-size: 10px; color: var(--white-dim); text-align: right; margin-top: 4px; }
+    .arena-char-count { font-size: 10px; color: var(--mod-text-muted); text-align: right; margin-top: 4px; }
 
     /* LIVE AUDIO CONTROLS */
     .arena-audio-controls { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 8px 0; }
-    .arena-mic-btn { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--red); background: rgba(204,41,54,0.1); color: var(--red); font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .arena-mic-btn.muted { border-color: var(--white-dim); color: var(--white-dim); background: rgba(255,255,255,0.04); }
+    .arena-mic-btn { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--mod-accent); background: var(--mod-accent-muted); color: var(--mod-accent); font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .arena-mic-btn.muted { border-color: var(--mod-text-muted); color: var(--mod-text-muted); background: var(--mod-bg-card); }
     .arena-mic-btn:active { transform: scale(0.94); }
-    .arena-audio-status { font-size: 12px; color: var(--white-dim); text-align: center; }
-    .arena-waveform { width: 100%; height: 40px; border-radius: 6px; background: rgba(255,255,255,0.02); }
+    .arena-audio-status { font-size: 12px; color: var(--mod-text-muted); text-align: center; }
+    .arena-waveform { width: 100%; height: 40px; border-radius: var(--mod-radius-md); background: var(--mod-bg-card); }
 
     /* VOICE MEMO CONTROLS */
     .arena-vm-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0; }
-    .arena-record-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--gold); background: rgba(212,168,67,0.1); color: var(--gold); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .arena-record-btn.recording { border-color: var(--red); color: var(--red); background: rgba(204,41,54,0.15); animation: recordPulse 1.5s ease-in-out infinite; }
-    @keyframes recordPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(204,41,54,0.3); } 50% { box-shadow: 0 0 0 12px rgba(204,41,54,0); } }
-    .arena-vm-status { font-size: 12px; color: var(--white-dim); }
-    .arena-vm-timer { font-family: var(--font-display); font-size: 18px; color: var(--white); }
+    .arena-record-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--mod-bar-secondary); background: rgba(136,144,168,0.08); color: var(--mod-bar-secondary); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .arena-record-btn.recording { border-color: var(--mod-accent); color: var(--mod-accent); background: var(--mod-accent-muted); animation: recordPulse 1.5s ease-in-out infinite; }
+    @keyframes recordPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,68,42,0.3); } 50% { box-shadow: 0 0 0 12px rgba(231,68,42,0); } }
+    .arena-vm-status { font-size: 12px; color: var(--mod-text-muted); }
+    .arena-vm-timer { font-family: var(--mod-font-ui); font-size: 18px; color: var(--mod-text-primary); }
 
     /* POST-DEBATE */
     .arena-post { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 32px 20px; text-align: center; }
     .arena-post-verdict { font-size: 48px; margin-bottom: 12px; }
-    .arena-post-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
-    .arena-post-topic { font-size: 14px; color: var(--white-dim); margin-bottom: 20px; }
+    .arena-post-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .arena-post-topic { font-size: 14px; color: var(--mod-text-body); margin-bottom: 20px; }
     .arena-post-score { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
     .arena-post-side { text-align: center; }
-    .arena-post-side-label { font-size: 11px; color: var(--white-dim); letter-spacing: 1px; margin-bottom: 4px; }
-    .arena-clickable-opp { color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-    .arena-post-side-score { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
-    .arena-post-side-score.winner { color: var(--gold); }
-    .arena-post-side-score.loser { color: var(--white-dim); }
-    .arena-post-divider { font-family: var(--font-display); font-size: 14px; color: var(--white-dim); letter-spacing: 1px; }
+    .arena-post-side-label { font-size: 11px; color: var(--mod-text-muted); letter-spacing: 1px; margin-bottom: 4px; }
+    .arena-clickable-opp { color: var(--mod-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .arena-post-side-score { font-family: var(--mod-font-ui); font-size: 32px; font-weight: 700; }
+    .arena-post-side-score.winner { color: var(--mod-accent); }
+    .arena-post-side-score.loser { color: var(--mod-text-muted); }
+    .arena-post-divider { font-family: var(--mod-font-ui); font-size: 14px; color: var(--mod-text-muted); letter-spacing: 1px; }
     .arena-post-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-    .arena-post-btn { padding: 12px 24px; border-radius: 24px; border: none; font-family: var(--font-display); font-size: 13px; font-weight: 600; letter-spacing: 1.5px; cursor: pointer; text-transform: uppercase; }
-    .arena-post-btn.primary { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--navy); }
-    .arena-post-btn.secondary { background: none; border: 1px solid var(--gold-dim); color: var(--gold); }
+    .arena-post-btn { padding: 12px 24px; border-radius: var(--mod-radius-pill); border: none; font-family: var(--mod-font-ui); font-size: 12px; font-weight: 600; letter-spacing: 1.5px; cursor: pointer; text-transform: uppercase; }
+    .arena-post-btn.primary { background: var(--mod-bar-accent); background-image: var(--mod-gloss); color: var(--mod-text-on-accent); }
+    .arena-post-btn.secondary { background: none; border: 1px solid var(--mod-border-primary); color: var(--mod-text-body); }
     .arena-post-btn:active { transform: scale(0.96); }
 
     /* SPECTATOR COUNT */
-    .arena-spectator-bar { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; font-size: 11px; color: var(--white-dim); }
+    .arena-spectator-bar { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; font-size: 11px; color: var(--mod-text-muted); }
     .arena-spectator-bar .eye { font-size: 13px; }
 
     /* BACK BUTTON */
-    .arena-back-btn { position: absolute; top: 12px; left: 12px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(10,17,40,0.6); color: var(--white-dim); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
-    .arena-back-btn:active { background: rgba(255,255,255,0.08); }
+    .arena-back-btn { position: absolute; top: 12px; left: 12px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--mod-border-primary); background: var(--mod-bg-base); color: var(--mod-text-muted); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+    .arena-back-btn:active { background: var(--mod-bg-card-active); }
 
     /* UTILITY */
     .arena-fade-in { animation: arenaFadeIn 0.3s ease; }
@@ -499,140 +559,140 @@ function injectCSS(): void {
     /* SESSION 39: MODERATOR UI */
 
     /* Reference submit button */
-    .arena-ref-btn { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid rgba(91,138,191,0.3);background:rgba(91,138,191,0.08);color:#7aa3d4;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-left:8px;white-space:nowrap; }
-    .arena-ref-btn:active { background:rgba(91,138,191,0.2); }
+    .arena-ref-btn { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--mod-radius-md);border:1px solid rgba(85,94,120,0.3);background:rgba(85,94,120,0.08);color:var(--mod-bar-secondary);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-left:8px;white-space:nowrap; }
+    .arena-ref-btn:active { background:rgba(85,94,120,0.2); }
 
     /* Reference submit form (inline under messages) */
-    .arena-ref-form { padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);background:rgba(10,17,40,0.4); }
-    .arena-ref-form input, .arena-ref-form textarea { width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--white);font-family:var(--font-body);font-size:13px;outline:none;margin-bottom:6px; }
-    .arena-ref-form input:focus, .arena-ref-form textarea:focus { border-color:rgba(91,138,191,0.4); }
+    .arena-ref-form { padding:10px 16px;border-top:1px solid var(--mod-border-subtle);background:var(--mod-bg-card); }
+    .arena-ref-form input, .arena-ref-form textarea { width:100%;padding:8px 12px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-base);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:13px;outline:none;margin-bottom:6px; }
+    .arena-ref-form input:focus, .arena-ref-form textarea:focus { border-color:var(--mod-accent-border); }
     .arena-ref-form textarea { resize:none;min-height:44px; }
     .arena-ref-side-row { display:flex;gap:6px;margin-bottom:8px; }
-    .arena-ref-side-btn { flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--white-dim);font-size:12px;font-weight:600;cursor:pointer;text-align:center; }
-    .arena-ref-side-btn.active { border-color:var(--gold);color:var(--gold);background:rgba(212,168,67,0.1); }
+    .arena-ref-side-btn { flex:1;padding:8px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center; }
+    .arena-ref-side-btn.active { border-color:var(--mod-accent-border);color:var(--mod-accent);background:var(--mod-accent-muted); }
     .arena-ref-actions { display:flex;gap:8px; }
-    .arena-ref-submit { flex:1;padding:8px;border-radius:8px;border:none;background:rgba(91,138,191,0.2);color:#7aa3d4;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer; }
-    .arena-ref-submit:active { background:rgba(91,138,191,0.35); }
-    .arena-ref-cancel { padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:none;color:var(--white-dim);font-size:12px;cursor:pointer; }
+    .arena-ref-submit { flex:1;padding:8px;border-radius:var(--mod-radius-md);border:none;background:rgba(85,94,120,0.15);color:var(--mod-bar-secondary);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer; }
+    .arena-ref-submit:active { background:rgba(85,94,120,0.3); }
+    .arena-ref-cancel { padding:8px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-subtle);background:none;color:var(--mod-text-muted);font-size:12px;cursor:pointer; }
 
     /* Moderator ruling panel (bottom sheet) */
 
     /* Ranked / Casual picker */
     .arena-rank-overlay { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; justify-content: flex-end; }
     .arena-rank-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
-    .arena-rank-sheet { position: relative; background: var(--navy); border-top: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 70vh; overflow-y: auto; animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
-    .arena-rank-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; text-align: center; margin-bottom: 4px; }
-    .arena-rank-subtitle { font-size: 13px; color: var(--white-dim); text-align: center; margin-bottom: 16px; }
-    .arena-rank-card { background: var(--card-bg); border: 2px solid var(--card-border); border-radius: 14px; padding: 18px 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s, background 0.2s; -webkit-tap-highlight-color: transparent; }
-    .arena-rank-card:active { background: rgba(255,255,255,0.03); }
-    .arena-rank-card.casual { border-left: 4px solid #5b8abf; }
-    .arena-rank-card.ranked { border-left: 4px solid #d4a843; }
+    .arena-rank-sheet { position: relative; background: var(--mod-bg-base); border-top: 1px solid var(--mod-border-primary); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 70vh; overflow-y: auto; animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .arena-rank-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; text-align: center; margin-bottom: 4px; }
+    .arena-rank-subtitle { font-size: 13px; color: var(--mod-text-body); text-align: center; margin-bottom: 16px; }
+    .arena-rank-card { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-radius: var(--mod-radius-md); padding: 18px 16px; margin-bottom: 12px; cursor: pointer; transition: background var(--mod-transition-fast); -webkit-tap-highlight-color: transparent; }
+    .arena-rank-card:active { background: var(--mod-bg-card-hover); }
+    .arena-rank-card.casual { border-left: var(--mod-card-bar-width) solid var(--mod-bar-primary); }
+    .arena-rank-card.ranked { border-left: var(--mod-card-bar-width) solid var(--mod-bar-accent); }
     .arena-rank-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .arena-rank-card-icon { font-size: 22px; }
-    .arena-rank-card-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: 2px; color: var(--white); }
-    .arena-rank-card-desc { font-size: 12px; color: var(--white-dim); line-height: 1.5; }
-    .arena-rank-card-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; margin-top: 8px; }
-    .arena-rank-card.casual .arena-rank-card-badge { background: rgba(91,138,191,0.2); color: #5b8abf; }
-    .arena-rank-card.ranked .arena-rank-card-badge { background: rgba(212,168,67,0.2); color: #d4a843; }
-    .arena-rank-cancel { display: block; width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.1); background: none; border-radius: 12px; color: var(--white-dim); font-family: var(--font-body); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
+    .arena-rank-card-name { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size); font-weight: var(--mod-font-card-title-weight); letter-spacing: var(--mod-font-card-title-spacing); color: var(--mod-text-primary); }
+    .arena-rank-card-desc { font-size: 12px; color: var(--mod-text-body); line-height: 1.5; }
+    .arena-rank-card-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: var(--mod-radius-pill); margin-top: 8px; }
+    .arena-rank-card.casual .arena-rank-card-badge { background: rgba(85,94,120,0.15); color: var(--mod-bar-primary); }
+    .arena-rank-card.ranked .arena-rank-card-badge { background: var(--mod-accent-muted); color: var(--mod-accent); }
+    .arena-rank-cancel { display: block; width: 100%; padding: 14px; border: 1px solid var(--mod-border-primary); background: none; border-radius: var(--mod-radius-md); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
 
     /* Ranked/Casual badge in queue + post-debate */
-    .arena-rank-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; margin-bottom: 8px; }
-    .arena-rank-badge.casual { background: rgba(91,138,191,0.2); color: #5b8abf; }
-    .arena-rank-badge.ranked { background: rgba(212,168,67,0.2); color: #d4a843; }
+    .arena-rank-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; border-radius: var(--mod-radius-pill); margin-bottom: 8px; }
+    .arena-rank-badge.casual { background: rgba(85,94,120,0.15); color: var(--mod-bar-primary); }
+    .arena-rank-badge.ranked { background: var(--mod-accent-muted); color: var(--mod-accent); }
     .arena-elo-change { font-size: 14px; font-weight: 700; margin-top: 8px; letter-spacing: 1px; }
-    .arena-elo-change.positive { color: #2ecc71; }
-    .arena-elo-change.negative { color: #cc2936; }
-    .arena-elo-change.neutral { color: var(--white-dim); }
+    .arena-elo-change.positive { color: var(--mod-status-open); }
+    .arena-elo-change.negative { color: var(--mod-accent); }
+    .arena-elo-change.neutral { color: var(--mod-text-muted); }
     .mod-ruling-overlay { position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end; }
     .mod-ruling-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.6); }
-    .mod-ruling-sheet { position:relative;background:var(--navy);border-top:2px solid var(--gold);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + var(--safe-bottom));max-height:70vh;overflow-y:auto;animation:sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
-    .mod-ruling-handle { width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);margin:0 auto 12px; }
-    .mod-ruling-title { font-family:var(--font-display);font-size:16px;letter-spacing:2px;color:var(--gold);text-align:center;margin-bottom:4px; }
-    .mod-ruling-sub { font-size:12px;color:var(--white-dim);text-align:center;margin-bottom:14px; }
-    .mod-ruling-ref { background:rgba(10,17,40,0.5);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:12px; }
-    .mod-ruling-ref-meta { font-size:10px;color:var(--white-dim);letter-spacing:1px;margin-bottom:4px; }
-    .mod-ruling-ref-url { font-size:12px;color:#7aa3d4;word-break:break-all;margin-bottom:4px; }
-    .mod-ruling-ref-desc { font-size:13px;color:var(--white);line-height:1.4; }
-    .mod-ruling-ref-side { font-size:11px;color:var(--gold);margin-top:4px; }
-    .mod-ruling-reason { width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--white);font-family:var(--font-body);font-size:13px;resize:none;min-height:44px;outline:none;margin-bottom:10px; }
-    .mod-ruling-reason:focus { border-color:var(--gold-dim); }
+    .mod-ruling-sheet { position:relative;background:var(--mod-bg-base);border-top:2px solid var(--mod-accent);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + var(--safe-bottom));max-height:70vh;overflow-y:auto;animation:sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .mod-ruling-handle { width:36px;height:4px;border-radius:2px;background:var(--mod-border-secondary);margin:0 auto 12px; }
+    .mod-ruling-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center;margin-bottom:4px; }
+    .mod-ruling-sub { font-size:12px;color:var(--mod-text-body);text-align:center;margin-bottom:14px; }
+    .mod-ruling-ref { background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:12px;margin-bottom:12px; }
+    .mod-ruling-ref-meta { font-size:10px;color:var(--mod-text-muted);letter-spacing:1px;margin-bottom:4px; }
+    .mod-ruling-ref-url { font-size:12px;color:var(--mod-bar-secondary);word-break:break-all;margin-bottom:4px; }
+    .mod-ruling-ref-desc { font-size:13px;color:var(--mod-text-primary);line-height:1.4; }
+    .mod-ruling-ref-side { font-size:11px;color:var(--mod-accent);margin-top:4px; }
+    .mod-ruling-reason { width:100%;padding:8px 12px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:13px;resize:none;min-height:44px;outline:none;margin-bottom:10px; }
+    .mod-ruling-reason:focus { border-color:var(--mod-accent-border); }
     .mod-ruling-btns { display:flex;gap:10px; }
-    .mod-ruling-allow { flex:1;padding:12px;border-radius:10px;border:none;background:rgba(46,204,113,0.15);color:var(--success);font-family:var(--font-display);font-size:14px;letter-spacing:2px;cursor:pointer; }
-    .mod-ruling-allow:active { background:rgba(46,204,113,0.3); }
-    .mod-ruling-deny { flex:1;padding:12px;border-radius:10px;border:none;background:rgba(204,41,54,0.15);color:var(--red);font-family:var(--font-display);font-size:14px;letter-spacing:2px;cursor:pointer; }
-    .mod-ruling-deny:active { background:rgba(204,41,54,0.3); }
-    .mod-ruling-timer { font-size:11px;color:var(--white-dim);text-align:center;margin-bottom:8px; }
+    .mod-ruling-allow { flex:1;padding:12px;border-radius:var(--mod-radius-md);border:none;background:rgba(93,202,165,0.12);color:var(--mod-status-open);font-family:var(--mod-font-ui);font-size:14px;letter-spacing:2px;cursor:pointer; }
+    .mod-ruling-allow:active { background:rgba(93,202,165,0.25); }
+    .mod-ruling-deny { flex:1;padding:12px;border-radius:var(--mod-radius-md);border:none;background:var(--mod-accent-muted);color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;letter-spacing:2px;cursor:pointer; }
+    .mod-ruling-deny:active { background:rgba(231,68,42,0.25); }
+    .mod-ruling-timer { font-size:11px;color:var(--mod-text-muted);text-align:center;margin-bottom:8px; }
 
     /* SESSION 110: Pre-debate screen */
     .arena-pre-debate { display:flex;flex-direction:column;align-items:center;padding:20px 16px;padding-bottom:80px;overflow-y:auto;height:100%; }
-    .arena-pre-debate-title { font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;text-align:center; }
-    .arena-pre-debate-sub { font-size:13px;color:var(--white-dim);text-align:center;margin-bottom:16px; }
-    .arena-pre-debate-enter { display:inline-flex;align-items:center;gap:8px;padding:14px 40px;border-radius:30px;border:none;background:linear-gradient(135deg,var(--red),#e63946);color:#fff;font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 24px rgba(204,41,54,0.35);margin-top:16px; }
+    .arena-pre-debate-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;text-align:center; }
+    .arena-pre-debate-sub { font-size:13px;color:var(--mod-text-body);text-align:center;margin-bottom:16px; }
+    .arena-pre-debate-enter { display:inline-flex;align-items:center;gap:8px;padding:14px 40px;border-radius:var(--mod-radius-pill);border:none;background:var(--mod-bar-accent);background-image:var(--mod-gloss);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:16px; }
     .arena-pre-debate-enter:active { transform:scale(0.96); }
 
     /* SESSION 110: Staking results in post-debate */
-    .arena-staking-result { background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px 20px;margin:12px 0;text-align:center;max-width:300px;width:100%; }
-    .arena-staking-result-title { font-family:var(--font-display);font-size:12px;letter-spacing:2px;color:var(--gold);margin-bottom:6px; }
-    .arena-staking-result-amount { font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:1px; }
-    .arena-staking-result-amount.won { color:#2ecc71; }
-    .arena-staking-result-amount.lost { color:var(--red); }
-    .arena-staking-result-amount.none { color:var(--white-dim); }
-    .arena-staking-result-detail { font-size:11px;color:var(--white-dim);margin-top:4px; }
+    .arena-staking-result { background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);border-radius:var(--mod-radius-md);padding:14px 20px;margin:12px 0;text-align:center;max-width:300px;width:100%; }
+    .arena-staking-result-title { font-family:var(--mod-font-ui);font-size:7px;font-weight:600;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:6px; }
+    .arena-staking-result-amount { font-family:var(--mod-font-ui);font-size:24px;font-weight:700;letter-spacing:1px; }
+    .arena-staking-result-amount.won { color:var(--mod-status-open); }
+    .arena-staking-result-amount.lost { color:var(--mod-accent); }
+    .arena-staking-result-amount.none { color:var(--mod-text-muted); }
+    .arena-staking-result-detail { font-size:11px;color:var(--mod-text-muted);margin-top:4px; }
 
     /* Moderator assignment picker */
-    .mod-picker-section { margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06); }
-    .mod-picker-label { font-size:11px;color:var(--white-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px; }
+    .mod-picker-section { margin-top:12px;padding-top:12px;border-top:1px solid var(--mod-border-subtle); }
+    .mod-picker-label { font-size:11px;color:var(--mod-text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-family:var(--mod-font-ui); }
     .mod-picker-opts { display:flex;flex-direction:column;gap:6px; }
-    .mod-picker-opt { display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer; }
-    .mod-picker-opt:active { background:rgba(255,255,255,0.06); }
-    .mod-picker-opt.selected { border-color:var(--gold);background:rgba(212,168,67,0.08); }
-    .mod-picker-avatar { width:32px;height:32px;border-radius:50%;border:2px solid var(--gold-dim);background:var(--navy);color:var(--gold);font-family:var(--font-display);font-size:13px;display:flex;align-items:center;justify-content:center; }
+    .mod-picker-opt { display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer; }
+    .mod-picker-opt:active { background:var(--mod-bg-card-active); }
+    .mod-picker-opt.selected { border-color:var(--mod-accent-border);background:var(--mod-accent-muted); }
+    .mod-picker-avatar { width:32px;height:32px;border-radius:50%;border:2px solid var(--mod-bar-secondary);background:var(--mod-bg-base);color:var(--mod-bar-secondary);font-family:var(--mod-font-ui);font-size:13px;display:flex;align-items:center;justify-content:center; }
     .mod-picker-info { flex:1; }
-    .mod-picker-name { font-size:13px;font-weight:600;color:var(--white); }
-    .mod-picker-stats { font-size:10px;color:var(--white-dim); }
-    .mod-picker-check { width:18px;height:18px;border-radius:50%;border:2px solid var(--white-dim);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold); }
-    .mod-picker-opt.selected .mod-picker-check { border-color:var(--gold);background:rgba(212,168,67,0.2); }
+    .mod-picker-name { font-size:13px;font-weight:600;color:var(--mod-text-primary); }
+    .mod-picker-stats { font-size:10px;color:var(--mod-text-muted); }
+    .mod-picker-check { width:18px;height:18px;border-radius:50%;border:2px solid var(--mod-text-muted);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mod-accent); }
+    .mod-picker-opt.selected .mod-picker-check { border-color:var(--mod-accent);background:var(--mod-accent-muted); }
 
     /* Moderator badge in VS bar */
-    .arena-mod-bar { display:flex;align-items:center;justify-content:center;gap:6px;padding:4px;font-size:11px;color:var(--gold);border-bottom:1px solid rgba(212,168,67,0.1); }
+    .arena-mod-bar { display:flex;align-items:center;justify-content:center;gap:6px;padding:4px;font-size:11px;color:var(--mod-bar-secondary);border-bottom:1px solid var(--mod-border-subtle); }
     .arena-mod-bar .mod-icon { font-size:12px; }
 
     /* Post-debate mod scoring */
     .mod-score-section { margin-top:16px;width:100%;max-width:320px; }
-    .mod-score-title { font-family:var(--font-display);font-size:13px;letter-spacing:2px;color:var(--gold);text-align:center;margin-bottom:8px; }
-    .mod-score-card { background:rgba(10,17,40,0.5);border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:14px;text-align:center; }
-    .mod-score-name { font-size:14px;font-weight:600;color:var(--white);margin-bottom:8px; }
+    .mod-score-title { font-family:var(--mod-font-ui);font-size:7px;font-weight:600;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center;margin-bottom:8px; }
+    .mod-score-card { background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:14px;text-align:center; }
+    .mod-score-name { font-size:14px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px; }
     .mod-score-btns { display:flex;gap:10px;justify-content:center; }
-    .mod-score-btn { padding:10px 20px;border-radius:10px;border:none;font-family:var(--font-display);font-size:13px;letter-spacing:1px;cursor:pointer; }
-    .mod-score-btn.happy { background:rgba(46,204,113,0.15);color:var(--success); }
-    .mod-score-btn.happy:active { background:rgba(46,204,113,0.3); }
-    .mod-score-btn.unhappy { background:rgba(204,41,54,0.15);color:var(--red); }
-    .mod-score-btn.unhappy:active { background:rgba(204,41,54,0.3); }
+    .mod-score-btn { padding:10px 20px;border-radius:var(--mod-radius-md);border:none;font-family:var(--mod-font-ui);font-size:13px;letter-spacing:1px;cursor:pointer; }
+    .mod-score-btn.happy { background:rgba(93,202,165,0.12);color:var(--mod-status-open); }
+    .mod-score-btn.happy:active { background:rgba(93,202,165,0.25); }
+    .mod-score-btn.unhappy { background:var(--mod-accent-muted);color:var(--mod-accent); }
+    .mod-score-btn.unhappy:active { background:rgba(231,68,42,0.25); }
     .mod-score-slider-row { margin-top:8px; }
-    .mod-score-slider { width:100%;accent-color:var(--gold); }
-    .mod-score-val { font-family:var(--font-display);font-size:16px;color:var(--gold);margin-top:4px; }
+    .mod-score-slider { width:100%;accent-color:var(--mod-accent); }
+    .mod-score-val { font-family:var(--mod-font-ui);font-size:16px;color:var(--mod-accent);margin-top:4px; }
 
     /* SESSION 113: Transcript bottom sheet */
     .arena-transcript-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center; }
-    .arena-transcript-sheet { background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;padding-bottom:max(12px,env(safe-area-inset-bottom)); }
-    .arena-transcript-header { padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0; }
-    .arena-transcript-handle { width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 12px; }
-    .arena-transcript-title { font-family:var(--font-display);font-size:16px;letter-spacing:2px;color:var(--gold);text-align:center; }
-    .arena-transcript-topic { font-size:12px;color:var(--white-dim);text-align:center;margin-top:4px; }
+    .arena-transcript-sheet { background:var(--mod-bg-base);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+    .arena-transcript-header { padding:16px 20px 12px;border-bottom:1px solid var(--mod-border-subtle);flex-shrink:0; }
+    .arena-transcript-handle { width:40px;height:4px;background:var(--mod-border-secondary);border-radius:2px;margin:0 auto 12px; }
+    .arena-transcript-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center; }
+    .arena-transcript-topic { font-size:12px;color:var(--mod-text-body);text-align:center;margin-top:4px; }
     .arena-transcript-body { flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px;display:flex;flex-direction:column;gap:8px; }
-    .arena-transcript-round { font-size:10px;color:var(--gold-dim);letter-spacing:2px;text-align:center;padding:8px 0 4px;text-transform:uppercase; }
-    .arena-transcript-msg { padding:10px 14px;border-radius:12px;max-width:85%; }
-    .arena-transcript-msg.side-a { background:rgba(91,138,191,0.12);border:1px solid rgba(91,138,191,0.2);align-self:flex-start; }
-    .arena-transcript-msg.side-b { background:rgba(204,41,54,0.12);border:1px solid rgba(204,41,54,0.2);align-self:flex-end; }
+    .arena-transcript-round { font-size:10px;color:var(--mod-text-muted);letter-spacing:2px;text-align:center;padding:8px 0 4px;text-transform:uppercase; }
+    .arena-transcript-msg { padding:10px 14px;border-radius:var(--mod-radius-lg);max-width:85%; }
+    .arena-transcript-msg.side-a { background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);align-self:flex-start; }
+    .arena-transcript-msg.side-b { background:rgba(85,94,120,0.12);border:1px solid rgba(85,94,120,0.2);align-self:flex-end; }
     .arena-transcript-msg .t-name { font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px; }
-    .arena-transcript-msg.side-a .t-name { color:#7aa3d4; }
-    .arena-transcript-msg.side-b .t-name { color:#cc2936; }
-    .arena-transcript-msg .t-text { font-size:14px;color:var(--white);line-height:1.4;word-break:break-word; }
-    .arena-transcript-empty { text-align:center;color:var(--white-dim);font-size:13px;padding:24px 0; }
-    .mod-score-submit { margin-top:8px;padding:10px 24px;border-radius:10px;border:none;background:var(--gold);color:var(--navy);font-family:var(--font-display);font-size:13px;letter-spacing:1px;cursor:pointer; }
+    .arena-transcript-msg.side-a .t-name { color:var(--mod-accent); }
+    .arena-transcript-msg.side-b .t-name { color:var(--mod-bar-secondary); }
+    .arena-transcript-msg .t-text { font-size:14px;color:var(--mod-text-primary);line-height:1.4;word-break:break-word; }
+    .arena-transcript-empty { text-align:center;color:var(--mod-text-muted);font-size:13px;padding:24px 0; }
+    .mod-score-submit { margin-top:8px;padding:10px 24px;border-radius:var(--mod-radius-md);border:none;background:var(--mod-bar-accent);background-image:var(--mod-gloss);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:13px;letter-spacing:1px;cursor:pointer; }
     .mod-score-submit:active { transform:scale(0.96); }
-    .mod-scored { font-size:13px;color:var(--success);margin-top:8px; }
+    .mod-scored { font-size:13px;color:var(--mod-status-open);margin-top:8px; }
   `;
   document.head.appendChild(style);
 }
@@ -646,6 +706,7 @@ export function renderLobby(): void {
   selectedMode = null;
   selectedModerator = null;
   selectedRanked = false;
+  selectedCategory = null;
   stopReferencePoll();
   activatedPowerUps.clear();
   shieldActive = false;
@@ -711,9 +772,7 @@ export function renderLobby(): void {
 
   // Wire challenge CTA — navigate to home carousel
   document.getElementById('arena-challenge-cta')?.addEventListener('click', () => {
-    if (typeof (window as unknown as Record<string, unknown>).navigateTo === 'function') {
-      (window as unknown as Record<string, unknown> & { navigateTo: (s: string) => void }).navigateTo('home');
-    }
+    navigateTo('home');
   });
 
   // Load lobby content
@@ -856,8 +915,8 @@ export function showPowerUpShop(): void {
       <div style="padding:16px;padding-bottom:80px;max-width:480px;margin:0 auto;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
           <button id="powerup-shop-back" style="
-            background:none;border:none;color:#D4AF37;
-            font-family:'Barlow Condensed',sans-serif;font-size:14px;
+            background:none;border:none;color:var(--mod-text-body);
+            font-family:var(--mod-font-ui);font-size:14px;
             font-weight:600;cursor:pointer;letter-spacing:1px;padding:0;
           ">\u2190 BACK</button>
         </div>
@@ -1061,7 +1120,11 @@ export function showModeSelect(): void {
         selectedModerator = null;
       }
       closeModeSelect(true);
-      enterQueue(mode, topic);
+      if (mode === 'ai') {
+        enterQueue(mode, topic);
+      } else {
+        showCategoryPicker(mode, topic);
+      }
     });
   });
 
@@ -1140,6 +1203,81 @@ async function loadAvailableModerators(overlay: HTMLElement): Promise<void> {
 }
 
 // ============================================================
+// CATEGORY PICKER
+// ============================================================
+
+function showCategoryPicker(mode: string, topic: string): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'arena-cat-overlay';
+  overlay.id = 'arena-cat-overlay';
+  overlay.innerHTML = `
+    <style>
+      .arena-cat-overlay { position:fixed; inset:0; z-index:300; display:flex; align-items:flex-end; }
+      .arena-cat-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+      .arena-cat-sheet { position:relative; width:100%; background:var(--mod-bg-base); border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0; padding:20px 20px calc(20px + var(--safe-bottom)); z-index:1; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+      @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+      .arena-cat-handle { width:36px; height:4px; border-radius:2px; background:var(--mod-border-primary); margin:0 auto 16px; }
+      .arena-cat-title { font-family:var(--mod-font-ui); font-size:11px; font-weight:600; letter-spacing:3px; color:var(--mod-text-muted); text-transform:uppercase; text-align:center; margin-bottom:6px; }
+      .arena-cat-subtitle { font-size:13px; color:var(--mod-text-body); text-align:center; margin-bottom:20px; }
+      .arena-cat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+      .arena-cat-btn { display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-primary); background:var(--mod-bg-card); cursor:pointer; transition:all 0.15s; }
+      .arena-cat-btn:active, .arena-cat-btn.selected { border-color:var(--mod-accent); background:var(--mod-accent-muted); }
+      .arena-cat-icon { font-size:20px; flex-shrink:0; }
+      .arena-cat-label { font-family:var(--mod-font-ui); font-size:13px; font-weight:600; color:var(--mod-text-primary); letter-spacing:0.5px; }
+      .arena-cat-any { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-subtle); background:transparent; cursor:pointer; font-family:var(--mod-font-ui); font-size:13px; color:var(--mod-text-muted); letter-spacing:1px; margin-bottom:12px; transition:all 0.15s; }
+      .arena-cat-any:active { background:var(--mod-bg-card); }
+      .arena-cat-cancel { width:100%; padding:12px; border-radius:var(--mod-radius-pill); border:none; background:transparent; color:var(--mod-text-muted); font-family:var(--mod-font-ui); font-size:14px; cursor:pointer; }
+    </style>
+    <div class="arena-cat-backdrop" id="arena-cat-backdrop"></div>
+    <div class="arena-cat-sheet">
+      <div class="arena-cat-handle"></div>
+      <div class="arena-cat-title">Choose Your Arena</div>
+      <div class="arena-cat-subtitle">You'll only match opponents in the same room</div>
+      <div class="arena-cat-grid">
+        ${QUEUE_CATEGORIES.map(c => `
+          <button class="arena-cat-btn" data-cat="${c.id}">
+            <span class="arena-cat-icon">${c.icon}</span>
+            <span class="arena-cat-label">${c.label}</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="arena-cat-any" id="arena-cat-any">⚡ ANY CATEGORY — FASTEST MATCH</button>
+      <button class="arena-cat-cancel" id="arena-cat-cancel">Back</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  pushArenaState('categoryPicker');
+
+  // Wire category buttons
+  overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedCategory = (btn as HTMLElement).dataset.cat ?? null;
+      overlay.remove();
+      enterQueue(mode, topic);
+    });
+  });
+
+  // Wire "any" button
+  document.getElementById('arena-cat-any')?.addEventListener('click', () => {
+    selectedCategory = null;
+    overlay.remove();
+    enterQueue(mode, topic);
+  });
+
+  // Wire cancel — go back to lobby
+  document.getElementById('arena-cat-cancel')?.addEventListener('click', () => {
+    overlay.remove();
+    history.back();
+  });
+
+  // Backdrop tap = cancel
+  document.getElementById('arena-cat-backdrop')?.addEventListener('click', () => {
+    overlay.remove();
+    history.back();
+  });
+}
+
+// ============================================================
 // QUEUE
 // ============================================================
 
@@ -1155,6 +1293,8 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
 
   if (screenEl) screenEl.innerHTML = '';
   queueSeconds = 0;
+  queueErrorState = false;
+  aiFallbackShown = false;
 
   const modeInfo = MODES[mode as DebateMode];
   const profile = getCurrentProfile();
@@ -1164,24 +1304,59 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   queueEl.className = 'arena-queue arena-fade-in';
   queueEl.innerHTML = `
     <div class="arena-rank-badge ${selectedRanked ? 'ranked' : 'casual'}">${selectedRanked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
-    <div class="arena-queue-icon">${modeInfo.icon}</div>
-    <div class="arena-queue-title">${modeInfo.name}</div>
-    <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
+    <div class="arena-queue-search-ring" id="arena-queue-ring">
+      <div class="arena-queue-icon">${modeInfo.icon}</div>
+    </div>
+    <div class="arena-queue-title">${modeInfo.name}${selectedCategory ? ` · ${QUEUE_CATEGORIES.find(c => c.id === selectedCategory)?.label ?? selectedCategory}` : ''}</div>
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
+    <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     <div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>
-    <button class="arena-queue-cancel" id="arena-queue-cancel">Cancel</button>
+    <div class="arena-queue-pop" id="arena-queue-pop"></div>
+    <div id="arena-queue-ai-prompt"></div>
+    <button class="arena-queue-cancel" id="arena-queue-cancel">\u2715 CANCEL</button>
+    <div class="arena-queue-feed" id="arena-queue-feed"></div>
   `;
   screenEl?.appendChild(queueEl);
 
   document.getElementById('arena-queue-cancel')?.addEventListener('click', leaveQueue);
 
+  // Fetch live debates for spectator feed (fire-and-forget)
+  (async () => {
+    try {
+      const { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5 });
+      const feedEl = document.getElementById('arena-queue-feed');
+      if (!feedEl || view !== 'queue') return;
+      const items = data as ArenaFeedItem[] | null;
+      if (items && items.length > 0) {
+        const live = items.filter((d: ArenaFeedItem) => d.status === 'live');
+        const recent = items.filter((d: ArenaFeedItem) => d.status !== 'live').slice(0, 3);
+        const cards = [...live, ...recent].slice(0, 4);
+        if (cards.length > 0) {
+          feedEl.innerHTML = `<div class="arena-queue-feed-label">\uD83D\uDC41\uFE0F Live in the Arena</div>`
+            + cards.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('');
+        }
+      }
+    } catch { /* feed is optional */ }
+  })();
+
   queueElapsedTimer = setInterval(() => {
+    if (queueErrorState) return;
     queueSeconds++;
     const timerEl = document.getElementById('arena-queue-timer');
     if (timerEl) timerEl.textContent = formatTimer(queueSeconds);
 
-    const timeout = QUEUE_TIMEOUT_SEC[mode as DebateMode] ?? 60;
-    if (queueSeconds >= timeout) {
+    // Status text progression
+    updateQueueStatus(queueSeconds);
+
+    // AI Sparring prompt at 60s (queue keeps running)
+    const aiPromptSec = QUEUE_AI_PROMPT_SEC[mode as DebateMode] ?? 60;
+    if (aiPromptSec > 0 && queueSeconds === aiPromptSec && !aiFallbackShown) {
+      showAIFallbackPrompt();
+    }
+
+    // Hard timeout — give up
+    const hardTimeout = QUEUE_HARD_TIMEOUT_SEC[mode as DebateMode] ?? 180;
+    if (hardTimeout > 0 && queueSeconds >= hardTimeout) {
       onQueueTimeout();
     }
   }, 1000);
@@ -1204,11 +1379,45 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   }
 }
 
+function updateQueueStatus(seconds: number): void {
+  const statusEl = document.getElementById('arena-queue-status');
+  if (!statusEl) return;
+
+  if (aiFallbackShown) {
+    statusEl.textContent = 'Queue still active \u2014 searching...';
+  } else if (seconds <= 15) {
+    statusEl.textContent = 'Searching for a worthy opponent...';
+  } else if (seconds <= 30) {
+    statusEl.textContent = 'Expanding search range...';
+  } else if (seconds <= 45) {
+    statusEl.textContent = 'Searching all regions...';
+  } else {
+    statusEl.textContent = 'Still looking...';
+  }
+}
+
+function showAIFallbackPrompt(): void {
+  aiFallbackShown = true;
+  const promptEl = document.getElementById('arena-queue-ai-prompt');
+  if (!promptEl) return;
+
+  promptEl.innerHTML = `
+    <div class="arena-queue-ai-fallback arena-fade-in">
+      <div class="arena-queue-ai-fallback-text">\uD83E\uDD16 No opponents yet. Sharpen your skills while you wait?</div>
+      <button class="arena-post-btn primary" id="arena-queue-ai-spar">SPAR WITH AI</button>
+    </div>
+  `;
+  document.getElementById('arena-queue-ai-spar')?.addEventListener('click', () => {
+    leaveQueue();
+    enterQueue('ai', '');
+  });
+}
+
 async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
   try {
     const { data, error } = await safeRpc<MatchData>('join_debate_queue', {
       p_mode: mode,
-      p_category: null,
+      p_category: selectedCategory,
       p_topic: topic || null,
       p_ranked: selectedRanked,
     });
@@ -1222,6 +1431,15 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
           const { data: status, error: pollErr } = await safeRpc<MatchData>('check_queue_status');
           if (pollErr) throw pollErr;
           if (view !== 'queue') return;
+
+          // Update queue population count
+          const qc = (status as Record<string, unknown>)?.queue_count;
+          const popEl = document.getElementById('arena-queue-pop');
+          if (popEl) {
+            const count = typeof qc === 'number' ? qc : 0;
+            popEl.textContent = count > 0 ? `${count} other${count !== 1 ? 's' : ''} searching` : '';
+          }
+
           if (status && (status as MatchData).status === 'matched') {
             onMatchFound(status as MatchData);
           }
@@ -1230,6 +1448,7 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
     }
   } catch (err) {
     console.error('[Arena] Queue join error:', err);
+    queueErrorState = true;
     const statusEl = document.getElementById('arena-queue-status');
     if (statusEl) statusEl.textContent = friendlyError(err) || 'Queue error \u2014 try again';
   }
@@ -1240,7 +1459,7 @@ function onMatchFound(data: MatchData): void {
   const statusEl = document.getElementById('arena-queue-status');
   if (statusEl) {
     statusEl.textContent = '\uD83C\uDFAF OPPONENT FOUND!';
-    statusEl.style.color = 'var(--gold)';
+    statusEl.style.color = 'var(--mod-accent)';
   }
   setTimeout(() => {
     const debateData: CurrentDebate = {
@@ -1259,23 +1478,33 @@ function onMatchFound(data: MatchData): void {
     if (selectedMode === 'ai' || !data.opponent_id) {
       enterRoom(debateData);
     } else {
-      void showPreDebate(debateData);
+      showMatchFound(debateData);
     }
   }, 1200);
 }
 
 function onQueueTimeout(): void {
   clearQueueTimers();
+
+  // Stop the search ring animation
+  const ringEl = document.getElementById('arena-queue-ring');
+  if (ringEl) ringEl.classList.add('stopped');
+
   const statusEl = document.getElementById('arena-queue-status');
   if (statusEl) {
-    statusEl.innerHTML = 'No opponents found.<br><br>';
+    statusEl.textContent = 'No opponents available right now.';
+    statusEl.style.color = 'var(--mod-muted, #8890A8)';
   }
 
-  // Offer alternatives
+  // Clear AI prompt if it was showing
+  const promptEl = document.getElementById('arena-queue-ai-prompt');
+  if (promptEl) promptEl.innerHTML = '';
+
+  // Show final options
   const queueEl = screenEl?.querySelector('.arena-queue');
   if (queueEl) {
     const alt = document.createElement('div');
-    alt.style.cssText = 'display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;';
+    alt.className = 'arena-queue-timeout-options arena-fade-in';
     alt.innerHTML = `
       <button class="arena-post-btn primary" id="arena-try-ai">\uD83E\uDD16 SPAR WITH AI INSTEAD</button>
       <button class="arena-post-btn secondary" id="arena-try-again">\uD83D\uDD04 TRY AGAIN</button>
@@ -1303,6 +1532,143 @@ export function leaveQueue(): void {
 function clearQueueTimers(): void {
   if (queuePollTimer) { clearInterval(queuePollTimer); queuePollTimer = null; }
   if (queueElapsedTimer) { clearInterval(queueElapsedTimer); queueElapsedTimer = null; }
+}
+
+// ============================================================
+// MATCH FOUND — ACCEPT/DECLINE (F-02)
+// ============================================================
+
+function clearMatchAcceptTimers(): void {
+  if (matchAcceptTimer) { clearInterval(matchAcceptTimer); matchAcceptTimer = null; }
+  if (matchAcceptPollTimer) { clearInterval(matchAcceptPollTimer); matchAcceptPollTimer = null; }
+}
+
+function showMatchFound(debateData: CurrentDebate): void {
+  clearMatchAcceptTimers();
+  matchFoundDebate = debateData;
+  view = 'matchFound';
+  pushArenaState('matchFound');
+  if (screenEl) screenEl.innerHTML = '';
+
+  matchAcceptSeconds = MATCH_ACCEPT_SEC;
+
+  const opInitial = (debateData.opponentName[0] || '?').toUpperCase();
+  const mf = document.createElement('div');
+  mf.className = 'arena-match-found arena-fade-in';
+  mf.innerHTML = `
+    <div class="arena-mf-label">\u2694\uFE0F MATCH FOUND</div>
+    <div class="arena-mf-opponent">
+      <div class="arena-mf-avatar">${opInitial}</div>
+      <div class="arena-mf-name">${escapeHTML(debateData.opponentName)}</div>
+      <div class="arena-mf-elo">${debateData.opponentElo} ELO</div>
+    </div>
+    <div class="arena-mf-topic">${escapeHTML(debateData.topic)}</div>
+    <div class="arena-mf-countdown" id="mf-countdown">${matchAcceptSeconds}</div>
+    <div class="arena-mf-status" id="mf-status">Accept before time runs out</div>
+    <div class="arena-mf-buttons">
+      <button class="arena-mf-btn accept" id="mf-accept-btn">ACCEPT</button>
+      <button class="arena-mf-btn decline" id="mf-decline-btn">DECLINE</button>
+    </div>
+  `;
+  screenEl?.appendChild(mf);
+
+  document.getElementById('mf-accept-btn')?.addEventListener('click', () => onMatchAccept());
+  document.getElementById('mf-decline-btn')?.addEventListener('click', () => onMatchDecline());
+
+  matchAcceptTimer = setInterval(() => {
+    matchAcceptSeconds--;
+    const cdEl = document.getElementById('mf-countdown');
+    if (cdEl) cdEl.textContent = String(matchAcceptSeconds);
+    if (matchAcceptSeconds <= 0) {
+      onMatchDecline();
+    }
+  }, 1000);
+}
+
+async function onMatchAccept(): Promise<void> {
+  clearInterval(matchAcceptTimer!);
+  matchAcceptTimer = null;
+  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
+  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
+  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
+  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
+
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = 'Waiting for opponent\u2026';
+
+  if (!isPlaceholder() && matchFoundDebate) {
+    const { error } = await safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: true });
+    if (error) {
+      if (statusEl) statusEl.textContent = 'Error \u2014 retrying\u2026';
+      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.style.opacity = '1'; }
+      if (declineBtn) { declineBtn.disabled = false; declineBtn.style.opacity = '1'; }
+      return;
+    }
+  }
+
+  // Start polling for opponent acceptance
+  let pollElapsed = 0;
+  matchAcceptPollTimer = setInterval(async () => {
+    pollElapsed += 1.5;
+    if (pollElapsed >= MATCH_ACCEPT_POLL_TIMEOUT_SEC) {
+      onOpponentDeclined();
+      return;
+    }
+    if (!matchFoundDebate || isPlaceholder()) {
+      onMatchConfirmed();
+      return;
+    }
+    try {
+      const { data, error } = await safeRpc<MatchAcceptResponse>('check_match_acceptance', { p_debate_id: matchFoundDebate.id });
+      if (error || !data) return;
+      const resp = data as MatchAcceptResponse;
+      if (resp.status === 'cancelled') {
+        onOpponentDeclined();
+        return;
+      }
+      const myCol = matchFoundDebate.role === 'a' ? resp.player_a_ready : resp.player_b_ready;
+      const opCol = matchFoundDebate.role === 'a' ? resp.player_b_ready : resp.player_a_ready;
+      if (opCol === false) { onOpponentDeclined(); return; }
+      if (myCol === true && opCol === true) { onMatchConfirmed(); return; }
+    } catch { /* retry next tick */ }
+  }, 1500);
+}
+
+function onMatchDecline(): void {
+  clearMatchAcceptTimers();
+  if (!isPlaceholder() && matchFoundDebate) {
+    safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: false }).catch(() => {});
+  }
+  returnToQueueAfterDecline();
+}
+
+function onMatchConfirmed(): void {
+  clearMatchAcceptTimers();
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = '\u2705 Both ready \u2014 entering battle!';
+  if (matchFoundDebate) {
+    setTimeout(() => { void showPreDebate(matchFoundDebate!); }, 800);
+  }
+}
+
+function onOpponentDeclined(): void {
+  clearMatchAcceptTimers();
+  const statusEl = document.getElementById('mf-status');
+  if (statusEl) statusEl.textContent = 'Opponent declined \u2014 returning to queue\u2026';
+  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
+  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
+  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
+  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
+  setTimeout(() => returnToQueueAfterDecline(), 1500);
+}
+
+function returnToQueueAfterDecline(): void {
+  matchFoundDebate = null;
+  if (selectedMode) {
+    enterQueue(selectedMode, '');
+  } else {
+    renderLobby();
+  }
 }
 
 // ============================================================
@@ -1473,19 +1839,19 @@ export function enterRoom(debate: CurrentDebate): void {
     <div class="arena-room-header">
       <div class="arena-rank-badge ${debate.ranked ? 'ranked' : 'casual'}" style="margin-bottom:6px">${debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
       <div class="arena-room-topic">${escapeHTML(debate.topic)}</div>
-      ${isAI ? `<div class="ai-generated-badge" style="margin-top:8px">
-        <span class="ai-icon">AI</span>
-        AI Sparring Partner \u2014 Not a Real Person
-      </div>` : ''}
       <div class="arena-room-round" id="arena-round-label">ROUND ${debate.round}/${debate.totalRounds}</div>
       ${debate.mode === 'live' ? `<div class="arena-room-timer" id="arena-room-timer">${formatTimer(ROUND_DURATION)}</div>` : ''}
     </div>
+    ${isAI ? `<div class="ai-generated-badge" style="align-self:center;margin:0 0 4px;">
+      <span class="ai-icon">AI</span>
+      AI Sparring Partner \u2014 Not a Real Person
+    </div>` : ''}
     <div class="arena-vs-bar">
       <div class="arena-debater">
         <div class="arena-debater-avatar">${myInitial}</div>
         <div class="arena-debater-info">
           <div class="arena-debater-name">${escapeHTML(myName)}</div>
-          <div class="arena-debater-elo">${Number(myElo)} ELO <span style="color:#D4A843;margin-left:6px;font-size:11px;">\uD83E\uDE99 ${Number(profile?.token_balance) || 0}</span></div>
+          <div class="arena-debater-elo">${Number(myElo)} ELO <span style="color:var(--mod-bar-secondary);margin-left:6px;font-size:11px;">\uD83E\uDE99 ${Number(profile?.token_balance) || 0}</span></div>
         </div>
       </div>
       <div class="arena-vs-text">VS</div>
@@ -1665,7 +2031,7 @@ function renderInputControls(mode: DebateMode): void {
           <button class="arena-record-btn" id="arena-record-btn">\u23FA</button>
           <div style="display:flex;gap:10px;margin-top:8px;">
             <button class="arena-card-btn arena-hidden" id="arena-vm-cancel">RETAKE</button>
-            <button class="arena-card-btn arena-hidden" id="arena-vm-send" style="border-color:var(--gold);color:var(--gold);">SEND</button>
+            <button class="arena-card-btn arena-hidden" id="arena-vm-send" style="border-color:var(--mod-accent-border);color:var(--mod-accent);">SEND</button>
           </div>
         </div>
       `;
@@ -2578,7 +2944,7 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
       const result = await scoreModerator(debate.id, score);
       const scoredEl = document.getElementById('mod-scored');
       if (result?.error) {
-        if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--red)'; }
+        if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
       } else {
         if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
       }
@@ -2598,7 +2964,7 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
     const result = await scoreModerator(debate.id, score);
     const scoredEl = document.getElementById('mod-scored');
     if (result?.error) {
-      if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--red)'; }
+      if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
       if (submitBtn) { submitBtn.textContent = 'SUBMIT SCORE'; submitBtn.disabled = false; }
     } else {
       if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
