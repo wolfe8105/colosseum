@@ -187,6 +187,16 @@ export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
 
 const QUEUE_AI_PROMPT_SEC: Readonly<Record<DebateMode, number>> = { live: 60, voicememo: 60, text: 60, ai: 0 };
 const QUEUE_HARD_TIMEOUT_SEC: Readonly<Record<DebateMode, number>> = { live: 180, voicememo: 180, text: 180, ai: 0 };
+
+interface QueueCategory { readonly id: string; readonly icon: string; readonly label: string; }
+const QUEUE_CATEGORIES: readonly QueueCategory[] = [
+  { id: 'politics',      icon: '🏛️', label: 'Politics' },
+  { id: 'sports',        icon: '🏈', label: 'Sports' },
+  { id: 'entertainment', icon: '🎬', label: 'Film & TV' },
+  { id: 'couples',       icon: '💔', label: 'Couples Court' },
+  { id: 'music',         icon: '🎵', label: 'Music' },
+  { id: 'trending',      icon: '🔥', label: 'Trending' },
+] as const;
 const MATCH_ACCEPT_SEC = 12;
 const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 const ROUND_DURATION = 120;
@@ -245,6 +255,7 @@ let screenEl: HTMLElement | null = null;
 let cssInjected = false;
 let selectedModerator: SelectedModerator | null = null;
 let selectedRanked = false;
+let selectedCategory: string | null = null;
 export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
@@ -695,6 +706,7 @@ export function renderLobby(): void {
   selectedMode = null;
   selectedModerator = null;
   selectedRanked = false;
+  selectedCategory = null;
   stopReferencePoll();
   activatedPowerUps.clear();
   shieldActive = false;
@@ -1108,7 +1120,11 @@ export function showModeSelect(): void {
         selectedModerator = null;
       }
       closeModeSelect(true);
-      enterQueue(mode, topic);
+      if (mode === 'ai') {
+        enterQueue(mode, topic);
+      } else {
+        showCategoryPicker(mode, topic);
+      }
     });
   });
 
@@ -1187,6 +1203,81 @@ async function loadAvailableModerators(overlay: HTMLElement): Promise<void> {
 }
 
 // ============================================================
+// CATEGORY PICKER
+// ============================================================
+
+function showCategoryPicker(mode: string, topic: string): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'arena-cat-overlay';
+  overlay.id = 'arena-cat-overlay';
+  overlay.innerHTML = `
+    <style>
+      .arena-cat-overlay { position:fixed; inset:0; z-index:300; display:flex; align-items:flex-end; }
+      .arena-cat-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+      .arena-cat-sheet { position:relative; width:100%; background:var(--mod-bg-base); border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0; padding:20px 20px calc(20px + var(--safe-bottom)); z-index:1; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+      @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+      .arena-cat-handle { width:36px; height:4px; border-radius:2px; background:var(--mod-border-primary); margin:0 auto 16px; }
+      .arena-cat-title { font-family:var(--mod-font-ui); font-size:11px; font-weight:600; letter-spacing:3px; color:var(--mod-text-muted); text-transform:uppercase; text-align:center; margin-bottom:6px; }
+      .arena-cat-subtitle { font-size:13px; color:var(--mod-text-body); text-align:center; margin-bottom:20px; }
+      .arena-cat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+      .arena-cat-btn { display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-primary); background:var(--mod-bg-card); cursor:pointer; transition:all 0.15s; }
+      .arena-cat-btn:active, .arena-cat-btn.selected { border-color:var(--mod-accent); background:var(--mod-accent-muted); }
+      .arena-cat-icon { font-size:20px; flex-shrink:0; }
+      .arena-cat-label { font-family:var(--mod-font-ui); font-size:13px; font-weight:600; color:var(--mod-text-primary); letter-spacing:0.5px; }
+      .arena-cat-any { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-subtle); background:transparent; cursor:pointer; font-family:var(--mod-font-ui); font-size:13px; color:var(--mod-text-muted); letter-spacing:1px; margin-bottom:12px; transition:all 0.15s; }
+      .arena-cat-any:active { background:var(--mod-bg-card); }
+      .arena-cat-cancel { width:100%; padding:12px; border-radius:var(--mod-radius-pill); border:none; background:transparent; color:var(--mod-text-muted); font-family:var(--mod-font-ui); font-size:14px; cursor:pointer; }
+    </style>
+    <div class="arena-cat-backdrop" id="arena-cat-backdrop"></div>
+    <div class="arena-cat-sheet">
+      <div class="arena-cat-handle"></div>
+      <div class="arena-cat-title">Choose Your Arena</div>
+      <div class="arena-cat-subtitle">You'll only match opponents in the same room</div>
+      <div class="arena-cat-grid">
+        ${QUEUE_CATEGORIES.map(c => `
+          <button class="arena-cat-btn" data-cat="${c.id}">
+            <span class="arena-cat-icon">${c.icon}</span>
+            <span class="arena-cat-label">${c.label}</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="arena-cat-any" id="arena-cat-any">⚡ ANY CATEGORY — FASTEST MATCH</button>
+      <button class="arena-cat-cancel" id="arena-cat-cancel">Back</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  pushArenaState('categoryPicker');
+
+  // Wire category buttons
+  overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedCategory = (btn as HTMLElement).dataset.cat ?? null;
+      overlay.remove();
+      enterQueue(mode, topic);
+    });
+  });
+
+  // Wire "any" button
+  document.getElementById('arena-cat-any')?.addEventListener('click', () => {
+    selectedCategory = null;
+    overlay.remove();
+    enterQueue(mode, topic);
+  });
+
+  // Wire cancel — go back to lobby
+  document.getElementById('arena-cat-cancel')?.addEventListener('click', () => {
+    overlay.remove();
+    history.back();
+  });
+
+  // Backdrop tap = cancel
+  document.getElementById('arena-cat-backdrop')?.addEventListener('click', () => {
+    overlay.remove();
+    history.back();
+  });
+}
+
+// ============================================================
 // QUEUE
 // ============================================================
 
@@ -1216,7 +1307,7 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
     <div class="arena-queue-search-ring" id="arena-queue-ring">
       <div class="arena-queue-icon">${modeInfo.icon}</div>
     </div>
-    <div class="arena-queue-title">${modeInfo.name}</div>
+    <div class="arena-queue-title">${modeInfo.name}${selectedCategory ? ` · ${QUEUE_CATEGORIES.find(c => c.id === selectedCategory)?.label ?? selectedCategory}` : ''}</div>
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
     <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     <div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>
@@ -1326,7 +1417,7 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
   try {
     const { data, error } = await safeRpc<MatchData>('join_debate_queue', {
       p_mode: mode,
-      p_category: null,
+      p_category: selectedCategory,
       p_topic: topic || null,
       p_ranked: selectedRanked,
     });
