@@ -40,7 +40,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | B-05 | Tier threshold gap — Tiers 3-5 unreachable | ✅ | Session 164. Expanded questionnaire from 39→100 questions (12→20 sections). 8 new B2B-driven sections added. All tier thresholds (10/25/50/75/100) now reachable. |
 | B-06 | AI Sparring pre-debate navigation bug | ✅ | Session 163. Not reproducible — killed by TS migration Session 142. |
 | B-07 | No responsive breakpoints | ✅ | Session 165. `@media (min-width: 768px)` content constraint: `.screen` capped at `max-width: 640px` + centered. Home screen (ring nav) exempted. Profile-depth grid 4-col on desktop. Groups/settings get body constraint. CSS only. |
-| B-08 | AI sparring badge overlaps debate room header on mobile | ✅ | Session 169. Badge was inside `.arena-room-header` flex row — too wide for mobile, covered topic text and round counter. Fix: moved badge out of header, placed between header and vs-bar as its own centered element. |
+| B-08 | AI sparring badge mobile overlap | ✅ | Session 169. `ai-generated-badge` div moved out of `.arena-room-header` flex row, placed between header and `.arena-vs-bar` as its own centered element with `align-self:center`. |
 
 ---
 
@@ -52,7 +52,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
-| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback, 180s hard timeout, cancel button. Layer 2 ✅ Session 169: queue population count (server→client), spectator feed in queue (live debate cards). Layer 3 open: mode-scoped rooms, LCARS visual variety, audio/haptic feedback. |
+| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback prompt, 180s hard timeout, cancel button. Layer 2 ✅ Session 169: queue population count, spectator feed. Layer 3 ✅ Session 170: category-scoped queues with backoff. |
 | F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | ✅ Session 168. 12s countdown, accept/decline buttons, respond_to_match + check_match_acceptance RPCs, player_a_ready/player_b_ready columns. |
 | F-03 | Entrance sequence / battle animations | | 🔶 Concept only | Plays on debate entry. Ties to group identity system. |
 | F-04 | Instant rematch from post-debate | | ❌ No spec | Button exists in nav map, no design. |
@@ -61,6 +61,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-07 | Spectator features (pulse, chat, live share) | | ❌ No spec | Conceptual. |
 | F-08 | Tournament system | | ❌ No spec | Brackets, elimination, Swiss. Feature Room Map "New E". |
 | F-45 | Desktop-optimized arena layout | | ❌ No spec | Two-column, sidebar stats. Currently phone UI centered with empty space on desktop. |
+| F-46 | Private lobby / invite-only debate | | ⏳ Session 170 research | Create a debate locked to: (a) one specific user by username, (b) a group, (c) a shareable join code for up to N users. Needs: `visibility` column on `arena_debates`, `debate_invites` table, notification path, "waiting for opponent" lobby UI. Category picker from F-01 Layer 3 reused as first step. |
 
 ## 3B. Token Economy / Staking
 
@@ -142,8 +143,6 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 # OPEN QUESTIONS FROM RESEARCH DOCS
 
-# OPEN QUESTIONS FROM RESEARCH DOCS
-
 These are unresolved design questions that block specific features. Captured here so they don't get lost.
 
 1. ~~What milestones trigger each group banner tier unlock? (F-19)~~ ✅ Session 166. Avg group win %: 0–25% = standard icons we provide, 26–50% = custom static flag, 51%+ = custom animated flag (max 10s, 1080p small-space equivalent).
@@ -183,4 +182,5 @@ This punch list was compiled from:
 | 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
 | 2026-03-23 | 167 | F-01 Layer 1 done. Queue screen upgrade: dual search ring, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button. F-02 JS started (not uploaded). |
 | 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |
-| 2026-03-23 | 169 | B-08 fixed (AI sparring badge mobile overlap). F-01 Layer 2 done: queue population count via check_queue_status RPC, spectator feed (live debate cards) in queue screen. |
+| 2026-03-23 | 169 | B-08 done (AI sparring badge mobile overlap). F-01 Layer 2 done: queue population count + spectator feed. SQL: check_queue_status() replaced via moderator-queue-population-migration.sql. |
+| 2026-03-24 | 170 | F-01 Layer 3 done: category-scoped queues with backoff. QUEUE_CATEGORIES const (6 categories), showCategoryPicker() bottom sheet inserted between mode select and queue. SQL: join_debate_queue() — two-phase match (strict category → any category fallback), check_queue_status() — queue_count scoped to mode+category. Queue title shows "TEXT BATTLE · POLITICS" etc. AI Sparring bypasses picker. F-46 added (private lobby / invite-only — research done, not built). |
