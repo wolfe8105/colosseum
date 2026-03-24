@@ -3348,7 +3348,9 @@ async function createAndWaitPrivateLobby(
     });
 
     if (error) throw error;
-    const result = data as PrivateLobbyResult;
+    // RETURNS TABLE comes back as an array — unwrap first row
+    const rows = data as PrivateLobbyResult[];
+    const result = Array.isArray(rows) ? rows[0]! : (data as PrivateLobbyResult);
     privateLobbyDebateId = result.debate_id;
 
     // Update waiting screen
