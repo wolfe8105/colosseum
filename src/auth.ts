@@ -847,6 +847,23 @@ export async function toggleModAvailable(available: boolean): Promise<AuthResult
   }
 }
 
+export async function updateModCategories(categories: string[]): Promise<AuthResult> {
+  if (isPlaceholderMode) {
+    if (currentProfile) (currentProfile as Record<string, unknown>).mod_categories = categories;
+    _notify(currentUser, currentProfile);
+    return { success: true };
+  }
+  try {
+    const { data, error } = await safeRpc('update_mod_categories', { p_categories: categories });
+    if (error) throw error;
+    if (currentProfile) (currentProfile as Record<string, unknown>).mod_categories = categories;
+    _notify(currentUser, currentProfile);
+    return (data as AuthResult) ?? { success: true };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
+}
+
 export async function submitReference(
   debateId: string,
   url: string | null,
@@ -1033,6 +1050,7 @@ const auth = {
   showUserProfile,
   toggleModerator,
   toggleModAvailable,
+  updateModCategories,
   submitReference,
   ruleOnReference,
   scoreModerator,
