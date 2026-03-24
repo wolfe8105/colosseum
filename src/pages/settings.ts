@@ -11,7 +11,7 @@
 import {
   ready, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient,
   safeRpc, updateProfile, logOut, resetPassword, deleteAccount,
-  toggleModerator, toggleModAvailable,
+  toggleModerator, toggleModAvailable, updateModCategories,
 } from '../auth.ts';
 import { isAnyPlaceholder, showToast } from '../config.ts';
 
@@ -309,6 +309,13 @@ function loadModeratorSettings(): void {
   const statsBlock = getEl('mod-stats');
   if (statsBlock) statsBlock.style.display = isMod ? 'block' : 'none';
 
+  // Load category chips
+  const cats = (p.mod_categories as string[]) ?? [];
+  document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip').forEach(chip => {
+    const cat = chip.dataset.cat ?? '';
+    chip.classList.toggle('selected', cats.includes(cat));
+  });
+
   // Dot color
   const dot = getEl('mod-dot');
   if (dot) dot.style.background = isAvail ? 'var(--success)' : 'var(--white-dim)';
@@ -358,6 +365,31 @@ getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (
     toast(available ? '🟢 Available to moderate' : '🔴 Offline');
   }
   target.disabled = false;
+});
+
+// Wire category chip toggles
+document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip').forEach(chip => {
+  chip.addEventListener('click', async () => {
+    const cat = chip.dataset.cat ?? '';
+    const isSelected = chip.classList.toggle('selected');
+    const selected = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip.selected')
+    ).map(c => c.dataset.cat ?? '').filter(Boolean);
+
+    const statusEl = getEl('mod-cat-status');
+    if (statusEl) statusEl.textContent = 'Saving…';
+
+    const result = await updateModCategories(selected);
+    if (result?.error) {
+      chip.classList.toggle('selected', !isSelected); // revert
+      if (statusEl) statusEl.textContent = '❌ ' + result.error;
+      toast('❌ ' + result.error);
+    } else {
+      if (statusEl) statusEl.textContent = selected.length === 0
+        ? 'Accepting all categories'
+        : `${selected.length} categor${selected.length === 1 ? 'y' : 'ies'} selected`;
+    }
+  });
 });
 
 // ============================================================
