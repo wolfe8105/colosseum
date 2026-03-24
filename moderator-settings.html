@@ -288,6 +288,26 @@
     color: var(--mod-text-muted);
   }
   @media (min-width: 768px) { body { max-width: 640px; margin-left: auto; margin-right: auto; } }
+  .mod-cat-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--mod-border-primary);
+    background: var(--mod-bg-card);
+    color: var(--mod-text-body);
+    font-family: var(--mod-font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    min-height: 44px;
+  }
+  .mod-cat-chip.selected {
+    background: var(--mod-bar-accent);
+    border-color: var(--mod-bar-accent);
+    color: var(--mod-text-on-accent);
+  }
 </style>
 <link rel="stylesheet" href="/src/moderator-tokens.css">
 </head>
@@ -441,6 +461,24 @@
           <div class="row-label">Approval Rate</div>
         </div>
         <div style="font-size:15px;color:var(--mod-status-open);" id="mod-stat-approval">0%</div>
+      </div>
+    </div>
+    <!-- Category specialties -->
+    <div class="settings-card" style="margin-top:10px;">
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+        <div class="row-left">
+          <div class="row-label">My Categories</div>
+          <div class="row-desc">Only moderate debates in these topics</div>
+        </div>
+        <div id="mod-category-chips" style="display:flex;flex-wrap:wrap;gap:8px;width:100%;">
+          <button class="mod-cat-chip" data-cat="politics">🏛️ Politics</button>
+          <button class="mod-cat-chip" data-cat="sports">🏟️ Sports</button>
+          <button class="mod-cat-chip" data-cat="entertainment">🎬 Entertainment</button>
+          <button class="mod-cat-chip" data-cat="couples">💔 Couples</button>
+          <button class="mod-cat-chip" data-cat="trending">🔥 Trending</button>
+          <button class="mod-cat-chip" data-cat="music">🎵 Music</button>
+        </div>
+        <div id="mod-cat-status" style="font-size:11px;color:var(--mod-text-muted);min-height:16px;"></div>
       </div>
     </div>
   </div>
