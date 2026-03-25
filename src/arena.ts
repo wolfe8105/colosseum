@@ -49,7 +49,7 @@ import { navigateTo } from './navigation.ts';
 // TYPE DEFINITIONS
 // ============================================================
 
-export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate' | 'privateLobbyWaiting' | 'modQueue';
+export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate' | 'privateLobbyWaiting' | 'modQueue' | 'modDebatePicker' | 'modDebateWaiting';
 export type DebateMode = 'live' | 'voicememo' | 'text' | 'ai';
 export type DebateStatus = 'pending' | 'lobby' | 'matched' | 'live' | 'completed' | 'complete';
 export type DebateRole = 'a' | 'b';
@@ -87,6 +87,9 @@ export interface CurrentDebate {
   _stakingResult?: SettleResult | null;
   debater_a?: string;
   debater_b?: string;
+  modView?: boolean;
+  debaterAName?: string;
+  debaterBName?: string;
 }
 
 export interface SelectedModerator {
@@ -262,6 +265,8 @@ let modQueuePollTimer: ReturnType<typeof setInterval> | null = null;
 let selectedWantMod: boolean = false;
 let modStatusPollTimer: ReturnType<typeof setInterval> | null = null;
 let modRequestModalShown: boolean = false;
+let modDebatePollTimer: ReturnType<typeof setInterval> | null = null;
+let modDebateId: string | null = null;
 export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
@@ -1875,10 +1880,12 @@ export function enterRoom(debate: CurrentDebate): void {
   }
 
   const profile = getCurrentProfile();
-  const myName = profile?.display_name || profile?.username || 'You';
+  const isModView = debate.modView === true;
+  const myName = isModView ? (debate.debaterAName || 'Debater A') : (profile?.display_name || profile?.username || 'You');
   const myElo = profile?.elo_rating || 1200;
-  const myInitial = (myName[0] || '?').toUpperCase();
-  const oppInitial = (debate.opponentName[0] || '?').toUpperCase();
+  const myInitial = isModView ? (debate.debaterAName?.[0] || 'A').toUpperCase() : (myName[0] || '?').toUpperCase();
+  const oppName = isModView ? (debate.debaterBName || 'Debater B') : debate.opponentName;
+  const oppInitial = (oppName[0] || '?').toUpperCase();
   const isAI = debate.mode === 'ai';
 
   const room = document.createElement('div');
@@ -1906,15 +1913,15 @@ export function enterRoom(debate: CurrentDebate): void {
       <div class="arena-debater right">
         <div class="arena-debater-avatar ${isAI ? 'ai-avatar' : ''}">${isAI ? '\uD83E\uDD16' : oppInitial}</div>
         <div class="arena-debater-info" style="text-align:right;">
-          <div class="arena-debater-name">${escapeHTML(debate.opponentName)}</div>
-          <div class="arena-debater-elo">${Number(debate.opponentElo)} ELO</div>
+          <div class="arena-debater-name">${escapeHTML(oppName)}</div>
+          <div class="arena-debater-elo">${isModView ? '' : `${Number(debate.opponentElo)} ELO`}</div>
         </div>
       </div>
     </div>
     <div id="powerup-loadout-container"></div>
     <div class="arena-spectator-bar"><span class="eye">\uD83D\uDC41\uFE0F</span> <span id="arena-spectator-count">0</span> watching</div>
     <div class="arena-messages" id="arena-messages"></div>
-    <div class="arena-input-area" id="arena-input-area"></div>
+    <div class="arena-input-area" id="arena-input-area" ${isModView ? 'style="display:none;"' : ''}></div>
   `;
   screenEl?.appendChild(room);
 
@@ -2014,13 +2021,13 @@ export function enterRoom(debate: CurrentDebate): void {
     }
   }
 
-  // Session 39: Start reference polling if moderator assigned
-  if (selectedModerator && debate.id && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
+  // Session 39: Start reference polling if moderator assigned (or mod is observing)
+  if ((selectedModerator || debate.modView) && debate.id && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     startReferencePoll(debate.id);
   }
 
-  // F-47: Start mod status poll for human debates (not AI, not placeholder)
-  if (debate.mode !== 'ai' && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && !isPlaceholder()) {
+  // F-47: Start mod status poll for human debates — skip if this user IS the mod
+  if (!debate.modView && debate.mode !== 'ai' && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && !isPlaceholder()) {
     startModStatusPoll(debate.id);
   }
 
@@ -2501,9 +2508,9 @@ export async function endCurrentDebate(): Promise<void> {
   const winner: DebateRole = scoreA >= scoreB ? 'a' : 'b';
   const didWin = winner === debate.role;
 
-  // Update Supabase
+  // Update Supabase — skip entirely if this user is the moderator (not a debater)
   let eloChangeMe = 0;
-  if (!isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
+  if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     try {
       const { data: result, error } = await safeRpc<UpdateDebateResult>('update_arena_debate', {
         p_debate_id: debate.id,
@@ -3508,8 +3515,40 @@ async function joinWithCode(code: string): Promise<void> {
       messages: [],
     };
     showMatchFound(debateData);
-  } catch (err) {
-    showToast(friendlyError(err) || 'Code not found or already taken');
+  } catch {
+    // join_private_lobby failed — try join_mod_debate (mod_created debates use a different RPC)
+    try {
+      const { data: modData, error: modError } = await safeRpc<ModDebateJoinResult>('join_mod_debate', {
+        p_join_code: code,
+      });
+      if (modError) throw modError;
+      const modResult = modData as ModDebateJoinResult;
+      selectedMode = modResult.mode as DebateMode;
+
+      if (modResult.role === 'b') {
+        // Both debaters present — go straight to match found
+        const debateData: CurrentDebate = {
+          id: modResult.debate_id,
+          topic: modResult.topic || randomFrom(AI_TOPICS),
+          role: 'b',
+          mode: modResult.mode as DebateMode,
+          round: 1,
+          totalRounds: 3,
+          opponentName: modResult.opponent_name || 'Debater A',
+          opponentId: modResult.opponent_id,
+          opponentElo: modResult.opponent_elo || 1200,
+          ranked: modResult.ranked,
+          messages: [],
+        };
+        showMatchFound(debateData);
+      } else {
+        // role === 'a' — waiting for second debater, show waiting screen and poll
+        modDebateId = modResult.debate_id;
+        showModDebateWaitingDebater(modResult.debate_id, modResult.topic, modResult.mode as DebateMode, modResult.ranked);
+      }
+    } catch (modErr) {
+      showToast(friendlyError(modErr) || 'Code not found or already taken');
+    }
   }
 }
 
@@ -3629,6 +3668,27 @@ interface ModQueueItem {
   mod_status: string;
 }
 
+interface ModDebateJoinResult {
+  debate_id: string;
+  role: string;
+  status: string;
+  topic: string;
+  mode: string;
+  ranked: boolean;
+  moderator_name: string;
+  opponent_name: string | null;
+  opponent_id: string | null;
+  opponent_elo: number | null;
+}
+
+interface ModDebateCheckResult {
+  status: string;
+  debater_a_id: string | null;
+  debater_a_name: string;
+  debater_b_id: string | null;
+  debater_b_name: string;
+}
+
 function showModQueue(): void {
   view = 'modQueue';
   history.pushState({ arenaView: 'modQueue' }, '');
@@ -3637,6 +3697,7 @@ function showModQueue(): void {
     screenEl.style.position = 'relative';
   }
 
+  const profile = getCurrentProfile();
   const container = document.createElement('div');
   container.className = 'arena-lobby arena-fade-in';
   container.innerHTML = `
@@ -3646,6 +3707,7 @@ function showModQueue(): void {
     </div>
     <div style="padding:0 16px 16px;">
       <button class="arena-secondary-btn" id="mod-queue-back" style="width:100%;margin-bottom:16px;">← BACK</button>
+      ${profile?.is_moderator ? `<button class="arena-secondary-btn" id="mod-queue-create-debate" style="width:100%;margin-bottom:16px;border-color:var(--mod-accent-primary);color:var(--mod-accent-primary);">⚔️ CREATE DEBATE</button>` : ''}
       <div id="mod-queue-list"></div>
     </div>
   `;
@@ -3654,6 +3716,11 @@ function showModQueue(): void {
   document.getElementById('mod-queue-back')?.addEventListener('click', () => {
     stopModQueuePoll();
     renderLobby();
+  });
+
+  document.getElementById('mod-queue-create-debate')?.addEventListener('click', () => {
+    stopModQueuePoll();
+    showModDebatePicker();
   });
 
   void loadModQueue();
@@ -3859,6 +3926,244 @@ async function handleModResponse(accept: boolean, debateId: string, modal: HTMLE
     modRequestModalShown = false;
     // poll continues — mod_status reset to 'waiting' by RPC
   }
+}
+
+// ============================================================
+// F-48 — MOD-INITIATED DEBATE
+// ============================================================
+
+function showModDebatePicker(): void {
+  view = 'modDebatePicker';
+  history.pushState({ arenaView: 'modDebatePicker' }, '');
+  if (screenEl) screenEl.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'arena-lobby arena-fade-in';
+  container.innerHTML = `
+    <div class="arena-hero" style="padding-bottom:8px;">
+      <div class="arena-hero-title">Create Debate</div>
+      <div class="arena-hero-sub">Set the stage — debaters join with your code</div>
+    </div>
+    <div style="padding:0 16px 24px;">
+      <button class="arena-secondary-btn" id="mod-debate-picker-back" style="width:100%;margin-bottom:20px;">← BACK</button>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Mode</div>
+        <select id="mod-debate-mode" style="width:100%;padding:12px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;">
+          <option value="text">Text Battle</option>
+          <option value="live">Live Audio</option>
+          <option value="voicememo">Voice Memo</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Category</div>
+        <select id="mod-debate-category" style="width:100%;padding:12px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;">
+          <option value="">— Any —</option>
+          <option value="politics">Politics</option>
+          <option value="sports">Sports</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="music">Music</option>
+          <option value="movies">Movies</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Topic <span style="font-weight:400;text-transform:none;">(optional)</span></div>
+        <input id="mod-debate-topic" type="text" placeholder="Leave blank for open debate" maxlength="200"
+          style="width:100%;padding:12px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);color:var(--mod-text-primary);font-family:var(--mod-font-body);font-size:14px;box-sizing:border-box;" />
+      </div>
+
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:20px;cursor:pointer;">
+        <input type="checkbox" id="mod-debate-ranked" style="width:18px;height:18px;" />
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-body);">Ranked debate</span>
+      </label>
+
+      <button class="arena-primary-btn" id="mod-debate-create-btn" style="width:100%;">⚔️ CREATE &amp; GET CODE</button>
+    </div>
+  `;
+  screenEl?.appendChild(container);
+
+  document.getElementById('mod-debate-picker-back')?.addEventListener('click', () => {
+    showModQueue();
+  });
+
+  document.getElementById('mod-debate-create-btn')?.addEventListener('click', () => {
+    void createModDebate();
+  });
+}
+
+async function createModDebate(): Promise<void> {
+  const btn = document.getElementById('mod-debate-create-btn') as HTMLButtonElement | null;
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+
+  const mode = (document.getElementById('mod-debate-mode') as HTMLSelectElement)?.value || 'text';
+  const category = (document.getElementById('mod-debate-category') as HTMLSelectElement)?.value || null;
+  const topic = (document.getElementById('mod-debate-topic') as HTMLInputElement)?.value.trim() || null;
+  const ranked = (document.getElementById('mod-debate-ranked') as HTMLInputElement)?.checked || false;
+
+  try {
+    const { data, error } = await safeRpc<{ debate_id: string; join_code: string }>('create_mod_debate', {
+      p_mode: mode,
+      p_topic: topic,
+      p_category: category || null,
+      p_ranked: ranked,
+    });
+    if (error) throw error;
+    const result = data as { debate_id: string; join_code: string };
+    modDebateId = result.debate_id;
+    showModDebateWaitingMod(result.debate_id, result.join_code, topic || 'Open Debate', mode as DebateMode, ranked);
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚔️ CREATE & GET CODE'; }
+    showToast(friendlyError(err) || 'Could not create debate');
+  }
+}
+
+function showModDebateWaitingMod(debateId: string, joinCode: string, topic: string, mode: DebateMode, ranked: boolean): void {
+  view = 'modDebateWaiting';
+  history.pushState({ arenaView: 'modDebateWaiting' }, '');
+  if (screenEl) screenEl.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'arena-lobby arena-fade-in';
+  container.innerHTML = `
+    <div class="arena-hero" style="padding-bottom:8px;">
+      <div class="arena-hero-title">Waiting for Debaters</div>
+      <div class="arena-hero-sub">${escapeHTML(topic)}</div>
+    </div>
+    <div style="padding:0 16px 24px;text-align:center;">
+      <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:2px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:10px;">Join Code</div>
+      <div style="font-family:var(--mod-font-display);font-size:40px;font-weight:700;color:var(--mod-accent-primary);letter-spacing:6px;margin-bottom:6px;">${escapeHTML(joinCode)}</div>
+      <div style="font-family:var(--mod-font-body);font-size:13px;color:var(--mod-text-secondary);margin-bottom:24px;">Share this code with your two debaters</div>
+      <div id="mod-debate-slots" style="margin-bottom:24px;">
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:6px;">Debater A: <span id="slot-a-name" style="color:var(--mod-text-muted);">waiting…</span></div>
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);">Debater B: <span id="slot-b-name" style="color:var(--mod-text-muted);">waiting…</span></div>
+      </div>
+      <button class="arena-secondary-btn" id="mod-debate-cancel-btn" style="width:100%;">CANCEL</button>
+    </div>
+  `;
+  screenEl?.appendChild(container);
+
+  document.getElementById('mod-debate-cancel-btn')?.addEventListener('click', () => {
+    void cancelModDebate(debateId);
+  });
+
+  startModDebatePoll(debateId, mode, ranked);
+}
+
+function showModDebateWaitingDebater(debateId: string, topic: string, mode: DebateMode, ranked: boolean): void {
+  view = 'modDebateWaiting';
+  history.pushState({ arenaView: 'modDebateWaiting' }, '');
+  if (screenEl) screenEl.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'arena-lobby arena-fade-in';
+  container.innerHTML = `
+    <div class="arena-hero" style="padding-bottom:8px;">
+      <div class="arena-hero-title">Waiting for Opponent</div>
+      <div class="arena-hero-sub">${escapeHTML(topic || 'Open Debate')}</div>
+    </div>
+    <div style="padding:0 16px 24px;text-align:center;">
+      <div style="font-family:var(--mod-font-body);font-size:14px;color:var(--mod-text-secondary);margin-bottom:24px;">You're in. Waiting for the second debater to join…</div>
+      <button class="arena-secondary-btn" id="mod-debate-debater-cancel-btn" style="width:100%;">LEAVE</button>
+    </div>
+  `;
+  screenEl?.appendChild(container);
+
+  document.getElementById('mod-debate-debater-cancel-btn')?.addEventListener('click', () => {
+    stopModDebatePoll();
+    renderLobby();
+  });
+
+  startModDebatePoll(debateId, mode, ranked);
+}
+
+function startModDebatePoll(debateId: string, mode: DebateMode, ranked: boolean): void {
+  stopModDebatePoll();
+  modDebatePollTimer = setInterval(async () => {
+    if (view !== 'modDebateWaiting') {
+      stopModDebatePoll();
+      return;
+    }
+    try {
+      const { data, error } = await safeRpc<ModDebateCheckResult>('check_mod_debate', { p_debate_id: debateId });
+      if (error || !data) return;
+      const result = data as ModDebateCheckResult;
+
+      // Update slot display for mod's waiting screen
+      const slotA = document.getElementById('slot-a-name');
+      const slotB = document.getElementById('slot-b-name');
+      if (slotA && result.debater_a_name) slotA.textContent = result.debater_a_name || 'waiting…';
+      if (slotB && result.debater_b_name) slotB.textContent = result.debater_b_name || 'waiting…';
+
+      if (result.status === 'matched') {
+        stopModDebatePoll();
+        onModDebateReady(debateId, result, mode, ranked);
+      }
+    } catch { /* retry next tick */ }
+  }, 4000);
+}
+
+function stopModDebatePoll(): void {
+  if (modDebatePollTimer) {
+    clearInterval(modDebatePollTimer);
+    modDebatePollTimer = null;
+  }
+}
+
+function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: DebateMode, ranked: boolean): void {
+  const profile = getCurrentProfile();
+  const isActualMod = profile?.id !== result.debater_a_id && profile?.id !== result.debater_b_id;
+
+  if (isActualMod) {
+    // Moderator enters room in observer mode
+    const debateData: CurrentDebate = {
+      id: debateId,
+      topic: 'Moderated Debate',
+      role: 'a',
+      mode,
+      round: 1,
+      totalRounds: 3,
+      opponentName: result.debater_b_name || 'Debater B',
+      opponentId: result.debater_b_id,
+      opponentElo: 1200,
+      ranked,
+      messages: [],
+      modView: true,
+      debaterAName: result.debater_a_name || 'Debater A',
+      debaterBName: result.debater_b_name || 'Debater B',
+    };
+    enterRoom(debateData);
+  } else {
+    // Debater A — now matched, go to match found
+    const role: DebateRole = profile?.id === result.debater_a_id ? 'a' : 'b';
+    const opponentName = role === 'a' ? (result.debater_b_name || 'Debater B') : (result.debater_a_name || 'Debater A');
+    const opponentId = role === 'a' ? result.debater_b_id : result.debater_a_id;
+    const debateData: CurrentDebate = {
+      id: debateId,
+      topic: 'Moderated Debate',
+      role,
+      mode,
+      round: 1,
+      totalRounds: 3,
+      opponentName,
+      opponentId,
+      opponentElo: 1200,
+      ranked,
+      messages: [],
+    };
+    showMatchFound(debateData);
+  }
+}
+
+async function cancelModDebate(debateId: string): Promise<void> {
+  stopModDebatePoll();
+  try {
+    await safeRpc('cancel_private_lobby', { p_debate_id: debateId });
+  } catch { /* silent */ }
+  modDebateId = null;
+  showModQueue();
 }
 
 // ============================================================
