@@ -49,7 +49,7 @@ import { navigateTo } from './navigation.ts';
 // TYPE DEFINITIONS
 // ============================================================
 
-export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate' | 'privateLobbyWaiting';
+export type ArenaView = 'lobby' | 'modeSelect' | 'queue' | 'matchFound' | 'room' | 'preDebate' | 'postDebate' | 'privateLobbyWaiting' | 'modQueue';
 export type DebateMode = 'live' | 'voicememo' | 'text' | 'ai';
 export type DebateStatus = 'pending' | 'lobby' | 'matched' | 'live' | 'completed' | 'complete';
 export type DebateRole = 'a' | 'b';
@@ -258,6 +258,7 @@ let selectedRanked = false;
 let selectedCategory: string | null = null;
 let privateLobbyPollTimer: ReturnType<typeof setInterval> | null = null;
 let privateLobbyDebateId: string | null = null;
+let modQueuePollTimer: ReturnType<typeof setInterval> | null = null;
 export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
@@ -752,6 +753,7 @@ export function renderLobby(): void {
         <button class="arena-secondary-btn" id="arena-private-btn">\u2694\uFE0F PRIVATE DEBATE</button>
         <button class="arena-secondary-btn" id="arena-powerup-shop-btn">\u26A1 POWER-UPS</button>
       </div>
+      ${profile?.is_moderator ? `<div class="arena-btn-row" style="margin-top:0;"><button class="arena-secondary-btn" id="arena-mod-queue-btn" style="width:100%;">🧑‍⚖️ MOD QUEUE</button></div>` : ''}
       <div class="arena-btn-row" style="margin-top:0;">
         <input id="arena-join-code-input" type="text" maxlength="6" placeholder="JOIN CODE" style="flex:1;padding:10px 14px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:13px;letter-spacing:3px;text-transform:uppercase;outline:none;min-height:44px;">
         <button class="arena-secondary-btn" id="arena-join-code-btn" style="flex:0 0 auto;padding:10px 18px;">GO</button>
@@ -783,6 +785,7 @@ export function renderLobby(): void {
   document.getElementById('arena-enter-btn')?.addEventListener('click', showRankedPicker);
   document.getElementById('arena-powerup-shop-btn')?.addEventListener('click', showPowerUpShop);
   document.getElementById('arena-private-btn')?.addEventListener('click', showPrivateLobbyPicker);
+  document.getElementById('arena-mod-queue-btn')?.addEventListener('click', showModQueue);
 
   // Wire join code input
   const joinCodeInput = document.getElementById('arena-join-code-input') as HTMLInputElement | null;
@@ -3587,6 +3590,141 @@ export function init(): void {
   // Auto-open power-up shop if ?shop=1 in URL
   if (new URLSearchParams(window.location.search).get('shop') === '1') {
     showPowerUpShop();
+  }
+}
+
+// ============================================================
+// F-47 STEP 5 — MOD QUEUE
+// ============================================================
+
+interface ModQueueItem {
+  id: string;
+  topic: string;
+  category: string;
+  mode: string;
+  created_at: string;
+  debater_a_name: string | null;
+  debater_b_name: string | null;
+  mod_status: string;
+}
+
+function showModQueue(): void {
+  view = 'modQueue';
+  history.pushState({ arenaView: 'modQueue' }, '');
+  if (screenEl) {
+    screenEl.innerHTML = '';
+    screenEl.style.position = 'relative';
+  }
+
+  const container = document.createElement('div');
+  container.className = 'arena-lobby arena-fade-in';
+  container.innerHTML = `
+    <div class="arena-hero" style="padding-bottom:8px;">
+      <div class="arena-hero-title">Mod Queue</div>
+      <div class="arena-hero-sub">Debates waiting for a moderator</div>
+    </div>
+    <div style="padding:0 16px 16px;">
+      <button class="arena-secondary-btn" id="mod-queue-back" style="width:100%;margin-bottom:16px;">← BACK</button>
+      <div id="mod-queue-list"></div>
+    </div>
+  `;
+  screenEl?.appendChild(container);
+
+  document.getElementById('mod-queue-back')?.addEventListener('click', () => {
+    stopModQueuePoll();
+    renderLobby();
+  });
+
+  void loadModQueue();
+  startModQueuePoll();
+}
+
+async function loadModQueue(): Promise<void> {
+  const listEl = document.getElementById('mod-queue-list');
+  if (!listEl) return;
+
+  const { data, error } = await safeRpc<ModQueueItem[]>('browse_mod_queue');
+
+  if (error) {
+    const msg = (error as { message?: string }).message ?? String(error);
+    if (msg.includes('Not an available moderator')) {
+      listEl.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--mod-text-secondary);font-family:var(--mod-font-ui);font-size:13px;">You're not set to Available.<br>Toggle in Settings to receive requests.</div>`;
+    } else {
+      showToast(msg);
+    }
+    return;
+  }
+
+  const rows = (data as ModQueueItem[]) ?? [];
+
+  if (rows.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--mod-text-secondary);font-family:var(--mod-font-ui);font-size:13px;">No debates waiting for a moderator right now.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = rows.map(row => {
+    const waitMs = Date.now() - new Date(row.created_at).getTime();
+    const waitMin = Math.floor(waitMs / 60000);
+    const waitSec = Math.floor((waitMs % 60000) / 1000);
+    const waitStr = waitMin > 0 ? `${waitMin}m ${waitSec}s` : `${waitSec}s`;
+    const nameA = row.debater_a_name ?? 'Unknown';
+    const nameB = row.debater_b_name ?? 'TBD';
+    return `
+      <div style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:14px 16px;margin-bottom:12px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${row.category} · ${row.mode}</div>
+        <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px;">${row.topic}</div>
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">${nameA} vs ${nameB} · waiting ${waitStr}</div>
+        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.id}" style="width:100%;background:var(--mod-accent-primary);color:#fff;border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll<HTMLButtonElement>('.mod-queue-claim-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const debateId = btn.dataset.debateId!;
+      void claimModRequest(debateId, btn);
+    });
+  });
+}
+
+async function claimModRequest(debateId: string, btn: HTMLButtonElement): Promise<void> {
+  btn.disabled = true;
+  btn.textContent = 'REQUESTING…';
+
+  const { error } = await safeRpc('request_to_moderate', { p_debate_id: debateId });
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'REQUEST TO MOD';
+    showToast('Another mod got there first — queue refreshed');
+    void loadModQueue();
+    return;
+  }
+
+  stopModQueuePoll();
+
+  const listEl = document.getElementById('mod-queue-list');
+  if (listEl) {
+    listEl.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;">Request sent.<br><span style="font-weight:400;color:var(--mod-text-secondary);font-size:13px;">Waiting for the debaters to accept.</span></div>`;
+  }
+}
+
+function startModQueuePoll(): void {
+  if (modQueuePollTimer) clearInterval(modQueuePollTimer);
+  modQueuePollTimer = setInterval(() => {
+    if (view !== 'modQueue') {
+      clearInterval(modQueuePollTimer!);
+      modQueuePollTimer = null;
+      return;
+    }
+    void loadModQueue();
+  }, 5000);
+}
+
+function stopModQueuePoll(): void {
+  if (modQueuePollTimer) {
+    clearInterval(modQueuePollTimer);
+    modQueuePollTimer = null;
   }
 }
 
