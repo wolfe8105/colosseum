@@ -3756,6 +3756,7 @@ function stopModQueuePoll(): void {
 interface ModStatusResult {
   mod_status: string;
   mod_requested_by: string | null;
+  moderator_id: string | null;
   moderator_display_name: string;
 }
 
@@ -3772,7 +3773,7 @@ function startModStatusPoll(debateId: string): void {
       if (error || !data) return;
       const result = data as ModStatusResult;
       if (result.mod_status === 'requested' && !modRequestModalShown) {
-        showModRequestModal(result.moderator_display_name, debateId);
+        showModRequestModal(result.moderator_display_name, result.moderator_id ?? '', debateId);
       } else if (result.mod_status === 'claimed' || result.mod_status === 'none') {
         document.getElementById('mod-request-modal')?.remove();
         stopModStatusPoll();
@@ -3788,7 +3789,7 @@ function stopModStatusPoll(): void {
   }
 }
 
-function showModRequestModal(modName: string, debateId: string): void {
+function showModRequestModal(modName: string, modId: string, debateId: string): void {
   modRequestModalShown = true;
   document.getElementById('mod-request-modal')?.remove();
 
@@ -3817,22 +3818,22 @@ function showModRequestModal(modName: string, debateId: string): void {
     if (cdEl) cdEl.textContent = `Auto-declining in ${secondsLeft}s`;
     if (secondsLeft <= 0) {
       clearInterval(countdownTimer);
-      void handleModResponse(false, debateId, modal);
+      void handleModResponse(false, debateId, modal, modId, modName);
     }
   }, 1000);
 
   document.getElementById('mod-req-accept')?.addEventListener('click', () => {
     clearInterval(countdownTimer);
-    void handleModResponse(true, debateId, modal);
+    void handleModResponse(true, debateId, modal, modId, modName);
   });
 
   document.getElementById('mod-req-decline')?.addEventListener('click', () => {
     clearInterval(countdownTimer);
-    void handleModResponse(false, debateId, modal);
+    void handleModResponse(false, debateId, modal, modId, modName);
   });
 }
 
-async function handleModResponse(accept: boolean, debateId: string, modal: HTMLElement): Promise<void> {
+async function handleModResponse(accept: boolean, debateId: string, modal: HTMLElement, modId: string, modName: string): Promise<void> {
   const acceptBtn = document.getElementById('mod-req-accept') as HTMLButtonElement | null;
   const declineBtn = document.getElementById('mod-req-decline') as HTMLButtonElement | null;
   if (acceptBtn) acceptBtn.disabled = true;
@@ -3849,6 +3850,10 @@ async function handleModResponse(accept: boolean, debateId: string, modal: HTMLE
   modal.remove();
   if (accept) {
     stopModStatusPoll();
+    if (currentDebate) {
+      currentDebate.moderatorId = modId;
+      currentDebate.moderatorName = modName;
+    }
     showToast('Moderator accepted — debate is now moderated');
   } else {
     modRequestModalShown = false;
