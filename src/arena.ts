@@ -259,6 +259,9 @@ let selectedCategory: string | null = null;
 let privateLobbyPollTimer: ReturnType<typeof setInterval> | null = null;
 let privateLobbyDebateId: string | null = null;
 let modQueuePollTimer: ReturnType<typeof setInterval> | null = null;
+let selectedWantMod: boolean = false;
+let modStatusPollTimer: ReturnType<typeof setInterval> | null = null;
+let modRequestModalShown: boolean = false;
 export let referencePollTimer: ReturnType<typeof setInterval> | null = null;
 export let pendingReferences: unknown[] = [];
 export let activatedPowerUps: Set<string> = new Set();
@@ -710,6 +713,7 @@ export function renderLobby(): void {
   selectedModerator = null;
   selectedRanked = false;
   selectedCategory = null;
+  selectedWantMod = false;
   if (privateLobbyPollTimer) { clearInterval(privateLobbyPollTimer); privateLobbyPollTimer = null; }
   privateLobbyDebateId = null;
   stopReferencePoll();
@@ -1276,6 +1280,10 @@ function showCategoryPicker(mode: string, topic: string): void {
         `).join('')}
       </div>
       <button class="arena-cat-any" id="arena-cat-any">⚡ ANY CATEGORY — FASTEST MATCH</button>
+      <label id="arena-want-mod-row" style="display:flex;align-items:center;gap:10px;padding:12px 4px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="arena-want-mod-toggle" style="width:18px;height:18px;accent-color:var(--mod-accent-primary);cursor:pointer;">
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-body);">🧑‍⚖️ Request a moderator for this debate</span>
+      </label>
       <button class="arena-cat-cancel" id="arena-cat-cancel">Back</button>
     </div>
   `;
@@ -1286,6 +1294,7 @@ function showCategoryPicker(mode: string, topic: string): void {
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       selectedCategory = (btn as HTMLElement).dataset.cat ?? null;
+      selectedWantMod = (document.getElementById('arena-want-mod-toggle') as HTMLInputElement | null)?.checked ?? false;
       overlay.remove();
       enterQueue(mode, topic);
     });
@@ -1294,6 +1303,7 @@ function showCategoryPicker(mode: string, topic: string): void {
   // Wire "any" button
   document.getElementById('arena-cat-any')?.addEventListener('click', () => {
     selectedCategory = null;
+    selectedWantMod = (document.getElementById('arena-want-mod-toggle') as HTMLInputElement | null)?.checked ?? false;
     overlay.remove();
     enterQueue(mode, topic);
   });
@@ -1681,6 +1691,10 @@ function onMatchConfirmed(): void {
   const statusEl = document.getElementById('mf-status');
   if (statusEl) statusEl.textContent = '\u2705 Both ready \u2014 entering battle!';
   if (matchFoundDebate) {
+    if (selectedWantMod && !isPlaceholder()) {
+      safeRpc('request_mod_for_debate', { p_debate_id: matchFoundDebate.id }).catch(() => {});
+    }
+    selectedWantMod = false;
     setTimeout(() => { void showPreDebate(matchFoundDebate!); }, 800);
   }
 }
@@ -2003,6 +2017,11 @@ export function enterRoom(debate: CurrentDebate): void {
   // Session 39: Start reference polling if moderator assigned
   if (selectedModerator && debate.id && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     startReferencePoll(debate.id);
+  }
+
+  // F-47: Start mod status poll for human debates (not AI, not placeholder)
+  if (debate.mode !== 'ai' && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && !isPlaceholder()) {
+    startModStatusPoll(debate.id);
   }
 
   // Start round timer for live mode
@@ -2460,6 +2479,8 @@ export async function endCurrentDebate(): Promise<void> {
   pushArenaState('postDebate');
   if (roundTimer) clearInterval(roundTimer);
   stopReferencePoll();
+  stopModStatusPoll();
+  document.getElementById('mod-request-modal')?.remove();
 
   const debate = currentDebate!;
 
@@ -3725,6 +3746,113 @@ function stopModQueuePoll(): void {
   if (modQueuePollTimer) {
     clearInterval(modQueuePollTimer);
     modQueuePollTimer = null;
+  }
+}
+
+// ============================================================
+// F-47 STEP 6 — MOD STATUS POLL + REQUEST MODAL
+// ============================================================
+
+interface ModStatusResult {
+  mod_status: string;
+  mod_requested_by: string | null;
+  moderator_display_name: string;
+}
+
+function startModStatusPoll(debateId: string): void {
+  stopModStatusPoll();
+  modRequestModalShown = false;
+  modStatusPollTimer = setInterval(async () => {
+    if (view !== 'room') {
+      stopModStatusPoll();
+      return;
+    }
+    try {
+      const { data, error } = await safeRpc<ModStatusResult>('get_debate_mod_status', { p_debate_id: debateId });
+      if (error || !data) return;
+      const result = data as ModStatusResult;
+      if (result.mod_status === 'requested' && !modRequestModalShown) {
+        showModRequestModal(result.moderator_display_name, debateId);
+      } else if (result.mod_status === 'claimed' || result.mod_status === 'none') {
+        document.getElementById('mod-request-modal')?.remove();
+        stopModStatusPoll();
+      }
+    } catch { /* retry next tick */ }
+  }, 4000);
+}
+
+function stopModStatusPoll(): void {
+  if (modStatusPollTimer) {
+    clearInterval(modStatusPollTimer);
+    modStatusPollTimer = null;
+  }
+}
+
+function showModRequestModal(modName: string, debateId: string): void {
+  modRequestModalShown = true;
+  document.getElementById('mod-request-modal')?.remove();
+
+  let secondsLeft = 30;
+  const modal = document.createElement('div');
+  modal.id = 'mod-request-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);';
+  modal.innerHTML = `
+    <div style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-lg);padding:28px 24px;max-width:320px;width:90%;text-align:center;">
+      <div style="font-size:32px;margin-bottom:12px;">🧑‍⚖️</div>
+      <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:2px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Moderator Request</div>
+      <div style="font-family:var(--mod-font-body);font-size:16px;font-weight:600;color:var(--mod-text-primary);margin-bottom:6px;">${modName}</div>
+      <div style="font-family:var(--mod-font-body);font-size:14px;color:var(--mod-text-secondary);margin-bottom:20px;">wants to moderate this debate</div>
+      <div id="mod-req-countdown" style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);margin-bottom:20px;">Auto-declining in ${secondsLeft}s</div>
+      <div style="display:flex;gap:10px;">
+        <button id="mod-req-decline" style="flex:1;padding:12px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:transparent;color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">DECLINE</button>
+        <button id="mod-req-accept" style="flex:1;padding:12px;border-radius:var(--mod-radius-pill);border:none;background:var(--mod-accent-primary);color:#fff;font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const countdownTimer = setInterval(() => {
+    secondsLeft--;
+    const cdEl = document.getElementById('mod-req-countdown');
+    if (cdEl) cdEl.textContent = `Auto-declining in ${secondsLeft}s`;
+    if (secondsLeft <= 0) {
+      clearInterval(countdownTimer);
+      void handleModResponse(false, debateId, modal);
+    }
+  }, 1000);
+
+  document.getElementById('mod-req-accept')?.addEventListener('click', () => {
+    clearInterval(countdownTimer);
+    void handleModResponse(true, debateId, modal);
+  });
+
+  document.getElementById('mod-req-decline')?.addEventListener('click', () => {
+    clearInterval(countdownTimer);
+    void handleModResponse(false, debateId, modal);
+  });
+}
+
+async function handleModResponse(accept: boolean, debateId: string, modal: HTMLElement): Promise<void> {
+  const acceptBtn = document.getElementById('mod-req-accept') as HTMLButtonElement | null;
+  const declineBtn = document.getElementById('mod-req-decline') as HTMLButtonElement | null;
+  if (acceptBtn) acceptBtn.disabled = true;
+  if (declineBtn) declineBtn.disabled = true;
+
+  const { error } = await safeRpc('respond_to_mod_request', { p_debate_id: debateId, p_accept: accept });
+
+  if (error) {
+    modal.remove();
+    modRequestModalShown = false;
+    return;
+  }
+
+  modal.remove();
+  if (accept) {
+    stopModStatusPoll();
+    showToast('Moderator accepted — debate is now moderated');
+  } else {
+    modRequestModalShown = false;
+    // poll continues — mod_status reset to 'waiting' by RPC
   }
 }
 
