@@ -3598,7 +3598,7 @@ export function init(): void {
 // ============================================================
 
 interface ModQueueItem {
-  id: string;
+  debate_id: string;
   topic: string;
   category: string;
   mode: string;
@@ -3674,7 +3674,7 @@ async function loadModQueue(): Promise<void> {
         <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${row.category} · ${row.mode}</div>
         <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px;">${row.topic}</div>
         <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">${nameA} vs ${nameB} · waiting ${waitStr}</div>
-        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.id}" style="width:100%;background:var(--mod-accent-primary);color:#fff;border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
+        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.debate_id}" style="width:100%;background:var(--mod-accent-primary);color:#fff;border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
       </div>
     `;
   }).join('');
