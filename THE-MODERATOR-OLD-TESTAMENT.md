@@ -1140,3 +1140,530 @@ Full codebase audit via Claude Code CLI. 120+ issues found across 43 files. 29 c
 **Files changed:** `colosseum-debate-landing.html`, `colosseum-auto-debate.html`, `index.html`
 
 ---
+
+## Session 108 — TOKEN STAKING & POWER-UP PLAN
+
+**Goal:** Design the complete token spend loop — staking + power-ups + questionnaire gate.
+
+1. **Full plan document created** — `TOKEN-STAKING-POWERUP-PLAN.docx` in repo.
+2. **Design decisions locked:** Parimutuel pool split, pre-debate only, debaters can self-stake, free-form amounts, all 4 power-ups at launch (2x Multiplier, Silence, Shield, Reveal), slots gated by questionnaire tier.
+3. **5-tier questionnaire gate:** Tier 1 (10 Qs, 5 token max, 0 slots) → Tier 5 (100 Qs, unlimited staking, 4 slots, all power-ups).
+4. **6-phase implementation order:** Phase 1 questionnaire foundation → Phase 2 staking backend → Phase 3 staking frontend → Phase 4 power-up backend → Phase 5 power-up frontend → Phase 6 polish.
+5. **Database schemas defined:** `stakes` table, `power_up_inventory` table, `questions_answered` column on profiles.
+6. **Castle defense compliant:** All writes through SECURITY DEFINER RPCs, `resolve_stakes` service-role only, `questions_answered` added to `guard_profile_columns` trigger (Session 117).
+
+**No code shipped. No SQL. Planning session only.**
+
+---
+
+## Session 109 — TOKEN STAKING PHASE 2 (BACKEND)
+
+**Goal:** Build the staking backend from TOKEN-STAKING-POWERUP-PLAN.docx Phase 2.
+
+1. **SQL migration** — `stakes` table, `stake_pools` table, 3 SECURITY DEFINER RPCs: `place_stake`, `get_stake_pool`, `settle_stakes`. Parimutuel pool model. Pre-debate only. Rate-limited.
+2. **colosseum-staking.js** — NEW module. `getPool()`, `renderStakingPanel()`, `wireStakingPanel()`, `settleStakes()`. Renders staking UI with token input, side picker, pool visualization.
+3. **colosseum-arena.js** — Pre-debate screen added (`showPreDebate()`). Loads staking panel between matchmaking and room entry. Staking settlement wired into `endCurrentDebate()`.
+
+**Files changed:** `colosseum-staking.js` (new), `colosseum-arena.js`, SQL migration
+
+---
+
+## Session 110 — POWER-UPS FRONTEND (PHASE 5)
+
+**Goal:** Build the power-up frontend from TOKEN-STAKING-POWERUP-PLAN.docx Phase 5.
+
+1. **colosseum-powerups.js** — NEW module. 4 power-ups: 2x Multiplier (passive), Silence (10s mute), Shield (block reference challenge), Reveal (see opponent loadout). Inventory management, equip/unequip, activation handlers.
+2. **Pre-debate loadout** — Power-up loadout panel renders in pre-debate screen. Equip from inventory before entering room.
+3. **In-debate activation bar** — Horizontal bar above message stream. Tap to activate Silence/Shield/Reveal. Visual effects: silence countdown overlay, shield indicator badge, reveal popup showing opponent's equipped items.
+4. **Power-up state cleanup** — `activatedPowerUps` Set, `shieldActive` flag, `silenceTimer` ref. All cleaned up in `renderLobby()` and `endCurrentDebate()`.
+5. **Staking settlement with multiplier** — `settleStakes()` accepts multiplier parameter. 2x Multiplier power-up doubles staking payout on win.
+
+**Files changed:** `colosseum-powerups.js` (new), `colosseum-arena.js`
+
+---
+
+## Session 111 — BUG QUEST BATCH + DISCORD KILLED
+
+**Goal:** Continue bug audit, kill dead channels.
+
+1. **3 bugs fixed** — Score: 21/36 → 24/36.
+2. **Discord killed permanently** — `LEG1_DISCORD_ENABLED` hardcoded to `false` in bot-config.js. Discord bot code stays in repo but never runs. Do not suggest Discord as a channel.
+
+**Files changed:** `bot-config.js`, plus bug fix files
+
+---
+
+## Session 112 — BUG QUEST BATCH + IDEAS PARKED
+
+**Goal:** Continue bug audit, park new ideas.
+
+1. **3 bugs fixed** — Bugs 025 (hot takes expand), 031 (password reset), 034 (confirmed already built). Score: 24/36 → 27/36.
+2. **Two new ideas parked (not built):**
+   - *Timed Powerup Data Harvests* — Colosseum cross-cutting system. Powerup activation prompts are disguised B2B data questions. Roadmapped after bug quest.
+   - *Data Harvesting Game Studio* — SEPARATE venture (separate LLC, Supabase, everything). Clone top free mobile games via Unity reskin, replace IAP with data questions. $1k budget. Parked.
+
+**Files changed:** `colosseum-async.js`, `colosseum-settings.html`
+
+---
+
+## Session 113 — PROFILE DEPTH + TRANSCRIPT + PREDICTIONS
+
+**Goal:** Close bugs 030, 023, 026.
+
+1. **Bug 030 — Profile depth.** Emoji avatar picker (20 options, saves as `emoji:⚔️` in avatar_url), inline bio edit (500 char), followers/following list modal with tap-to-profile.
+2. **Bug 023 — Post-debate transcript.** "📝 TRANSCRIPT" button in post-debate actions. Opens bottom sheet with full message history — side-colored bubbles (blue A, red B), round dividers, scrollable.
+3. **Bug 026 — Standalone prediction creation.** New `prediction_questions` and `prediction_picks` tables. 3 SECURITY DEFINER RPCs: `create_prediction_question`, `get_prediction_questions`, `pick_prediction`. Rate-limited (10 creates/hr, 30 picks/hr). CREATE button in predictions tab, bottom sheet form, optimistic UI with server sync.
+
+**Score: 27/36 → 30/36.**
+
+**New Supabase objects:** Tables `prediction_questions`, `prediction_picks`. RPCs `create_prediction_question`, `get_prediction_questions`, `pick_prediction`.
+
+**Files changed:** `index.html`, `colosseum-auth.js`, `api/profile.js`, `colosseum-arena.js`, `colosseum-async.js`, `colosseum-prediction-questions.sql`
+
+---
+
+## Session 114 — SPECTATOR VIEW PATH + PREDICTIONS FIX
+
+**Goal:** Bug 024 (spectator view path), verify Bug 026 prediction flow, fix predictions tab visibility.
+
+1. **Bug 024 — Spectator view path.** New standalone page `colosseum-spectate.html`. Loads debate via `get_arena_debate_spectator` RPC. Message stream with round dividers, 5-second auto-polling for live debates, vote buttons, spectator count via `bump_spectator_count`, share buttons.
+2. **Predictions tab visibility fix.** `overlay-predictions-tab` ID rename bug fixed.
+3. **Bug 026 verified end-to-end.**
+
+**Score: 30/36 → 31/36.**
+
+**New Supabase objects:** RPCs `get_arena_debate_spectator`, `bump_spectator_count`.
+
+**Files changed:** `colosseum-spectate.html` (new), `colosseum-spectate-rpcs.sql` (new), `colosseum-arena.js`, `index.html`
+
+---
+
+## Session 115 — BUG QUEST BATCH (SPECTATOR CHAT, PULSE GAUGE, SHARE)
+
+**Goal:** Close bugs 027, 028, 033.
+
+1. **Bug 027 — Spectator chat.** Live chat for spectators during debates.
+2. **Bug 028 — Audience pulse gauge.** Real-time sentiment visual showing which side is winning.
+3. **Bug 033 — Enhanced share.** Improved share flow for post-debate results.
+
+**Score: 31/36 → 32/36.**
+
+**Files changed:** `colosseum-spectate.html`, `colosseum-arena.js`, `colosseum-share.js`
+
+---
+
+## Session 116 — GVG CHALLENGE + GROQ DECISION (BUG QUEST EFFECTIVELY COMPLETE)
+
+**Goal:** Close bugs 029 (Groups GvG) and 012 (Groq tier decision).
+
+1. **Bug 029 — Group vs Group Challenge System.** SQL: `group_challenges` table, status flow (pending→accepted→declined→expired→live→completed), 48-hour auto-expiry. 4 SECURITY DEFINER RPCs: `create_group_challenge`, `respond_to_group_challenge`, `resolve_group_challenge`, `get_group_challenges`. HTML/JS: Challenges tab, GvG button, full modal with opponent search, topic input, format pills (1v1/3v3/5v5).
+2. **Bug 012 — Groq Free Tier (CLOSED).** Decision: Accept template fallback. At 3 debates/day the free tier rarely hits.
+
+**Score: 32/36 → 34/36. Bug quest effectively complete.** Sole remaining: Bug 014 (Reddit API approval — external blocker).
+
+**New Supabase objects:** Table `group_challenges`. RPCs `create_group_challenge`, `respond_to_group_challenge`, `resolve_group_challenge`, `get_group_challenges`.
+
+**Files changed:** `colosseum-groups.html`, `colosseum-gvg-challenge.sql` (new)
+
+---
+
+## Session 117 — TOKEN STAKING PHASE 1 (QUESTIONNAIRE TIER FOUNDATION)
+
+**Goal:** Begin token staking build. Phase 1: questionnaire tier system.
+
+1. **SQL migration.** Added `questions_answered` integer column to `profiles` (default 0). Updated `guard_profile_columns` trigger (now guards: level, xp, streak_freezes, questions_answered). Created `increment_questions_answered(p_count)` SECURITY DEFINER RPC.
+2. **colosseum-tiers.js (NEW).** 6 tiers: Unranked (0), Spectator+ (10), Contender (25), Gladiator (50), Champion (75), Legend (100). `getTier(qa)`, `getNextTier(qa)`, `renderTierBadge(qa)`, `renderTierProgress(qa)`.
+3. **colosseum-profile-depth.html.** Tier banner UI added. `saveSection()` wired to `increment_questions_answered`. Init migration sync on page load.
+4. **Threshold note:** Current questionnaire has 39 questions — users can reach Tier 2 (25) but not Tier 3+ (50/75/100). Thresholds recalibrated Session 164.
+
+**New Supabase objects:** Column `profiles.questions_answered`. RPC `increment_questions_answered`. Trigger `guard_profile_columns` updated.
+
+**Files changed:** `colosseum-tiers.js` (new), `colosseum-profile-depth.html`, `colosseum-token-staking-phase1.sql` (new)
+
+---
+
+## Session 118 — STAKING & POWER-UP AUDIT (4 RPC BUGS FIXED)
+
+**Goal:** Begin Phase 2 staking backend. Discovered Phases 2-5 were already built (Sessions 109-110). Audited all RPCs and fixed 4 bugs.
+
+**Bug 1 — `place_stake` column mismatch (LM-174).** `tokens` → `token_balance`.
+**Bug 2 — `settle_stakes` join mismatch (LM-175).** `pool_id` → `debate_id`.
+**Bug 3 — `buy_power_up` column mismatch (LM-174).** `tokens` → `token_balance`.
+**Bug 4 — `activate_power_up` missing boolean (LM-176).** Added `activated = true`.
+
+**Phases 1-5 COMPLETE. Phase 6 (Polish & Balance) is next.**
+
+**No new files. SQL-only fixes (4 RPCs patched in Supabase).**
+
+---
+
+> Sessions 119-120: Not in project chat record.
+
+## Session 121 — ARENA NAVIGATION FIX + STAKING TEST START
+
+**Goal:** Fix arena popstate bugs, fix AI debate status for staking, begin staking end-to-end test.
+
+1. **Popstate rewrite (LM-183).** Removed `_skipNextPop` boolean. New pattern: forward → `replaceState`, back/cancel → `history.back()`. Arrow function wrapping required on listeners.
+2. **AI debate status fix (LM-184).** `create_ai_debate` RPC: `'live'` → `'pending'`. Flip to `'live'` happens in `enterRoom()` only.
+3. **Staking test started.** Pre-debate screen renders, stake placed (tokens 55→50). Settlement not yet tested.
+
+**Files changed:** `colosseum-arena.js` (GitHub), `create_ai_debate` RPC (Supabase)
+
+---
+
+## Session 122 — WIRING MANIFEST COMPLETE + TYPESCRIPT MIGRATION PLAN
+
+**Goal:** Complete the Wiring Manifest, plan TypeScript migration.
+
+1. **Wiring Manifest completed** — 1,546 lines. All 8 sections. Validated by tracing AI Sparring end-to-end.
+2. **TypeScript Migration Plan written** — 6-phase plan: Phase 0 → Phase 6.
+3. **Five-runtime technical debt identified.** Frontend (vanilla JS), Bot Army (Node CommonJS) are the migration targets.
+
+**New files:** `THE-MODERATOR-WIRING-MANIFEST.md`, `TYPESCRIPT-MIGRATION-PLAN.md`
+
+---
+
+## Session 123 — STAKING END-TO-END TEST (5 BUGS FIXED)
+
+**Goal:** Complete staking end-to-end test.
+
+1. **Double `settle_stakes` call (LM-182).** Deleted duplicate Session 109 block from `endCurrentDebate()`.
+2. **`stake_pools.winner` column missing (LM-177).** Added via ALTER TABLE.
+3. **`claim_action_tokens` dead `debates` table reference.** Removed.
+4. **`claim_action_tokens` log_event signature mismatch (LM-178).** Fixed to named parameters.
+5. **End-to-end staking test PASSED.**
+
+**Files changed:** `colosseum-arena.js` (GitHub), `settle_stakes`/`claim_action_tokens` RPCs (Supabase), `stake_pools` table (Supabase)
+
+---
+
+## Session 124 — 3 RPC BUGS FIXED (CONSOLE CLEAN)
+
+**Goal:** Fix remaining console errors from Session 123.
+
+1. **`get_my_milestones` + `claim_milestone` — column "action" (LM-179).** Fixed to `earn_type`. Milestone keys stored as `'milestone:key_name'` pattern in `earn_type`, `reference_id` NULL.
+2. **`get_category_counts` 404 (LM-180, LM-181).** Fixed bare `record` return → `RETURNS TABLE(...)`. Fixed legacy `public.debates` reference → `arena_debates`.
+
+**Console status:** Clean. SQL-only fixes (3 RPCs patched in Supabase).**
+
+---
+
+## Session 125 — TYPESCRIPT MIGRATION PHASE 0 (BUILD INFRASTRUCTURE)
+
+**Goal:** Add TypeScript, Vite, and build step without changing existing code.
+
+1. **6 files created.** `package.json`, `tsconfig.json` (strict mode, ES2022), `vite.config.ts` (multi-page), `src/types/globals.d.ts`, `src/types/database.ts`, `.gitignore` updated.
+2. **Verified.** `npm install` clean, `tsc --noEmit` passes.
+3. **Vercel unchanged.** `vercel.json` still `buildCommand: null`.
+
+---
+
+## Session 126 — TYPESCRIPT PHASES 1-2 (FOUNDATION + DEFENSE)
+
+**Goal:** Migrate foundation and defense modules.
+
+1. **Phase 1 — Foundation.** `src/config.ts`, `src/auth.ts` (typed `safeRpc<T>`).
+2. **Phase 2 — Defense.** `src/tiers.ts`, `src/tokens.ts`, `src/staking.ts`, `src/powerups.ts`.
+3. **All 8 files compile clean** — strict mode.
+
+---
+
+## Session 127 — TYPESCRIPT PHASE 3 (ALL REMAINING MODULES)
+
+**Goal:** Migrate remaining 12 frontend modules.
+
+1. **12 modules migrated.** `src/scoring.ts`, `src/notifications.ts`, `src/leaderboard.ts`, `src/share.ts`, `src/cards.ts`, `src/analytics.ts`, `src/payments.ts`, `src/paywall.ts`, `src/webrtc.ts`, `src/voicememo.ts`, `src/arena.ts`, `src/async.ts`.
+2. **16 of 16 frontend modules** now have typed TypeScript mirrors in `src/`.
+
+---
+
+## Session 128 — TYPESCRIPT PHASE 4 (HTML INLINE SCRIPT EXTRACTION)
+
+**Goal:** Extract inline `<script>` blocks from all 10 HTML pages into typed modules.
+
+1. **10 page modules created** in `src/pages/`. 7 fully hand-typed. 3 heavy files (spectate, groups, home) with `any` annotations — need full typing pass (closed Session 166).
+2. **10 HTML files updated** — single `<script type="module">` each.
+
+---
+
+## Session 130 — VITE BUILD ENABLED + 3 COSMETIC BUGS FIXED
+
+**Goal:** Fix 3 cosmetic bugs, enable Vite build in production.
+
+1. **"Answer NaN more questions" fixed.** `next.questionsNeeded` replaces `next.minQuestions`.
+2. **"NaN ELO" on AI bot fixed.** `opponentElo: 1200`.
+3. **Vite build enabled.** `vercel.json`: `buildCommand: "npm run build"`, `outputDirectory: "dist"`. First successful build confirmed.
+4. **Power-up shop entry points added.** `navigateTo` exposed on window.
+
+**Files changed:** `package.json`, `vercel.json`, `colosseum-powerups.js`, `colosseum-arena.js`, `index.html`, `src/pages/home.ts`
+
+---
+
+## Session 131 — PHASE 5 COMPLETE (BOT ARMY TS MIGRATION)
+
+**Goal:** Complete bot army TypeScript migration.
+
+1. **Phase 5 complete.** 19 files (17 .ts + tsconfig.json + types.d.ts). PM2 running compiled JS from `dist/`. `ecosystem.config.js` updated to `dist/bot-engine.js`. Original .js kept as rollback.
+
+**Files changed:** 19 new .ts files on VPS + GitHub, `ecosystem.config.js`
+
+---
+
+## Session 132 — VITEST + BOT ARMY TESTS (PHASE 6 STARTED)
+
+**Goal:** Install Vitest, write bot army tests, fix 2 bugs found by tests.
+
+1. **Vitest installed.** 3 test files: category-classifier (35 tests), content-filter (32 tests), bot-config (29 tests). 97/97 passing.
+2. **Bug 1 fixed:** category classifier `\b` word-boundary regex on ALL keywords.
+3. **Bug 2 fixed:** content filter regex alternation reordered.
+
+**Files:** `vitest.config.ts`, `lib/category-classifier.ts`, `lib/content-filter.ts`, `tests/*.test.ts`, `package.json`
+
+---
+
+> Sessions 133-134 were conducted in a separate project chat (security audit).
+
+## Session 133 — SECURITY AUDIT PHASE 1-2 (PII SCRUB + XSS)
+
+1. **Phase 1 PII scrub.** Personal Gmail removed from `colosseum-legal-snippets.html`.
+2. **Phase 2 XSS fixes.** `submitReference` URL validation added.
+3. **DOB-in-JWT issue identified.**
+
+**Files changed:** `colosseum-auth.js`, `colosseum-legal-snippets.html`
+
+---
+
+## Session 134 — SECURITY AUDIT PHASE 3 (AUTH FIXES + DOB-IN-JWT)
+
+1. **requireAuth() placeholder bypass fixed.**
+2. **UUID validation added** to 14 functions.
+3. **`_notify` removed from public API.**
+4. **DOB-in-JWT fix shipped.** Trigger strips DOB. `set_profile_dob()` RPC created.
+5. **innerHTML fixes shipped.** `_esc()` helpers added to payments, paywall, tokens.
+
+**Security audit status: CLOSED.** All 120+ issues resolved.
+
+**Files changed:** `colosseum-auth.js`, `colosseum-payments.js`, `colosseum-paywall.js`, `colosseum-tokens.js`, `src/pages/plinko.ts`, `colosseum-dob-fix.sql`
+
+---
+
+> Sessions 135-141: Not in project chat record.
+
+## Session 142 — LEGACY SCRIPT TAG REMOVAL (VIA CLAUDE CODE)
+
+**Goal:** Remove all legacy `<script>` tags from HTML files.
+
+1. **76 legacy `<script>` tags removed** across all 11 HTML pages (19 from index.html + 57 from 10 others). Every page now runs single `<script type="module">` via Vite.
+2. **Verified live on Vercel.** index.html, colosseum-groups.html, colosseum-settings.html all rendering correctly.
+
+**Files changed:** All 11 HTML files, 8 page .ts files.
+
+---
+
+> Sessions 143-145: Not in project chat record.
+
+## Session 146 — REFERENCE ARSENAL DESIGN + STRIPE FIX + DEAD FILE CLEANUP
+
+1. **Stripe console error fixed.** `typeof Stripe === 'undefined'` guard in `src/payments.ts`.
+2. **Three dead files deleted.** `src/types/database.ts`, `database.ts` (root), `globals.d.ts` (root).
+3. **Reference Arsenal designed.** 5-step forge form, 6 source types, community verification, -10 penalty on rejected challenge. `arsenal_references` (21 cols), `reference_verifications` (6 cols), 4 SECURITY DEFINER RPCs.
+
+**Files changed:** `src/payments.ts`. 3 files deleted.
+
+---
+
+## Session 147 — REFERENCE ARSENAL MIGRATION + TYPESCRIPT MODULE
+
+1. **Migration SQL executed.** 2 tables, 6 RPCs live in Supabase. LM-186 bug fixed (rivals columns are `challenger_id`/`target_id`, not `user_id`/`rival_id`).
+2. **`src/reference-arsenal.ts` built.** 730 lines. Compiles clean strict mode.
+
+**Files changed:** `src/reference-arsenal.ts` (new). Supabase: `arsenal_references`, `reference_verifications`, 6 RPCs.
+
+---
+
+> Sessions 148-149: Not in project chat record.
+
+## Session 150 — EDIT BUG FIX + VERIFY FLOW CONFIRMED
+
+1. **edit_reference RPC bug fixed.** log_event positional args → named params.
+2. **Verify flow tested end-to-end.** Duplicate vote blocked. Owner card shows locked indicator.
+3. **Login/signup flow problems noted.** Google OAuth disabled. Email confirmation failing.
+
+**Files changed:** Supabase: edit_reference RPC patched.
+
+---
+
+## Session 151 — LM-188 FULL AUDIT: log_event NAMED PARAMS
+
+**Goal:** Eliminate all positional log_event calls across entire codebase.
+
+1. **7 broken calls fixed** across 6 RPCs. join_debate_queue (×2), toggle_moderator_status, update_arena_debate, claim_debate_tokens, create_group, join_group.
+2. **22 fragile calls converted** to named params across 20 RPCs.
+3. **29 total calls, 26 RPCs, zero positional calls remain.**
+
+**Files changed:** Supabase: 26 RPCs patched. Zero GitHub. Zero VPS.
+
+---
+
+## Session 152 — PWA MOBILE DISTRIBUTION DECISION
+
+**Goal:** Decide mobile distribution strategy.
+
+1. **Decision locked:** PWA first (manifest + service worker → Add to Home Screen on Android/iOS). TWA wrapper for Google Play later if warranted. Apple App Store deferred — requires Mac, $99/yr, Apple rejects WebView-only apps. Capacitor is the fallback path if native shell is ever needed. No native rewrite.
+
+**No code shipped. Decision only.**
+
+---
+
+> Sessions 153-159: Not in project chat record.
+
+## Session 160 — COLOSSEUM → MODERATOR FILE RENAME
+
+**Goal:** Rename project from "The Colosseum" to "The Moderator."
+
+1. **All HTML files renamed.** `colosseum-*.html` → `moderator-*.html`.
+2. **All bible docs renamed.** `THE-COLOSSEUM-*.md` → `THE-MODERATOR-*.md`, `COLOSSEUM-FEATURE-ROOM-MAP.md` → `MODERATOR-FEATURE-ROOM-MAP.md`.
+3. **Internal content not fully updated.** NT, OT, War Plan, Wiring Manifest, Land Mine Map still have "Colosseum" in body text (H-03, tracked in Punch List).
+
+**Files changed:** File renames only. No code changes.
+
+---
+
+> Session 161: Not in project chat record.
+
+## Session 162 — PUNCH LIST CREATED
+
+**Goal:** Create single source of truth for everything that needs doing.
+
+1. **THE-MODERATOR-PUNCH-LIST.md created.** Three sections: Housekeeping (11 items), Bugs (8 items), Features (44 items). Source of truth for all open work going forward.
+
+**Files changed:** `THE-MODERATOR-PUNCH-LIST.md` (new).
+
+---
+
+## Session 163 — ARENA BUG AUDIT + NAVIGATION MODULE + TIMEOUT FIX
+
+**Goal:** Close B-01 (arena blank), B-02 (auth redirect loop), B-06 (AI sparring nav), housekeeping cleanup.
+
+1. **B-01 closed.** Not a bug — arena is a screen inside index.html via `arena.init()`, not a separate HTML file. Wiring Manifest stale reference.
+2. **B-02 fixed.** Root cause: 4000ms page timeout vs 5000ms auth timeout = 1s gap. Fix: 4000→6000ms in home.ts, profile-depth.ts, settings.ts.
+3. **B-06 closed.** Not reproducible — killed by TS migration Session 142.
+4. **H-02 closed.** `src/navigation.ts` created — register/call pattern for page navigation. `(window as any).navigateTo` removed. 4 consumers updated. Zero `window.navigateTo` refs remain.
+5. **H-04 closed.** `colosseum-arena.html` stale Wiring Manifest reference. Arena is inline in index.html.
+6. **H-09 closed.** `bot-engine.js` straggler already deleted.
+7. **H-10/H-11 closed.** TYPESCRIPT-MIGRATION-PLAN.md and NAVIGATION-ARCHITECTURE.md removed from project knowledge.
+
+**Files changed:** `src/navigation.ts` (new), `src/pages/home.ts`, `src/pages/profile-depth.ts`, `src/pages/settings.ts`
+
+---
+
+## Session 164 — QUESTIONNAIRE EXPANSION (39 → 100 QUESTIONS)
+
+**Goal:** Close B-05 — tier thresholds 3-5 unreachable with only 39 questions.
+
+1. **Profile depth expanded.** 39 → 100 questions. 12 → 20 sections. 8 new B2B-driven sections added (covers consumer behavior, spending, values, media habits, etc.). All tier thresholds (10/25/50/75/100) now reachable.
+
+**Files changed:** `src/pages/profile-depth.ts`, `moderator-profile-depth.html`
+
+---
+
+## Session 165 — RESPONSIVE BREAKPOINTS + any TYPING PASS (PARTIAL)
+
+**Goal:** Close B-07 (no responsive breakpoints), begin H-01 (any annotations).
+
+1. **B-07 closed.** `@media (min-width: 768px)` added. `.screen` capped at `max-width: 640px` + centered. Home screen ring nav exempted. Profile-depth grid 4-col on desktop.
+2. **H-01 partial.** `home.ts`: 4 `any` → `Category`, `Profile`, `User`. `groups.ts`: 4 `any` → `SupabaseClient`, `User`, `GroupListItem`.
+3. **F-45 added** to punch list (desktop-optimized arena layout).
+
+**Files changed:** CSS in index.html and moderator-groups.html, `src/pages/home.ts`, `src/pages/groups.ts`
+
+---
+
+## Session 166 — spectate.ts TYPING + GROUP FEATURE DESIGN QUESTIONS ANSWERED
+
+**Goal:** Close H-01 (spectate.ts), answer 6 of 7 open group design questions.
+
+1. **H-01 closed.** `spectate.ts`: 14 `any` → `SpectateDebate`, `DebateMessage`, `SpectatorChatMessage`. All eslint-disables removed. Vite build clean.
+2. **6 of 7 open questions answered:**
+   - F-18 Audition: Exhibition only. 5 entry rules via leader dropdown.
+   - F-19 Banners: Auto-unlock at win% thresholds (0-25% standard, 26-50% custom static, 51%+ custom animated 10s max). Permanent once crossed.
+   - F-20 Shared fate: `floor(avg_questions/100 × win_pct × 80)`. Max 80%.
+   - F-21 Intro music: 10 standard intros for everyone; custom 10-sec upload at 35%+ questions.
+3. **Q7 (member contribution tracking) still open.**
+
+**Files changed:** `src/pages/spectate.ts`
+
+---
+
+## Session 167 — WAITING ROOM LAYER 1
+
+**Goal:** F-01 Layer 1: waiting room queue screen upgrade.
+
+1. **Queue screen upgraded.** Dual search ring animation, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button.
+
+**Files changed:** `src/pages/home.ts`, `src/arena.ts`, CSS in `index.html`
+
+---
+
+## Session 168 — MATCH FOUND ACCEPT/DECLINE SCREEN (F-02)
+
+**Goal:** F-02: match found accept/decline screen.
+
+1. **Accept/decline screen built.** 12s countdown, accept/decline buttons. `respond_to_match` + `check_match_acceptance` RPCs. `player_a_ready`/`player_b_ready` columns on `arena_debates`. `MatchAcceptResponse` interface.
+
+**New Supabase objects:** Columns `player_a_ready`, `player_b_ready` on `arena_debates`. RPCs `respond_to_match`, `check_match_acceptance`.
+
+**Files changed:** `src/arena.ts`, `src/pages/home.ts`, SQL migration (`moderator-match-accept-migration.sql`)
+
+---
+
+## Session 169 — AI SPARRING BADGE FIX + WAITING ROOM LAYER 2
+
+**Goal:** B-08 (badge overlap), F-01 Layer 2 (queue population + spectator feed).
+
+1. **B-08 closed.** `ai-generated-badge` div moved out of `.arena-room-header` flex row — placed between header and `.arena-vs-bar` as centered standalone element.
+2. **F-01 Layer 2 done.** Queue population count + spectator feed added to waiting room. `check_queue_status()` RPC replaced via `moderator-queue-population-migration.sql`.
+
+**Files changed:** `src/arena.ts`, `moderator-queue-population-migration.sql` (new)
+
+---
+
+## Session 170 — WAITING ROOM LAYER 3 + PRIVATE LOBBY RESEARCH
+
+**Goal:** F-01 Layer 3 (category-scoped queues), research F-46.
+
+1. **F-01 Layer 3 done.** `QUEUE_CATEGORIES` const (6 categories). `showCategoryPicker()` bottom sheet inserted between mode select and queue. Queue title shows "TEXT BATTLE · POLITICS" etc. AI Sparring bypasses picker. SQL: `join_debate_queue()` two-phase match (strict category → any category fallback). Queue count scoped to mode + category.
+2. **F-46 research complete.** Private lobby / invite-only debate spec: `visibility` column on `arena_debates`, `debate_invites` table, notification path, "waiting for opponent" lobby UI. Build deferred.
+
+**Files changed:** `src/arena.ts`, `src/pages/home.ts`, SQL updates
+
+---
+
+> Sessions 171-172: Not in project chat record.
+
+## Session 173 — F-46 COMPLETE + F-47 MODERATOR MARKETPLACE SQL + CLIENT STEP 4
+
+**Goal:** Complete F-46 (private lobby), begin F-47 (Moderator Marketplace).
+
+1. **F-46 complete.** Private lobby / invite-only debate shipped. Tests 8-12 skipped by Pat's decision.
+2. **F-47 SQL Phase 1 — 2 broken RPCs fixed** (table reference `debates` → `arena_debates`): `assign_moderator`, `score_moderator`.
+3. **F-47 SQL Phase 2 — Schema additions:**
+   - `mod_categories TEXT[] DEFAULT '{}'` + GIN index on `profiles`
+   - `mod_status TEXT DEFAULT 'none'` CHECK (`'none'`/`'waiting'`/`'requested'`/`'claimed'`) on `arena_debates`
+   - `mod_requested_by UUID NULL` on `arena_debates`
+   - Partial index on `arena_debates (mod_status) WHERE mod_status = 'waiting'`
+4. **F-47 SQL Phase 3 — 4 new RPCs + 1 supporting RPC:**
+   - `browse_mod_queue()` — returns waiting debates filtered to mod's categories
+   - `request_to_moderate(p_debate_id)` — mod claims a debate, `FOR UPDATE SKIP LOCKED`
+   - `respond_to_mod_request(p_debate_id, p_accept)` — debater accepts/declines
+   - `get_mod_profile(p_moderator_id)` — public mod profile
+   - `update_mod_categories(p_categories)` — saves mod's category specialties
+5. **F-47 Client Step 4 — Moderator settings category multi-select:**
+   - `src/auth.ts` — `updateModCategories()` added + exported
+   - `src/pages/settings.ts` — chip load in `loadModeratorSettings()`, chip wire listeners
+   - `moderator-settings.html` — 6 category chips UI + CSS inside `#mod-stats` block
+
+**F-47 remaining:** Step 5 (Mod Queue tab), Step 6 (Debater-side mod request flow), Step 7 (Post-debate mod scoring UI), Step 8 (8 test cases).
+
+**Files changed:** `src/auth.ts`, `src/pages/settings.ts`, `moderator-settings.html`. Supabase: `assign_moderator`, `score_moderator` (fixed), `browse_mod_queue`, `request_to_moderate`, `respond_to_mod_request`, `get_mod_profile`, `update_mod_categories` (new). Schema: `profiles.mod_categories`, `arena_debates.mod_status`, `arena_debates.mod_requested_by`, 2 indexes.
+
