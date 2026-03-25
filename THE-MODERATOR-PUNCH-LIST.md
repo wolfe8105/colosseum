@@ -62,6 +62,8 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-08 | Tournament system | | ❌ No spec | Brackets, elimination, Swiss. Feature Room Map "New E". |
 | F-45 | Desktop-optimized arena layout | | ❌ No spec | Two-column, sidebar stats. Currently phone UI centered with empty space on desktop. |
 | F-46 | Private lobby / invite-only debate | | ⏳ Session 170 research | Create a debate locked to: (a) one specific user by username, (b) a group, (c) a shareable join code for up to N users. Needs: `visibility` column on `arena_debates`, `debate_invites` table, notification path, "waiting for opponent" lobby UI. Category picker from F-01 Layer 3 reused as first step. |
+| F-47 | Moderator Marketplace | | 🔶 Session 174 | SQL Phases 1-3 ✅. Client Steps 1-4 ✅. Step 5 ✅ (Mod Queue tab: browse_mod_queue(), modQueuePollTimer, showModQueue, loadModQueue, claimModRequest). Step 6 ✅ (Debater opt-in toggle in category picker, request_mod_for_debate RPC, get_debate_mod_status RPC, startModStatusPoll, showModRequestModal 30s countdown, handleModResponse). Steps 7-8 remaining: post-debate mod scoring UI + 8 test cases. |
+| F-48 | Mod-initiated debate | | ❌ No spec | Mod creates debate, sets topic/category, two debaters join via lobby or join code. Reverse of F-47. Reuses F-46 private lobby infrastructure. |
 
 ## 3B. Token Economy / Staking
 
@@ -184,3 +186,4 @@ This punch list was compiled from:
 | 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |
 | 2026-03-23 | 169 | B-08 done (AI sparring badge mobile overlap). F-01 Layer 2 done: queue population count + spectator feed. SQL: check_queue_status() replaced via moderator-queue-population-migration.sql. |
 | 2026-03-25 | 173 | F-46 complete (private lobby). F-47 SQL Phases 1-3 done, Client Step 4 done (mod category chips). H-03 partial: NT rewritten, OT updated (108-173), CLAUDE.md rewritten. |
+| 2026-03-25 | 174 | F-47 Steps 5-6 done. Step 5: Mod Queue tab (MOD QUEUE button lobby-gated by is_moderator, showModQueue screen, loadModQueue 5s poll, claimModRequest race-condition-safe). browse_mod_queue() RPC fixed (ambiguous id→debate_id, added 'live' to status filter). Step 6: Debater opt-in toggle in category picker, request_mod_for_debate RPC, get_debate_mod_status RPC, startModStatusPoll in debate room, showModRequestModal with 30s countdown, handleModResponse accept/decline. F-48 added (mod-initiated debate concept). Files: src/arena.ts (GitHub), browse_mod_queue + request_mod_for_debate + get_debate_mod_status (Supabase). |

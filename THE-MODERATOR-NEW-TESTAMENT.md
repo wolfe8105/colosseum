@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 173 (March 25, 2026)
+### Last Updated: Session 174 (March 25, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -113,7 +113,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 41+ tables, RLS hardened, 55+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: SQL Phases 1-3 complete (7 RPCs, 3 schema additions), Client Step 4 complete (category chips in settings). Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, Vite build live (Session 130). Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 97 tests passing. Zero legacy script tags.
+Supabase (faomczmipsccwbhpivmp): 41+ tables, RLS hardened, 55+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: SQL Phases 1-3 complete (7 RPCs, 3 schema additions), Client Steps 4-6 complete (category chips in settings, Mod Queue tab, debater opt-in toggle + in-debate mod request modal). Steps 7-8 remaining. Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, Vite build live (Session 130). Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 97 tests passing. Zero legacy script tags.
 
 ## Toolchain
 | Tool | Purpose |
@@ -284,7 +284,16 @@ These are the things that bite hardest. Full details in the Land Mine Map.
 - **FOR UPDATE SKIP LOCKED** used in request_to_moderate RPC — race-condition-safe mod claim. First mod to lock the row wins; others skip.
 - **mod_status = 'waiting' debates** sit inside their category (visible in category feed, not general feed). 3-minute timeout before reset to 'waiting' on no debater response. Debaters cannot cancel mod request — hard gate.
 - **Arena debate queue** — join_debate_queue() uses two-phase match: strict category first, then any-category fallback. queue_count scoped to mode + category (Session 170).
-- **Match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
+- **match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
+- **F-47 Steps 5-6 (Session 174):**
+  - `browse_mod_queue()` — RETURNS TABLE with `debate_id` (not `id` — ambiguity fix), filters `status IN ('pending','lobby','matched','live')`. Caller must be `is_moderator=true AND mod_available=true`.
+  - `request_mod_for_debate(p_debate_id)` — sets `mod_status='waiting'`. Guard: caller must be debater_a or debater_b, `mod_status` must be `'none'` (idempotent on repeat call).
+  - `get_debate_mod_status(p_debate_id)` — returns `{mod_status, mod_requested_by, moderator_display_name}`. Caller must be debater.
+  - Client: MOD QUEUE button in Arena lobby, gated by `is_moderator`. `showModQueue()` view with 5s poll. `claimModRequest()` handles race condition gracefully.
+  - Client: "Request a moderator" toggle in category picker sets `selectedWantMod`. After both players accept (`onMatchConfirmed`), fires `request_mod_for_debate` if toggled — best-effort, never blocks debate entry.
+  - Client: `startModStatusPoll(debateId)` runs in debate room (4s interval), surfaces `showModRequestModal` when `mod_status='requested'`. 30s auto-decline countdown. `respond_to_mod_request` called on accept/decline.
+  - `selectedWantMod` resets on `renderLobby()`. Modal cleaned up in `endCurrentDebate()`.
+  - F-48 concept added: mod-initiated debate (reverse of F-47, reuses F-46 private lobby infrastructure).
 
 ---
 
