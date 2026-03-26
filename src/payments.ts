@@ -184,6 +184,7 @@ export async function subscribe(tier: string): Promise<void> {
       }),
     });
 
+    if (!res.ok) throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {
@@ -229,6 +230,7 @@ export async function buyTokens(packageId: string): Promise<void> {
       }),
     });
 
+    if (!res.ok) throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {

@@ -401,7 +401,11 @@ export async function send(): Promise<void> {
       p_parent_id: context.parentTakeId ?? null,
       p_content: '🎤 Voice Take',
     });
-    if (error) console.error('create_voice_take error:', error);
+    if (error) {
+      console.error('create_voice_take error:', error);
+      showToast('⚠️ Failed to post voice take. Try again.');
+      return;
+    }
   }
 
   pendingRecording = null;

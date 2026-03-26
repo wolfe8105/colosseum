@@ -598,10 +598,10 @@ export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolea
       <div class="ref-card-claim">"${esc(ref.claim)}"</div>
       <div class="ref-card-meta">
         <span class="ref-card-domain">${esc(ref.domain)}</span>
-        <span class="ref-card-author">${esc(ref.author)} · ${ref.publication_year}</span>
+        <span class="ref-card-author">${esc(ref.author)} · ${Number(ref.publication_year)}</span>
       </div>
       <div class="ref-card-power">
-        <span class="ref-card-power-label">Power ${ref.current_power}/${ref.power_ceiling}</span>
+        <span class="ref-card-power-label">Power ${Number(ref.current_power)}/${Number(ref.power_ceiling)}</span>
         <div class="ref-card-power-bar">
           <div class="ref-card-power-fill" style="width: ${Math.round(fill * 100)}%"></div>
         </div>
@@ -611,10 +611,10 @@ export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolea
         }
       </div>
       <div class="ref-card-stats">
-        <span title="Citations">📄 ${ref.citation_count}</span>
+        <span title="Citations">📄 ${Number(ref.citation_count)}</span>
         <span title="Win Rate">🏆 ${wr}</span>
-        <span title="Challenges survived">${ref.challenge_wins}/${ref.challenge_count} challenges</span>
-        <span title="XP">✨ ${ref.xp} XP</span>
+        <span title="Challenges survived">${Number(ref.challenge_wins)}/${Number(ref.challenge_count)} challenges</span>
+        <span title="XP">✨ ${Number(ref.xp)} XP</span>
       </div>
       ${showVerifyBtn ? `<button class="ref-card-verify-btn" data-ref-id="${esc(ref.id)}">⚡ Verify</button>` : ''}
       ${showEditBtn && ref.verification_points === 0 ? `<button class="ref-card-edit-btn" data-ref-id="${esc(ref.id)}">✏️ Edit</button>` : ''}
