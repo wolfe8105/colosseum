@@ -8,6 +8,7 @@
  */
 
 import { safeRpc } from './auth.ts';
+import { escapeHTML } from './config.ts';
 import { getTier, getPowerUpSlots, getNextTier } from './tiers.ts';
 
 // ============================================================
@@ -194,8 +195,8 @@ export function renderLoadout(
       const cat = CATALOG[eq.power_up_id as PowerUpId];
       slots.push(`
         <div class="powerup-slot filled" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:var(--mod-text-heading)11;border:1px solid var(--mod-text-heading)44;border-radius:8px;text-align:center;cursor:default;">
-          <div style="font-size:24px;">${eq.icon ?? cat?.icon ?? '?'}</div>
-          <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-heading);margin-top:4px;">${eq.name ?? cat?.name ?? ''}</div>
+          <div style="font-size:24px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</div>
+          <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-heading);margin-top:4px;">${escapeHTML(eq.name ?? cat?.name ?? '')}</div>
         </div>`);
     } else {
       slots.push(`
@@ -211,8 +212,8 @@ export function renderLoadout(
     const cat = CATALOG[item.power_up_id as PowerUpId];
     return `
       <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:6px;cursor:pointer;margin-bottom:4px;">
-        <span style="font-size:20px;">${item.icon ?? cat?.icon ?? '?'}</span>
-        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);flex:1;">${item.name ?? cat?.name ?? ''}</span>
+        <span style="font-size:20px;">${escapeHTML(item.icon ?? cat?.icon ?? '?')}</span>
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);flex:1;">${escapeHTML(item.name ?? cat?.name ?? '')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">x${item.quantity}</span>
       </div>`;
   });
@@ -295,7 +296,7 @@ export function renderActivationBar(equipped: EquippedItem[]): string {
         data-id="${eq.power_up_id}" data-slot="${eq.slot_number}"
         ${isPassive ? 'disabled title="Active — doubles staking payout"' : ''}
         style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid ${isPassive ? 'var(--mod-text-heading)44' : 'var(--mod-text-heading)66'};background:${isPassive ? 'var(--mod-text-heading)11' : 'rgba(15,15,26,0.9)'};color:${isPassive ? 'var(--mod-text-heading)' : '#fff'};font-family:var(--mod-font-ui);font-size:12px;font-weight:600;cursor:${isPassive ? 'default' : 'pointer'};white-space:nowrap;transition:all 0.2s;">
-        <span style="font-size:18px;">${eq.icon ?? cat?.icon ?? '?'}</span>
+        <span style="font-size:18px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</span>
         <span>${isPassive ? 'ACTIVE' : 'USE'}</span>
       </button>`;
   });
@@ -353,7 +354,7 @@ export function renderSilenceOverlay(opponentName?: string): ReturnType<typeof s
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,var(--mod-accent-border),rgba(231,68,42,0.1));border-bottom:1px solid var(--mod-accent-border);z-index:200;animation:arenaFadeIn 0.3s ease;';
   overlay.innerHTML = `
     <span style="font-size:22px;">🤫</span>
-    <span style="font-family:var(--mod-font-ui);font-size:14px;font-weight:600;color:var(--mod-text-heading);letter-spacing:1px;">${opponentName ?? 'Opponent'} SILENCED</span>
+    <span style="font-family:var(--mod-font-ui);font-size:14px;font-weight:600;color:var(--mod-text-heading);letter-spacing:1px;">${escapeHTML(opponentName ?? 'Opponent')} SILENCED</span>
     <span id="silence-countdown" style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--mod-text-primary);min-width:30px;text-align:center;">10</span>
   `;
   document.body.appendChild(overlay);
@@ -380,8 +381,8 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
     const cat = CATALOG[eq.power_up_id as PowerUpId];
     return `
       <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:8px;">
-        <span style="font-size:22px;">${eq.icon ?? cat?.icon ?? '?'}</span>
-        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);">${eq.name ?? cat?.name ?? eq.power_up_id}</span>
+        <span style="font-size:22px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</span>
+        <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);">${escapeHTML(eq.name ?? cat?.name ?? eq.power_up_id)}</span>
       </div>`;
   });
 
