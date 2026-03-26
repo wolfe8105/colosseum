@@ -11,6 +11,8 @@
  * Migration: Session 127 (Phase 3)
  */
 
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
+
 // ============================================================
 // TYPE DEFINITIONS
 // ============================================================
@@ -30,14 +32,6 @@ export interface EventMetadata extends Record<string, unknown> {
   utm_medium: string | null;
   utm_campaign: string | null;
 }
-
-// ============================================================
-// CONFIG
-// ============================================================
-
-const SUPABASE_URL = 'https://faomczmipsccwbhpivmp.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
 
 // ============================================================
 // VISITOR ID
