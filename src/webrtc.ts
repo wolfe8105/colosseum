@@ -86,6 +86,7 @@ export interface DebateState {
 export interface WaveformResult {
   analyser: AnalyserNode;
   audioCtx: AudioContext;
+  stop: () => void;
 }
 
 export type WebRTCEventCallback = (data: Record<string, unknown>) => void;
@@ -410,7 +411,11 @@ function setupSignaling(debateId: string): void {
   });
 
   signalingChannel.on('broadcast', { event: 'signal' }, (payload: Record<string, unknown>) => {
-    void handleSignalingMessage(payload['payload'] as SignalingMessage);
+    const raw = payload['payload'];
+    if (!raw || typeof raw !== 'object') return;
+    const msg = raw as Record<string, unknown>;
+    if (typeof msg['type'] !== 'string' || typeof msg['from'] !== 'string') return;
+    void handleSignalingMessage(msg as unknown as SignalingMessage);
   });
 
   signalingChannel.on('presence', { event: 'sync' }, () => {
@@ -530,28 +535,35 @@ function createPeerConnection(): RTCPeerConnection {
 }
 
 async function createOffer(): Promise<void> {
-  if (!peerConnection) createPeerConnection();
-
-  const offer = await peerConnection!.createOffer({
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: false,
-  });
-  await peerConnection!.setLocalDescription(offer);
-  sendSignal('offer', offer);
+  try {
+    if (!peerConnection) createPeerConnection();
+    const offer = await peerConnection!.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+    await peerConnection!.setLocalDescription(offer);
+    sendSignal('offer', offer);
+  } catch (err) {
+    console.warn('[WebRTC] createOffer error:', err);
+  }
 }
 
 async function handleOffer(offer: RTCSessionDescriptionInit): Promise<void> {
-  if (!peerConnection) createPeerConnection();
-
-  await peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await peerConnection!.createAnswer();
-  await peerConnection!.setLocalDescription(answer);
-  sendSignal('answer', answer);
+  try {
+    if (!peerConnection) createPeerConnection();
+    await peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection!.createAnswer();
+    await peerConnection!.setLocalDescription(answer);
+    sendSignal('answer', answer);
+  } catch (err) {
+    console.warn('[WebRTC] handleOffer error:', err);
+  }
 }
 
 async function handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
-  if (!peerConnection) return;
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  try {
+    if (!peerConnection) return;
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  } catch (err) {
+    console.warn('[WebRTC] handleAnswer error:', err);
+  }
 }
 
 async function handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
@@ -846,8 +858,10 @@ export function createWaveform(stream: MediaStream, canvasElement: HTMLCanvasEle
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
 
+  let rafHandle: number;
+
   function draw(): void {
-    requestAnimationFrame(draw);
+    rafHandle = requestAnimationFrame(draw);
     analyser.getByteFrequencyData(dataArray);
 
     const w = canvasElement.width;
@@ -868,7 +882,11 @@ export function createWaveform(stream: MediaStream, canvasElement: HTMLCanvasEle
   }
 
   draw();
-  return { analyser, audioCtx };
+  return {
+    analyser,
+    audioCtx,
+    stop: () => cancelAnimationFrame(rafHandle),
+  };
 }
 
 // ============================================================
