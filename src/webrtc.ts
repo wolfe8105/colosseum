@@ -5,6 +5,8 @@
  * Uses Supabase Realtime channels for signaling (no separate server).
  *
  * Migration: Session 127 (Phase 3). ES imports: Session 140.
+ * Turn-based rewrite: Session 178. One speaker at a time, Web Worker timer,
+ * Date.now() drift-free countdown, enforced muting of non-speaking side.
  */
 
 import { getSupabaseClient, getCurrentUser } from './auth.ts';
@@ -20,6 +22,8 @@ type RealtimeChannel = ReturnType<SupabaseClient['channel']>;
 
 export type DebateRole = 'a' | 'b';
 export type WebRTCStatus = 'idle' | 'connecting' | 'live' | 'break' | 'ended';
+
+export type TurnPhase = 'speaking' | 'pause' | 'ad_break' | 'final_ad';
 
 export type WebRTCEventType =
   | 'micReady'
@@ -39,7 +43,31 @@ export type WebRTCEventType =
   | 'debateEnd'
   | 'joining'
   | 'left'
-  | 'placeholderMode';
+  | 'placeholderMode'
+  // New turn-based events (Session 178)
+  | 'turnStart'
+  | 'turnEnd'
+  | 'pauseStart'
+  | 'pauseTick'
+  | 'turnFrozen'
+  | 'turnUnfrozen';
+
+/** One step in the deterministic turn sequence */
+export interface TurnStep {
+  phase: TurnPhase;
+  round: number;
+  side: DebateRole | null; // null for pauses/breaks
+  duration: number;        // seconds
+}
+
+export interface TurnState {
+  stepIndex: number;
+  phase: TurnPhase | 'ended';
+  round: number;
+  side: DebateRole | null;
+  timeLeft: number;
+  isFrozen: boolean;       // true if this client cannot speak or type
+}
 
 export interface DebateState {
   debateId: string | null;
@@ -47,10 +75,12 @@ export interface DebateState {
   status: WebRTCStatus;
   round: number;
   totalRounds: number;
-  roundTimer: ReturnType<typeof setInterval> | null;
-  breakTimer: ReturnType<typeof setInterval> | null;
+  roundTimer: ReturnType<typeof setInterval> | null;  // kept for legacy compat, unused
+  breakTimer: ReturnType<typeof setInterval> | null;  // kept for legacy compat, unused
   timeLeft: number;
   isMuted: boolean;
+  // New turn-based fields (Session 178)
+  turn: TurnState;
 }
 
 export interface WaveformResult {
@@ -65,7 +95,10 @@ export type WebRTCEventCallback = (data: Record<string, unknown>) => void;
 // ============================================================
 
 interface SignalingMessage {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'round-start' | 'round-end' | 'debate-end';
+  type: 'offer' | 'answer' | 'ice-candidate'
+    | 'round-start' | 'round-end' | 'debate-end'
+    // New turn-based signals (Session 178)
+    | 'turn-start' | 'turn-end' | 'finish-turn';
   data: unknown;
   from: DebateRole;
 }
@@ -76,11 +109,139 @@ interface SignalingMessage {
 
 const ICE_SERVERS: Array<{ urls: string }> = [...CONFIG_ICE_SERVERS];
 
+/** Duration of each debater's turn in seconds */
+const TURN_DURATION = 120;
+
+/** Pause between turns within a round */
+const PAUSE_DURATION = 10;
+
+/** Ad break between rounds */
+const AD_BREAK_DURATION = 60;
+
+/** Final ad break after last turn, before vote gate */
+const FINAL_AD_DURATION = 30;
+
+/** Total rounds in a moderated debate */
+const TOTAL_ROUNDS = 4;
+
+// Legacy constants kept for backward compat with any code reading them
 const ROUND_DURATION: number = DEBATE.roundDurationSec;
-
 const BREAK_DURATION: number = DEBATE.breakDurationSec;
-
 const MAX_ROUNDS: number = DEBATE.defaultRounds;
+
+// ============================================================
+// TURN SEQUENCE — built once, read-only
+//
+// Deterministic: both clients compute the same sequence.
+// Odd rounds start with 'a', even rounds start with 'b'.
+//
+// Round 1: A(120s) → pause(10s) → B(120s) → ad(60s)
+// Round 2: B(120s) → pause(10s) → A(120s) → ad(60s)
+// Round 3: A(120s) → pause(10s) → B(120s) → ad(60s)
+// Round 4: B(120s) → pause(10s) → A(120s) → final_ad(30s)
+// ============================================================
+
+function buildTurnSequence(): TurnStep[] {
+  const steps: TurnStep[] = [];
+
+  for (let round = 1; round <= TOTAL_ROUNDS; round++) {
+    // Odd rounds: a first. Even rounds: b first.
+    const first: DebateRole = round % 2 === 1 ? 'a' : 'b';
+    const second: DebateRole = first === 'a' ? 'b' : 'a';
+
+    // First speaker's turn
+    steps.push({ phase: 'speaking', round, side: first, duration: TURN_DURATION });
+    // Pause between turns
+    steps.push({ phase: 'pause', round, side: null, duration: PAUSE_DURATION });
+    // Second speaker's turn
+    steps.push({ phase: 'speaking', round, side: second, duration: TURN_DURATION });
+
+    // Break after round
+    if (round < TOTAL_ROUNDS) {
+      steps.push({ phase: 'ad_break', round, side: null, duration: AD_BREAK_DURATION });
+    } else {
+      steps.push({ phase: 'final_ad', round, side: null, duration: FINAL_AD_DURATION });
+    }
+  }
+
+  return steps;
+}
+
+const TURN_SEQUENCE: readonly TurnStep[] = buildTurnSequence();
+
+// ============================================================
+// WEB WORKER TIMER (inline Blob — no external file, no npm dep)
+//
+// Runs in a separate thread. Not throttled in background tabs.
+// Uses Date.now() as source of truth — no cumulative drift.
+// Posts {remaining} every second, {expired: true} when done.
+// ============================================================
+
+const TIMER_WORKER_CODE = `
+let startedAt = 0;
+let duration = 0;
+let intervalId = null;
+
+self.onmessage = function(e) {
+  if (e.data.command === 'start') {
+    startedAt = e.data.startedAt;
+    duration = e.data.duration;
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(tick, 1000);
+    tick();
+  } else if (e.data.command === 'stop') {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = null;
+  }
+};
+
+function tick() {
+  var elapsed = (Date.now() - startedAt) / 1000;
+  var remaining = Math.max(0, Math.ceil(duration - elapsed));
+  self.postMessage({ remaining: remaining });
+  if (remaining <= 0) {
+    clearInterval(intervalId);
+    intervalId = null;
+    self.postMessage({ expired: true });
+  }
+}
+`;
+
+let timerWorker: Worker | null = null;
+
+function createTimerWorker(): Worker {
+  const blob = new Blob([TIMER_WORKER_CODE], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+  // Clean up blob URL after worker starts (worker keeps the code)
+  URL.revokeObjectURL(url);
+  return worker;
+}
+
+function startWorkerTimer(durationSec: number): void {
+  if (!timerWorker) {
+    timerWorker = createTimerWorker();
+    timerWorker.onmessage = handleTimerMessage;
+  }
+  timerWorker.postMessage({
+    command: 'start',
+    startedAt: Date.now(),
+    duration: durationSec,
+  });
+}
+
+function stopWorkerTimer(): void {
+  if (timerWorker) {
+    timerWorker.postMessage({ command: 'stop' });
+  }
+}
+
+function terminateWorkerTimer(): void {
+  if (timerWorker) {
+    timerWorker.terminate();
+    timerWorker = null;
+  }
+}
 
 // ============================================================
 // STATE
@@ -91,16 +252,26 @@ let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
 let signalingChannel: RealtimeChannel | null = null;
 
+const DEFAULT_TURN_STATE: TurnState = {
+  stepIndex: -1,
+  phase: 'ended',
+  round: 0,
+  side: null,
+  timeLeft: 0,
+  isFrozen: true,
+};
+
 let debateState: DebateState = {
   debateId: null,
   role: null,
   status: 'idle',
   round: 0,
-  totalRounds: MAX_ROUNDS,
+  totalRounds: TOTAL_ROUNDS,
   roundTimer: null,
   breakTimer: null,
   timeLeft: 0,
   isMuted: false,
+  turn: { ...DEFAULT_TURN_STATE },
 };
 
 const callbacks: Record<string, WebRTCEventCallback[]> = {};
@@ -192,6 +363,39 @@ export function getAudioLevel(stream: MediaStream): () => number {
 }
 
 // ============================================================
+// MUTE ENFORCEMENT
+//
+// Mute the local mic when it's not this client's turn to speak.
+// track.enabled = false sends silence (Opus ~40kbps).
+// Remote peer is NOT notified by WebRTC — signaling handles that.
+//
+// CRITICAL ORDER: mute FIRST, then fire turnEnd event.
+// Prevents audio leak during transition (W3C confirmed race).
+// ============================================================
+
+function enforceMute(): void {
+  if (!localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if (track) {
+    track.enabled = false;
+    debateState.isMuted = true;
+    fire('muteChanged', { muted: true });
+    fire('turnFrozen', { role: debateState.role });
+  }
+}
+
+function enforceUnmute(): void {
+  if (!localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if (track) {
+    track.enabled = true;
+    debateState.isMuted = false;
+    fire('muteChanged', { muted: false });
+    fire('turnUnfrozen', { role: debateState.role });
+  }
+}
+
+// ============================================================
 // SIGNALING VIA SUPABASE REALTIME
 // ============================================================
 
@@ -251,15 +455,38 @@ async function handleSignalingMessage(msg: SignalingMessage): Promise<void> {
     case 'ice-candidate':
       await handleIceCandidate(msg.data as RTCIceCandidateInit);
       break;
+    // Legacy round signals — still handled for backward compat
     case 'round-start':
-      startRoundTimer((msg.data as { round: number }).round);
+      // If received from old client, treat as turn-start for round 1
+      if (debateState.turn.stepIndex < 0) {
+        beginStep(0);
+      }
       break;
     case 'round-end':
-      endRound();
-      break;
+      break; // handled by turn system now
     case 'debate-end':
       endDebate();
       break;
+    // New turn-based signals (Session 178)
+    case 'turn-start': {
+      const d = msg.data as { stepIndex: number };
+      // Sync to the same step as the other client
+      if (d.stepIndex !== debateState.turn.stepIndex) {
+        beginStep(d.stepIndex);
+      }
+      break;
+    }
+    case 'turn-end': {
+      // Other side's turn ended (timer expired or finish-turn).
+      // Advance to next step.
+      advanceStep();
+      break;
+    }
+    case 'finish-turn': {
+      // Other debater pressed Finish Turn — advance immediately.
+      advanceStep();
+      break;
+    }
   }
 }
 
@@ -337,64 +564,201 @@ async function handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void>
 }
 
 // ============================================================
-// ROUND MANAGEMENT
+// TURN ENGINE — replaces round management (Session 178)
+//
+// The sequence is deterministic. Both clients compute the same
+// TURN_SEQUENCE array. The engine walks through steps one by one.
+//
+// Timer authority: the speaking side's timer expiring is the
+// canonical end of a turn. They send 'turn-end'. The other side
+// runs a local timer as fallback (if signal is lost, local timer
+// controls local UI).
 // ============================================================
 
-function startRoundTimer(round: number): void {
-  debateState.round = round;
-  debateState.timeLeft = ROUND_DURATION;
-  debateState.status = 'live';
+/** Handle timer worker messages */
+function handleTimerMessage(e: MessageEvent): void {
+  const { remaining, expired } = e.data as { remaining?: number; expired?: boolean };
 
-  fire('roundStart', { round, timeLeft: ROUND_DURATION });
+  if (remaining !== undefined) {
+    debateState.timeLeft = remaining;
+    debateState.turn.timeLeft = remaining;
 
-  if (debateState.roundTimer) clearInterval(debateState.roundTimer);
-  debateState.roundTimer = setInterval(() => {
-    debateState.timeLeft--;
-    fire('tick', { timeLeft: debateState.timeLeft, round });
+    const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+    if (!step) return;
 
-    if (debateState.timeLeft <= 0) {
-      if (debateState.roundTimer) clearInterval(debateState.roundTimer);
+    // Fire appropriate tick event based on phase
+    switch (step.phase) {
+      case 'speaking':
+        fire('tick', { timeLeft: remaining, round: step.round, side: step.side });
+        break;
+      case 'pause':
+        fire('pauseTick', {
+          timeLeft: remaining,
+          round: step.round,
+          nextSide: getNextSpeaker(debateState.turn.stepIndex),
+        });
+        break;
+      case 'ad_break':
+      case 'final_ad':
+        fire('breakTick', { timeLeft: remaining });
+        break;
+    }
+  }
 
-      if (round >= debateState.totalRounds) {
-        sendSignal('debate-end', {});
-        endDebate();
-      } else {
-        sendSignal('round-end', { round });
-        startBreak(round);
+  if (expired) {
+    onStepExpired();
+  }
+}
+
+/** Get the next speaking side after a pause */
+function getNextSpeaker(currentStepIndex: number): DebateRole | null {
+  for (let i = currentStepIndex + 1; i < TURN_SEQUENCE.length; i++) {
+    if (TURN_SEQUENCE[i]!.phase === 'speaking') {
+      return TURN_SEQUENCE[i]!.side;
+    }
+  }
+  return null;
+}
+
+/** Begin a specific step in the turn sequence */
+function beginStep(stepIndex: number): void {
+  if (stepIndex >= TURN_SEQUENCE.length) {
+    endDebate();
+    return;
+  }
+
+  const step = TURN_SEQUENCE[stepIndex]!;
+
+  // Update state
+  debateState.turn.stepIndex = stepIndex;
+  debateState.turn.phase = step.phase;
+  debateState.turn.round = step.round;
+  debateState.turn.side = step.side;
+  debateState.turn.timeLeft = step.duration;
+  debateState.round = step.round;
+  debateState.timeLeft = step.duration;
+
+  // Determine if this client is frozen
+  const myRole = debateState.role;
+  if (step.phase === 'speaking' && step.side === myRole) {
+    // My turn to speak
+    debateState.turn.isFrozen = false;
+    enforceUnmute();
+  } else {
+    // Not my turn, or it's a pause/break
+    debateState.turn.isFrozen = true;
+    enforceMute();
+  }
+
+  // Update status
+  if (step.phase === 'speaking') {
+    debateState.status = 'live';
+  } else {
+    debateState.status = 'break';
+  }
+
+  // Fire events
+  switch (step.phase) {
+    case 'speaking':
+      fire('turnStart', {
+        round: step.round,
+        side: step.side,
+        timeLeft: step.duration,
+        isFrozen: debateState.turn.isFrozen,
+      });
+      // Backward compat: fire roundStart at the first turn of each round
+      if (isFirstTurnOfRound(stepIndex)) {
+        fire('roundStart', { round: step.round, timeLeft: step.duration });
       }
-    }
-  }, 1000);
+      break;
+
+    case 'pause':
+      fire('pauseStart', {
+        round: step.round,
+        nextSide: getNextSpeaker(stepIndex),
+        timeLeft: step.duration,
+      });
+      break;
+
+    case 'ad_break':
+      // Backward compat: fire roundEnd then breakStart
+      fire('roundEnd', { round: step.round });
+      fire('breakStart', { afterRound: step.round, timeLeft: step.duration });
+      break;
+
+    case 'final_ad':
+      fire('roundEnd', { round: step.round });
+      fire('breakStart', { afterRound: step.round, timeLeft: step.duration, isFinal: true });
+      break;
+  }
+
+  // Start the timer
+  startWorkerTimer(step.duration);
 }
 
-function startBreak(afterRound: number): void {
-  debateState.status = 'break';
-  debateState.timeLeft = BREAK_DURATION;
-
-  fire('breakStart', { afterRound, timeLeft: BREAK_DURATION });
-
-  if (debateState.breakTimer) clearInterval(debateState.breakTimer);
-  debateState.breakTimer = setInterval(() => {
-    debateState.timeLeft--;
-    fire('breakTick', { timeLeft: debateState.timeLeft });
-
-    if (debateState.timeLeft <= 0) {
-      if (debateState.breakTimer) clearInterval(debateState.breakTimer);
-      const nextRound = afterRound + 1;
-      sendSignal('round-start', { round: nextRound });
-      startRoundTimer(nextRound);
-    }
-  }, 1000);
+/** Check if this step is the first speaking turn of a new round */
+function isFirstTurnOfRound(stepIndex: number): boolean {
+  if (stepIndex === 0) return true;
+  const current = TURN_SEQUENCE[stepIndex]!;
+  const prev = TURN_SEQUENCE[stepIndex - 1];
+  if (!prev) return true;
+  return current.phase === 'speaking' && current.round !== prev.round;
 }
 
-function endRound(): void {
-  if (debateState.roundTimer) clearInterval(debateState.roundTimer);
-  fire('roundEnd', { round: debateState.round });
+/** Called when the timer for the current step expires */
+function onStepExpired(): void {
+  const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+  if (!step) return;
+
+  if (step.phase === 'speaking') {
+    // CRITICAL ORDER: mute first, then fire event, then signal
+    enforceMute();
+
+    fire('turnEnd', { round: step.round, side: step.side });
+
+    // Speaking side is timer authority — signal the other client
+    if (step.side === debateState.role) {
+      sendSignal('turn-end', { round: step.round, side: step.side });
+    }
+  }
+
+  advanceStep();
+}
+
+/** Move to the next step in the sequence */
+function advanceStep(): void {
+  stopWorkerTimer();
+  const nextIndex = debateState.turn.stepIndex + 1;
+  beginStep(nextIndex);
+}
+
+/** Debater presses "Finish Turn" — ends their own turn early */
+export function finishTurn(): void {
+  const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+  if (!step) return;
+
+  // Can only finish during a speaking phase that is MY turn
+  if (step.phase !== 'speaking') return;
+  if (step.side !== debateState.role) return;
+
+  // CRITICAL ORDER: mute first
+  enforceMute();
+
+  fire('turnEnd', { round: step.round, side: step.side, early: true });
+
+  // Signal the other client
+  sendSignal('finish-turn', { round: step.round, side: step.side });
+
+  // Advance to next step (pause, then other speaker's turn)
+  advanceStep();
 }
 
 function endDebate(): void {
+  stopWorkerTimer();
   debateState.status = 'ended';
-  if (debateState.roundTimer) clearInterval(debateState.roundTimer);
-  if (debateState.breakTimer) clearInterval(debateState.breakTimer);
+  debateState.turn.phase = 'ended';
+  debateState.turn.isFrozen = true;
+  enforceMute();
   fire('debateEnd', { debateId: debateState.debateId });
 }
 
@@ -406,7 +770,8 @@ export async function joinDebate(debateId: string, role: DebateRole): Promise<vo
   debateState.debateId = debateId;
   debateState.role = role;
   debateState.status = 'connecting';
-  debateState.totalRounds = MAX_ROUNDS;
+  debateState.totalRounds = TOTAL_ROUNDS;
+  debateState.turn = { ...DEFAULT_TURN_STATE };
 
   if (isPlaceholder()) {
     fire('placeholderMode', {
@@ -416,20 +781,23 @@ export async function joinDebate(debateId: string, role: DebateRole): Promise<vo
   }
 
   await requestMic();
+  // Start muted — nobody speaks until startLive()
+  enforceMute();
   setupSignaling(debateId);
   fire('joining', { debateId, role });
 }
 
 export async function startLive(): Promise<void> {
+  // Side 'a' initiates the turn sequence
   if (debateState.role === 'a') {
-    sendSignal('round-start', { round: 1 });
-    startRoundTimer(1);
+    sendSignal('turn-start', { stepIndex: 0 });
+    beginStep(0);
   }
 }
 
 export function leaveDebate(): void {
-  if (debateState.roundTimer) clearInterval(debateState.roundTimer);
-  if (debateState.breakTimer) clearInterval(debateState.breakTimer);
+  stopWorkerTimer();
+  terminateWorkerTimer();
 
   if (peerConnection) {
     peerConnection.close();
@@ -452,11 +820,12 @@ export function leaveDebate(): void {
     role: null,
     status: 'idle',
     round: 0,
-    totalRounds: MAX_ROUNDS,
+    totalRounds: TOTAL_ROUNDS,
     roundTimer: null,
     breakTimer: null,
     timeLeft: 0,
     isMuted: false,
+    turn: { ...DEFAULT_TURN_STATE },
   };
 
   fire('left', {});
@@ -507,7 +876,7 @@ export function createWaveform(stream: MediaStream, canvasElement: HTMLCanvasEle
 // ============================================================
 
 export function getState(): Readonly<DebateState> {
-  return { ...debateState };
+  return { ...debateState, turn: { ...debateState.turn } };
 }
 
 export function getLocalStream(): MediaStream | null {
@@ -522,6 +891,10 @@ export function isConnected(): boolean {
   return peerConnection?.connectionState === 'connected';
 }
 
+export function getTurnSequence(): readonly TurnStep[] {
+  return TURN_SEQUENCE;
+}
+
 // ============================================================
 // DEFAULT EXPORT
 // ============================================================
@@ -530,6 +903,7 @@ const webrtc = {
   joinDebate,
   startLive,
   leaveDebate,
+  finishTurn,
   requestMic,
   toggleMute,
   getAudioLevel,
@@ -540,6 +914,7 @@ const webrtc = {
   get localStream() { return getLocalStream(); },
   get remoteStream() { return getRemoteStream(); },
   get isConnected() { return isConnected(); },
+  get turnSequence() { return getTurnSequence(); },
 } as const;
 
 export default webrtc;
