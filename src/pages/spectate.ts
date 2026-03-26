@@ -127,7 +127,7 @@ interface SpectatorChatMessage {
   function renderAvatar(avatarUrl: string | null, name: string, sideClass: string) {
     const av = parseAvatar(avatarUrl, name);
     if (av.type === 'emoji') {
-      return '<div class="vs-avatar emoji">' + av.value + '</div>';
+      return '<div class="vs-avatar emoji">' + escHtml(av.value) + '</div>';
     }
     return '<div class="vs-avatar ' + sideClass + '">' + escHtml(av.value) + '</div>';
   }
