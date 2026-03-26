@@ -3014,3 +3014,89 @@ RULE: AI debates (no opponent_id) skip the match found screen entirely.
   Human debates MUST go through showMatchFound() → respond_to_match().
 SESSION: 168.
 ```
+
+## LM-191: score_debate_comment bypasses insert_feed_event — both must be kept in sync
+```
+DECISION (Session 178): score_debate_comment writes directly to debate_feed_events
+  instead of calling insert_feed_event. Required because the atomic
+  UPDATE ... RETURNING on arena_debates (to get score_a_after/score_b_after) and
+  the INSERT must happen in the same transaction.
+PROTECTS: Score totals in point_award event metadata are always accurate.
+BITES YOU WHEN: insert_feed_event gains new logic (rate limiting, content sanitization
+  changes, new validation). score_debate_comment does NOT inherit those changes
+  automatically. They are separate code paths that happen to both write to
+  debate_feed_events.
+SYMPTOM: insert_feed_event enforces a new rule (e.g., rate limit), but point_award
+  events bypass it entirely. Inconsistent behavior between event types.
+FIX: Any new logic added to insert_feed_event that should also apply to point_award
+  events must be manually added to score_debate_comment. They are permanently coupled.
+  Both functions must reference each other in comments. Never remove this note.
+SESSION: 178.
+```
+
+## LM-192: debate_feed_events is append-only — pin_feed_event is the sole UPDATE exception
+```
+DECISION (Session 178): debate_feed_events has USING(false) RLS on UPDATE.
+  pin_feed_event is the only function that mutates existing rows. It toggles
+  metadata.pinned on speech events using SECURITY DEFINER to bypass RLS.
+  The broadcast trigger is AFTER INSERT only — it does NOT fire on this UPDATE.
+  Pin state is moderator-private by design (spec: "Prevents debaters from
+  changing behavior").
+BITES YOU WHEN: You add a feature that needs to UPDATE an existing feed event row
+  (e.g., edit speech content, update a reference status). RLS blocks direct updates.
+  If you write a new SECURITY DEFINER function to do it, you also need to decide
+  whether it should broadcast the change.
+SYMPTOM: UPDATE on debate_feed_events fails silently (RLS USING false). No error
+  thrown to client unless the RLS policy is checked directly.
+FIX: Any new mutation to existing feed events needs: (1) SECURITY DEFINER function,
+  (2) explicit decision on whether to broadcast, (3) careful consideration of
+  B2B archive integrity — mutating archived debate data corrupts the historical record.
+  Default answer: don't mutate. Append a correction event instead.
+SESSION: 178.
+```
+
+## LM-193: Realtime broadcast private channels require setAuth() before subscribe
+```
+DECISION (Session 178): debate_feed_events uses realtime.broadcast_changes with
+  private channels (topic: 'debate:<uuid>'). Clients must call
+  await supabase.realtime.setAuth() BEFORE subscribing, and subscribe with
+  { config: { private: true } }. The realtime.messages RLS policy checks
+  extension = 'broadcast' for authenticated users.
+BITES YOU WHEN: You subscribe to the debate channel without setAuth() or without
+  the private config flag. The channel appears to connect but receives no events.
+SYMPTOM: Broadcast messages never arrive. No error in console. WebSocket connection
+  shows as established. Supabase Realtime logs show auth rejection on channel join.
+FIX:
+  await supabase.realtime.setAuth();
+  const channel = supabase
+    .channel(`debate:${debateId}`, { config: { private: true } })
+    .on('broadcast', { event: 'INSERT' }, handler)
+    .subscribe();
+  Also: worker mode recommended for stable mobile connections:
+  createClient(url, key, { realtime: { worker: true } })
+ALSO BITES YOU WHEN: Supabase Dashboard → Realtime → Settings has "Allow public
+  access" enabled. Must be DISABLED to enforce private channel auth.
+SESSION: 178.
+```
+
+## LM-194: record_mod_dropout — one 0-score per dropout, not two
+```
+DECISION (Session 178): record_mod_dropout inserts one synthetic 0-score into
+  moderator_scores using the REPORTING debater's ID as scorer_id. Uses
+  ON CONFLICT (debate_id, scorer_id) DO NOTHING. If the other debater also
+  calls the RPC (idempotent path via 'cancelled' status check), they do NOT
+  insert a second 0-score.
+  Result: one 0-score per dropout event, never two.
+BITES YOU WHEN: You assume both debaters reporting the dropout doubles the penalty
+  impact on mod_approval_pct. It doesn't — the second caller hits the idempotency
+  guard (status = 'cancelled') and returns { already_processed: true } before
+  reaching the score insertion.
+ALSO BITES YOU WHEN: You change the moderator_scores schema and break the
+  ON CONFLICT constraint on (debate_id, scorer_id). Both debaters could then
+  insert separate 0-scores, doubling the penalty unintentionally.
+FIX: If you want both debaters to register disapproval, remove ON CONFLICT and
+  handle the duplicate case differently. Current behavior (single penalty) is
+  intentional. Verify the unique constraint on moderator_scores covers
+  (debate_id, scorer_id) before any schema changes.
+SESSION: 178.
+```

@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 174 (March 25, 2026)
+### Last Updated: Session 179 (March 26, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
@@ -7,7 +7,7 @@
 >
 > **Other bible docs (repo, read when relevant):**
 > - `THE-MODERATOR-OLD-TESTAMENT.md` — All session build logs (1-173), 502+ item inventory, revenue model, B2B data play, growth strategy
-> - `THE-MODERATOR-LAND-MINE-MAP.md` — 185+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
+> - `THE-MODERATOR-LAND-MINE-MAP.md` — 189+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.**
 > - `THE-MODERATOR-WIRING-MANIFEST.md` — Full C4-style architecture model. Every RPC, global, flow mapped. (Session 122)
 > - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, buyer list
 > - `THE-MODERATOR-PRODUCT-VISION.md` — Psychology framework, visual game layer, ad placement, gamification
@@ -113,7 +113,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 41+ tables, RLS hardened, 55+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: SQL Phases 1-3 complete (7 RPCs, 3 schema additions), Client Steps 4-6 complete (category chips in settings, Mod Queue tab, debater opt-in toggle + in-debate mod request modal). Steps 7-8 remaining. Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, Vite build live (Session 130). Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 97 tests passing. Zero legacy script tags.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: SQL Phases 1-3 complete (7 RPCs, 3 schema additions), Client Steps 4-6 complete (category chips in settings, Mod Queue tab, debater opt-in toggle + in-debate mod request modal). Steps 7-8 remaining. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, Vite build live (Session 130). Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 97 tests passing. Zero legacy script tags.
 
 ## Toolchain
 | Tool | Purpose |
@@ -294,6 +294,20 @@ These are the things that bite hardest. Full details in the Land Mine Map.
   - Client: `startModStatusPoll(debateId)` runs in debate room (4s interval), surfaces `showModRequestModal` when `mod_status='requested'`. 30s auto-decline countdown. `respond_to_mod_request` called on accept/decline.
   - `selectedWantMod` resets on `renderLobby()`. Modal cleaned up in `endCurrentDebate()`.
   - F-48 concept added: mod-initiated debate (reverse of F-47, reuses F-46 private lobby infrastructure).
+
+- **Session 178 — Live Debate Feed + Moderator Scoring + Dropout Penalties:**
+  - `debate_feed_events` table — append-only B2B archive, one row per event (speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up). Columns: id BIGSERIAL, debate_id, user_id (NULL for system events), event_type, round (0-10), side (a/b/mod), content, score (1-5 for point_award), reference_id, metadata JSONB, created_at. SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only). Trigger: broadcast_feed_event → realtime.broadcast_changes on private channel 'debate:<uuid>'.
+  - `mod_dropout_log` table — append-only, one row per moderator dropout. Columns: id BIGSERIAL, moderator_id, debate_id, cooldown_minutes, offense_number, created_at. "Daily reset" = count WHERE created_at >= date_trunc('day', now() UTC). No cron.
+  - `arena_debates.scoring_budget_per_round` INT DEFAULT NULL — parked. NULL = unlimited. Enforced by score_debate_comment when non-null.
+  - `insert_feed_event(p_debate_id, p_event_type, p_round, p_side, p_content, p_score, p_reference_id, p_metadata)` — role-validates by event type, double-writes to event_log. Does NOT handle point_award (use score_debate_comment).
+  - `get_feed_events(p_debate_id, p_after, p_limit)` — backfill on reconnect or full replay. p_after=NULL = all events. Hard cap 1000.
+  - `score_debate_comment(p_debate_id, p_feed_event_id, p_score)` — moderator-only. Atomically increments score_a or score_b on arena_debates, inserts point_award with running totals in metadata. Double-scoring guard via EXISTS check. Writes DIRECTLY to debate_feed_events (not via insert_feed_event). See LM-191.
+  - `pin_feed_event(p_debate_id, p_feed_event_id)` — moderator-only, toggles metadata.pinned on speech events. Only UPDATE exception on append-only table. No broadcast. See LM-192.
+  - `record_mod_dropout(p_debate_id)` — debater-only, human-moderated live debates only. Nulls debate (status→cancelled), logs dropout, inserts synthetic 0-score into moderator_scores (ON CONFLICT DO NOTHING), recalculates mod_approval_pct. Idempotent: second caller gets { already_processed: true }. See LM-194.
+  - `check_mod_cooldown(p_moderator_id)` — call before showing "Accept" on browse_mod_queue. Returns { in_cooldown, dropouts_today, cooldown_expires_at, cooldown_remaining_seconds, next_offense_cooldown_minutes }.
+  - `get_mod_cooldown_minutes(p_offense_number)` — IMMUTABLE helper. 1→10min, 2→60min, 3+→1440min.
+  - **Broadcast private channels require setAuth() + { config: { private: true } }** — see LM-193.
+  - **Supabase Dashboard → Realtime → Settings: "Allow public access" must be DISABLED** for private channels to work.
 
 ---
 

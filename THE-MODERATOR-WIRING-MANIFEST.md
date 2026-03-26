@@ -1,5 +1,5 @@
 # THE COLOSSEUM — WIRING MANIFEST
-### Last Updated: Session 143 (March 20, 2026)
+### Last Updated: Session 178 (March 26, 2026)
 
 > **What this is:** A plain-text architecture model inspired by Scryer's C4 hierarchy.
 > Maps every touchpoint so Claude can answer: "If I change X, what breaks?"
@@ -871,6 +871,124 @@ Communication:
 
 ---
 
+# SECTION 4C: WIRING MANIFEST — LIVE DEBATE FEED LAYER (Session 178)
+
+## 4C.1 FEED TABLE
+
+### debate_feed_events (Table)
+- DEFINED IN: Supabase (moderator-feed-table-migration.sql, Session 178)
+- PURPOSE: Append-only permanent B2B archive. One row per event in a moderated debate feed.
+- EVENT TYPES: speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up
+- KEY COLUMNS: id BIGSERIAL, debate_id (FK arena_debates), user_id (FK profiles — NULL for round_divider system events), event_type, round INT (0-10), side TEXT (a/b/mod), content TEXT, score INT (1-5 for point_award only), reference_id (FK debate_references — nullable), metadata JSONB, created_at TIMESTAMPTZ (server-assigned)
+- RLS: SELECT public (debates are public). INSERT/UPDATE/DELETE all blocked (SECURITY DEFINER only).
+- EXCEPTION: pin_feed_event() does UPDATE on metadata.pinned — the ONLY update allowed. See LM-192.
+- REAL-TIME: feed_event_broadcast_trigger → broadcast_feed_event() → realtime.broadcast_changes('debate:<debate_id>'). Trigger fires AFTER INSERT only — does NOT fire on pin_feed_event UPDATE.
+- INDEXES: (debate_id, created_at ASC) for live feed + replay. (event_type, created_at DESC) for B2B. (user_id, event_type) partial for debater analytics. Partial GIN on metadata->>'scored_event_id' WHERE event_type='point_award' for double-scoring check.
+- DEPENDS ON: arena_debates, profiles, debate_references, log_event()
+- BLAST RADIUS: B2B archive integrity. Mutation of existing rows corrupts the historical record. Default: never update, always append.
+- LAND MINES: LM-191 (score_debate_comment bypasses insert_feed_event), LM-192 (append-only exception), LM-193 (broadcast auth)
+
+### broadcast_feed_event() (Trigger Function)
+- DEFINED IN: Supabase (SECURITY DEFINER, AFTER INSERT on debate_feed_events)
+- PURPOSE: Calls realtime.broadcast_changes on topic 'debate:<debate_id>'
+- FAILURE MODE: EXCEPTION block catches all errors, raises WARNING. Never blocks the INSERT. Client backfills on reconnect via get_feed_events.
+- BLAST RADIUS: If broadcast fails silently, clients miss live events but data is safe in table.
+
+---
+
+## 4C.2 FEED RPCs
+
+### insert_feed_event(p_debate_id, p_event_type, p_round, p_side, p_content, p_score, p_reference_id, p_metadata) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Single entry point for all feed events except point_award (which goes through score_debate_comment).
+- ROLE VALIDATION:
+  - speech, reference_cite, reference_challenge, power_up → debater_a or debater_b only
+  - point_award, mod_ruling → moderator only
+  - sentiment_vote → any authenticated user
+  - round_divider → any debate participant (debater or moderator)
+- CALLED FROM: arena.ts client (not yet wired — wire when building debate room UI)
+- DOUBLE-WRITE: Calls log_event() for analytics pipeline after INSERT.
+- BLAST RADIUS: If role validation wrong, wrong participants can inject events into the feed.
+- LAND MINES: LM-191 (does NOT handle point_award — use score_debate_comment for those)
+
+### get_feed_events(p_debate_id, p_after, p_limit) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Backfill on reconnect, initial load for late-joining spectators, full replay.
+- PARAMS: p_after=NULL returns all events (replay). p_after=<timestamp> returns events after that time (reconnect gap-fill). Hard cap: 1000 rows.
+- CALLED FROM: arena.ts client on channel reconnect; spectator page on join
+- BLAST RADIUS: Low — read-only. If called with wrong debate_id, returns empty array.
+
+### score_debate_comment(p_debate_id, p_feed_event_id, p_score) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Moderator live-scores a speech event (1-5 points).
+- FLOW: Validates moderator → validates speech event → double-scoring guard → atomically UPDATE score_a or score_b on arena_debates → INSERT point_award into debate_feed_events (fires broadcast) → log_event double-write
+- GUARDS:
+  - Caller must be debate's moderator
+  - Debate status must be 'live' or 'round_break'
+  - Target must be a speech event
+  - Double-scoring prevention: EXISTS check on metadata->>'scored_event_id'
+  - Budget: if arena_debates.scoring_budget_per_round is non-null, enforces count cap per round
+- RETURNS: { success, id, score, side, round, score_a, score_b } — score_a/score_b are new running totals
+- BLAST RADIUS: Increments scoreboard directly. If called twice on same event, double-scoring guard catches it. If score_a/score_b start drifting from sum of point_awards, scoreboard is wrong.
+- LAND MINES: LM-191 (writes directly to debate_feed_events, not via insert_feed_event — new logic in insert_feed_event does NOT auto-apply here)
+- CALLED FROM: arena.ts (moderator scoring UI — not yet wired)
+
+### pin_feed_event(p_debate_id, p_feed_event_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Toggle metadata.pinned on a speech event. Moderator uses this to mark comments for scoring during ad breaks.
+- MODERATOR-PRIVATE: Broadcast trigger does NOT fire on this UPDATE. No other clients see pin state.
+- ONLY UPDATE on append-only table — bypasses USING(false) RLS via SECURITY DEFINER.
+- RETURNS: { success, feed_event_id, pinned: true/false }
+- BLAST RADIUS: Low — metadata-only toggle. No broadcast.
+- LAND MINES: LM-192
+
+---
+
+## 4C.3 MODERATOR DROPOUT SYSTEM
+
+### mod_dropout_log (Table)
+- DEFINED IN: Supabase (moderator-dropout-penalties-migration.sql, Session 178)
+- PURPOSE: Append-only log of moderator dropouts. One row per dropout.
+- COLUMNS: id BIGSERIAL, moderator_id (FK profiles), debate_id (FK arena_debates, CASCADE), cooldown_minutes INT, offense_number INT, created_at TIMESTAMPTZ
+- RLS: SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only).
+- "DAILY RESET" PATTERN: No cron, no columns to reset. Offense count = COUNT WHERE created_at >= date_trunc('day', now() UTC). Resets automatically at midnight UTC.
+- INDEXES: (moderator_id, created_at DESC) for cooldown queries. (debate_id) for cascade.
+- BLAST RADIUS: If this table grows unbounded, cooldown queries slow down. Low risk at current scale.
+
+### record_mod_dropout(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Called by a debater when moderator presence disappears from signaling channel. Nulls the debate and applies dropout penalty.
+- CALLER: Debater (debater_a or debater_b) only. Human-moderated live/round_break debates only.
+- FLOW:
+  1. Idempotency check: if debate already 'cancelled', return { already_processed: true }
+  2. Validate caller is a debater, debate is live/round_break, moderator_type = 'human'
+  3. UPDATE arena_debates SET status='cancelled', ended_at=now(), winner=NULL
+  4. Count today's dropouts → v_offense = count + 1
+  5. INSERT into mod_dropout_log
+  6. INSERT 0-score into moderator_scores (ON CONFLICT DO NOTHING on debate_id, scorer_id)
+  7. Recalculate mod_approval_pct on profiles
+  8. log_event('moderator_dropout')
+- RETURNS: { success, moderator_id, offense_number, cooldown_minutes, cooldown_expires_at, new_approval }
+- IDEMPOTENT: Both debaters may call simultaneously. First processes; second returns { already_processed: true }.
+- BLAST RADIUS: Cancels the debate permanently. Affects mod_approval_pct. One 0-score per dropout (not two). See LM-194.
+- LAND MINES: LM-194 (ON CONFLICT DO NOTHING — one 0-score per dropout)
+- CALLED FROM: arena.ts (on Realtime presence disappearance — not yet wired)
+
+### check_mod_cooldown(p_moderator_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Check whether a moderator is currently in a dropout cooldown.
+- RETURNS: { in_cooldown, dropouts_today, cooldown_expires_at, cooldown_remaining_seconds, next_offense_cooldown_minutes }
+- CALLED FROM: arena.ts client-side before showing "Accept" button on browse_mod_queue results.
+- NOTE: Not yet wired into request_to_moderate RPC server-side — add later if desired.
+- BLAST RADIUS: Low — read-only. If this returns wrong in_cooldown, a penalized mod can accept debates during cooldown.
+
+### get_mod_cooldown_minutes(p_offense_number) (Helper Function)
+- DEFINED IN: Supabase (IMMUTABLE SQL function)
+- PURPOSE: Returns cooldown duration for a given offense number. 1→10min, 2→60min, 3+→1440min.
+- NOT CALLED DIRECTLY by client. Used internally by record_mod_dropout and check_mod_cooldown.
+
+---
+
 # SECTION 4B: WIRING MANIFEST — PAYMENTS LAYER
 
 ## 4B.1 STRIPE INTEGRATION
@@ -1496,6 +1614,11 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 - Use `--branch=production` for Cloudflare Pages wrangler deploys — `--branch=main` routes to Preview
 - Load scripts in order: Supabase CDN → config.js → auth.js → page-specific modules. Never reorder.
 - Keep SRI hashes on Supabase CDN script tags — pins to @2.98.0. Regenerate if upgrading SDK version.
+- Call `await supabase.realtime.setAuth()` BEFORE subscribing to any private broadcast channel (LM-193)
+- Subscribe to debate feed channel with `{ config: { private: true } }` — omitting this = no events received (LM-193)
+- Call `check_mod_cooldown` before showing "Accept" on browse_mod_queue — do not let penalized mods accept debates
+- Use `score_debate_comment` for point_award events — never `insert_feed_event` (different transaction requirements, LM-191)
+- When adding new logic to `insert_feed_event`, manually apply same logic to `score_debate_comment` if it should apply to point_award (LM-191)
 
 ## NEVER
 - Call `debit_tokens()` from frontend — it's locked to service_role for a reason
@@ -1520,6 +1643,11 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 - Load page-specific modules before auth.js — auth.js must resolve .ready before anything else runs
 - Render auth-gated content before ColosseumAuth.ready resolves — use await, never setTimeout
 - Call `log_event()` with positional args — MUST use named parameters (p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=). LM-188 closed Session 151.
+- Subscribe to a private Supabase Realtime channel without calling `supabase.realtime.setAuth()` first — events will never arrive (LM-193)
+- Subscribe to the debate feed channel without `{ config: { private: true } }` — events will never arrive (LM-193)
+- Update rows in `debate_feed_events` except via `pin_feed_event` — it is an append-only archive (LM-192)
+- Use `insert_feed_event` for point_award events — use `score_debate_comment` instead (LM-191)
+- Assume `record_mod_dropout` inserts two 0-scores when both debaters call — ON CONFLICT DO NOTHING ensures one (LM-194)
 
 ## ASK PAT FIRST
 - Any change to RLS policies
@@ -1600,8 +1728,9 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 147 | Section 4.10 added, Source Map row added | Reference Arsenal: 2 tables, 6 RPCs, 1 TS module. Column name bug caught (LM-186). |
 | 150 | No wiring changes | edit_reference log_event bug fixed (named params). Verify flow confirmed end-to-end. Login/signup flow problems identified (LM-189). |
 | 151 | No wiring changes | Full log_event named-param audit. 29 calls fixed across 26 RPCs. LM-188 closed. Zero positional calls remain. |
+| 178 | Section 4C added | Live Debate Feed layer: debate_feed_events table (append-only B2B archive, broadcast trigger, 4 RPCs: insert_feed_event, get_feed_events, score_debate_comment, pin_feed_event). Moderator Dropout system: mod_dropout_log table, 3 RPCs (record_mod_dropout, check_mod_cooldown, get_mod_cooldown_minutes). arena_debates.scoring_budget_per_round column added. LM-191/192/193/194 added. 8 new ALWAYS rules + 4 new NEVER rules. |
 
 ---
 
-> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 151.
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 178.
 > Future additions: As new features are built, add entries here. Update affected entries at end of each session.
