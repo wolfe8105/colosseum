@@ -10,7 +10,7 @@
  */
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import { ready, getCurrentUser, getSupabaseClient } from '../auth.ts';
+import { ready, getCurrentUser, getSupabaseClient, safeRpc } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
 
 /** Group row as returned by discover / my-groups / leaderboard RPCs */
@@ -28,9 +28,8 @@ interface GroupListItem {
   my_role?: string | null;
 }
 
-// ── STATE ─────────────────────────────────────────────────
+// ── STATE ───────────────────────────────────────────────────────────────────
 let sb: SupabaseClient | null = null;
-
 let currentUser: User | null = null;
 let activeTab = 'discover';
 let activeDetailTab = 'hot-takes';
@@ -40,18 +39,22 @@ let currentGroupId: string | null = null;
 let isMember = false;
 
 const CATEGORY_LABELS = {
-  general: 'General', politics: '🏛️ Politics', sports: '🏆 Sports',
-  entertainment: '🎬 Entertainment', music: '🎵 Music', couples_court: '💔 Couples Court'
+  general: 'General',
+  politics: '🏛️ Politics',
+  sports: '🏆 Sports',
+  entertainment: '🎬 Entertainment',
+  music: '🎵 Music',
+  couples_court: '💔 Couples Court'
 };
 
-// ── INIT ──────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────────────────────
 ready.then(() => {
   sb = getSupabaseClient();
   currentUser = getCurrentUser();
   loadDiscover();
 });
 
-// ── TAB SWITCHING ─────────────────────────────────────────
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
 function switchTab(tab: string) {
   activeTab = tab;
   document.querySelectorAll('#lobby-tabs .tab-btn').forEach((b, i) => {
@@ -60,7 +63,6 @@ function switchTab(tab: string) {
   document.getElementById('tab-discover').style.display = tab === 'discover' ? 'block' : 'none';
   document.getElementById('tab-mine').style.display = tab === 'mine' ? 'block' : 'none';
   document.getElementById('tab-leaderboard').style.display = tab === 'leaderboard' ? 'block' : 'none';
-
   if (tab === 'mine' && currentUser) loadMyGroups();
   if (tab === 'mine' && !currentUser) {
     document.getElementById('mine-list').innerHTML = renderEmpty('🔒', 'Sign in to see your groups', '');
@@ -78,7 +80,7 @@ function switchDetailTab(tab: string) {
   document.getElementById('detail-members-list').style.display = tab === 'members' ? 'block' : 'none';
 }
 
-// ── CATEGORY FILTER ───────────────────────────────────────
+// ── CATEGORY FILTER ───────────────────────────────────────────────────────────
 function filterCategory(cat: string | null, el: HTMLElement) {
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
@@ -86,14 +88,11 @@ function filterCategory(cat: string | null, el: HTMLElement) {
   loadDiscover();
 }
 
-// ── LOAD: DISCOVER ────────────────────────────────────────
+// ── LOAD: DISCOVER ────────────────────────────────────────────────────────────
 async function loadDiscover() {
   document.getElementById('discover-list').innerHTML = '<div class="loading-state">Loading groups…</div>';
   try {
-    const { data, error } = await sb.rpc('discover_groups', {
-      p_limit: 30,
-      p_category: activeCategory
-    });
+    const { data, error } = await sb.rpc('discover_groups', { p_limit: 30, p_category: activeCategory });
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     renderGroupList('discover-list', groups || []);
@@ -102,7 +101,7 @@ async function loadDiscover() {
   }
 }
 
-// ── LOAD: MY GROUPS ───────────────────────────────────────
+// ── LOAD: MY GROUPS ───────────────────────────────────────────────────────────
 async function loadMyGroups() {
   document.getElementById('mine-list').innerHTML = '<div class="loading-state">Loading…</div>';
   try {
@@ -119,7 +118,7 @@ async function loadMyGroups() {
   }
 }
 
-// ── LOAD: LEADERBOARD ─────────────────────────────────────
+// ── LOAD: LEADERBOARD ─────────────────────────────────────────────────────────
 async function loadLeaderboard() {
   document.getElementById('leaderboard-list').innerHTML = '<div class="loading-state">Loading rankings…</div>';
   try {
@@ -132,7 +131,7 @@ async function loadLeaderboard() {
   }
 }
 
-// ── RENDER: GROUP LIST ────────────────────────────────────
+// ── RENDER: GROUP LIST ────────────────────────────────────────────────────────
 function renderGroupList(containerId: string, groups: GroupListItem[], showRole = false, showRank = false) {
   const el = document.getElementById(containerId);
   if (groups.length === 0) {
@@ -142,7 +141,9 @@ function renderGroupList(containerId: string, groups: GroupListItem[], showRole 
   const esc = escapeHTML;
   el.innerHTML = groups.map((g, i) => {
     const catLabel = CATEGORY_LABELS[g.category] || esc(g.category || 'General');
-    const roleHtml = (showRole && g.role) ? `<span class="my-role-badge ${esc(g.role)}">${esc(g.role.toUpperCase())}</span>` : '';
+    const roleHtml = (showRole && g.role)
+      ? `<span class="my-role-badge ${esc(g.role)}">${esc(g.role.toUpperCase())}</span>`
+      : '';
     return `<div class="group-card" data-group-id="${esc(g.id)}">
       <div class="group-emoji">${esc(g.avatar_emoji || '⚔️')}</div>
       <div class="group-info">
@@ -178,7 +179,7 @@ function renderEmpty(icon: string, title: string, sub: string) {
   </div>`;
 }
 
-// ── OPEN GROUP DETAIL ─────────────────────────────────────
+// ── OPEN GROUP DETAIL ─────────────────────────────────────────────────────────
 async function openGroup(groupId: string) {
   currentGroupId = groupId;
   document.getElementById('view-lobby').style.display = 'none';
@@ -201,14 +202,12 @@ async function openGroup(groupId: string) {
     const { data, error } = await sb.rpc('get_group_details', { p_group_id: groupId });
     if (error) throw error;
     const g = typeof data === 'string' ? JSON.parse(data) : data;
-
     document.getElementById('detail-top-name').textContent = g.name.toUpperCase();
     document.getElementById('detail-emoji').textContent = g.avatar_emoji || '⚔️';
     document.getElementById('detail-name').textContent = g.name;
     document.getElementById('detail-desc').textContent = g.description || '';
     document.getElementById('detail-members').textContent = g.member_count;
     document.getElementById('detail-elo').textContent = g.elo_rating;
-
     isMember = g.is_member;
     updateJoinBtn(g);
     // E212: Show GvG button only for members
@@ -219,10 +218,8 @@ async function openGroup(groupId: string) {
 
   // Load hot takes for this group (section = group_id)
   loadGroupHotTakes(groupId);
-
   // Load GvG challenges
   loadGroupChallenges(groupId);
-
   // Load members
   loadGroupMembers(groupId);
 }
@@ -245,7 +242,7 @@ function updateJoinBtn(g: GroupListItem) {
   }
 }
 
-// ── HOT TAKES FOR GROUP ───────────────────────────────────
+// ── HOT TAKES FOR GROUP ───────────────────────────────────────────────────────
 async function loadGroupHotTakes(groupId: string) {
   try {
     // Group hot takes use section = group_id (see SQL header comment)
@@ -256,7 +253,6 @@ async function loadGroupHotTakes(groupId: string) {
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(30);
-
     if (error) throw error;
 
     // E211: Compose UI — auth-gated, only shown for logged-in users
@@ -307,11 +303,9 @@ function _wireGroupTakeComposer(groupId: string) {
   const btn = document.getElementById('group-take-post');
   const counter = document.getElementById('group-take-count');
   if (!input || !btn) return;
-
   input.addEventListener('input', () => {
     counter.textContent = input.value.length + '/280';
   });
-
   btn.addEventListener('click', () => postGroupHotTake(groupId));
 }
 
@@ -329,53 +323,45 @@ async function postGroupHotTake(groupId: string) {
     window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + groupId);
     return;
   }
-
   const btn = document.getElementById('group-take-post');
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
-
   try {
-    const { data, error } = await sb.rpc('create_hot_take', {
-      p_content: text,
-      p_section: groupId
-    });
-
+    const { data, error } = await sb.rpc('create_hot_take', { p_content: text, p_section: groupId });
     if (error) {
       console.error('create_hot_take (group) error:', error);
-              showToast('Post failed — try again', 'error');
+      showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
       return;
     }
-
     // Success — reload hot takes to show the new one
     input.value = '';
     document.getElementById('group-take-count').textContent = '0/280';
-          showToast('🔥 Hot take posted', 'success');
+    showToast('🔥 Hot take posted', 'success');
     loadGroupHotTakes(groupId);
   } catch (e) {
     console.error('create_hot_take (group) exception:', e);
-          showToast('Post failed — try again', 'error');
+    showToast('Post failed — try again', 'error');
   }
   if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
 }
 
-// ── MEMBERS LIST ──────────────────────────────────────────
+// ── MEMBERS LIST ──────────────────────────────────────────────────────────────
 async function loadGroupMembers(groupId: string) {
   const esc = escapeHTML;
   try {
     const { data, error } = await sb.rpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
     if (error) throw error;
     const members = typeof data === 'string' ? JSON.parse(data) : data;
-
     if (!members || members.length === 0) {
       document.getElementById('detail-members-list').innerHTML = renderEmpty('👥', 'No members yet', '');
       return;
     }
-
     document.getElementById('detail-members-list').innerHTML = members.map(m => {
       const name = m.display_name || m.username || 'Gladiator';
       const role = m.role || 'member';
       const roleBadge = role !== 'member'
-        ? `<span class="my-role-badge ${esc(role)}">${esc(role.toUpperCase())}</span>` : '';
+        ? `<span class="my-role-badge ${esc(role)}">${esc(role.toUpperCase())}</span>`
+        : '';
       const memberUsername = m.username || '';
       const clickAttr = memberUsername ? `data-username="${esc(memberUsername)}" style="cursor:pointer;"` : '';
       return `<div class="member-row" ${clickAttr}>
@@ -402,9 +388,7 @@ async function loadGroupMembers(groupId: string) {
   }
 }
 
-// ── JOIN / LEAVE ──────────────────────────────────────────
-
-// ── GVG CHALLENGE SYSTEM (E212/E215) ─────────────────────
+// ── GVG CHALLENGE SYSTEM (E212/E215) ─────────────────────────────────────────
 let selectedOpponentGroup = null;
 let selectedGvGFormat = '1v1';
 
@@ -441,6 +425,7 @@ function closeGvGModal() {
         pill.classList.add('active');
       });
     });
+
     // Opponent search debounce
     const searchInput = document.getElementById('gvg-opponent-search');
     if (searchInput) {
@@ -457,7 +442,6 @@ async function searchGroupsForChallenge(query: string) {
   const container = document.getElementById('gvg-opponent-results');
   if (!container) return;
   if (query.length < 2) { container.innerHTML = ''; return; }
-
   try {
     const esc = escapeHTML;
     const { data, error } = await sb
@@ -467,13 +451,11 @@ async function searchGroupsForChallenge(query: string) {
       .neq('id', currentGroupId)
       .order('member_count', { ascending: false })
       .limit(6);
-
     if (error) throw error;
     if (!data || data.length === 0) {
       container.innerHTML = '<div style="color:var(--white-dim);opacity:0.5;font-size:13px;padding:8px;">No groups found</div>';
       return;
     }
-
     container.innerHTML = data.map(g => `
       <div class="gvg-opponent-option" data-gid="${esc(g.id)}" data-gname="${esc(g.name)}" data-gemoji="${esc(g.avatar_emoji || '⚔️')}" data-gelo="${parseInt(g.group_elo || 1200)}">
         <span style="font-size:20px;">${esc(g.avatar_emoji || '⚔️')}</span>
@@ -483,10 +465,14 @@ async function searchGroupsForChallenge(query: string) {
         </div>
       </div>
     `).join('');
-
     container.querySelectorAll('.gvg-opponent-option').forEach(opt => {
       opt.addEventListener('click', () => {
-        selectedOpponentGroup = { id: opt.dataset.gid, name: opt.dataset.gname, emoji: opt.dataset.gemoji, elo: parseInt(opt.dataset.gelo) };
+        selectedOpponentGroup = {
+          id: opt.dataset.gid,
+          name: opt.dataset.gname,
+          emoji: opt.dataset.gemoji,
+          elo: parseInt(opt.dataset.gelo)
+        };
         const sel = document.getElementById('gvg-selected-opponent');
         const esc2 = escapeHTML;
         sel.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
@@ -515,19 +501,20 @@ function clearGvGOpponent() {
 async function submitGroupChallenge() {
   const errEl = document.getElementById('gvg-error');
   const btn = document.getElementById('gvg-submit-btn');
-
   if (!selectedOpponentGroup) {
     errEl.textContent = 'Select an opponent group';
-    errEl.style.display = 'block'; return;
+    errEl.style.display = 'block';
+    return;
   }
   const topic = document.getElementById('gvg-topic').value.trim();
   if (topic.length < 5) {
     errEl.textContent = 'Topic must be at least 5 characters';
-    errEl.style.display = 'block'; return;
+    errEl.style.display = 'block';
+    return;
   }
-
-  btn.disabled = true; btn.textContent = 'SENDING…'; errEl.style.display = 'none';
-
+  btn.disabled = true;
+  btn.textContent = 'SENDING…';
+  errEl.style.display = 'none';
   try {
     const { data, error } = await safeRpc('create_group_challenge', {
       p_challenger_group_id: currentGroupId,
@@ -537,45 +524,49 @@ async function submitGroupChallenge() {
       p_format: selectedGvGFormat
     });
     if (error) {
-      errEl.textContent = error.message || 'RPC failed'; errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'SEND CHALLENGE ⚔️'; return;
+      errEl.textContent = error.message || 'RPC failed';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'SEND CHALLENGE ⚔️';
+      return;
     }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result && result.error) {
-      errEl.textContent = result.error; errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'SEND CHALLENGE ⚔️'; return;
+      errEl.textContent = result.error;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'SEND CHALLENGE ⚔️';
+      return;
     }
     // Success
     closeGvGModal();
     loadGroupChallenges(currentGroupId);
-          showToast('⚔️ Challenge sent!', 'success');
+    showToast('⚔️ Challenge sent!', 'success');
   } catch (e) {
-    errEl.textContent = 'Something went wrong'; errEl.style.display = 'block';
+    errEl.textContent = 'Something went wrong';
+    errEl.style.display = 'block';
   }
-  btn.disabled = false; btn.textContent = 'SEND CHALLENGE ⚔️';
+  btn.disabled = false;
+  btn.textContent = 'SEND CHALLENGE ⚔️';
 }
 
 async function loadGroupChallenges(groupId: string) {
   const container = document.getElementById('detail-challenges');
   if (!container) return;
-
   try {
     const { data, error } = await sb.rpc('get_group_challenges', { p_group_id: groupId, p_limit: 10 });
     if (error) throw error;
     const challenges = typeof data === 'string' ? JSON.parse(data) : data;
-
     if (!challenges || challenges.length === 0) {
       container.innerHTML = renderEmpty('⚔️', 'No challenges yet', isMember ? 'Challenge another group to get started' : 'Join this group to send challenges');
       return;
     }
-
     const esc = escapeHTML;
     container.innerHTML = challenges.map(c => {
       const isDefender = c.defender_group_id === groupId;
       const oppName = isDefender ? c.challenger_name : c.defender_name;
       const oppEmoji = isDefender ? c.challenger_emoji : c.defender_emoji;
       const oppElo = isDefender ? c.challenger_elo : c.defender_elo;
-
       let badge = '', actionHtml = '';
       switch (c.status) {
         case 'pending':
@@ -592,17 +583,20 @@ async function loadGroupChallenges(groupId: string) {
           }
           break;
         case 'accepted':
-          badge = '<span class="meta-pill" style="background:rgba(46,204,113,0.15);color:var(--success);border:none;">ACCEPTED</span>'; break;
+          badge = '<span class="meta-pill" style="background:rgba(46,204,113,0.15);color:var(--success);border:none;">ACCEPTED</span>';
+          break;
         case 'completed':
           badge = c.winner_group_id === groupId
             ? '<span class="meta-pill" style="background:rgba(212,168,67,0.15);color:var(--gold);border:none;">WON ✨</span>'
-            : '<span class="meta-pill" style="background:rgba(193,39,45,0.15);color:var(--red);border:none;">LOST</span>'; break;
+            : '<span class="meta-pill" style="background:rgba(193,39,45,0.15);color:var(--red);border:none;">LOST</span>';
+          break;
         case 'declined':
-          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">DECLINED</span>'; break;
+          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">DECLINED</span>';
+          break;
         case 'expired':
-          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">EXPIRED</span>'; break;
+          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">EXPIRED</span>';
+          break;
       }
-
       return `<div class="challenge-card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           <span style="font-size:18px;">${esc(oppEmoji || '⚔️')}</span>
@@ -636,23 +630,17 @@ async function respondToChallenge(challengeId: string, action: string) {
       p_challenge_id: challengeId,
       p_action: action
     });
-    if (error) {
-      showToast('⚠️ ' + (error.message || 'Failed'), 'error');
-      return;
-    }
+    if (error) { showToast('⚠️ ' + (error.message || 'Failed'), 'error'); return; }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
-    if (result && result.error) {
-      showToast('⚠️ ' + result.error, 'error');
-      return;
-    }
+    if (result && result.error) { showToast('⚠️ ' + result.error, 'error'); return; }
     loadGroupChallenges(currentGroupId);
-          showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
+    showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
   } catch (e) {
     showToast('⚠️ Something went wrong', 'error');
   }
 }
 
-// ── JOIN / LEAVE ──────────────────────────────────────────
+// ── JOIN / LEAVE ──────────────────────────────────────────────────────────────
 async function toggleMembership() {
   if (!currentUser) {
     window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
@@ -668,8 +656,7 @@ async function toggleMembership() {
       btn.textContent = 'JOIN GROUP';
       btn.className = 'join-btn join';
       document.getElementById('gvg-challenge-btn').style.display = 'none';
-      document.getElementById('detail-members').textContent =
-        (parseInt(document.getElementById('detail-members').textContent) - 1).toString();
+      document.getElementById('detail-members').textContent = (parseInt(document.getElementById('detail-members').textContent) - 1).toString();
     } else {
       const { error } = await sb.rpc('join_group', { p_group_id: currentGroupId });
       if (error) throw error;
@@ -677,8 +664,7 @@ async function toggleMembership() {
       btn.textContent = 'LEAVE GROUP';
       btn.className = 'join-btn leave';
       document.getElementById('gvg-challenge-btn').style.display = 'block';
-      document.getElementById('detail-members').textContent =
-        (parseInt(document.getElementById('detail-members').textContent) + 1).toString();
+      document.getElementById('detail-members').textContent = (parseInt(document.getElementById('detail-members').textContent) + 1).toString();
     }
   } catch (e) {
     alert(e.message || 'Something went wrong');
@@ -687,14 +673,14 @@ async function toggleMembership() {
   }
 }
 
-// ── SHOW LOBBY ────────────────────────────────────────────
+// ── SHOW LOBBY ────────────────────────────────────────────────────────────────
 function showLobby() {
   currentGroupId = null;
   document.getElementById('view-detail').style.display = 'none';
   document.getElementById('view-lobby').style.display = 'block';
 }
 
-// ── CREATE MODAL ──────────────────────────────────────────
+// ── CREATE MODAL ──────────────────────────────────────────────────────────────
 function openCreateModal() {
   if (!currentUser) {
     window.location.href = 'moderator-plinko.html';
@@ -720,11 +706,9 @@ function selectEmoji(el: HTMLElement) {
 async function submitCreateGroup() {
   const name = document.getElementById('group-name').value.trim();
   if (!name || name.length < 2) { alert('Group name must be at least 2 characters'); return; }
-
   const btn = document.getElementById('create-submit-btn');
   btn.disabled = true;
   btn.textContent = 'CREATING…';
-
   try {
     const { data, error } = await sb.rpc('create_group', {
       p_name: name,
@@ -735,14 +719,11 @@ async function submitCreateGroup() {
     });
     if (error) throw error;
     const result = typeof data === 'string' ? JSON.parse(data) : data;
-
     closeCreateModal();
     document.getElementById('group-name').value = '';
     document.getElementById('group-desc-input').value = '';
-
     // Open the newly created group
     if (result.group_id) openGroup(result.group_id);
-
   } catch (e) {
     alert(e.message || 'Could not create group');
   } finally {
@@ -751,8 +732,45 @@ async function submitCreateGroup() {
   }
 }
 
-// ── URL PARAM: open group directly ────────────────────────
+// ── URL PARAM: open group directly ───────────────────────────────────────────
 const urlGroup = new URLSearchParams(window.location.search).get('group');
 if (urlGroup && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(urlGroup)) {
   ready.then(() => openGroup(urlGroup));
 }
+
+// ── WINDOW EXPOSURE ───────────────────────────────────────────────────────────
+// Module-scoped functions are invisible to inline onclick handlers in the HTML.
+// These assignments make them reachable. C4 fix — Session 179.
+declare global {
+  interface Window {
+    switchTab: (tab: string) => void;
+    switchDetailTab: (tab: string) => void;
+    filterCategory: (cat: string | null, el: HTMLElement) => void;
+    openCreateModal: () => void;
+    closeCreateModal: () => void;
+    handleModalBackdrop: (e: Event) => void;
+    selectEmoji: (el: HTMLElement) => void;
+    submitCreateGroup: () => Promise<void>;
+    showLobby: () => void;
+    toggleMembership: () => Promise<void>;
+    openGvGModal: () => void;
+    closeGvGModal: () => void;
+    clearGvGOpponent: () => void;
+    submitGroupChallenge: () => Promise<void>;
+  }
+}
+
+window.switchTab = switchTab;
+window.switchDetailTab = switchDetailTab;
+window.filterCategory = filterCategory;
+window.openCreateModal = openCreateModal;
+window.closeCreateModal = closeCreateModal;
+window.handleModalBackdrop = handleModalBackdrop;
+window.selectEmoji = selectEmoji;
+window.submitCreateGroup = submitCreateGroup;
+window.showLobby = showLobby;
+window.toggleMembership = toggleMembership;
+window.openGvGModal = openGvGModal;
+window.closeGvGModal = closeGvGModal;
+window.clearGvGOpponent = clearGvGOpponent;
+window.submitGroupChallenge = submitGroupChallenge;
