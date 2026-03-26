@@ -185,7 +185,7 @@ function saveSettings(): void {
       display_name: settings.display_name,
       username: settings.username,
       bio: settings.bio,
-    }).catch(() => { /* best effort */ });
+    }).catch((err: unknown) => { console.warn('[Settings] updateProfile failed:', err); });
 
     // SESSION 52/64: Save toggles via RPC (not direct upsert)
     safeRpc('save_user_settings', {
@@ -201,7 +201,7 @@ function saveSettings(): void {
     }).then((result: unknown) => {
       const r = result as { error?: { message: string } } | null;
       if (r?.error) console.warn('[Settings] save_user_settings RPC failed:', r.error.message);
-    }).catch(() => { /* best effort */ });
+    }).catch((err: unknown) => { console.warn('[Settings] save_user_settings failed:', err); });
   }
 
   toast('✅ Settings saved');
