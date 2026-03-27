@@ -6,9 +6,9 @@
  * GvG challenges (Session 116), group hot take composer (Session 105).
  *
  * Migration: Session 128 (Phase 4), Session 139 (ES imports, 3 window globals removed)
+ * F-14 / F-15 client: Session 181 — role-aware member actions (promote/kick/ban modal)
  * NOTE: Mechanical extraction. Type annotations at key boundaries.
  */
-
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { ready, getCurrentUser, getSupabaseClient, safeRpc } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
@@ -28,7 +28,21 @@ interface GroupListItem {
   my_role?: string | null;
 }
 
-// ── STATE ───────────────────────────────────────────────────────────────────
+/** Member row as returned by get_group_members RPC */
+interface GroupMember {
+  user_id: string;
+  role: string;
+  joined_at?: string;
+  username?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  elo_rating?: number | string;
+  wins?: number | string;
+  losses?: number | string;
+  level?: number | string;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
 let sb: SupabaseClient | null = null;
 let currentUser: User | null = null;
 let activeTab = 'discover';
@@ -37,8 +51,9 @@ let activeCategory: string | null = null;
 let selectedEmoji = '⚔️';
 let currentGroupId: string | null = null;
 let isMember = false;
+let callerRole: string | null = null; // F-14: caller's role in currently open group
 
-const CATEGORY_LABELS = {
+const CATEGORY_LABELS: Record<string, string> = {
   general: 'General',
   politics: '🏛️ Politics',
   sports: '🏆 Sports',
@@ -47,10 +62,43 @@ const CATEGORY_LABELS = {
   couples_court: '💔 Couples Court'
 };
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
+// ── ROLE HELPERS ──────────────────────────────────────────────────────────────
+// Mirrors group_role_rank() SQL function. Lower number = higher authority.
+function clientRoleRank(role: string | null): number {
+  switch (role) {
+    case 'leader':    return 1;
+    case 'co_leader': return 2;
+    case 'elder':     return 3;
+    case 'member':    return 4;
+    default:          return 99; // non-member
+  }
+}
+
+// Roles a caller can assign via promote_group_member.
+// Server enforces the full matrix — this just drives the dropdown UI.
+function assignableRoles(role: string): string[] {
+  switch (role) {
+    case 'leader':    return ['leader', 'co_leader', 'elder', 'member'];
+    case 'co_leader': return ['elder', 'member'];
+    default:          return [];
+  }
+}
+
+function roleLabel(role: string): string {
+  switch (role) {
+    case 'leader':    return 'Leader';
+    case 'co_leader': return 'Co-Leader';
+    case 'elder':     return 'Elder';
+    case 'member':    return 'Member';
+    default:          return role;
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
 ready.then(() => {
   sb = getSupabaseClient();
   currentUser = getCurrentUser();
+  _injectMemberActionsModal();
   loadDiscover();
 });
 
@@ -60,10 +108,10 @@ function switchTab(tab: string) {
   document.querySelectorAll('#lobby-tabs .tab-btn').forEach((b, i) => {
     b.classList.toggle('active', ['discover','mine','leaderboard'][i] === tab);
   });
-  document.getElementById('tab-discover').style.display = tab === 'discover' ? 'block' : 'none';
-  document.getElementById('tab-mine').style.display = tab === 'mine' ? 'block' : 'none';
-  document.getElementById('tab-leaderboard').style.display = tab === 'leaderboard' ? 'block' : 'none';
-  if (tab === 'mine' && currentUser) loadMyGroups();
+  document.getElementById('tab-discover').style.display     = tab === 'discover'    ? 'block' : 'none';
+  document.getElementById('tab-mine').style.display         = tab === 'mine'        ? 'block' : 'none';
+  document.getElementById('tab-leaderboard').style.display  = tab === 'leaderboard' ? 'block' : 'none';
+  if (tab === 'mine' && currentUser)  loadMyGroups();
   if (tab === 'mine' && !currentUser) {
     document.getElementById('mine-list').innerHTML = renderEmpty('🔒', 'Sign in to see your groups', '');
   }
@@ -75,9 +123,9 @@ function switchDetailTab(tab: string) {
   document.querySelectorAll('#detail-tabs .tab-btn').forEach((b, i) => {
     b.classList.toggle('active', ['hot-takes','challenges','members'][i] === tab);
   });
-  document.getElementById('detail-hot-takes').style.display = tab === 'hot-takes' ? 'block' : 'none';
-  document.getElementById('detail-challenges').style.display = tab === 'challenges' ? 'block' : 'none';
-  document.getElementById('detail-members-list').style.display = tab === 'members' ? 'block' : 'none';
+  document.getElementById('detail-hot-takes').style.display     = tab === 'hot-takes'  ? 'block' : 'none';
+  document.getElementById('detail-challenges').style.display    = tab === 'challenges' ? 'block' : 'none';
+  document.getElementById('detail-members-list').style.display  = tab === 'members'    ? 'block' : 'none';
 }
 
 // ── CATEGORY FILTER ───────────────────────────────────────────────────────────
@@ -151,22 +199,21 @@ function renderGroupList(containerId: string, groups: GroupListItem[], showRole 
         ${g.description ? `<div class="group-desc">${esc(g.description)}</div>` : ''}
         <div class="group-meta">
           <span class="meta-pill cat">${catLabel}</span>
-          <span class="meta-pill members">👥 ${parseInt(g.member_count, 10) || 0}</span>
+          <span class="meta-pill members">👥 ${parseInt(String(g.member_count), 10) || 0}</span>
           ${roleHtml}
         </div>
       </div>
       <div class="group-elo">
-        ${showRank ? `<div class="elo-label">#${parseInt(g.rank, 10) || (i + 1)}</div>` : ''}
-        <div class="elo-num">${parseInt(g.elo_rating, 10) || 1000}</div>
+        ${showRank ? `<div class="elo-label">#${parseInt(String(g.rank), 10) || (i + 1)}</div>` : ''}
+        <div class="elo-num">${parseInt(String(g.elo_rating), 10) || 1000}</div>
         <div class="elo-label">ELO</div>
       </div>
     </div>`;
   }).join('');
 
-  // Event delegation for group cards
   el.querySelectorAll('.group-card[data-group-id]').forEach(card => {
     card.addEventListener('click', () => {
-      openGroup(card.dataset.groupId);
+      openGroup((card as HTMLElement).dataset.groupId);
     });
   });
 }
@@ -182,70 +229,69 @@ function renderEmpty(icon: string, title: string, sub: string) {
 // ── OPEN GROUP DETAIL ─────────────────────────────────────────────────────────
 async function openGroup(groupId: string) {
   currentGroupId = groupId;
-  document.getElementById('view-lobby').style.display = 'none';
+  document.getElementById('view-lobby').style.display  = 'none';
   document.getElementById('view-detail').style.display = 'flex';
 
   // Reset
-  document.getElementById('detail-name').textContent = 'Loading…';
-  document.getElementById('detail-emoji').textContent = '⚔️';
-  document.getElementById('detail-desc').textContent = '';
+  document.getElementById('detail-name').textContent    = 'Loading…';
+  document.getElementById('detail-emoji').textContent   = '⚔️';
+  document.getElementById('detail-desc').textContent    = '';
   document.getElementById('detail-members').textContent = '—';
-  document.getElementById('detail-elo').textContent = '—';
-  document.getElementById('detail-hot-takes').innerHTML = '<div class="loading-state">Loading hot takes…</div>';
-  document.getElementById('detail-challenges').innerHTML = '<div class="loading-state">Loading challenges…</div>';
-  document.getElementById('detail-members-list').innerHTML = '<div class="loading-state">Loading members…</div>';
+  document.getElementById('detail-elo').textContent     = '—';
+  document.getElementById('detail-hot-takes').innerHTML     = '<div class="loading-state">Loading hot takes…</div>';
+  document.getElementById('detail-challenges').innerHTML    = '<div class="loading-state">Loading challenges…</div>';
+  document.getElementById('detail-members-list').innerHTML  = '<div class="loading-state">Loading members…</div>';
   document.getElementById('gvg-challenge-btn').style.display = 'none';
   switchDetailTab('hot-takes');
 
-  // Load group details
   try {
     const { data, error } = await sb.rpc('get_group_details', { p_group_id: groupId });
     if (error) throw error;
     const g = typeof data === 'string' ? JSON.parse(data) : data;
+
     document.getElementById('detail-top-name').textContent = g.name.toUpperCase();
-    document.getElementById('detail-emoji').textContent = g.avatar_emoji || '⚔️';
-    document.getElementById('detail-name').textContent = g.name;
-    document.getElementById('detail-desc').textContent = g.description || '';
-    document.getElementById('detail-members').textContent = g.member_count;
-    document.getElementById('detail-elo').textContent = g.elo_rating;
-    isMember = g.is_member;
+    document.getElementById('detail-emoji').textContent    = g.avatar_emoji || '⚔️';
+    document.getElementById('detail-name').textContent     = g.name;
+    document.getElementById('detail-desc').textContent     = g.description || '';
+    document.getElementById('detail-members').textContent  = g.member_count;
+    document.getElementById('detail-elo').textContent      = g.elo_rating;
+
+    isMember   = g.is_member;
+    callerRole = g.my_role ?? null; // F-14: must be set before loadGroupMembers renders action buttons
+
     updateJoinBtn(g);
-    // E212: Show GvG button only for members
     document.getElementById('gvg-challenge-btn').style.display = isMember ? 'block' : 'none';
   } catch (e) {
     document.getElementById('detail-name').textContent = 'Error loading group';
   }
 
-  // Load hot takes for this group (section = group_id)
   loadGroupHotTakes(groupId);
-  // Load GvG challenges
   loadGroupChallenges(groupId);
-  // Load members
   loadGroupMembers(groupId);
 }
 
 function updateJoinBtn(g: GroupListItem) {
-  const btn = document.getElementById('join-btn');
+  const btn = document.getElementById('join-btn') as HTMLButtonElement;
   if (!currentUser) {
     btn.textContent = 'SIGN IN TO JOIN';
-    btn.className = 'join-btn join';
+    btn.className   = 'join-btn join';
     return;
   }
   if (g.is_member) {
-    btn.textContent = g.my_role === 'owner' ? 'YOU OWN THIS GROUP' : 'LEAVE GROUP';
-    btn.className = g.my_role === 'owner' ? 'join-btn leave' : 'join-btn leave';
-    if (g.my_role === 'owner') btn.disabled = true;
+    // F-14 fix: was 'owner', now 'leader'
+    btn.textContent = g.my_role === 'leader' ? 'YOU OWN THIS GROUP' : 'LEAVE GROUP';
+    btn.className   = 'join-btn leave';
+    btn.disabled    = g.my_role === 'leader';
   } else {
     btn.textContent = 'JOIN GROUP';
-    btn.className = 'join-btn join';
-    btn.disabled = false;
+    btn.className   = 'join-btn join';
+    btn.disabled    = false;
   }
 }
 
 // ── HOT TAKES FOR GROUP ───────────────────────────────────────────────────────
 async function loadGroupHotTakes(groupId: string) {
   try {
-    // Group hot takes use section = group_id (see SQL header comment)
     const { data, error } = await sb
       .from('hot_takes')
       .select('id, content, user_id, reaction_count, created_at, profiles_public(username, display_name)')
@@ -255,7 +301,6 @@ async function loadGroupHotTakes(groupId: string) {
       .limit(30);
     if (error) throw error;
 
-    // E211: Compose UI — auth-gated, only shown for logged-in users
     const esc = escapeHTML;
     let composerHtml = '';
     if (currentUser) {
@@ -283,7 +328,7 @@ async function loadGroupHotTakes(groupId: string) {
     }
 
     const takesHtml = data.map(t => {
-      const author = t.profiles_public?.username || t.profiles_public?.display_name || 'Unknown';
+      const author = (t.profiles_public as any)?.username || (t.profiles_public as any)?.display_name || 'Unknown';
       return `<div class="group-take">
         <div class="take-author">${esc(author)}</div>
         <div class="take-content">${esc(t.content)}</div>
@@ -297,21 +342,17 @@ async function loadGroupHotTakes(groupId: string) {
   }
 }
 
-// E211: Wire group hot take composer events
 function _wireGroupTakeComposer(groupId: string) {
-  const input = document.getElementById('group-take-input');
-  const btn = document.getElementById('group-take-post');
+  const input   = document.getElementById('group-take-input') as HTMLTextAreaElement | null;
+  const btn     = document.getElementById('group-take-post') as HTMLButtonElement | null;
   const counter = document.getElementById('group-take-count');
   if (!input || !btn) return;
-  input.addEventListener('input', () => {
-    counter.textContent = input.value.length + '/280';
-  });
+  input.addEventListener('input', () => { counter.textContent = input.value.length + '/280'; });
   btn.addEventListener('click', () => postGroupHotTake(groupId));
 }
 
-// E211: Post a hot take scoped to a group
 async function postGroupHotTake(groupId: string) {
-  const input = document.getElementById('group-take-input');
+  const input = document.getElementById('group-take-input') as HTMLTextAreaElement | null;
   if (!input) return;
   const text = input.value.trim();
   if (!text) {
@@ -323,23 +364,20 @@ async function postGroupHotTake(groupId: string) {
     window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + groupId);
     return;
   }
-  const btn = document.getElementById('group-take-post');
+  const btn = document.getElementById('group-take-post') as HTMLButtonElement | null;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
-    const { data, error } = await sb.rpc('create_hot_take', { p_content: text, p_section: groupId });
+    const { error } = await sb.rpc('create_hot_take', { p_content: text, p_section: groupId });
     if (error) {
-      console.error('create_hot_take (group) error:', error);
       showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
       return;
     }
-    // Success — reload hot takes to show the new one
     input.value = '';
     document.getElementById('group-take-count').textContent = '0/280';
     showToast('🔥 Hot take posted', 'success');
     loadGroupHotTakes(groupId);
   } catch (e) {
-    console.error('create_hot_take (group) exception:', e);
     showToast('Post failed — try again', 'error');
   }
   if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
@@ -351,45 +389,350 @@ async function loadGroupMembers(groupId: string) {
   try {
     const { data, error } = await sb.rpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
     if (error) throw error;
-    const members = typeof data === 'string' ? JSON.parse(data) : data;
+    const members: GroupMember[] = typeof data === 'string' ? JSON.parse(data) : data;
+
     if (!members || members.length === 0) {
       document.getElementById('detail-members-list').innerHTML = renderEmpty('👥', 'No members yet', '');
       return;
     }
+
+    const callerRank = clientRoleRank(callerRole);
+
     document.getElementById('detail-members-list').innerHTML = members.map(m => {
-      const name = m.display_name || m.username || 'Gladiator';
-      const role = m.role || 'member';
+      const name       = m.display_name || m.username || 'Gladiator';
+      const role       = m.role || 'member';
+      const targetRank = clientRoleRank(role);
+      // Caller can act only if they strictly outrank the target AND are authenticated
+      const canAct     = !!currentUser && callerRank < targetRank;
+
       const roleBadge = role !== 'member'
         ? `<span class="my-role-badge ${esc(role)}">${esc(role.toUpperCase())}</span>`
         : '';
-      const memberUsername = m.username || '';
-      const clickAttr = memberUsername ? `data-username="${esc(memberUsername)}" style="cursor:pointer;"` : '';
-      return `<div class="member-row" ${clickAttr}>
+
+      const actionHtml = canAct ? `
+        <div class="member-actions" style="display:flex;gap:6px;margin-top:8px;">
+          <button
+            class="member-action-btn"
+            data-action="open-modal"
+            data-user-id="${esc(m.user_id)}"
+            data-username="${esc(m.username || '')}"
+            data-display-name="${esc(name)}"
+            data-role="${esc(role)}"
+            style="background:rgba(212,168,67,0.12);color:#d4a843;
+                   border:1px solid rgba(212,168,67,0.3);border-radius:6px;
+                   padding:5px 12px;font-family:'Barlow Condensed',sans-serif;
+                   font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">
+            MANAGE
+          </button>
+        </div>` : '';
+
+      const profileAttr = m.username ? `data-username="${esc(m.username)}"` : '';
+
+      return `<div class="member-row" ${profileAttr} style="cursor:${m.username ? 'pointer' : 'default'};">
         <div class="member-avatar">
           ${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="">` : '⚔️'}
         </div>
-        <div class="member-info">
+        <div class="member-info" style="flex:1;min-width:0;">
           <div class="member-name">${esc(name)}</div>
-          <div class="member-elo">ELO ${parseInt(m.elo_rating, 10) || 1000} · ${parseInt(m.wins, 10) || 0}W ${parseInt(m.losses, 10) || 0}L</div>
+          <div class="member-elo">ELO ${parseInt(String(m.elo_rating), 10) || 1000} · ${parseInt(String(m.wins), 10) || 0}W ${parseInt(String(m.losses), 10) || 0}L</div>
+          ${actionHtml}
         </div>
         <div class="member-role">${roleBadge}</div>
       </div>`;
     }).join('');
 
-    // Wire profile navigation via delegation
+    // Single delegated listener: button click opens modal, row click navigates to profile
     document.getElementById('detail-members-list').addEventListener('click', (e) => {
-      const row = e.target.closest('[data-username]');
-      if (row && row.dataset.username) {
+      const actionBtn = (e.target as HTMLElement).closest('[data-action="open-modal"]') as HTMLElement | null;
+      if (actionBtn) {
+        e.stopPropagation();
+        openMemberActionsModal({
+          user_id:      actionBtn.dataset.userId,
+          username:     actionBtn.dataset.username,
+          display_name: actionBtn.dataset.displayName,
+          role:         actionBtn.dataset.role,
+        } as GroupMember);
+        return;
+      }
+      const row = (e.target as HTMLElement).closest('[data-username]') as HTMLElement | null;
+      if (row?.dataset.username) {
         window.location.href = '/u/' + encodeURIComponent(row.dataset.username);
       }
     });
+
   } catch (e) {
     document.getElementById('detail-members-list').innerHTML = renderEmpty('⚠️', 'Could not load members', '');
   }
 }
 
+// ── MEMBER ACTIONS MODAL ──────────────────────────────────────────────────────
+// Injected once on init. Reused for every MANAGE button click.
+function _injectMemberActionsModal() {
+  if (document.getElementById('member-actions-modal')) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'member-actions-modal';
+  modal.style.cssText = [
+    'display:none',
+    'position:fixed',
+    'inset:0',
+    'z-index:1000',
+    'background:rgba(0,0,0,0.75)',
+    'backdrop-filter:blur(4px)',
+    'align-items:center',
+    'justify-content:center',
+  ].join(';');
+
+  modal.innerHTML = `
+    <div style="
+      background:rgba(13,22,40,0.98);
+      border:1px solid rgba(212,168,67,0.25);
+      border-radius:14px;
+      padding:24px;
+      width:min(360px,90vw);
+      font-family:'Barlow Condensed',sans-serif;
+    ">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div id="mam-avatar" style="font-size:28px;">⚔️</div>
+        <div>
+          <div id="mam-name" style="color:#f0f0f0;font-size:17px;font-weight:700;line-height:1.2;"></div>
+          <div id="mam-role-label" style="color:rgba(160,168,184,0.7);font-size:13px;margin-top:2px;"></div>
+        </div>
+      </div>
+
+      <div id="mam-promote-section" style="margin-bottom:16px;">
+        <div style="color:rgba(160,168,184,0.6);font-size:11px;letter-spacing:1px;margin-bottom:8px;">CHANGE ROLE</div>
+        <div style="display:flex;gap:8px;">
+          <select id="mam-promote-select" style="
+            flex:1;
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:8px;
+            color:#f0f0f0;
+            font-family:'Barlow Condensed',sans-serif;
+            font-size:14px;
+            padding:8px 10px;
+            cursor:pointer;
+          "></select>
+          <button id="mam-promote-btn" style="
+            background:rgba(212,168,67,0.15);
+            color:#d4a843;
+            border:1px solid rgba(212,168,67,0.4);
+            border-radius:8px;
+            padding:8px 16px;
+            font-family:'Bebas Neue',sans-serif;
+            font-size:14px;
+            letter-spacing:1px;
+            cursor:pointer;
+            white-space:nowrap;
+          ">SET ROLE</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;"></div>
+
+      <div id="mam-kick-section" style="margin-bottom:12px;">
+        <button id="mam-kick-btn" style="
+          width:100%;
+          background:rgba(255,165,0,0.1);
+          color:#ffa500;
+          border:1px solid rgba(255,165,0,0.3);
+          border-radius:8px;
+          padding:10px;
+          font-family:'Bebas Neue',sans-serif;
+          font-size:15px;
+          letter-spacing:1px;
+          cursor:pointer;
+        ">⚡ KICK MEMBER</button>
+      </div>
+
+      <div id="mam-ban-section" style="margin-bottom:20px;">
+        <div style="color:rgba(160,168,184,0.6);font-size:11px;letter-spacing:1px;margin-bottom:6px;">BAN REASON (optional)</div>
+        <textarea id="mam-ban-reason" maxlength="280" placeholder="Reason for ban…" style="
+          width:100%;
+          min-height:56px;
+          resize:vertical;
+          background:rgba(255,255,255,0.04);
+          border:1px solid rgba(255,255,255,0.1);
+          border-radius:8px;
+          color:#f0f0f0;
+          font-family:'Source Sans 3',sans-serif;
+          font-size:13px;
+          padding:8px 10px;
+          line-height:1.4;
+          margin-bottom:8px;
+          box-sizing:border-box;
+        "></textarea>
+        <button id="mam-ban-btn" style="
+          width:100%;
+          background:rgba(193,39,45,0.15);
+          color:#cc2936;
+          border:1px solid rgba(193,39,45,0.4);
+          border-radius:8px;
+          padding:10px;
+          font-family:'Bebas Neue',sans-serif;
+          font-size:15px;
+          letter-spacing:1px;
+          cursor:pointer;
+        ">🚫 BAN MEMBER</button>
+      </div>
+
+      <div id="mam-error" style="display:none;color:#cc2936;font-size:13px;margin-bottom:12px;"></div>
+
+      <button id="mam-cancel-btn" style="
+        width:100%;
+        background:rgba(255,255,255,0.05);
+        color:rgba(160,168,184,0.7);
+        border:1px solid rgba(255,255,255,0.1);
+        border-radius:8px;
+        padding:10px;
+        font-family:'Bebas Neue',sans-serif;
+        font-size:14px;
+        letter-spacing:1px;
+        cursor:pointer;
+      ">CANCEL</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Wire all modal button events once here — no window exposure needed
+  document.getElementById('mam-cancel-btn').addEventListener('click', closeMemberActionsModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeMemberActionsModal(); });
+  document.getElementById('mam-promote-btn').addEventListener('click', _executePromote);
+  document.getElementById('mam-kick-btn').addEventListener('click', _executeKick);
+  document.getElementById('mam-ban-btn').addEventListener('click', _executeBan);
+}
+
+// The member currently being managed
+let _mamMember: GroupMember | null = null;
+
+function openMemberActionsModal(member: GroupMember) {
+  _mamMember = member;
+  const esc  = escapeHTML;
+
+  document.getElementById('mam-name').textContent       = member.display_name || member.username || 'Member';
+  document.getElementById('mam-role-label').textContent = 'Current role: ' + roleLabel(member.role);
+  document.getElementById('mam-avatar').textContent     = '⚔️';
+  document.getElementById('mam-error').style.display    = 'none';
+  (document.getElementById('mam-ban-reason') as HTMLTextAreaElement).value = '';
+
+  // Promote dropdown — hidden for elder (can only kick/ban members)
+  const promoteSection = document.getElementById('mam-promote-section');
+  const roles = assignableRoles(callerRole);
+  if (roles.length > 0 && callerRole !== 'elder') {
+    const sel = document.getElementById('mam-promote-select') as HTMLSelectElement;
+    const opts = roles.filter(r => r !== member.role);
+    sel.innerHTML = (opts.length > 0 ? opts : roles)
+      .map(r => `<option value="${esc(r)}">${roleLabel(r)}${r === 'leader' ? ' (transfer leadership)' : ''}</option>`)
+      .join('');
+    promoteSection.style.display = 'block';
+  } else {
+    promoteSection.style.display = 'none';
+  }
+
+  document.getElementById('member-actions-modal').style.display = 'flex';
+}
+
+function closeMemberActionsModal() {
+  document.getElementById('member-actions-modal').style.display = 'none';
+  _mamMember = null;
+}
+
+function _setMamError(msg: string) {
+  const el = document.getElementById('mam-error');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+
+function _setBtnLoading(btnId: string, loading: boolean, label: string) {
+  const btn = document.getElementById(btnId) as HTMLButtonElement;
+  btn.disabled    = loading;
+  btn.textContent = loading ? '…' : label;
+}
+
+async function _executePromote() {
+  if (!_mamMember || !currentGroupId) return;
+  const sel     = document.getElementById('mam-promote-select') as HTMLSelectElement;
+  const newRole = sel.value;
+  if (!newRole) return;
+  document.getElementById('mam-error').style.display = 'none';
+  _setBtnLoading('mam-promote-btn', true, 'SET ROLE');
+  try {
+    const { data, error } = await safeRpc('promote_group_member', {
+      p_group_id: currentGroupId,
+      p_user_id:  _mamMember.user_id,
+      p_new_role: newRole,
+    });
+    if (error) { _setMamError(error.message || 'Promote failed'); return; }
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    if (result?.error) { _setMamError(result.error); return; }
+    closeMemberActionsModal();
+    showToast(`✅ Role updated to ${roleLabel(newRole)}`, 'success');
+    // If caller transferred their leadership, reload entire group detail to refresh callerRole
+    if (newRole === 'leader') {
+      openGroup(currentGroupId);
+    } else {
+      loadGroupMembers(currentGroupId);
+    }
+  } catch (e) {
+    _setMamError('Something went wrong');
+  } finally {
+    _setBtnLoading('mam-promote-btn', false, 'SET ROLE');
+  }
+}
+
+async function _executeKick() {
+  if (!_mamMember || !currentGroupId) return;
+  const name = _mamMember.display_name || _mamMember.username || 'this member';
+  if (!confirm(`Kick ${name} from the group?`)) return;
+  document.getElementById('mam-error').style.display = 'none';
+  _setBtnLoading('mam-kick-btn', true, '⚡ KICK MEMBER');
+  try {
+    const { data, error } = await safeRpc('kick_group_member', {
+      p_group_id: currentGroupId,
+      p_user_id:  _mamMember.user_id,
+    });
+    if (error) { _setMamError(error.message || 'Kick failed'); return; }
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    if (result?.error) { _setMamError(result.error); return; }
+    closeMemberActionsModal();
+    showToast(`⚡ ${name} kicked`, 'success');
+    loadGroupMembers(currentGroupId);
+  } catch (e) {
+    _setMamError('Something went wrong');
+  } finally {
+    _setBtnLoading('mam-kick-btn', false, '⚡ KICK MEMBER');
+  }
+}
+
+async function _executeBan() {
+  if (!_mamMember || !currentGroupId) return;
+  const reason = (document.getElementById('mam-ban-reason') as HTMLTextAreaElement).value.trim() || null;
+  const name   = _mamMember.display_name || _mamMember.username || 'this member';
+  document.getElementById('mam-error').style.display = 'none';
+  _setBtnLoading('mam-ban-btn', true, '🚫 BAN MEMBER');
+  try {
+    const { data, error } = await safeRpc('ban_group_member', {
+      p_group_id: currentGroupId,
+      p_user_id:  _mamMember.user_id,
+      p_reason:   reason,
+    });
+    if (error) { _setMamError(error.message || 'Ban failed'); return; }
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    if (result?.error) { _setMamError(result.error); return; }
+    closeMemberActionsModal();
+    showToast(`🚫 ${name} banned`, 'success');
+    loadGroupMembers(currentGroupId);
+  } catch (e) {
+    _setMamError('Something went wrong');
+  } finally {
+    _setBtnLoading('mam-ban-btn', false, '🚫 BAN MEMBER');
+  }
+}
+
 // ── GVG CHALLENGE SYSTEM (E212/E215) ─────────────────────────────────────────
-let selectedOpponentGroup = null;
+let selectedOpponentGroup: { id: string; name: string; emoji: string; elo: number } | null = null;
 let selectedGvGFormat = '1v1';
 
 function openGvGModal() {
@@ -398,14 +741,13 @@ function openGvGModal() {
     return;
   }
   selectedOpponentGroup = null;
-  selectedGvGFormat = '1v1';
+  selectedGvGFormat     = '1v1';
   document.getElementById('gvg-modal').classList.add('open');
-  document.getElementById('gvg-opponent-search').value = '';
-  document.getElementById('gvg-opponent-results').innerHTML = '';
+  document.getElementById('gvg-opponent-search').value       = '';
+  document.getElementById('gvg-opponent-results').innerHTML  = '';
   document.getElementById('gvg-selected-opponent').style.display = 'none';
-  document.getElementById('gvg-topic').value = '';
+  (document.getElementById('gvg-topic') as HTMLInputElement).value = '';
   document.getElementById('gvg-error').style.display = 'none';
-  // Reset format pills
   document.querySelectorAll('.gvg-format-pill').forEach(p => p.classList.remove('active'));
   document.querySelector('.gvg-format-pill[data-format="1v1"]').classList.add('active');
 }
@@ -414,22 +756,18 @@ function closeGvGModal() {
   document.getElementById('gvg-modal').classList.remove('open');
 }
 
-// Opponent search with debounce
 (function wireGvGControls() {
   document.addEventListener('DOMContentLoaded', () => {
-    // Format pills
     document.querySelectorAll('.gvg-format-pill').forEach(pill => {
       pill.addEventListener('click', () => {
-        selectedGvGFormat = pill.dataset.format;
+        selectedGvGFormat = (pill as HTMLElement).dataset.format;
         document.querySelectorAll('.gvg-format-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
       });
     });
-
-    // Opponent search debounce
-    const searchInput = document.getElementById('gvg-opponent-search');
+    const searchInput = document.getElementById('gvg-opponent-search') as HTMLInputElement | null;
     if (searchInput) {
-      let timer;
+      let timer: ReturnType<typeof setTimeout>;
       searchInput.addEventListener('input', () => {
         clearTimeout(timer);
         timer = setTimeout(() => searchGroupsForChallenge(searchInput.value.trim()), 350);
@@ -457,23 +795,28 @@ async function searchGroupsForChallenge(query: string) {
       return;
     }
     container.innerHTML = data.map(g => `
-      <div class="gvg-opponent-option" data-gid="${esc(g.id)}" data-gname="${esc(g.name)}" data-gemoji="${esc(g.avatar_emoji || '⚔️')}" data-gelo="${parseInt(g.group_elo || 1200)}">
+      <div class="gvg-opponent-option"
+        data-gid="${esc(g.id)}"
+        data-gname="${esc(g.name)}"
+        data-gemoji="${esc(g.avatar_emoji || '⚔️')}"
+        data-gelo="${parseInt(String(g.group_elo || 1200))}">
         <span style="font-size:20px;">${esc(g.avatar_emoji || '⚔️')}</span>
         <div style="flex:1;">
           <div style="color:var(--white);font-size:13px;font-weight:700;">${esc(g.name)}</div>
-          <div style="color:var(--white-dim);font-size:11px;">${parseInt(g.member_count || 0)} members · Elo ${parseInt(g.group_elo || 1200)}</div>
+          <div style="color:var(--white-dim);font-size:11px;">${parseInt(String(g.member_count || 0))} members · Elo ${parseInt(String(g.group_elo || 1200))}</div>
         </div>
       </div>
     `).join('');
     container.querySelectorAll('.gvg-opponent-option').forEach(opt => {
       opt.addEventListener('click', () => {
+        const el = opt as HTMLElement;
         selectedOpponentGroup = {
-          id: opt.dataset.gid,
-          name: opt.dataset.gname,
-          emoji: opt.dataset.gemoji,
-          elo: parseInt(opt.dataset.gelo)
+          id:    el.dataset.gid,
+          name:  el.dataset.gname,
+          emoji: el.dataset.gemoji,
+          elo:   parseInt(el.dataset.gelo),
         };
-        const sel = document.getElementById('gvg-selected-opponent');
+        const sel  = document.getElementById('gvg-selected-opponent');
         const esc2 = escapeHTML;
         sel.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:20px;">${esc2(selectedOpponentGroup.emoji)}</span>
@@ -485,7 +828,7 @@ async function searchGroupsForChallenge(query: string) {
         </div>`;
         sel.style.display = 'block';
         container.innerHTML = '';
-        document.getElementById('gvg-opponent-search').value = '';
+        (document.getElementById('gvg-opponent-search') as HTMLInputElement).value = '';
       });
     });
   } catch (e) {
@@ -500,53 +843,52 @@ function clearGvGOpponent() {
 
 async function submitGroupChallenge() {
   const errEl = document.getElementById('gvg-error');
-  const btn = document.getElementById('gvg-submit-btn');
+  const btn   = document.getElementById('gvg-submit-btn') as HTMLButtonElement;
   if (!selectedOpponentGroup) {
-    errEl.textContent = 'Select an opponent group';
+    errEl.textContent   = 'Select an opponent group';
     errEl.style.display = 'block';
     return;
   }
-  const topic = document.getElementById('gvg-topic').value.trim();
+  const topic = (document.getElementById('gvg-topic') as HTMLInputElement).value.trim();
   if (topic.length < 5) {
-    errEl.textContent = 'Topic must be at least 5 characters';
+    errEl.textContent   = 'Topic must be at least 5 characters';
     errEl.style.display = 'block';
     return;
   }
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = 'SENDING…';
   errEl.style.display = 'none';
   try {
     const { data, error } = await safeRpc('create_group_challenge', {
       p_challenger_group_id: currentGroupId,
-      p_defender_group_id: selectedOpponentGroup.id,
-      p_topic: topic,
-      p_category: document.getElementById('gvg-category').value,
-      p_format: selectedGvGFormat
+      p_defender_group_id:   selectedOpponentGroup.id,
+      p_topic:               topic,
+      p_category:            (document.getElementById('gvg-category') as HTMLSelectElement).value,
+      p_format:              selectedGvGFormat,
     });
     if (error) {
-      errEl.textContent = error.message || 'RPC failed';
+      errEl.textContent   = error.message || 'RPC failed';
       errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'SEND CHALLENGE ⚔️';
+      btn.disabled        = false;
+      btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
-    if (result && result.error) {
-      errEl.textContent = result.error;
+    if (result?.error) {
+      errEl.textContent   = result.error;
       errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'SEND CHALLENGE ⚔️';
+      btn.disabled        = false;
+      btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
-    // Success
     closeGvGModal();
     loadGroupChallenges(currentGroupId);
     showToast('⚔️ Challenge sent!', 'success');
   } catch (e) {
-    errEl.textContent = 'Something went wrong';
+    errEl.textContent   = 'Something went wrong';
     errEl.style.display = 'block';
   }
-  btn.disabled = false;
+  btn.disabled    = false;
   btn.textContent = 'SEND CHALLENGE ⚔️';
 }
 
@@ -564,20 +906,21 @@ async function loadGroupChallenges(groupId: string) {
     const esc = escapeHTML;
     container.innerHTML = challenges.map(c => {
       const isDefender = c.defender_group_id === groupId;
-      const oppName = isDefender ? c.challenger_name : c.defender_name;
-      const oppEmoji = isDefender ? c.challenger_emoji : c.defender_emoji;
-      const oppElo = isDefender ? c.challenger_elo : c.defender_elo;
+      const oppName    = isDefender ? c.challenger_name  : c.defender_name;
+      const oppEmoji   = isDefender ? c.challenger_emoji : c.defender_emoji;
+      const oppElo     = isDefender ? c.challenger_elo   : c.defender_elo;
       let badge = '', actionHtml = '';
       switch (c.status) {
         case 'pending':
           badge = '<span class="meta-pill" style="background:rgba(212,168,67,0.15);color:var(--gold);border:none;">PENDING</span>';
           if (isDefender && currentUser) {
-            // UUID regex validation on challenge ID
             const cid = String(c.id);
             if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
               actionHtml = `<div style="display:flex;gap:6px;margin-top:8px;">
-                <button data-challenge-id="${esc(cid)}" data-action="accept" class="gvg-respond-btn" style="flex:1;background:rgba(46,204,113,0.15);color:var(--success);border:1px solid rgba(46,204,113,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
-                <button data-challenge-id="${esc(cid)}" data-action="decline" class="gvg-respond-btn" style="flex:1;background:rgba(193,39,45,0.15);color:var(--red);border:1px solid rgba(193,39,45,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">DECLINE</button>
+                <button data-challenge-id="${esc(cid)}" data-action="accept" class="gvg-respond-btn"
+                  style="flex:1;background:rgba(46,204,113,0.15);color:var(--success);border:1px solid rgba(46,204,113,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
+                <button data-challenge-id="${esc(cid)}" data-action="decline" class="gvg-respond-btn"
+                  style="flex:1;background:rgba(193,39,45,0.15);color:var(--red);border:1px solid rgba(193,39,45,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">DECLINE</button>
               </div>`;
             }
           }
@@ -611,11 +954,10 @@ async function loadGroupChallenges(groupId: string) {
       </div>`;
     }).join('');
 
-    // Wire accept/decline buttons via delegation
     container.querySelectorAll('.gvg-respond-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        respondToChallenge(btn.dataset.challengeId, btn.dataset.action);
+        respondToChallenge((btn as HTMLElement).dataset.challengeId, (btn as HTMLElement).dataset.action);
       });
     });
   } catch (e) {
@@ -628,11 +970,11 @@ async function respondToChallenge(challengeId: string, action: string) {
   try {
     const { data, error } = await safeRpc('respond_to_group_challenge', {
       p_challenge_id: challengeId,
-      p_action: action
+      p_action:       action,
     });
     if (error) { showToast('⚠️ ' + (error.message || 'Failed'), 'error'); return; }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
-    if (result && result.error) { showToast('⚠️ ' + result.error, 'error'); return; }
+    if (result?.error) { showToast('⚠️ ' + result.error, 'error'); return; }
     loadGroupChallenges(currentGroupId);
     showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
   } catch (e) {
@@ -646,28 +988,33 @@ async function toggleMembership() {
     window.location.href = 'moderator-plinko.html?returnTo=' + encodeURIComponent(window.location.pathname + '?group=' + currentGroupId);
     return;
   }
-  const btn = document.getElementById('join-btn');
+  const btn = document.getElementById('join-btn') as HTMLButtonElement;
   btn.disabled = true;
   try {
     if (isMember) {
       const { error } = await sb.rpc('leave_group', { p_group_id: currentGroupId });
       if (error) throw error;
-      isMember = false;
+      isMember   = false;
+      callerRole = null;
       btn.textContent = 'JOIN GROUP';
-      btn.className = 'join-btn join';
+      btn.className   = 'join-btn join';
       document.getElementById('gvg-challenge-btn').style.display = 'none';
-      document.getElementById('detail-members').textContent = (parseInt(document.getElementById('detail-members').textContent) - 1).toString();
+      document.getElementById('detail-members').textContent =
+        String(parseInt(document.getElementById('detail-members').textContent) - 1);
     } else {
       const { error } = await sb.rpc('join_group', { p_group_id: currentGroupId });
       if (error) throw error;
-      isMember = true;
+      isMember   = true;
+      callerRole = 'member';
       btn.textContent = 'LEAVE GROUP';
-      btn.className = 'join-btn leave';
+      btn.className   = 'join-btn leave';
       document.getElementById('gvg-challenge-btn').style.display = 'block';
-      document.getElementById('detail-members').textContent = (parseInt(document.getElementById('detail-members').textContent) + 1).toString();
+      document.getElementById('detail-members').textContent =
+        String(parseInt(document.getElementById('detail-members').textContent) + 1);
     }
+    loadGroupMembers(currentGroupId); // re-render with updated callerRole
   } catch (e) {
-    alert(e.message || 'Something went wrong');
+    alert((e as Error).message || 'Something went wrong');
   } finally {
     btn.disabled = false;
   }
@@ -676,58 +1023,51 @@ async function toggleMembership() {
 // ── SHOW LOBBY ────────────────────────────────────────────────────────────────
 function showLobby() {
   currentGroupId = null;
+  callerRole     = null;
   document.getElementById('view-detail').style.display = 'none';
-  document.getElementById('view-lobby').style.display = 'block';
+  document.getElementById('view-lobby').style.display  = 'block';
 }
 
 // ── CREATE MODAL ──────────────────────────────────────────────────────────────
 function openCreateModal() {
-  if (!currentUser) {
-    window.location.href = 'moderator-plinko.html';
-    return;
-  }
+  if (!currentUser) { window.location.href = 'moderator-plinko.html'; return; }
   document.getElementById('create-modal').classList.add('open');
 }
-
 function closeCreateModal() {
   document.getElementById('create-modal').classList.remove('open');
 }
-
 function handleModalBackdrop(e: Event) {
   if (e.target === document.getElementById('create-modal')) closeCreateModal();
 }
-
 function selectEmoji(el: HTMLElement) {
   document.querySelectorAll('.emoji-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   selectedEmoji = el.dataset.emoji;
 }
-
 async function submitCreateGroup() {
-  const name = document.getElementById('group-name').value.trim();
+  const name = (document.getElementById('group-name') as HTMLInputElement).value.trim();
   if (!name || name.length < 2) { alert('Group name must be at least 2 characters'); return; }
-  const btn = document.getElementById('create-submit-btn');
-  btn.disabled = true;
+  const btn = document.getElementById('create-submit-btn') as HTMLButtonElement;
+  btn.disabled    = true;
   btn.textContent = 'CREATING…';
   try {
     const { data, error } = await sb.rpc('create_group', {
-      p_name: name,
-      p_description: document.getElementById('group-desc-input').value.trim() || null,
-      p_category: document.getElementById('group-category').value,
-      p_is_public: true,
-      p_avatar_emoji: selectedEmoji
+      p_name:         name,
+      p_description:  (document.getElementById('group-desc-input') as HTMLInputElement).value.trim() || null,
+      p_category:     (document.getElementById('group-category') as HTMLSelectElement).value,
+      p_is_public:    true,
+      p_avatar_emoji: selectedEmoji,
     });
     if (error) throw error;
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     closeCreateModal();
-    document.getElementById('group-name').value = '';
-    document.getElementById('group-desc-input').value = '';
-    // Open the newly created group
+    (document.getElementById('group-name') as HTMLInputElement).value      = '';
+    (document.getElementById('group-desc-input') as HTMLInputElement).value = '';
     if (result.group_id) openGroup(result.group_id);
   } catch (e) {
-    alert(e.message || 'Could not create group');
+    alert((e as Error).message || 'Could not create group');
   } finally {
-    btn.disabled = false;
+    btn.disabled    = false;
     btn.textContent = 'CREATE GROUP';
   }
 }
@@ -760,17 +1100,20 @@ declare global {
   }
 }
 
-window.switchTab = switchTab;
-window.switchDetailTab = switchDetailTab;
-window.filterCategory = filterCategory;
-window.openCreateModal = openCreateModal;
-window.closeCreateModal = closeCreateModal;
-window.handleModalBackdrop = handleModalBackdrop;
-window.selectEmoji = selectEmoji;
-window.submitCreateGroup = submitCreateGroup;
-window.showLobby = showLobby;
-window.toggleMembership = toggleMembership;
-window.openGvGModal = openGvGModal;
-window.closeGvGModal = closeGvGModal;
-window.clearGvGOpponent = clearGvGOpponent;
+window.switchTab            = switchTab;
+window.switchDetailTab      = switchDetailTab;
+window.filterCategory       = filterCategory;
+window.openCreateModal      = openCreateModal;
+window.closeCreateModal     = closeCreateModal;
+window.handleModalBackdrop  = handleModalBackdrop;
+window.selectEmoji          = selectEmoji;
+window.submitCreateGroup    = submitCreateGroup;
+window.showLobby            = showLobby;
+window.toggleMembership     = toggleMembership;
+window.openGvGModal         = openGvGModal;
+window.closeGvGModal        = closeGvGModal;
+window.clearGvGOpponent     = clearGvGOpponent;
 window.submitGroupChallenge = submitGroupChallenge;
+// Note: member action modal functions (_executePromote, _executeKick, _executeBan,
+// openMemberActionsModal, closeMemberActionsModal) are all wired via event delegation
+// and _injectMemberActionsModal() — no window exposure needed.
