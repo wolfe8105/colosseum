@@ -11,6 +11,7 @@
 // ES imports (replaces window globals)
 import { oauthLogin, signUp, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from '../auth.ts';
 import { isAnyPlaceholder } from '../config.ts';
+import { nudge } from '../nudge.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -250,6 +251,7 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
 
       const welcome = document.getElementById('welcome-text');
       if (welcome) welcome.textContent = 'Welcome to the arena, ' + displayName + '!';
+      nudge('first_signup', '🎉 Welcome to the arena. Your journey starts now.', 'success');
       goToStep(4);
     }
   } catch {

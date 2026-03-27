@@ -12,6 +12,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from '../auth.ts';
 import type { SafeRpcResult } from '../auth.ts';
 import { claimVote } from '../tokens.ts';
+import { nudge } from '../nudge.ts';
 import '../analytics.ts';
 
 /** Debate shape returned by get_arena_debate_spectator RPC or direct query */
@@ -249,6 +250,8 @@ interface SpectatorChatMessage {
       if (isLive) {
         startPolling();
         startChatPolling();
+      } else {
+        nudge('replay_entry', '👁️ Watching the replay. Judge for yourself.');
       }
     } catch (err) {
       console.error('[Spectate] Load error:', err);
@@ -683,6 +686,8 @@ interface SpectatorChatMessage {
         p_vote: side,
       });
       if (error) console.warn('[Spectate] Vote error:', error.message);
+
+      nudge('first_vote', '🗳️ Vote cast. Your voice shapes the verdict.');
 
       const { data: fresh } = await rpc('get_arena_debate_spectator', { p_debate_id: debateId });
       if (fresh) {
