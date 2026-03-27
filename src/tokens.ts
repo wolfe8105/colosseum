@@ -10,6 +10,7 @@
 import { showToast, escapeHTML } from './config.ts';
 import { safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, onChange } from './auth.ts';
 import type { Profile } from './auth.ts';
+import { nudge } from './nudge.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -307,6 +308,7 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
     label = `Daily login + ${result.login_streak ?? 0}-day streak!`;
   }
   _tokenToast(result.tokens_earned ?? 0, label);
+  nudge('return_visit', '🔥 Welcome back. The arena missed you.');
   console.log(`[Tokens] Daily login: +${result.tokens_earned ?? 0} (streak: ${result.login_streak ?? 0}, freeze used: ${result.freeze_used ?? false})`);
   _checkStreakMilestones(result.login_streak ?? 0);
   return result;

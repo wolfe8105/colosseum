@@ -44,6 +44,7 @@ import type { SafeRpcResult } from './auth.ts';
 import type { SettleResult, PoolData, StakeResult } from './staking.ts';
 import type { EquippedItem, InventoryItem, PowerUpResult } from './powerups.ts';
 import { navigateTo } from './navigation.ts';
+import { nudge } from './nudge.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -1872,6 +1873,8 @@ export function enterRoom(debate: CurrentDebate): void {
   currentDebate = debate;
   if (screenEl) screenEl.innerHTML = '';
 
+  nudge('enter_debate', '⚔️ You\'re in. Make every word count.');
+
   // Session 121: Set debate status to 'live'
   if (debate.mode === 'ai' && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     safeRpc('update_arena_debate', { p_debate_id: debate.id, p_status: 'live' }).catch((e: unknown) => {
@@ -2250,6 +2253,7 @@ function advanceRound(): void {
     return;
   }
   debate.round++;
+  nudge('round_end', '🔔 Round complete. Stay sharp.');
   addSystemMessage(`Round ${debate.round} of ${debate.totalRounds} \u2014 Your turn.`);
 
   const roundLabel = document.getElementById('arena-round-label');
@@ -2508,7 +2512,7 @@ export async function endCurrentDebate(): Promise<void> {
   const winner: DebateRole = scoreA >= scoreB ? 'a' : 'b';
   const didWin = winner === debate.role;
 
-  // Update Supabase — skip entirely if this user is the moderator (not a debater)
+  nudge('final_score', didWin ? '🏆 Victory. The arena remembers.' : '💀 Defeat. Come back stronger.', didWin ? 'success' : 'info');
   let eloChangeMe = 0;
   if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     try {
