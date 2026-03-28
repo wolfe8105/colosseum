@@ -3401,7 +3401,14 @@ async function createAndWaitPrivateLobby(
           <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:3px;color:var(--mod-text-muted);margin-bottom:8px;">JOIN CODE</div>
           <div style="font-family:var(--mod-font-ui);font-size:40px;font-weight:700;color:var(--mod-accent);letter-spacing:8px;">${escapeHTML(result.join_code)}</div>
         </div>
+        <button id="arena-challenge-link-btn" style="margin-top:4px;padding:12px 24px;border-radius:20px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1.5px;cursor:pointer;width:100%;text-transform:uppercase;">🔗 Copy Challenge Link</button>
       `;
+      document.getElementById('arena-challenge-link-btn')?.addEventListener('click', () => {
+        const link = `https://themoderator.app/challenge?code=${encodeURIComponent(result.join_code!)}`;
+        navigator.clipboard.writeText(link)
+          .then(() => showToast('Challenge link copied!'))
+          .catch(() => showToast(link));
+      });
     } else if (visibility === 'private') {
       if (titleEl) titleEl.textContent = 'CHALLENGE SENT';
       if (statusEl) statusEl.textContent = `Waiting for ${escapeHTML(invitedUserName || 'them')} to accept...`;
@@ -3654,6 +3661,12 @@ export function init(): void {
   // Auto-open power-up shop if ?shop=1 in URL
   if (new URLSearchParams(window.location.search).get('shop') === '1') {
     showPowerUpShop();
+  }
+  // F-39: Auto-join via challenge link (?joinCode=XXXXXX)
+  const challengeCode = new URLSearchParams(window.location.search).get('joinCode');
+  if (challengeCode) {
+    window.history.replaceState({}, '', window.location.pathname);
+    void joinWithCode(challengeCode.toUpperCase());
   }
 }
 
