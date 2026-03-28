@@ -146,15 +146,21 @@ export async function startRecording(): Promise<boolean> {
     updateRecorderUI();
     recordingTimer = setInterval(updateRecorderUI, 100);
 
-    startVisualization(recordingStream);
-
+    // MAX_DURATION timeout set immediately after the interval — before startVisualization,
+    // which can throw. If it does, the catch below clears recordingTimer + calls cleanup(),
+    // and this timeout fires harmlessly (isRecordingState will be false by then).
     setTimeout(() => {
       if (isRecordingState) void stopRecording();
     }, MAX_DURATION_SEC * 1000);
 
+    startVisualization(recordingStream);
+
     return true;
   } catch (err) {
-    console.error('Mic access denied:', err);
+    console.error('startRecording error:', err);
+    // Clear timer and release audio device if setup failed mid-way.
+    if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+    cleanup();
     showToast('🎤 Microphone access denied. Check browser permissions.');
     return false;
   }
