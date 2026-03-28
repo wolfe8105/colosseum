@@ -193,7 +193,9 @@ function esc(s: string | null | undefined): string {
 
 export function onChange(fn: AuthListener): void {
   listeners.push(fn);
-  if (currentUser || currentProfile) fn(currentUser, currentProfile);
+  if (currentUser || currentProfile) {
+    try { fn(currentUser, currentProfile); } catch (e) { console.error('[auth] onChange immediate callback threw', e); }
+  }
 }
 
 function _notify(user: User | null, profile: Profile | null): void {
@@ -438,6 +440,9 @@ export async function oauthLogin(provider: 'google' | 'apple' | string, redirect
 
 export async function logOut(): Promise<AuthResult> {
   if (isPlaceholderMode) return { success: true };
+
+  const notif = (window as { ColosseumNotifications?: { destroy?: () => void } }).ColosseumNotifications;
+  notif?.destroy?.();
 
   try {
     await Promise.race([

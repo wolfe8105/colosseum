@@ -279,6 +279,7 @@ export let _rulingCountdownTimer: ReturnType<typeof setInterval> | null = null;
 // Voice memo state
 let vmRecording = false;
 let vmTimer: ReturnType<typeof setInterval> | null = null;
+let _queuePollInFlight = false;
 let vmSeconds = 0;
 
 // ============================================================
@@ -307,7 +308,7 @@ function pushArenaState(viewName: string): void {
   history.pushState({ arenaView: viewName }, '');
 }
 
-window.addEventListener('popstate', () => {
+const _onPopState = () => {
   // Clean up any overlays still in DOM
   document.getElementById('arena-rank-overlay')?.remove();
   document.getElementById('arena-mode-overlay')?.remove();
@@ -334,7 +335,8 @@ window.addEventListener('popstate', () => {
 
   // All back navigation returns to lobby
   if (view !== 'lobby') renderLobby();
-});
+};
+window.addEventListener('popstate', _onPopState);
 
 // ============================================================
 // CSS INJECTION
@@ -1479,6 +1481,8 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
     } else {
       queuePollTimer = setInterval(async () => {
         if (view !== 'queue') return;
+        if (_queuePollInFlight) return;
+        _queuePollInFlight = true;
         try {
           const { data: status, error: pollErr } = await safeRpc<MatchData>('check_queue_status');
           if (pollErr) throw pollErr;
@@ -1495,8 +1499,10 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
           if (status && (status as MatchData).status === 'matched') {
             onMatchFound(status as MatchData);
           }
-        } catch { /* handled */ }
-      }, 2000);
+        } catch { /* handled */ } finally {
+          _queuePollInFlight = false;
+        }
+      }, 4000);
     }
   } catch (err) {
     console.error('[Arena] Queue join error:', err);
@@ -4195,6 +4201,16 @@ export function getView(): ArenaView {
 
 export function getCurrentDebate(): CurrentDebate | null {
   return currentDebate ? { ...currentDebate } : null;
+}
+
+export function destroy(): void {
+  if (queueElapsedTimer) { clearInterval(queueElapsedTimer); queueElapsedTimer = null; }
+  if (queuePollTimer) { clearInterval(queuePollTimer); queuePollTimer = null; }
+  if (roundTimer) { clearInterval(roundTimer); roundTimer = null; }
+  if (vmTimer) { clearInterval(vmTimer); vmTimer = null; }
+  if (referencePollTimer) { clearInterval(referencePollTimer); referencePollTimer = null; }
+  if (_rulingCountdownTimer) { clearInterval(_rulingCountdownTimer); _rulingCountdownTimer = null; }
+  window.removeEventListener('popstate', _onPopState);
 }
 
 // ============================================================
