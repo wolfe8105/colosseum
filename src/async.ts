@@ -27,6 +27,7 @@ import {
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
 import { navigateTo } from './navigation.ts';
+import { nudge } from './nudge.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -834,7 +835,10 @@ export async function react(takeId: string): Promise<void> {
         take.reactions = (data as ReactResult).reaction_count;
         take.userReacted = (data as ReactResult).reacted;
         loadHotTakes(currentFilter);
-        if ((data as ReactResult).reacted && typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimReaction(takeId);
+        if ((data as ReactResult).reacted) {
+          nudge('first_vote', '\uD83D\uDDF3\uFE0F Vote cast. Your voice shapes the verdict.');
+          if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimReaction(takeId);
+        }
       }
     } catch { /* handled */ }
   }
