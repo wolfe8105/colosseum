@@ -36,6 +36,7 @@ import { registerNavigate } from '../navigation.ts';
 
 // --- Side-effect imports ---
 import { showPowerUpShop } from '../arena.ts';
+import { init as initRivalsPresence, destroy as destroyRivalsPresence } from '../rivals-presence.ts';
 import '../notifications.ts';
 import '../leaderboard.ts';
 import '../scoring.ts';
@@ -677,6 +678,15 @@ function updateUIFromProfile(user: User | null, profile: Profile | null){
   }
 }
 onChange(updateUIFromProfile);
+
+// F-25: Rival online alerts — init on login, destroy on logout
+onChange((user, profile) => {
+  if (user && profile) {
+    void initRivalsPresence();
+  } else {
+    destroyRivalsPresence();
+  }
+});
 
 
 // ============================================================
