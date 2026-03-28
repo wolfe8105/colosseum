@@ -1,18 +1,29 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 179 (March 26, 2026)
+### Last Updated: Session 191 (March 28, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
-> Build logs live in the Old Testament. Land Mine Map stays in the repo — pull only when doing schema/auth/deployment work.
-> Session handoffs go in the chat message, not this file.
->
-> **Other bible docs (repo, read when relevant):**
-> - `THE-MODERATOR-OLD-TESTAMENT.md` — All session build logs (1-191), 502+ item inventory, revenue model, B2B data play, growth strategy
-> - `THE-MODERATOR-LAND-MINE-MAP.md` — 194+ documented pitfalls, failure modes, fixes. **Read before any SQL, schema, auth, or deployment change.** (Note: internal file references use pre-TS-migration filenames — patterns still valid)
-> - `THE-MODERATOR-WIRING-MANIFEST.md` — Full C4-style architecture model. Every RPC, global, flow mapped. (Session 122, updated 178. Note: internal file references use pre-TS-migration filenames — patterns still valid)
-> - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play, auction model, pricing tiers, buyer list
-> - `THE-MODERATOR-PRODUCT-VISION.md` — Psychology framework, visual game layer, ad placement, gamification
-> - `THE-MODERATOR-PUNCH-LIST.md` — **Single source of truth for all open work: housekeeping, bugs, features.**
-> - `CLAUDE.md` — Claude Code guidance file (security rules, file conventions, architecture)
+> Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
+
+---
+
+## HOW TO USE THIS DOCUMENT
+
+**Start every session here.** If you need more detail on something, the map below tells you exactly where to go.
+
+### WHERE TO FIND THINGS
+
+| Topic | Go Here |
+|-------|---------|
+| Open work (bugs, features, housekeeping) | **THE-MODERATOR-PUNCH-LIST.md** |
+| Any SQL / schema / auth / deployment change | **THE-MODERATOR-LAND-MINE-MAP.md** first — 194 entries, 20 sections covering DB triggers, auth, bot army, VPS, Stripe, Supabase quirks |
+| Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — every RPC, global, flow, blast radius. Note: file refs use pre-TS names, patterns still valid |
+| B2B strategy, pricing, buyer list, pitch | **THE-MODERATOR-WAR-CHEST.md** |
+| UI features, ad surfaces, gamification, mobile UX | **THE-MODERATOR-PRODUCT-VISION.md** |
+| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-191 |
+| Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — 77 design questions answered |
+| QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — stale, update in future session |
+| Screen-by-screen build queue | **PRODUCT-WALKTHROUGH.md** — barely started, continue in future session |
+| Security rules, file conventions, build system | **CLAUDE.md** |
 
 ---
 
@@ -20,7 +31,7 @@
 
 - Live audio debate platform / emergence engine
 - Users hang out in themed sections, post hot takes, react, debates emerge from disagreements
-- Four core mechanics: Post React Challenge Structure appears
+- Four core mechanics: Post → React → Challenge → Structure appears
 - Revenue: free platform → B2B data licensing + structural ad inventory. Consumer subs/tokens shelved at launch.
 - Philosophy: digital third place — not a destination, a place you're already in
 - Name: **The Moderator** (locked — renamed from The Colosseum, Session 160)
@@ -50,7 +61,7 @@
 
 ---
 
-# 4. KEY DECISIONS
+# 4. KEY DECISIONS (LOCKED)
 
 - Target male opinion culture 16-65, mobile-forward
 - Real-dollar tipping replaces token microtransactions
@@ -230,7 +241,6 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 ## Pat Action Items
 - Reddit API approval — check email, resubmit if rejected (submitted March 4)
 - Register DMCA agent at copyright.gov ($6)
-- Purchase domain thecolosseum.app
 - Google OAuth re-enable + SMTP fix (currently: signup via Google fails, email confirm broken)
 
 ## Monitoring
@@ -242,73 +252,85 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 
 # 12. CRITICAL TECHNICAL NOTES
 
-These are the things that bite hardest. Full details in the Land Mine Map.
+> These are the things that bite hardest without a full Land Mine Map read. Grouped by area.
 
+## Database / Schema
 - **Single canonical debate table: `arena_debates`** — legacy `debates` table eliminated Session 101.
-- **`guard_profile_columns` trigger** protects 4 columns: `level`, `xp`, `streak_freezes`, `questions_answered`. Raises exception on direct UPDATE for non-service roles. SECURITY DEFINER RPCs bypass it. Note: older docs incorrectly listed 21 columns — corrected Session 117.
+- **`guard_profile_columns` trigger** protects 4 columns: `level`, `xp`, `streak_freezes`, `questions_answered`. Raises exception on direct UPDATE for non-service roles. SECURITY DEFINER RPCs bypass it. Older docs incorrectly listed 21 columns — it's 4.
 - **Token balance column is `token_balance`** (not `tokens`). See LM-174.
-- **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client
-- **Supabase dashboard is schema source of truth** — verify column names before assuming
+- **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client.
+- **Supabase dashboard is schema source of truth** — verify column names before assuming.
+- **`token_earn_log` column is `earn_type` not `action`** (LM-179). Milestones stored as 'milestone:key_name' with NULL reference_id.
+- **PostgREST 404s on untyped record returns** (LM-180). RPCs must use RETURNS TABLE(...) not bare record.
+- **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Full audit Session 151 — zero positional calls remain.
+
+## Auth
 - **`navigator.locks` orphan bug** — noOpLock mock must load before Supabase CDN. Lives in `src/auth.ts`.
 - **Auth safety timeout is 6000ms** (was 4000ms — fixed Session 163). In home.ts, profile-depth.ts, settings.ts.
 - **Auth uses `readyPromise` pattern** — never setTimeout for async state. INITIAL_SESSION is sole init path.
-- **Cloudflare Pages requires `--branch=production`** for production deploys; `--branch=main` routes to Preview
-- **`wrangler login` fails on headless VPS** — use API token approach
-- **Stripe webhook body must be read with `req.text()`** to preserve raw body for HMAC
-- **VPS `.env` edits require `pm2 restart all`** to take effect
-- **SRI hashes pin supabase-js to @2.98.0** — must regenerate when upgrading
-- **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned
-- **Supabase API keys**: bot army and mirror use legacy JWT format (eyJ...), not new sb_secret_* format
+- **Google OAuth provider disabled** (LM-189). Only way to create test accounts: Supabase dashboard with Auto Confirm on.
+- **DOB stripped from JWT metadata** — handle_new_user trigger strips DOB. set_profile_dob RPC for OAuth users. Session 134.
+
+## Build / Deploy
+- **Vite build is live on Vercel** — buildCommand: "npm run build", outputDirectory: "dist". Build script: vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/. Session 130.
+- **Zero legacy script tags** — Every HTML page uses single `<script type="module">`. Session 142.
+- **SRI hashes pin supabase-js to @2.98.0** — must regenerate when upgrading.
+- **Cloudflare Pages requires `--branch=production`** for production deploys; `--branch=main` routes to Preview.
+- **`wrangler login` fails on headless VPS** — use API token approach.
+
+## VPS / Bot Army
+- **VPS `.env` edits require `pm2 restart all`** to take effect.
 - **Bot platform wiring requires THREE updates** (LM-149): config object + flags block in bot-config.ts + formatFlags() in bot-engine.ts. Missing any one = silent failure.
 - **VPS file copies**: always use `\cp` (backslash prefix) to bypass `cp -i` alias. Always verify with grep after copy.
 - **ecosystem.config.js env block overrides .env** — stripped all platform flags Session 94. .env is single source of truth.
 - **Bot category to mirror slug mapping** — bot uses `couples`, mirror uses `couples-court`. CATEGORY_TO_SLUG in supabase-client.ts handles this.
 - **Mirror generator path** — /opt/colosseum/colosseum-mirror-generator.js (NOT inside bot-army dir). Cron sources /opt/colosseum/mirror.env.
-- **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Full audit Session 151 — zero positional calls remain.
-- **Google OAuth provider disabled** (LM-189). Only way to create test accounts: Supabase dashboard with Auto Confirm on.
-- **Vite build is live on Vercel** — buildCommand: "npm run build", outputDirectory: "dist". Build script: vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/. Session 130.
-- **Zero legacy script tags** — Every HTML page uses single `<script type="module">`. Session 142.
-- **DOB stripped from JWT metadata** — handle_new_user trigger strips DOB. set_profile_dob RPC for OAuth users. Session 134.
-- **`navigateTo` uses register/call pattern** — src/navigation.ts. Zero window.navigateTo refs. Session 163.
 - **Bot army runs TypeScript** — PM2 runs dist/bot-engine.js (compiled from .ts). Original .js files are rollback only.
-- **Token staking + power-up ALL PHASES COMPLETE** (Sessions 108-110/117-118/123-124). Phase 6 (polish/balance) remains.
-- **`token_earn_log` column is `earn_type` not `action`** (LM-179). Milestones stored as 'milestone:key_name' with NULL reference_id.
-- **PostgREST 404s on untyped record returns** (LM-180). RPCs must use RETURNS TABLE(...) not bare record.
-- **Arena popstate: replaceState for forward, history.back for back** (LM-183). Arrow function wrapping required on listeners.
-- **AI debates must be created as `'pending'` not `'live'`** (LM-184). Flip to live happens in enterRoom() only.
-- **F-47 schema additions (Session 173):**
-  - profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index
-  - arena_debates.mod_status TEXT DEFAULT 'none' CHECK ('none'/'waiting'/'requested'/'claimed')
-  - arena_debates.mod_requested_by UUID NULL
-  - Partial index on arena_debates (mod_status) WHERE mod_status = 'waiting'
-- **FOR UPDATE SKIP LOCKED** used in request_to_moderate RPC — race-condition-safe mod claim. First mod to lock the row wins; others skip.
-- **mod_status = 'waiting' debates** sit inside their category (visible in category feed, not general feed). 3-minute timeout before reset to 'waiting' on no debater response. Debaters cannot cancel mod request — hard gate.
-- **Arena debate queue** — join_debate_queue() uses two-phase match: strict category first, then any-category fallback. queue_count scoped to mode + category (Session 170).
-- **match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
-- **F-47 Steps 5-6 (Session 174):**
-  - `browse_mod_queue()` — RETURNS TABLE with `debate_id` (not `id` — ambiguity fix), filters `status IN ('pending','lobby','matched','live')`. Caller must be `is_moderator=true AND mod_available=true`.
-  - `request_mod_for_debate(p_debate_id)` — sets `mod_status='waiting'`. Guard: caller must be debater_a or debater_b, `mod_status` must be `'none'` (idempotent on repeat call).
-  - `get_debate_mod_status(p_debate_id)` — returns `{mod_status, mod_requested_by, moderator_display_name}`. Caller must be debater.
-  - Client: MOD QUEUE button in Arena lobby, gated by `is_moderator`. `showModQueue()` view with 5s poll. `claimModRequest()` handles race condition gracefully.
-  - Client: "Request a moderator" toggle in category picker sets `selectedWantMod`. After both players accept (`onMatchConfirmed`), fires `request_mod_for_debate` if toggled — best-effort, never blocks debate entry.
-  - Client: `startModStatusPoll(debateId)` runs in debate room (4s interval), surfaces `showModRequestModal` when `mod_status='requested'`. 30s auto-decline countdown. `respond_to_mod_request` called on accept/decline.
-  - `selectedWantMod` resets on `renderLobby()`. Modal cleaned up in `endCurrentDebate()`.
-  - F-48 concept added: mod-initiated debate (reverse of F-47, reuses F-46 private lobby infrastructure).
+- **Supabase API keys**: bot army and mirror use legacy JWT format (eyJ...), not new sb_secret_* format.
 
-- **Session 178 — Live Debate Feed + Moderator Scoring + Dropout Penalties:**
-  - `debate_feed_events` table — append-only B2B archive, one row per event (speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up). Columns: id BIGSERIAL, debate_id, user_id (NULL for system events), event_type, round (0-10), side (a/b/mod), content, score (1-5 for point_award), reference_id, metadata JSONB, created_at. SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only). Trigger: broadcast_feed_event → realtime.broadcast_changes on private channel 'debate:<uuid>'.
-  - `mod_dropout_log` table — append-only, one row per moderator dropout. Columns: id BIGSERIAL, moderator_id, debate_id, cooldown_minutes, offense_number, created_at. "Daily reset" = count WHERE created_at >= date_trunc('day', now() UTC). No cron.
-  - `arena_debates.scoring_budget_per_round` INT DEFAULT NULL — parked. NULL = unlimited. Enforced by score_debate_comment when non-null.
-  - `insert_feed_event(p_debate_id, p_event_type, p_round, p_side, p_content, p_score, p_reference_id, p_metadata)` — role-validates by event type, double-writes to event_log. Does NOT handle point_award (use score_debate_comment).
-  - `get_feed_events(p_debate_id, p_after, p_limit)` — backfill on reconnect or full replay. p_after=NULL = all events. Hard cap 1000.
-  - `score_debate_comment(p_debate_id, p_feed_event_id, p_score)` — moderator-only. Atomically increments score_a or score_b on arena_debates, inserts point_award with running totals in metadata. Double-scoring guard via EXISTS check. Writes DIRECTLY to debate_feed_events (not via insert_feed_event). See LM-191.
-  - `pin_feed_event(p_debate_id, p_feed_event_id)` — moderator-only, toggles metadata.pinned on speech events. Only UPDATE exception on append-only table. No broadcast. See LM-192.
-  - `record_mod_dropout(p_debate_id)` — debater-only, human-moderated live debates only. Nulls debate (status→cancelled), logs dropout, inserts synthetic 0-score into moderator_scores (ON CONFLICT DO NOTHING), recalculates mod_approval_pct. Idempotent: second caller gets { already_processed: true }. See LM-194.
-  - `check_mod_cooldown(p_moderator_id)` — call before showing "Accept" on browse_mod_queue. Returns { in_cooldown, dropouts_today, cooldown_expires_at, cooldown_remaining_seconds, next_offense_cooldown_minutes }.
-  - `get_mod_cooldown_minutes(p_offense_number)` — IMMUTABLE helper. 1→10min, 2→60min, 3+→1440min.
-  - **Broadcast private channels require setAuth() + { config: { private: true } }** — see LM-193.
-  - **Supabase Dashboard → Realtime → Settings: "Allow public access" must be DISABLED** for private channels to work.
+## Stripe
+- **Stripe webhook body must be read with `req.text()`** to preserve raw body for HMAC.
+
+## Navigation / Frontend
+- **`navigateTo` uses register/call pattern** — src/navigation.ts. Zero window.navigateTo refs. Session 163.
+- **Arena popstate: replaceState for forward, history.back for back** (LM-183). Arrow function wrapping required on listeners.
+
+## Arena / Debates
+- **AI debates must be created as `'pending'` not `'live'`** (LM-184). Flip to live happens in enterRoom() only.
+- **Arena debate queue** — join_debate_queue() uses two-phase match: strict category first, then any-category fallback. queue_count scoped to mode + category (Session 170).
+- **Match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
+- **Token staking + power-up ALL PHASES COMPLETE** (Sessions 108-110/117-118/123-124). Phase 6 (polish/balance) remains.
+- **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned.
+
+## F-47 Moderator Marketplace (Sessions 173-174)
+- profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index
+- arena_debates.mod_status TEXT DEFAULT 'none' CHECK ('none'/'waiting'/'requested'/'claimed')
+- arena_debates.mod_requested_by UUID NULL
+- Partial index on arena_debates (mod_status) WHERE mod_status = 'waiting'
+- **FOR UPDATE SKIP LOCKED** used in request_to_moderate RPC — race-condition-safe mod claim. First mod to lock the row wins; others skip.
+- mod_status = 'waiting' debates sit inside their category. 3-minute timeout before reset on no debater response. Debaters cannot cancel mod request — hard gate.
+- `browse_mod_queue()` — RETURNS TABLE with `debate_id` (not `id` — ambiguity fix), filters `status IN ('pending','lobby','matched','live')`. Caller must be `is_moderator=true AND mod_available=true`.
+- `request_mod_for_debate(p_debate_id)` — sets `mod_status='waiting'`. Guard: caller must be debater_a or debater_b, mod_status must be 'none' (idempotent on repeat call).
+- `get_debate_mod_status(p_debate_id)` — returns {mod_status, mod_requested_by, moderator_display_name}. Caller must be debater.
+- Client: MOD QUEUE button in Arena lobby, gated by is_moderator. showModQueue() view with 5s poll. claimModRequest() handles race condition gracefully.
+- Client: startModStatusPoll(debateId) runs in debate room (4s interval), surfaces showModRequestModal when mod_status='requested'. 30s auto-decline countdown.
+- selectedWantMod resets on renderLobby(). Modal cleaned up in endCurrentDebate().
+- F-48 concept: mod-initiated debate (reverse of F-47, reuses F-46 private lobby infrastructure).
+
+## Session 178 — Live Debate Feed + Moderator Scoring + Dropout Penalties
+- `debate_feed_events` table — append-only B2B archive, one row per event (speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up). Columns: id BIGSERIAL, debate_id, user_id (NULL for system events), event_type, round (0-10), side (a/b/mod), content, score (1-5 for point_award), reference_id, metadata JSONB, created_at. SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only). Trigger: broadcast_feed_event → realtime.broadcast_changes on private channel 'debate:<uuid>'.
+- `mod_dropout_log` table — append-only, one row per moderator dropout. Columns: id BIGSERIAL, moderator_id, debate_id, cooldown_minutes, offense_number, created_at. "Daily reset" = count WHERE created_at >= date_trunc('day', now() UTC). No cron.
+- `arena_debates.scoring_budget_per_round` INT DEFAULT NULL — parked. NULL = unlimited. Enforced by score_debate_comment when non-null.
+- `insert_feed_event(p_debate_id, p_event_type, p_round, p_side, p_content, p_score, p_reference_id, p_metadata)` — role-validates by event type, double-writes to event_log. Does NOT handle point_award (use score_debate_comment).
+- `get_feed_events(p_debate_id, p_after, p_limit)` — backfill on reconnect or full replay. p_after=NULL = all events. Hard cap 1000.
+- `score_debate_comment(p_debate_id, p_feed_event_id, p_score)` — moderator-only. Atomically increments score_a or score_b on arena_debates, inserts point_award with running totals in metadata. Double-scoring guard via EXISTS check. Writes DIRECTLY to debate_feed_events (not via insert_feed_event). See LM-191.
+- `pin_feed_event(p_debate_id, p_feed_event_id)` — moderator-only, toggles metadata.pinned on speech events. Only UPDATE exception on append-only table. No broadcast. See LM-192.
+- `record_mod_dropout(p_debate_id)` — debater-only, human-moderated live debates only. Nulls debate (status→cancelled), logs dropout, inserts synthetic 0-score into moderator_scores (ON CONFLICT DO NOTHING), recalculates mod_approval_pct. Idempotent: second caller gets { already_processed: true }. See LM-194.
+- `check_mod_cooldown(p_moderator_id)` — call before showing "Accept" on browse_mod_queue. Returns { in_cooldown, dropouts_today, cooldown_expires_at, cooldown_remaining_seconds, next_offense_cooldown_minutes }.
+- `get_mod_cooldown_minutes(p_offense_number)` — IMMUTABLE helper. 1→10min, 2→60min, 3+→1440min.
+- **Broadcast private channels require setAuth() + { config: { private: true } }** — see LM-193.
+- **Supabase Dashboard → Realtime → Settings: "Allow public access" must be DISABLED** for private channels to work.
 
 ---
 
-*For all session build logs (1-173) — see the Old Testament. For documented pitfalls — see the Land Mine Map. For open work — see the Punch List.*
+*For all session build logs (1-191) — see the Old Testament. For documented pitfalls — see the Land Mine Map. For open work — see the Punch List.*
