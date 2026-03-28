@@ -1,5 +1,5 @@
-# THE COLOSSEUM — WIRING MANIFEST
-### Last Updated: Session 178 (March 26, 2026)
+# THE MODERATOR — WIRING MANIFEST
+### Last Updated: Session 192 (March 28, 2026)
 
 > **What this is:** A plain-text architecture model inspired by Scryer's C4 hierarchy.
 > Maps every touchpoint so Claude can answer: "If I change X, what breaks?"
@@ -21,9 +21,9 @@
 │  FRONTEND    │  BACKEND     │  BOT ARMY     │  MIRRORS          │
 │  (Vercel)    │  (Supabase)  │  (VPS/PM2)    │  (Cloudflare)     │
 │              │              │               │                   │
-│  9 HTML      │  Auth        │  bot-engine   │  mirror-generator │
+│  11 HTML     │  Auth        │  bot-engine   │  mirror-generator │
 │  pages       │  PostgreSQL  │  6 leg files  │  50+ static pages │
-│  13 JS       │  30+ RPCs    │  ai-generator │  analytics beacon │
+│  20+ TS      │  62+ RPCs    │  ai-generator │  analytics beacon │
 │  modules     │  RLS policies│  card-gen     │                   │
 │              │  Edge Funcs  │  PM2 crons    │                   │
 │              │  Realtime    │               │                   │
@@ -41,42 +41,42 @@ Communication:
 
 # SECTION 2: WIRING MANIFEST — DEFENSE LAYER
 
-## 2.1 AUTH SYSTEM (colosseum-auth.js → window.ColosseumAuth)
+## 2.1 AUTH SYSTEM (src/auth.ts → ColosseumAuth)
 
 ### ColosseumAuth (Global)
-- DEFINED IN: colosseum-auth.js (IIFE, exposes window.ColosseumAuth)
+- DEFINED IN: src/auth.ts
 - PROVIDES: .ready (Promise), .safeRpc(), .getUser(), .getProfile(), .signIn(), .signOut(), .updateProfile(), .showUserProfile(), follows/rivals RPCs, moderator RPCs
 - CONSUMED BY: Every other JS module. This is the god object.
 - INIT SEQUENCE: createClient() with noOpLock config → onAuthStateChange(INITIAL_SESSION) → resolves .ready → 5s safety timeout fallback
 - LAND MINES: LM-031 (noOpLock required), LM-078 (INITIAL_SESSION sole path), LM-185 (IIFE modules must use ColosseumAuth.safeRpc not bare safeRpc)
 
 ### ColosseumAuth.safeRpc(rpcName, params)
-- DEFINED IN: colosseum-auth.js
+- DEFINED IN: src/auth.ts
 - PURPOSE: Wrapper around supabase.rpc() with 401 recovery (auto-refresh session on auth failure)
 - CALLED FROM: Every module that talks to Supabase. This is THE entry point for all RPC calls from the frontend.
-  - colosseum-auth.js (internal profile/follow/rival/moderator calls)
-  - colosseum-async.js (hot takes, predictions, challenges)
-  - colosseum-arena.js (arena RPCs, debate lifecycle)
-  - colosseum-staking.js (place_stake, get_stake_pool, settle_stakes)
-  - colosseum-powerups.js (power-up inventory RPCs)
-  - colosseum-notifications.js (mark_notifications_read)
-  - colosseum-leaderboard.js (leaderboard queries)
-  - colosseum-tokens.js (claim_action_tokens)
-  - colosseum-payments.js (Stripe-related RPCs)
+  - src/auth.ts (internal profile/follow/rival/moderator calls)
+  - src/async.ts (hot takes, predictions, challenges)
+  - src/arena.ts (arena RPCs, debate lifecycle)
+  - src/staking.ts (place_stake, get_stake_pool, settle_stakes)
+  - src/powerups.ts (power-up inventory RPCs)
+  - src/notifications.ts (mark_notifications_read)
+  - src/leaderboard.ts (leaderboard queries)
+  - src/tokens.ts (claim_action_tokens)
+  - src/payments.ts (Stripe-related RPCs)
   - index.html inline scripts (carousel counts, etc.)
 - EXPECTS: Valid Supabase session. If 401, attempts session refresh then retries once.
 - BLAST RADIUS: If this breaks, THE ENTIRE APP stops talking to the backend. Every feature dies.
 - LAND MINES: LM-185 (IIFE modules MUST use ColosseumAuth.safeRpc(), never bare safeRpc() — it doesn't exist at window scope)
 
 ### ColosseumAuth.ready (Promise)
-- DEFINED IN: colosseum-auth.js
+- DEFINED IN: src/auth.ts
 - PURPOSE: Resolves when auth state is known (logged in or anonymous). All modules await this before rendering.
 - CONSUMED BY: Every HTML page's init script (await ColosseumAuth.ready)
 - BLAST RADIUS: If this never resolves, the entire app hangs on loading screen. 5s safety timeout exists as fallback.
 - LAND MINES: LM-031 (noOpLock), LM-078 (INITIAL_SESSION)
 
 ### supabase.auth.onAuthStateChange
-- DEFINED IN: colosseum-auth.js (inside createClient setup)
+- DEFINED IN: src/auth.ts (inside createClient setup)
 - PURPOSE: Sole entry point for auth initialization. Listens for INITIAL_SESSION event only.
 - EXPECTS: Supabase client with noOpLock: true in auth config (prevents navigator.locks API which blocks in some browsers)
 - BLAST RADIUS: If the event name changes or Supabase SDK updates the event system, auth breaks for all users.
@@ -144,7 +144,7 @@ Communication:
 ### claim_action_tokens(p_action, p_ref_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Award tokens for user actions (hot_take, reaction, prediction, vote, debate). Daily cap enforced server-side.
-- CALLED FROM: colosseum-tokens.js via ColosseumAuth.safeRpc()
+- CALLED FROM: src/tokens.ts via ColosseumAuth.safeRpc()
   - claimHotTake() → p_action: 'hot_take'
   - claimReaction() → p_action: 'reaction'
   - claimPrediction() → p_action: 'prediction'
@@ -160,7 +160,7 @@ Communication:
 ### place_stake(p_debate_id, p_user_id, p_amount, p_predicted_winner) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: User bets tokens on a debate outcome
-- CALLED FROM: colosseum-staking.js → ColosseumAuth.safeRpc('place_stake', {...})
+- CALLED FROM: src/staking.ts → ColosseumAuth.safeRpc('place_stake', {...})
 - EXPECTS:
   - debate status IN ('pending', 'lobby', 'matched') — NOT 'live'
   - user has sufficient token_balance
@@ -175,14 +175,14 @@ Communication:
 ### get_stake_pool(p_debate_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Returns current pool totals for a debate (side_a amount, side_b amount, stake count)
-- CALLED FROM: colosseum-staking.js → renderStakingPanel()
+- CALLED FROM: src/staking.ts → renderStakingPanel()
 - EXPECTS: Valid debate ID
 - BLAST RADIUS: Low — read-only. But if it returns stale data, UI shows wrong pool size.
 
 ### settle_stakes(p_debate_id, p_winner) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER, service_role recommended)
 - PURPOSE: Parimutuel payout. Winners split losers' pool proportionally.
-- CALLED FROM: colosseum-arena.js → endCurrentDebate() (settlement call after debate completes)
+- CALLED FROM: src/arena.ts → endCurrentDebate() (settlement call after debate completes)
 - EXPECTS: Debate must be completed, winner must be 'a' or 'b'
 - TRIGGERS: award_tokens for each winner, creates stake_won/stake_lost notifications
 - STATUS: NOT FULLY TESTED as of Session 121 — staking places correctly, settlement untested
@@ -197,13 +197,13 @@ Communication:
 - DEFINED IN: profiles table (added Session 117)
 - MODIFIED BY: increment_questions_answered RPC only
 - PROTECTED BY: guard_profile_columns trigger (RAISE EXCEPTION on direct UPDATE)
-- READ BY: colosseum-tiers.js, staking tier checks, power-up slot gates
+- READ BY: src/tiers.ts, staking tier checks, power-up slot gates
 - BLAST RADIUS: Controls staking limits and power-up access. If inflated, users bypass tier gates.
 
 ### increment_questions_answered(p_count) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Safely increment questions_answered by batch count
-- CALLED FROM: colosseum-profile-depth.html → saveSection() (counts newly answered questions only)
+- CALLED FROM: moderator-profile-depth.html → saveSection() (counts newly answered questions only)
 - EXPECTS: auth.uid() valid, p_count between 1 and 50
 - DOUBLE-COUNT PREVENTION: Frontend tracks previouslyAnsweredIds Set. Only new answers sent.
 - BLAST RADIUS: If double-counted, user reaches higher tiers faster → gets staking/power-up access early.
@@ -213,10 +213,11 @@ Communication:
 - Tier 0 Unranked: 0 questions
 - Tier 1 Spectator+: 10 questions (5 token max stake, 0 power-up slots)
 - Tier 2 Contender: 25 questions (25 token max, 1 slot)
-- Tier 3 Gladiator: 50 questions (100 token max, 2 slots) — UNREACHABLE (only 39 questions exist)
-- Tier 4 Champion: 75 questions — UNREACHABLE
-- Tier 5 Legend: 100 questions — UNREACHABLE
-- DEFINED IN TWO PLACES: colosseum-tiers.js (client display) AND server RPCs (enforcement). BOTH MUST CHANGE TOGETHER.
+- Tier 3 Gladiator: 50 questions (100 token max, 2 slots)
+- Tier 4 Champion: 75 questions
+- Tier 5 Legend: 100 questions
+- NOTE: Questionnaire expanded to 100 questions across 20 sections (Session 164). All tiers reachable.
+- DEFINED IN TWO PLACES: src/tiers.ts (client display) AND server RPCs (enforcement). BOTH MUST CHANGE TOGETHER.
 - LAND MINES: LM-172
 
 ---
@@ -235,13 +236,13 @@ Communication:
 ### create_ai_debate(p_topic, p_category, p_user_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Creates an AI sparring debate
-- CALLED FROM: colosseum-arena.js → when user selects AI Sparring mode
+- CALLED FROM: src/arena.ts → when user selects AI Sparring mode
 - INSERTS WITH: status = 'pending' (was 'live' before Session 121 fix)
 - BLAST RADIUS: If status reverts to 'live', place_stake breaks for AI debates (status not in allowed set)
 - LAND MINES: LM-184
 
 ### enterRoom(debateId) (JS Function)
-- DEFINED IN: colosseum-arena.js
+- DEFINED IN: src/arena.ts
 - PURPOSE: Transitions from pre-debate screen to active debate room
 - DOES:
   1. Calls update_arena_debate({p_status: 'live'}) for AI debates
@@ -253,7 +254,7 @@ Communication:
 ### update_arena_debate(params) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: General-purpose debate field updater (status, scores, winner, etc.)
-- CALLED FROM: colosseum-arena.js (status transitions, score updates, end-of-debate)
+- CALLED FROM: src/arena.ts (status transitions, score updates, end-of-debate)
 - EXPECTS: Caller must be debate participant or have appropriate role
 - BLAST RADIUS: Wide — controls the entire debate state machine. Wrong status = broken staking, broken settlement, broken spectator queries.
 
@@ -281,7 +282,7 @@ Communication:
 ### buy_power_up(p_power_up_id, p_quantity) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Purchase a power-up from shop, deduct token_balance
-- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('buy_power_up', {...})
+- CALLED FROM: src/powerups.ts → ColosseumAuth.safeRpc('buy_power_up', {...})
 - EXPECTS: auth.uid() valid, sufficient token_balance, valid power_up_id
 - COLUMN: Uses `token_balance` (NOT `tokens` — LM-174 fix)
 - BLAST RADIUS: If column name wrong, RPC fails with "column does not exist". Silent purchase failure.
@@ -290,7 +291,7 @@ Communication:
 ### equip_power_up(p_debate_id, p_power_up_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Move a power-up from inventory into debate loadout
-- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('equip_power_up', {...})
+- CALLED FROM: src/powerups.ts → ColosseumAuth.safeRpc('equip_power_up', {...})
 - EXPECTS: User owns the power-up (user_power_ups.quantity > 0), debate exists, slot available per tier
 - INSERTS INTO: debate_power_ups with activated=false, activated_at=NULL
 - BLAST RADIUS: Low — equip is reversible pre-debate.
@@ -298,7 +299,7 @@ Communication:
 ### activate_power_up(p_debate_power_up_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Fire a power-up during active debate
-- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('activate_power_up', {...})
+- CALLED FROM: src/powerups.ts → ColosseumAuth.safeRpc('activate_power_up', {...})
 - EXPECTS: debate_power_ups row exists with activated=false, activated_at IS NULL
 - SETS: activated = true AND activated_at = now() (BOTH — LM-176 fix)
 - BLAST RADIUS: If only activated_at set without activated=true, frontend shows power-up as still available after use.
@@ -307,7 +308,7 @@ Communication:
 ### get_my_power_ups(p_debate_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Returns user's equipped power-ups for a debate with activation state
-- CALLED FROM: colosseum-powerups.js → ColosseumAuth.safeRpc('get_my_power_ups', {...})
+- CALLED FROM: src/powerups.ts → ColosseumAuth.safeRpc('get_my_power_ups', {...})
 - READS: debate_power_ups.activated boolean to show UI state
 - BLAST RADIUS: Low — read-only.
 
@@ -317,8 +318,8 @@ Communication:
 - Shield: Active. Blocks one reference challenge. Tap to activate.
 - Reveal: Active. Shows opponent's equipped loadout. Tap to activate.
 
-### Power-Up Frontend State (colosseum-powerups.js)
-- DEFINED IN: colosseum-powerups.js (IIFE, no global — called from arena.js)
+### Power-Up Frontend State (src/powerups.ts)
+- DEFINED IN: src/powerups.ts (IIFE, no global — called from arena.js)
 - DEPENDS ON: ColosseumAuth.safeRpc (LM-185 — must use full path, not bare safeRpc)
 - STATE: activatedPowerUps Set, shieldActive flag, silenceTimer ref
 - CLEANUP: All state cleared in renderLobby() and endCurrentDebate()
@@ -330,16 +331,16 @@ Communication:
 ## 3.4 DEBATE ROOM WIRING
 
 ### showPreDebate(debateId) (JS Function)
-- DEFINED IN: colosseum-arena.js
+- DEFINED IN: src/arena.ts
 - PURPOSE: Renders pre-debate screen between matchmaking/creation and room entry
 - DOES:
-  1. Loads staking panel via colosseum-staking.js → renderStakingPanel()
-  2. Loads power-up loadout via colosseum-powerups.js → renderLoadout()
+  1. Loads staking panel via src/staking.ts → renderStakingPanel()
+  2. Loads power-up loadout via src/powerups.ts → renderLoadout()
   3. Shows ENTER BATTLE button → wired to enterRoom()
 - BLAST RADIUS: This is the gate between creation and combat. If bypassed, no staking window exists.
 
 ### AI Sparring Round Loop
-- DEFINED IN: colosseum-arena.js (inside enterRoom flow)
+- DEFINED IN: src/arena.ts (inside enterRoom flow)
 - FLOW:
   1. enterRoom() sets status to 'live' via update_arena_debate RPC
   2. First AI response fetched from Groq via ai-sparring Edge Function
@@ -354,7 +355,7 @@ Communication:
 - BLAST RADIUS: If Edge Function fails, AI never responds. Debate hangs. No timeout/fallback currently.
 
 ### endCurrentDebate() (JS Function)
-- DEFINED IN: colosseum-arena.js
+- DEFINED IN: src/arena.ts
 - PURPOSE: Terminates debate, generates scores, triggers settlement, renders post-debate
 - DOES:
   1. Sets view = 'postDebate', clears roundTimer
@@ -370,7 +371,7 @@ Communication:
 - LAND MINES: LM-175 (settle_stakes was joining on pool_id not debate_id — fixed Session 118)
 
 ### Post-Debate Screen
-- DEFINED IN: colosseum-arena.js (rendered inside endCurrentDebate)
+- DEFINED IN: src/arena.ts (rendered inside endCurrentDebate)
 - SHOWS: Win/loss verdict, score display, opponent info
 - BUTTONS:
   - Rematch → enterQueue(debate.mode, debate.topic) — re-enters general queue, does NOT preserve opponent
@@ -384,8 +385,8 @@ Communication:
 
 ## 3.5 SPECTATOR SYSTEM
 
-### colosseum-spectate.html (Standalone Page)
-- DEFINED IN: colosseum-spectate.html (Session 114)
+### moderator-spectate.html (Standalone Page)
+- DEFINED IN: moderator-spectate.html (Session 114)
 - PURPOSE: Watch a live or completed debate without participating
 - LOADS: auth.js, config.js — uses ColosseumAuth.safeRpc for RPCs
 - ROUTING: Arena lobby feed cards with data-link attribute → navigate to this page (arena debates) or auto-debate page (auto debates)
@@ -393,7 +394,7 @@ Communication:
 ### get_arena_debate_spectator(p_debate_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Fetch debate + both participant profiles (names, elo, avatars) for spectator view
-- CALLED FROM: colosseum-spectate.html on load
+- CALLED FROM: moderator-spectate.html on load
 - EXPECTS: Valid debate ID
 - RETURNS: Debate data + joined profile data for both sides
 - BLAST RADIUS: Low — read-only. If profiles missing, names show as fallback.
@@ -401,13 +402,13 @@ Communication:
 ### bump_spectator_count(p_debate_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Increment spectator count on arena_debates
-- CALLED FROM: colosseum-spectate.html on load
+- CALLED FROM: moderator-spectate.html on load
 - BLAST RADIUS: Low — counter only. But visible to debaters if they check.
 
 ### vote_arena_debate(p_debate_id, p_side) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Spectator votes for side A or B
-- CALLED FROM: colosseum-spectate.html vote buttons
+- CALLED FROM: moderator-spectate.html vote buttons
 - BLAST RADIUS: Low — advisory votes, don't affect scoring directly.
 
 ### Spectator Features (Sessions 114-115)
@@ -421,8 +422,8 @@ Communication:
 
 ## 3.6 SCORING SYSTEM
 
-### colosseum-scoring.js
-- DEFINED IN: colosseum-scoring.js (window.ColosseumScoring)
+### src/scoring.ts
+- DEFINED IN: src/scoring.ts (ColosseumScoring)
 - PURPOSE: Elo calculation, XP awards, level progression
 - READS: profiles table (SELECT only — no writes from this module)
 - BLAST RADIUS: Low in isolation — display calculations. But Elo values feed into Ranked mode matchmaking.
@@ -436,62 +437,88 @@ Communication:
 
 ---
 
-## 3.7 MODERATOR SYSTEM
+## 3.7 MODERATOR SYSTEM (F-47 — Sessions 173-179)
 
-### Moderator Toggle (Session 39)
-- DEFINED IN: colosseum-settings.html (moderator toggle in settings)
-- RPCs (4, Session 39): set_moderator_mode, submit_evidence, rule_on_reference, get_moderator_scores
-- All SECURITY DEFINER, all via ColosseumAuth.safeRpc
+### Moderator Profile
+- DEFINED IN: profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index (Session 173)
+- profiles.is_moderator BOOLEAN — toggled in moderator-settings.html
+- profiles.mod_available BOOLEAN — real-time availability flag
+- profiles.mod_approval_pct FLOAT — running approval score from all scored debates
 
-### set_moderator_mode(p_enabled) (RPC)
+### browse_mod_queue() (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Toggle whether user acts as moderator in debates
-- CALLED FROM: colosseum-settings.html moderator toggle
-- BLAST RADIUS: Low — user preference flag.
+- PURPOSE: Returns list of debates with mod_status='waiting' in moderator's categories
+- CALLED FROM: src/arena.ts → showModQueue() (MOD QUEUE button in lobby, 5s poll)
+- GUARDS: Caller must be is_moderator=true AND mod_available=true
+- RETURNS TABLE with debate_id (NOT id — ambiguity fix), filters status IN ('pending','lobby','matched','live')
+- BLAST RADIUS: If mod_status index missing, slow on large debate tables.
 
-### submit_evidence(p_debate_id, p_reference_url, p_claim, p_supports_side) (RPC)
+### request_to_moderate(p_debate_id) (RPC) — also called claimModRequest
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Submit a reference/evidence during a debate
-- CALLED FROM: colosseum-arena.js → evidence form in moderator panel
-- VALIDATES: auth, sanitize_url on reference, sanitize_text on claim
-- WRITES TO: debate_references table (6 RPCs total for reference system, Session 33)
-- BLAST RADIUS: If sanitize_url bypassed, malicious URLs stored in DB.
+- PURPOSE: Moderator claims a waiting debate. Uses FOR UPDATE SKIP LOCKED — race-condition-safe.
+- CALLED FROM: src/arena.ts → claimModRequest()
+- FLOW: First mod to lock the row wins. Others skip. Sets mod_status='claimed'.
+- BLAST RADIUS: Low — atomic. If called on already-claimed debate, returns graceful failure.
+- LAND MINES: FOR UPDATE SKIP LOCKED is critical — never remove it
 
-### rule_on_reference(p_reference_id, p_ruling, p_reason) (RPC)
+### request_mod_for_debate(p_debate_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Moderator allows or denies a submitted reference
-- CALLED FROM: colosseum-arena.js → ruling panel (allow/deny buttons)
-- AUTO-ALLOW: 60-second countdown timer. If moderator doesn't rule, reference auto-allowed.
-- AI RULING: ai-moderator Edge Function can auto-generate ruling (optional, not in main flow)
-- BLAST RADIUS: Low per ruling. But if auto-allow timer leaks (LM from Session 63 — fixed), overlay floats.
+- PURPOSE: Debater opts into moderation. Sets mod_status='waiting'.
+- CALLED FROM: src/arena.ts → debater opt-in toggle in category picker
+- GUARD: Caller must be debater_a or debater_b. mod_status must be 'none' (idempotent).
+- BLAST RADIUS: Low — sets a status flag. Mod queue picks it up on next poll.
 
-### Moderator Scoring (Post-Debate)
-- 100-point system: 50 from debaters (25 each, happy/not-happy binary) + 50 from fans (1-50 scale, averaged)
-- CALLED FROM: Post-debate screen moderator rating UI
-- WRITES TO: moderator_scores table via get_moderator_scores/submit rating RPCs
+### get_debate_mod_status(p_debate_id) (RPC)
+- DEFINED IN: Supabase RPC (SECURITY DEFINER)
+- PURPOSE: Returns {mod_status, mod_requested_by, moderator_display_name} for debater polling
+- CALLED FROM: src/arena.ts → startModStatusPoll(debateId) (4s interval in debate room)
+- GUARD: Caller must be a debater.
+- BLAST RADIUS: Low — read-only. Powers showModRequestModal when mod_status='requested'.
+
+### mod_status flow on arena_debates
+- arena_debates.mod_status TEXT DEFAULT 'none' CHECK ('none'/'waiting'/'requested'/'claimed')
+- arena_debates.mod_requested_by UUID NULL
+- Partial index on arena_debates(mod_status) WHERE mod_status = 'waiting'
+- STATUS FLOW: none → waiting (debater opts in) → requested (mod claims) → claimed (mod accepted)
+- Debater gets 30s auto-decline countdown via showModRequestModal
+- Debaters CANNOT cancel after requesting — hard gate
+
+### Moderator Scoring (F-47 Step 7 — renderModScoring)
+- Debaters: 👍/👎 binary (25 points each = 50 total from debaters)
+- Spectators: slider 1–50 (averaged into remaining 50 points)
+- CALLED FROM: src/arena.ts → renderModScoring() in post-debate screen
+- WRITES TO: moderator_scores table via score_moderator RPC
+- mod_approval_pct recalculated on profiles after each scoring event
+- LAND MINES: LM-194 (record_mod_dropout inserts one 0-score per dropout via ON CONFLICT DO NOTHING)
+
+### MOD QUEUE Button (Client)
+- DEFINED IN: src/arena.ts → lobby render
+- GATED BY: is_moderator=true on profile
+- SHOWS: showModQueue() screen with 5s poll calling browse_mod_queue()
+- selectedWantMod resets on renderLobby(). Modal cleaned up in endCurrentDebate().
 
 ---
 
 ## 3.8 WEBRTC / VOICE MEMO
 
-### colosseum-webrtc.js (window.ColosseumWebRTC)
-- DEFINED IN: colosseum-webrtc.js
+### src/webrtc.ts (ColosseumWebRTC)
+- DEFINED IN: src/webrtc.ts
 - PURPOSE: WebRTC audio for live debate mode
 - USES: Supabase Realtime channels for signaling (no separate signaling server)
 - PROVIDES: .joinDebate(debateId, role), .leaveDebate(), .toggleMute(), .createWaveform()
 - EVENTS: micReady, connected, disconnected, muteChanged, tick, debateEnd
 - AUDIO CONFIG: echoCancellation, noiseSuppression, autoGainControl, sampleRate 48000
 - ICE SERVERS: Google STUN + configured TURN server
-- WIRED INTO: colosseum-arena.js → initLiveAudio() (called in enterRoom for live audio mode)
+- WIRED INTO: src/arena.ts → initLiveAudio() (called in enterRoom for live audio mode)
 - CLEANUP: ColosseumWebRTC.leaveDebate() called in endCurrentDebate()
 - BLAST RADIUS: If mic permissions denied, audio fails silently (shows error message). If Realtime channel fails, signaling breaks — no peer connection established.
 - NOTE: Live audio mode is built but not heavily tested with real users. AI Sparring uses text, not audio.
 
-### colosseum-voicememo.js (window.ColosseumVoiceMemo)
-- DEFINED IN: colosseum-voicememo.js
+### src/voicememo.ts (ColosseumVoiceMemo)
+- DEFINED IN: src/voicememo.ts
 - PURPOSE: Record and send voice memos in async voice debate mode
 - PROVIDES: Voice recording, playback, send via RPC
-- WIRED INTO: colosseum-arena.js → wireVoiceMemoControls() (record/cancel/send buttons)
+- WIRED INTO: src/arena.ts → wireVoiceMemoControls() (record/cancel/send buttons)
 - BLAST RADIUS: Low — async mode. If recording fails, user can retry.
 
 ---
@@ -506,7 +533,7 @@ Communication:
 ### place_auto_debate_stake(p_debate_id, p_amount, p_predicted_winner) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Stake tokens on an auto-debate outcome
-- CALLED FROM: colosseum-auto-debate.html staking UI
+- CALLED FROM: moderator-auto-debate.html staking UI
 - EXPECTS: Valid auto_debate ID, sufficient token_balance
 - STATUS: Backend live. Frontend staking UI on auto-debate page.
 
@@ -533,7 +560,7 @@ Communication:
 
 ### create_hot_take(p_body, p_category) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-async.js → postTake()
+- CALLED FROM: src/async.ts → postTake()
 - VALIDATES: auth, rate limit, sanitize_text on body, category enum
 - TOKEN GATE: 25 tokens required
 - TRIGGERS: claim_action_tokens (p_action: 'hot_take') on success
@@ -542,12 +569,12 @@ Communication:
 ### react_hot_take(p_take_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Toggle fire reaction (add/remove in one RPC)
-- CALLED FROM: colosseum-async.js → toggle handler
+- CALLED FROM: src/async.ts → toggle handler
 - TRIGGERS: claim_action_tokens (p_action: 'reaction') only on ADD (data.reacted===true), not on remove
 - BLAST RADIUS: Low — self-contained toggle.
 
 ### Challenge Flow (Hot Take → Arena)
-- DEFINED IN: colosseum-async.js → _showChallengeModal()
+- DEFINED IN: src/async.ts → _showChallengeModal()
 - FLOW: User taps ⚔️ BET button on a hot take → modal with counter-argument textarea → creates challenge record → challenge→arena wiring (Session 97, E83)
 - TOKEN GATE: 50 tokens required for challenge
 - BLAST RADIUS: Creates DB record only. Does not auto-navigate to arena. Opponent must accept.
@@ -557,7 +584,7 @@ Communication:
 ## 4.2 PREDICTIONS SYSTEM
 
 ### Debate-Linked Predictions
-- DEFINED IN: colosseum-async.js → placePrediction()
+- DEFINED IN: src/async.ts → placePrediction()
 - PURPOSE: Side bet on an existing arena debate outcome
 - FLOW: Predictions tab → vote buttons (side a/b) → place_prediction RPC → optimistic UI
 - TOKEN GATE: 100 tokens to place prediction
@@ -579,19 +606,19 @@ Communication:
 
 ### create_prediction_question(p_topic, p_side_a_label, p_side_b_label, p_category) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-async.js → openCreatePredictionForm() → submit handler
+- CALLED FROM: src/async.ts → openCreatePredictionForm() → submit handler
 - VALIDATES: auth, rate limit (10/hr), sanitize_text on all inputs, topic 10-200 chars, labels 1-50 chars
 - BLAST RADIUS: Low — creates a question. If rate limit breaks, prediction spam.
 
 ### get_prediction_questions() (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-async.js → fetchStandaloneQuestions()
+- CALLED FROM: src/async.ts → fetchStandaloneQuestions()
 - RETURNS: Open prediction questions sorted by recency
 - BLAST RADIUS: Low — read-only.
 
 ### pick_prediction(p_question_id, p_pick) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-async.js → pickStandaloneQuestion()
+- CALLED FROM: src/async.ts → pickStandaloneQuestion()
 - VALIDATES: auth, rate limit (30/hr), question must be open, pick must be 'a' or 'b'
 - SIDE-SWITCH: If user already picked, swaps side and adjusts both pick counts atomically
 - BLAST RADIUS: Low. But if pick counts drift from actual picks rows, UI shows wrong percentages.
@@ -600,29 +627,29 @@ Communication:
 
 ## 4.3 GROUPS SYSTEM
 
-### colosseum-groups.html (Standalone Page)
-- DEFINED IN: colosseum-groups.html (Session 49, expanded Session 105/116)
+### moderator-groups.html (Standalone Page)
+- DEFINED IN: moderator-groups.html (Session 49, expanded Session 105/116)
 - ROUTE: /groups via vercel.json
 - TABS: Discover, My Groups, Rankings (3 tabs in lobby view)
 - GROUP DETAIL VIEW: Shows header, members, hot takes, challenges
 
 ### create_group(p_name, p_description, p_category, p_is_public, p_avatar_emoji) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-groups.html → submitCreateGroup()
+- CALLED FROM: moderator-groups.html → submitCreateGroup()
 - VALIDATES: auth, name min 2 chars, sanitize_text
 - AUTO-OPENS: On success, calls openGroup(result.group_id)
 - BLAST RADIUS: Low — creates group, user becomes owner.
 
 ### join_group(p_group_id) / leave_group(p_group_id) (RPCs)
 - DEFINED IN: Supabase RPCs (SECURITY DEFINER)
-- CALLED FROM: colosseum-groups.html → toggleMembership()
+- CALLED FROM: moderator-groups.html → toggleMembership()
 - AUTH GATE: Unauthenticated → plinko redirect with returnTo param
 - OWNER PROTECTION: Owner cannot leave (button disabled, "YOU OWN THIS GROUP")
 - BLAST RADIUS: Low — membership toggle. Adjusts member count display optimistically.
 
 ### get_group_details(p_group_id) / get_group_members(p_group_id, p_limit) / get_my_groups() / get_group_leaderboard() (RPCs)
 - DEFINED IN: Supabase RPCs (SECURITY DEFINER)
-- CALLED FROM: colosseum-groups.html (various tab/detail loaders)
+- CALLED FROM: moderator-groups.html (various tab/detail loaders)
 - BLAST RADIUS: Low — all read-only.
 
 ### Group Hot Takes (Session 105)
@@ -641,14 +668,14 @@ Communication:
 
 ### create_group_challenge(p_challenger_group_id, p_defender_group_id, p_topic, p_category, p_format) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-groups.html → GvG challenge modal
+- CALLED FROM: moderator-groups.html → GvG challenge modal
 - VALIDATES: auth, rate limit (3 pending/group), duplicate detection, self-challenge prevention
 - FORMAT: 1v1, 3v3, or 5v5
 - BLAST RADIUS: Creates challenge record. Does not start debate.
 
 ### respond_to_group_challenge(p_challenge_id, p_response) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-groups.html → accept/decline buttons via data-* attributes + event delegation
+- CALLED FROM: moderator-groups.html → accept/decline buttons via data-* attributes + event delegation
 - EXPECTS: Defender-only (auth check), challenge not expired, response = 'accepted' or 'declined'
 - BLAST RADIUS: If accepted, challenge transitions to matchable state. If logic allows non-defender to respond, challenges can be hijacked.
 
@@ -666,7 +693,7 @@ Communication:
 
 ## 4.4 PROFILE SYSTEM
 
-### colosseum-auth.js Profile Methods (via window.ColosseumAuth)
+### src/auth.ts Profile Methods (via ColosseumAuth)
 - updateProfile(updates) — Updates display_name, avatar_url, bio, username via safeRpc('update_profile', {...})
   - Only safe fields: display_name, avatar_url, bio, username
   - Updates local currentProfile cache after success
@@ -677,14 +704,14 @@ Communication:
 ### update_profile_section(p_section, p_answers) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Save profile depth questionnaire answers for a section
-- CALLED FROM: colosseum-profile-depth.html → saveSection()
+- CALLED FROM: moderator-profile-depth.html → saveSection()
 - VALIDATES: auth, sanitize_text on answers
 - BLAST RADIUS: Low — writes to profile_depth_answers. But saveSection also calls increment_questions_answered which affects tier.
 
 ### soft_delete_account() (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Mark account as deleted (soft delete, data retained)
-- CALLED FROM: colosseum-settings.html → deleteAccount flow (type "DELETE" to confirm)
+- CALLED FROM: moderator-settings.html → deleteAccount flow (type "DELETE" to confirm)
 - BLAST RADIUS: User loses access. Data preserved for legal retention.
 
 ### Avatar System (Session 113)
@@ -705,13 +732,13 @@ Communication:
 
 ### follow_user(p_target_id) / unfollow_user(p_target_id) (RPCs)
 - DEFINED IN: Supabase RPCs (SECURITY DEFINER)
-- CALLED FROM: colosseum-auth.js → followUser() / unfollowUser() → safeRpc
+- CALLED FROM: src/auth.ts → followUser() / unfollowUser() → safeRpc
 - UI: Follow button in showUserProfile() modal, follower/following lists on profile page
 - BLAST RADIUS: Low — social graph edges. No token implications.
 
 ### declare_rival(p_target_id) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- CALLED FROM: colosseum-auth.js → declareRival() → used in showUserProfile modal and post-debate screen
+- CALLED FROM: src/auth.ts → declareRival() → used in showUserProfile modal and post-debate screen
 - UI: ⚔️ RIVAL button. One-directional (you declare, they don't have to accept).
 - BLAST RADIUS: Low — creates social graph edge. Feeds rival display in async.js.
 
@@ -725,7 +752,7 @@ Communication:
 ## 4.6 NOTIFICATIONS
 
 ### ColosseumNotifications (Global)
-- DEFINED IN: colosseum-notifications.js (window.ColosseumNotifications)
+- DEFINED IN: src/notifications.ts (ColosseumNotifications)
 - POLLS: Every 30 seconds for unread count
 - CATEGORIES: challenge, stake_won, stake_lost, follow, rival, group, system
 - mark_notifications_read RPC: Bulk mark via ColosseumAuth.safeRpc()
@@ -736,8 +763,8 @@ Communication:
 
 ## 4.7 LEADERBOARD
 
-### colosseum-leaderboard.js (window.ColosseumLeaderboard)
-- DEFINED IN: colosseum-leaderboard.js
+### src/leaderboard.ts (ColosseumLeaderboard)
+- DEFINED IN: src/leaderboard.ts
 - TABS: Elo, Wins, Streak
 - TIME FILTERS: All time, This week, Today
 - MY RANK: Shows current user's position
@@ -749,8 +776,8 @@ Communication:
 
 ## 4.8 ACHIEVEMENT / MILESTONE SYSTEM
 
-### colosseum-tokens.js Milestone Subsystem
-- DEFINED IN: colosseum-tokens.js (within ColosseumTokens module)
+### src/tokens.ts Milestone Subsystem
+- DEFINED IN: src/tokens.ts (within ColosseumTokens module)
 - 13 ONE-TIME MILESTONES:
   - first_hot_take (25 tokens), first_debate (50), first_vote (10), first_reaction (5)
   - first_ai_sparring (15), first_prediction (10)
@@ -763,14 +790,14 @@ Communication:
 ### claim_milestone(p_milestone_key) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER, Session 72)
 - PURPOSE: Award one-time milestone reward (tokens and/or streak freezes)
-- CALLED FROM: colosseum-tokens.js → claimMilestone(key)
+- CALLED FROM: src/tokens.ts → claimMilestone(key)
 - DEDUP: Checks token_earn_log for existing claim. Returns "Already claimed" if duplicate.
 - BLAST RADIUS: If dedup breaks, users claim milestones multiple times → token inflation.
 
 ### get_my_milestones() (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER, Session 72)
 - PURPOSE: Returns list of claimed milestone keys + streak freeze count
-- CALLED FROM: colosseum-tokens.js → _loadMilestones() on init
+- CALLED FROM: src/tokens.ts → _loadMilestones() on init
 - BLAST RADIUS: Low — read-only. But if it returns wrong list, milestones re-fire (caught by server dedup).
 
 ### Streak Freeze Mechanic
@@ -780,7 +807,7 @@ Communication:
 - BLAST RADIUS: If freeze count wrong, user loses streak when they shouldn't (or keeps it when they shouldn't).
 
 ### Profile Milestone Checks
-- CALLED FROM: colosseum-profile-depth.html → after saveSection() succeeds
+- CALLED FROM: moderator-profile-depth.html → after saveSection() succeeds
 - checkProfileMilestones() checks section count against 3/6/12 thresholds
 - BLAST RADIUS: Low — awards tokens for completing profile sections.
 
@@ -998,16 +1025,16 @@ Communication:
 - PRODUCTS: 3 subscription tiers (Contender $9.99/mo, Champion $19.99/mo, Creator $29.99/mo) + 4 token packs (50/$0.99, 250/$3.99, 600/$7.99, 1500/$14.99)
 - NOTE: Token packs are in the UI but tokens are currently earned-only, never purchased. Revenue model pivoted to B2B data licensing. Consumer purchases may reactivate later.
 
-### colosseum-payments.js (window.ColosseumPayments)
-- DEFINED IN: colosseum-payments.js
+### src/payments.ts (ColosseumPayments)
+- DEFINED IN: src/payments.ts
 - PURPOSE: Client-side module. Redirects to Stripe-hosted checkout. No payment logic on client — ever.
 - PROVIDES: .subscribe(tier, billing), .buyTokens(packId)
 - FLOW: User clicks UPGRADE/BUY → JS calls Edge Function → Edge Function creates Stripe Checkout session → user redirected to Stripe-hosted page → Stripe handles payment → webhook fires back
 - DEPENDS ON: ColosseumAuth (needs user ID for checkout session)
 - BLAST RADIUS: If Edge Function down, checkout fails silently. User sees nothing happen.
 
-### colosseum-paywall.js (window.ColosseumPaywall)
-- DEFINED IN: colosseum-paywall.js
+### src/paywall.ts (ColosseumPaywall)
+- DEFINED IN: src/paywall.ts
 - PURPOSE: 4 contextual paywall variants. gate() helper checks if user can access a feature.
 - PROVIDES: .gate(feature) → returns true (allowed) or shows paywall modal (blocked)
 - CALLED FROM: Various modules before gated actions
@@ -1054,7 +1081,7 @@ Communication:
 - PURPOSE: Proxy between frontend and Groq API for AI debate opponent
 - MODEL: Groq Llama 3.3 70B Versatile (NOT 3.1 — decommissioned)
 - PERSONALITY: Populist, full conversation memory, round-aware
-- CALLED FROM: colosseum-arena.js during AI sparring rounds
+- CALLED FROM: src/arena.ts during AI sparring rounds
 - SECURITY: CORS allowlist (Vercel domain only). GROQ_API_KEY in Supabase secrets.
 - BLAST RADIUS: If Groq key invalid or quota exceeded, AI never responds. Debate hangs with no fallback.
 - NOTE: Groq free tier 100k tokens/day. Bot army also consumes from this quota.
@@ -1062,7 +1089,7 @@ Communication:
 ### ai-moderator (Supabase Edge Function)
 - DEFINED IN: Supabase Edge Functions (Deno.serve)
 - PURPOSE: AI-powered debate scoring and ruling generation
-- CALLED FROM: Moderator UI panel (colosseum-arena.js moderator flow)
+- CALLED FROM: Moderator UI panel (src/arena.ts moderator flow)
 - STATUS: Deployed but NOT wired into main scoring flow. endCurrentDebate() uses random scoring, not this.
 - BLAST RADIUS: Low currently — it's an optional tool, not in the critical path.
 
@@ -1195,7 +1222,7 @@ Communication:
 - SCHEDULE: 5-minute cron. Sources /opt/colosseum/mirror.env for credentials.
 - DEPLOYS TO: colosseum-f30.pages.dev via wrangler (must use --branch=production for production)
 - OUTPUT: 50+ pages per build. Home, category pages (/category/sports.html etc), individual debate pages (/debate/{id}.html)
-- INCLUDES: Cloudflare Web Analytics beacon (Session 96), colosseum-analytics.js script tag (Session 94)
+- INCLUDES: Cloudflare Web Analytics beacon (Session 96), src/analytics.ts script tag (Session 94)
 - USES: Supabase anon key (not service_role) for reads
 - BLAST RADIUS: If cron fails, mirror goes stale. Bot posts link to pages that exist but have old content. If mirror.env has wrong credentials, builds fail silently.
 - LAND MINES: File is NOT in bot-army dir. Updating the bot-army copy does nothing. Cron runs from /opt/colosseum/.
@@ -1206,8 +1233,8 @@ Communication:
 
 ## 5B.1 FUNNEL ANALYTICS
 
-### colosseum-analytics.js (window.ColosseumAnalytics)
-- DEFINED IN: colosseum-analytics.js (auto-executes on load)
+### src/analytics.ts (window.ColosseumAnalytics)
+- DEFINED IN: src/analytics.ts (auto-executes on load)
 - PURPOSE: Funnel tracking for both mirror and app
 - AUTO-FIRES: page_view event on every page load
 - CAPTURES: Visitor UUID (generated + stored in localStorage), referrer, UTM params (source, medium, campaign), page URL
@@ -1220,7 +1247,7 @@ Communication:
 - DEFINED IN: Supabase RPC (SECURITY DEFINER)
 - PURPOSE: Universal event logger. Writes to event_log table.
 - CALLED FROM:
-  - colosseum-analytics.js (page_view, signup)
+  - src/analytics.ts (page_view, signup)
   - 20+ other RPCs internally (wired Session 34) — every significant server action logs an event
 - BLAST RADIUS: Low — event logging. If it breaks, analytics go dark but no user-facing features fail.
 
@@ -1255,7 +1282,7 @@ Communication:
 
 ### landing_votes (Table)
 - DEFINED IN: Supabase (Session 107)
-- PURPOSE: Persist anonymous votes on colosseum-debate-landing.html
+- PURPOSE: Persist anonymous votes on moderator-debate-landing.html
 - COLUMNS: id, topic_slug, side, fingerprint, created_at
 - UNIQUE INDEX: (topic_slug, fingerprint) — one vote per fingerprint per topic
 - RLS: Enabled with zero policies (RPC-only access)
@@ -1269,7 +1296,7 @@ Communication:
 ### get_landing_vote_counts(p_topic_slug) (RPC)
 - DEFINED IN: Supabase RPC (SECURITY DEFINER, granted to anon role)
 - RETURNS: Vote counts per side for a topic
-- FALLBACK: colosseum-debate-landing.html falls back to hardcoded placeholders if no real votes exist
+- FALLBACK: moderator-debate-landing.html falls back to hardcoded placeholders if no real votes exist
 
 ---
 
@@ -1278,14 +1305,14 @@ Communication:
 ## FLOW 1: Anonymous User → First Stake
 ```
 1. User arrives via Bluesky link → mirror page (Cloudflare)
-2. Clicks CTA → colosseum-plinko.html (signup)
+2. Clicks CTA → moderator-plinko.html (signup)
 3. Signs up → onAuthStateChange INITIAL_SESSION fires → ColosseumAuth.ready resolves
 4. Lands on index.html → spoke carousel renders
-5. Clicks ARENA tile → colosseum-arena.html loads
+5. Clicks ARENA tile → moderator-arena.html loads
 6. Clicks AI SPARRING → renderAISparring()
 7. Picks mode → closeModeSelect(forward=true) → replaceState [NO history.back]
 8. Pre-debate screen renders → showPreDebate()
-9. loadStakingPanel() renders in pre-debate → colosseum-staking.js
+9. loadStakingPanel() renders in pre-debate → src/staking.ts
 10. Panel shows "Answer 10 more questions to unlock staking" (tier gate)
 11. User goes to profile-depth → answers 10 questions → increment_questions_answered
 12. Returns to arena → now Tier 1 (5 token max)
@@ -1324,8 +1351,8 @@ Communication:
 ## FLOW 4: AI Debate Room Lifecycle (Full Detail)
 ```
 1. User on pre-debate screen → showPreDebate(debateId)
-2. Staking panel loads → renderStakingPanel() [colosseum-staking.js]
-3. Power-up loadout loads → renderLoadout() [colosseum-powerups.js]
+2. Staking panel loads → renderStakingPanel() [src/staking.ts]
+3. Power-up loadout loads → renderLoadout() [src/powerups.ts]
 4. User optionally stakes tokens → place_stake RPC (status must be 'pending')
 5. User optionally equips power-ups → equip_power_up RPC
 6. User clicks ENTER BATTLE → enterRoom(debateId)
@@ -1347,7 +1374,7 @@ Communication:
 ## FLOW 5: Spectator Journey
 ```
 1. User on arena lobby → sees active/recent debate cards
-2. Card has data-link → click navigates to colosseum-spectate.html?id=<debate_id>
+2. Card has data-link → click navigates to moderator-spectate.html?id=<debate_id>
 3. Page loads → get_arena_debate_spectator RPC (fetches debate + profiles)
 4. bump_spectator_count RPC (increments viewer counter)
 5. Message stream renders with round dividers
@@ -1375,7 +1402,7 @@ Communication:
 ## FLOW 7: Hot Take → Challenge → Arena
 ```
 1. User reads hot take in feed (index.html → category overlay)
-2. Taps ⚔️ BET button → _showChallengeModal() [colosseum-async.js]
+2. Taps ⚔️ BET button → _showChallengeModal() [src/async.ts]
 3. Writes counter-argument → submit → create_challenge RPC (50 token gate)
 4. Challenge record created (DB only — no auto-navigation)
 5. Opponent receives notification (challenge category)
@@ -1396,191 +1423,33 @@ Communication:
 
 ---
 
-# SECTION 6B: PAGE LOAD MAP (HTML → JS Module Loading Order)
+# SECTION 6B: PAGE LOAD MAP
 
-> Every page follows the same head pattern: Supabase CDN → config.js → auth.js → page-specific modules.
-> SRI hashes pin supabase-js to @2.98.0 on 6 pages. Must regenerate when upgrading.
-> Auth gate: pages that require login check ColosseumAuth.ready → if no session → redirect to Plinko.
+> **TypeScript migration complete (Session 142).** Every HTML page uses a single `<script type="module">` entry point via Vite. No legacy multi-script loading order. Vite resolves all imports at build time.
+> SRI hashes pin supabase-js to @2.98.0. Must regenerate when upgrading.
+> Auth gate: pages that require login check `await ColosseumAuth.ready` (6s timeout) → if no session → redirect to moderator-plinko.html.
 
-## index.html (Home — Spoke Carousel)
-```
-HEAD SCRIPTS (blocking):
-  1. @supabase/supabase-js@2.98.0 (CDN, SRI hash)
-  2. colosseum-config.js (credentials, flags, escHtml, showToast)
-  3. colosseum-auth.js (ColosseumAuth global)
+## Page Inventory
 
-BODY SCRIPTS (defer/end):
-  4. colosseum-tokens.js (ColosseumTokens — milestones, streaks, claims)
-  5. colosseum-notifications.js (ColosseumNotifications — bell polling)
-  6. colosseum-async.js (ColosseumAsync — hot takes, predictions, challenges)
-  7. colosseum-leaderboard.js (ColosseumLeaderboard)
-  8. colosseum-share.js (ColosseumShare)
-  9. colosseum-analytics.js (auto page_view)
+| File | Auth Gate | Key Modules | Notes |
+|------|-----------|-------------|-------|
+| `index.html` | YES | src/pages/home.ts, src/tokens.ts, src/notifications.ts, src/async.ts, src/leaderboard.ts, src/share.ts, src/analytics.ts | Spoke carousel home |
+| `moderator-arena.html` | YES | src/arena.ts, src/tokens.ts, src/tiers.ts, src/staking.ts, src/powerups.ts, src/analytics.ts | Arena lobby + 4 debate modes |
+| `moderator-groups.html` | NO (auth-gated actions only) | src/pages/groups.ts, src/analytics.ts | Discover/My Groups/Rankings — inline logic |
+| `moderator-settings.html` | YES | src/pages/settings.ts, src/analytics.ts | Settings + moderator category chips (F-47 Step 4) |
+| `moderator-profile-depth.html` | YES | src/pages/profile-depth.ts, src/tiers.ts, src/analytics.ts | 20 sections, 100 Qs |
+| `moderator-login.html` | NO | src/pages/login.ts, src/analytics.ts | OAuth-dominant. Stays for Supabase redirects — LM-047 |
+| `moderator-plinko.html` | NO | src/pages/plinko.ts, src/analytics.ts | 4-step signup gate |
+| `moderator-spectate.html` | NO | src/pages/spectate.ts, src/analytics.ts | Open to all |
+| `moderator-auto-debate.html` | NO | src/pages/auto-debate.ts, src/tokens.ts, src/analytics.ts | Ungated — rage-click funnel |
+| `moderator-debate-landing.html` | NO | src/pages/debate-landing.ts, src/analytics.ts | Ungated anonymous voting |
+| `moderator-terms.html` | NO | src/pages/terms.ts | Static |
 
-INIT:
-  await ColosseumAuth.ready → if no session → redirect to Plinko
-  appInit() → renders spoke carousel, wires category overlays, pull-to-refresh
-  Carousel counts loaded via inline ColosseumAuth.safeRpc()
-
-AUTH GATE: YES — redirects to Plinko if not logged in
-```
-
-## colosseum-arena.html (Arena)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio (Supabase CDN, config, auth)
-
-BODY SCRIPTS:
-  4. colosseum-tokens.js
-  5. colosseum-tiers.js (getTier, renderTierBadge — display only)
-  6. colosseum-staking.js (IIFE — renderStakingPanel, placeStake)
-  7. colosseum-powerups.js (IIFE — shop, equip, activate)
-  8. colosseum-arena.js (ColosseumArena — lobby, modes, debate room, pre-debate)
-  9. colosseum-analytics.js
-
-INIT:
-  await ColosseumAuth.ready → renderLobby()
-  Arena.js orchestrates staking.js and powerups.js calls
-
-AUTH GATE: YES
-DEPENDS ON: staking.js and powerups.js MUST use ColosseumAuth.safeRpc (LM-185)
-```
-
-## colosseum-groups.html (Groups)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-  (groups logic is INLINE in the HTML, not a separate .js module)
-
-INIT:
-  Uses ColosseumAuth for RPC calls (was broken pre-Session 67 — used createClient directly)
-  Tabs: Discover, My Groups, Rankings
-  Group detail view loads on openGroup()
-  URL param support: ?group=UUID opens group directly
-
-AUTH GATE: NO — loads for guests. Auth-gated actions (create, join) redirect to Plinko.
-```
-
-## colosseum-settings.html (Settings)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-
-INIT:
-  await ColosseumAuth.ready → loads settings toggles, account management, bio edit
-  Delete account flow: type "DELETE" → soft_delete_account RPC
-
-AUTH GATE: YES
-```
-
-## colosseum-profile-depth.html (Questionnaire)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-tiers.js (tier banner rendering)
-  5. colosseum-analytics.js
-
-INIT:
-  await ColosseumAuth.ready → loads 12 sections, renders tier banner
-  saveSection() → counts new answers → increment_questions_answered RPC → updates tier live
-  Migration sync on load: if server questions_answered=0 but localStorage has answers, one-time catch-up
-
-AUTH GATE: YES
-LAND MINES: LM-172 (tier thresholds), LM-173 (double-counting prevention)
-```
-
-## colosseum-plinko.html (Signup Gate)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-
-INIT:
-  4-step signup: Step 1 OAuth (Google/Apple/email) → Step 2 Age Gate → Step 3 Username → Step 4 Done
-  On successful auth → redirects to index.html (or returnTo param)
-
-AUTH GATE: NO — this IS the auth gate. Logged-in users skip to home.
-```
-
-## colosseum-login.html (Login)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-
-INIT:
-  OAuth dominant (Google, Apple). Email collapsed behind toggle.
-  Password reset modal.
-  On success → redirect to returnTo or index.html
-
-AUTH GATE: NO
-```
-
-## colosseum-spectate.html (Spectator View)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-
-INIT:
-  Reads debate ID from URL params
-  get_arena_debate_spectator RPC → loads debate + profiles
-  bump_spectator_count RPC → increments viewer count
-  5-second polling for live debates
-
-AUTH GATE: NO — spectating is open to all
-```
-
-## colosseum-auto-debate.html (AI vs AI Debate Page)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-tokens.js (claimVote on voting)
-  5. colosseum-analytics.js
-
-INIT:
-  Auto-fetches latest debate ID if none in URL (Session 68 fix)
-  Loads auto_debate data from Supabase
-  Renders rounds, scorecard, judge's take
-  Voting via cast_auto_debate_vote RPC (ungated)
-  More Debates discovery section (E279/E280, Session 97)
-
-AUTH GATE: NO — ungated voting, rage-click funnel
-```
-
-## colosseum-debate-landing.html (Landing Page)
-```
-HEAD SCRIPTS:
-  1-3. Same head trio
-
-BODY SCRIPTS:
-  4. colosseum-analytics.js
-
-INIT:
-  Hardcoded DEBATES object with demo topics
-  Vote buttons → cast_landing_vote RPC (anon, fingerprint dedup)
-  get_landing_vote_counts RPC → real vote counts (falls back to placeholders)
-  Category pills link to /?cat=slug
-  downloadCard() for share card generation
-
-AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
-```
+## Key Rules (Post-TS Migration)
+- Never add legacy `<script src="">` tags to any HTML page
+- Every new page gets one `<script type="module">` — Vite handles the rest
+- Auth-gated pages: copy the 6s `Promise.race` gate pattern from LM-084
+- Exempt from auth gate: moderator-auto-debate.html, moderator-debate-landing.html, moderator-login.html, moderator-plinko.html, moderator-terms.html, moderator-privacy.html
 
 ---
 
@@ -1591,7 +1460,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 - Use `ColosseumAuth.safeRpc()` in IIFE modules — never bare `safeRpc()` (doesn't exist at window scope)
 - Use `replaceState` for forward navigation in overlays — never `history.back()` for forward
 - Wrap event listener callbacks in arrow functions when target function has boolean params: `() => fn()` not `fn`
-- Use `escHtml()` from colosseum-config.js for HTML escaping — never duplicate the function
+- Use `escHtml()` from src/config.ts for HTML escaping — never duplicate the function
 - Insert new debates as status `'pending'` — flip to `'live'` in `enterRoom()` only
 - Gate all table writes behind SECURITY DEFINER RPCs — never direct INSERT/UPDATE from client
 - Run `sanitize_text()` on all user-provided text inside RPCs before storage
@@ -1627,7 +1496,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 - Insert debates with status `'live'` directly — always start as `'pending'`
 - Trust the guard trigger to protect columns beyond its actual 4 (level, xp, streak_freezes, questions_answered)
 - Assume the drawio edge map is current — use THIS document instead
-- Modify tier thresholds in only one place — client (colosseum-tiers.js) AND server RPCs must match
+- Modify tier thresholds in only one place — client (src/tiers.ts) AND server RPCs must match
 - Use `history.back()` in forward navigation — replaceState only
 - Set `activated_at` without also setting `activated = true` — frontend reads the boolean
 - Reference column `tokens` in any RPC — the column is `token_balance`
@@ -1665,31 +1534,44 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 
 | File | Layer | Exposes | Key Dependencies |
 |------|-------|---------|-----------------|
-| colosseum-config.js | Foundation | window.ColosseumConfig, escHtml(), showToast() | None (loaded first) |
-| colosseum-auth.js | Defense | window.ColosseumAuth (.ready, .safeRpc, .getUser, .getProfile) | config.js, Supabase SDK |
-| colosseum-tokens.js | Defense | window.ColosseumTokens (.claimHotTake, .claimReaction, etc.) | auth.js (safeRpc) |
-| colosseum-tiers.js | Defense | window.ColosseumTiers (.getTier, .renderTierBadge) | None (pure utility) |
-| colosseum-staking.js | Arena | IIFE (no global) — called from arena.js | auth.js (ColosseumAuth.safeRpc) |
-| colosseum-powerups.js | Arena | IIFE (no global) — called from arena.js | auth.js (ColosseumAuth.safeRpc) |
-| colosseum-arena.js | Arena | window.ColosseumArena (lobby, matchmaking, debate room, pre-debate) | auth.js, staking.js, powerups.js, tokens.js |
-| colosseum-webrtc.js | Arena | window.ColosseumWebRTC (live audio via Supabase Realtime) | Supabase Realtime |
-| colosseum-voicememo.js | Arena | window.ColosseumVoiceMemo (async voice recording) | None |
-| colosseum-scoring.js | Arena | window.ColosseumScoring (Elo, XP, leveling — SELECT only) | None |
-| colosseum-home.js | Foundation | Home screen logic (legacy, superseded by inline carousel) | auth.js |
-| colosseum-async.js | Social | window.ColosseumAsync (hot takes, predictions, challenges) | auth.js, tokens.js |
-| colosseum-notifications.js | Social | window.ColosseumNotifications | auth.js |
-| colosseum-leaderboard.js | Social | window.ColosseumLeaderboard | auth.js |
-| colosseum-payments.js | Payments | window.ColosseumPayments (.subscribe, .buyTokens) | auth.js, Stripe SDK |
-| colosseum-paywall.js | Payments | window.ColosseumPaywall (.gate) | auth.js |
-| colosseum-share.js | Growth | window.ColosseumShare | config.js |
-| colosseum-cards.js | Growth | window.ColosseumCards (canvas share card gen) | None |
-| colosseum-analytics.js | Growth | window.ColosseumAnalytics (page_view, events) | Supabase anon client |
+| src/config.ts | Foundation | ModeratorConfig, escapeHTML(), showToast(), friendlyError() | None (loaded first) |
+| src/auth.ts | Defense | ColosseumAuth (.ready, .safeRpc, .getUser, .getProfile) | src/config.ts, Supabase SDK |
+| src/navigation.ts | Foundation | register/call pattern for page nav. Zero window.navigateTo refs. | None |
+| src/nudge.ts | Foundation | Polite engagement toasts. Suppression: once/session, 24h cooldown, 3-per-session cap. | src/auth.ts |
+| src/tokens.ts | Defense | ColosseumTokens (.claimHotTake, .claimReaction, etc.) | src/auth.ts (safeRpc) |
+| src/tiers.ts | Defense | ColosseumTiers (.getTier, .renderTierBadge, .renderTierProgress) | None (pure utility) |
+| src/staking.ts | Arena | placeStake(), getPool(), settleStakes(), parimutuel pool | src/auth.ts (safeRpc) |
+| src/powerups.ts | Arena | buy, equip, shop, loadout, 4 power-ups | src/auth.ts (safeRpc) |
+| src/arena.ts | Arena | Lobby, 4 modes, matchmaking, debate room, AI sparring, moderator UX, ranked/casual | src/auth.ts, src/staking.ts, src/powerups.ts, src/tokens.ts |
+| src/webrtc.ts | Arena | WebRTC audio via Supabase Realtime channels | Supabase Realtime |
+| src/voicememo.ts | Arena | Voice memo record/playback/send | None |
+| src/scoring.ts | Arena | Elo, XP, leveling (SELECT reads only) | None |
+| src/async.ts | Social | Hot takes feed, predictions, rivals display, react toggle, challenge modal | src/auth.ts, src/tokens.ts |
+| src/notifications.ts | Social | Notification center, 30s poll | src/auth.ts |
+| src/leaderboard.ts | Social | Elo/Wins/Streak tabs, time filters, My Rank | src/auth.ts |
+| src/reference-arsenal.ts | Social | 5-step forge form, reference card renderer, arsenal + library browser | src/auth.ts (safeRpc), src/config.ts |
+| src/payments.ts | Payments | Stripe Checkout, token purchases | src/auth.ts, Stripe SDK |
+| src/paywall.ts | Payments | 4 contextual paywall variants, gate() helper | src/auth.ts |
+| src/share.ts | Growth | Web Share API, clipboard, referrals, deep links | src/config.ts |
+| src/cards.ts | Growth | Canvas share card generator, 4 sizes, ESPN aesthetic | None |
+| src/analytics.ts | Growth | Visitor UUID, auto page_view, referrer/UTM. Uses raw fetch() — fires before auth init. | Supabase anon client |
+| src/pages/home.ts | Foundation | Spoke carousel home screen logic | src/auth.ts |
+| src/pages/login.ts | Foundation | OAuth-dominant login, password reset | src/auth.ts |
+| src/pages/plinko.ts | Foundation | 4-step signup gate | src/auth.ts |
+| src/pages/settings.ts | Foundation | Settings toggles, moderator category chips (F-47) | src/auth.ts |
+| src/pages/profile-depth.ts | Foundation | 20 sections, 100 Qs, saves to DB via safeRpc | src/auth.ts, src/tiers.ts |
+| src/pages/debate-landing.ts | Growth | Landing page, anonymous votes, fingerprint dedup | src/auth.ts (anon RPCs) |
+| src/pages/auto-debate.ts | Growth | AI vs AI debate page, ungated voting | src/auth.ts, src/tokens.ts |
+| src/pages/spectate.ts | Arena | Standalone spectator view | src/auth.ts |
+| src/pages/groups.ts | Social | Groups discover/detail/challenges | src/auth.ts |
+| src/pages/terms.ts | Foundation | Terms of Service static page | None |
 | ai-sparring (Edge Func) | Arena | Groq proxy for AI debate opponent | GROQ_API_KEY secret |
 | ai-moderator (Edge Func) | Arena | AI scoring/ruling generation | GROQ_API_KEY secret |
 | stripe-checkout (Edge Func) | Payments | Creates Stripe Checkout sessions | STRIPE_SECRET_KEY secret |
 | stripe-webhook (Edge Func) | Payments | Processes Stripe webhook events | STRIPE_WEBHOOK_SECRET secret |
-| bot-engine.js (VPS) | Bot Army | PM2 orchestrator, leg1/2/3 cron cycles | bot-config.js, all leg files |
-| bot-config.js | Bot Army | Env loader, flags, platform config | .env (VPS authoritative, LM-166) |
+| api/profile.js (Vercel) | Growth | Public profile pages at /u/username, dynamic OG tags | Supabase anon key |
+| bot-engine.ts (VPS) | Bot Army | PM2 orchestrator, leg1/2/3 cron cycles | bot-config.ts, all leg files |
+| bot-config.ts (VPS) | Bot Army | Env loader, flags, platform config | .env (VPS authoritative, LM-166) |
 | leg2-news-scanner.js (VPS) | Bot Army | RSS headline scanner, 7 feeds | None |
 | leg2-debate-creator.js (VPS) | Bot Army | Headline → hot take → Supabase → URL | ai-generator, supabase-client |
 | leg2-bluesky-poster.js (VPS) | Bot Army | Image post to Bluesky | card-generator, config.bluesky |
@@ -1698,13 +1580,7 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | card-generator.js (VPS) | Bot Army | ESPN-style PNG share cards | canvas npm |
 | category-classifier.js (VPS) | Bot Army | Headline → category routing | None |
 | supabase-client.js (VPS) | Bot Army | Service role client + CATEGORY_TO_SLUG | SUPABASE_SERVICE_KEY |
-| mirror-generator.js (VPS) | Growth | Static site generator → Cloudflare Pages | mirror.env, wrangler |
-| colosseum-spectate.html | Arena | Standalone spectator view page | auth.js, config.js |
-| colosseum-auto-debate.html | Growth | AI vs AI debate page, ungated voting | auth.js, tokens.js |
-| colosseum-debate-landing.html | Growth | Landing page, anonymous votes, fingerprint dedup | auth.js (anon RPCs) |
-| colosseum-plinko.html | Defense | 4-step signup gate | auth.js, config.js |
-| colosseum-groups.html | Social | Groups discover/detail/challenges (inline JS) | auth.js, config.js |
-| src/reference-arsenal.ts | Social | window.ColosseumArsenal (forgeReference, verifyReference, citeReference, challengeReference, showForgeForm, renderArsenal, renderLibrary) | auth.ts (safeRpc), config.ts (escapeHTML, showToast) |
+| colosseum-mirror-generator.js (VPS) | Growth | Static site generator → Cloudflare Pages | mirror.env, wrangler |
 
 ---
 
@@ -1729,8 +1605,9 @@ AUTH GATE: NO — fully ungated, designed for anonymous traffic from bot links
 | 150 | No wiring changes | edit_reference log_event bug fixed (named params). Verify flow confirmed end-to-end. Login/signup flow problems identified (LM-189). |
 | 151 | No wiring changes | Full log_event named-param audit. 29 calls fixed across 26 RPCs. LM-188 closed. Zero positional calls remain. |
 | 178 | Section 4C added | Live Debate Feed layer: debate_feed_events table (append-only B2B archive, broadcast trigger, 4 RPCs: insert_feed_event, get_feed_events, score_debate_comment, pin_feed_event). Moderator Dropout system: mod_dropout_log table, 3 RPCs (record_mod_dropout, check_mod_cooldown, get_mod_cooldown_minutes). arena_debates.scoring_budget_per_round column added. LM-191/192/193/194 added. 8 new ALWAYS rules + 4 new NEVER rules. |
+| 192 | Full doc overhaul | Title updated to The Moderator. All colosseum-*.html → moderator-*.html throughout. All colosseum-*.js → src/*.ts throughout. Container diagram counts corrected. Tier thresholds updated (Session 164: 100 questions, all tiers reachable — UNREACHABLE labels removed). Section 3.7 Moderator System fully rewritten for F-47 (browse_mod_queue, request_to_moderate, request_mod_for_debate, get_debate_mod_status, renderModScoring). Section 6B Page Load Map rewritten for post-TS-migration reality (single module entry point per page). Section 8 Source Map overhauled: navigation.ts and nudge.ts added, HTML pages moved to pages table, legacy entries cleaned up, IIFE descriptions removed, api/profile.js added. |
 
 ---
 
-> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 178.
+> **STATUS: COMPLETE.** All layers mapped. Session 122 initial build. Updated through Session 192.
 > Future additions: As new features are built, add entries here. Update affected entries at end of each session.

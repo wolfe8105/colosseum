@@ -1,6 +1,6 @@
-# THE COLOSSEUM — LAND MINE MAP
+# THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 151 (March 21, 2026) — Full rebuild from git history recovery + merge of all additions through Session 151
+### Last Updated: Session 192 (March 28, 2026) — Filename updates, factual corrections (LM-172, LM-084, LM-022)
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -339,12 +339,11 @@ FIX: noOpLock must be in createClient config. auth.js must use onAuthStateChange
 HISTORY:
   Session 26: Found orphaned locks hanging getSession. Added 3s timeout (band-aid).
   Session 27: Killed locks with value: undefined in auth.js init(). Broke signOut.
-  Session 30: Tried separate colosseum-locks-fix.js before CDN. Global mock too late —
+  Session 30: Tried separate locks-fix.js before CDN. Global mock too late —
     GoTrueClient captures lock reference at module parse time, not at call time.
   Session 31: noOpLock in createClient config. auth.js rebuilt from scratch.
     INITIAL_SESSION sole init path. No await in callback. VERIFIED WORKING.
 TRADE-OFF: No cross-tab session sync. Acceptable because app is mobile-first.
-NOTE: colosseum-locks-fix.js still loads on all pages but is dead weight. Harmless.
 ```
 
 ---
@@ -360,7 +359,7 @@ BITES YOU WHEN: Credentials are present but wrong/expired — app silently enter
 SYMPTOM: Login "works" instantly. Profile shows "Gladiator", 1200 ELO. Hot takes
   are hardcoded. No network requests to Supabase visible in DevTools.
 FIX: Check DevTools Network tab. If no requests to faomczmipsccwbhpivmp.supabase.co,
-  you're in placeholder mode. Verify credentials in colosseum-config.js are current.
+  you're in placeholder mode. Verify credentials in src/config.ts are current.
 ```
 
 ---
@@ -538,7 +537,7 @@ SESSIONS: Built Session 16
 
 ## LM-036: Stripe is SANDBOX mode
 ```
-DECISION: All Stripe keys in colosseum-config.js and Vercel env are sandbox/test keys
+DECISION: All Stripe keys in src/config.ts and Vercel env are sandbox/test keys
 PROTECTS: No real money flows during development
 BITES YOU WHEN: You test payments and they work — and then forget it's fake.
   Real users cannot subscribe. Webhooks work but money doesn't move.
@@ -690,18 +689,18 @@ PROTECTS: Unauthenticated users always have somewhere valid to go
 BITES YOU WHEN: You strip guest fallbacks from Members Zone before Plinko Gate exists.
   Unauthenticated users hit a blank screen or JavaScript crash instead of signup flow.
 SYMPTOM: App completely inaccessible to any new user. Bot army funnel is dead.
-FIX: colosseum-plinko.html must be deployed and tested before any page removes
+FIX: moderator-plinko.html must be deployed and tested before any page removes
   its guest fallback logic. Do not do these in the same deploy.
 SESSIONS: Decision Session 28/29
 ```
 
 ---
 
-## LM-047: colosseum-login.html stays — Plinko Gate is a NEW file
+## LM-047: moderator-login.html stays — Plinko Gate is a NEW file
 ```
-DECISION: Plinko Gate = colosseum-plinko.html. login.html is NOT deleted or replaced.
-PROTECTS: Existing password reset links, email confirm links point to colosseum-login.html
-BITES YOU WHEN: You delete or rename colosseum-login.html.
+DECISION: Plinko Gate = moderator-plinko.html. login.html is NOT deleted or replaced.
+PROTECTS: Existing password reset links, email confirm links point to moderator-login.html
+BITES YOU WHEN: You delete or rename moderator-login.html.
   All Supabase auth redirect URLs (email verification, password reset) break.
   Users who click email links get 404.
 SYMPTOM: Email confirmation links 404. Password reset links 404. User support nightmare.
@@ -736,48 +735,49 @@ DECISION: All modules expose themselves as window.ColosseumAuth, window.Colosseu
   window.ColosseumArena, etc. No ES modules, no import/export.
 PROTECTS: Works with CDN-delivered HTML without a build step
 BITES YOU WHEN: A page loads a module before its dependency is loaded.
-  e.g. colosseum-async.js calls ColosseumAuth.supabase before auth.js has run.
+  e.g. src/async.ts calls ColosseumAuth.supabase before auth.js has run.
 SYMPTOM: "Cannot read property 'supabase' of undefined" or similar.
   Works on fast connections (scripts load in time), breaks on slow (race condition).
 FIX: Script tags in HTML must be in dependency order:
-  1. colosseum-config.js
-  2. colosseum-auth.js
+  1. src/config.ts
+  2. src/auth.ts
   3. all other modules
   Never reorder script tags. Never lazy-load dependencies.
 ```
 
 ---
 
-## LM-050: Feature flags in colosseum-config.js — must be enabled to show UI
+## LM-050: Feature flags in src/config.ts — must be enabled to show UI
 ```
 DECISION: VERSION 2.2.0 feature flags: followsUI, predictionsUI, rivals, arena (NT 4.27)
 PROTECTS: Ships code without showing incomplete features
 BITES YOU WHEN: You build a new feature but forget to add/enable its feature flag.
   Or you disable a flag thinking it's temporary and forget to re-enable.
 SYMPTOM: Feature is coded, deployed, but UI never shows. No error.
-FIX: When building any new feature, add its flag to colosseum-config.js AND
+FIX: When building any new feature, add its flag to src/config.ts AND
   verify it's set to true before testing. Check config version number matches
   what's deployed to Vercel.
 ```
 
 ---
 
-## LM-051: Script load order — Supabase CDN → config → auth (locks-fix is dead weight)
+## LM-051: Script load order — Supabase CDN → config → auth
 ```
 DECISION: Script tags in <head> must be in this order:
-  1. colosseum-locks-fix.js (DEAD WEIGHT — does nothing, harmless, can remove eventually)
-  2. Supabase CDN
-  3. colosseum-config.js
-  4. colosseum-auth.js (contains the REAL fix: noOpLock in createClient config)
+  1. Supabase CDN
+  2. src/config.ts (credentials, flags, escapeHTML, showToast)
+  3. src/auth.ts (contains the noOpLock fix in createClient config)
 PROTECTS: Graceful auth initialization, no orphaned locks
 BITES YOU WHEN: You reorder scripts, add async/defer.
   - CDN after auth = placeholder mode, no Supabase calls
   - config after auth = auth can't find credentials
-  - You remove the noOpLock from createClient in auth.js (see LM-022)
+  - You remove the noOpLock from createClient in auth.ts (see LM-022)
 SYMPTOM: Various — guest mode, placeholder mode, hanging RPCs, or all three.
 FIX: Maintain CDN → config → auth order. Never defer or async any of them.
-  The real locks fix lives INSIDE auth.js (createClient config), not in locks-fix.js.
+  The real locks fix lives INSIDE auth.ts (createClient config).
 SESSIONS: LM-022 explains the full locks history. Updated Session 31.
+  TypeScript migration (Session 142): zero legacy script tags remain.
+  Each HTML page uses single <script type="module"> entry point.
 ```
 
 ---
@@ -848,7 +848,7 @@ PROTECTS: Content appears in correct category feeds
 BITES YOU WHEN: A hot take is posted with section = 'Sports' but overlay queries
   section = 'sports' (case mismatch). Or bot creates take with wrong section name.
 SYMPTOM: Take exists in DB but never appears in any category feed.
-FIX: Verify section values are lowercase and match exactly what colosseum-config.js
+FIX: Verify section values are lowercase and match exactly what src/config.ts
   defines for categories. Bot army must use the same keys.
 ```
 
@@ -1146,8 +1146,9 @@ SESSION: 31.
 ## LM-084: Members Zone auth gate pattern — copy to every new page
 ```
 DECISION (Session 32): Settings + profile-depth pages now gate on auth at DOMContentLoaded.
-  Pattern: await ColosseumAuth.ready (4s timeout) → if no session and not placeholder mode
-  → redirect to colosseum-plinko.html. index.html has same gate in its appInit().
+  Pattern: await ColosseumAuth.ready (6s timeout — fixed Session 163, was 4s) → if no
+  session and not placeholder mode → redirect to moderator-plinko.html.
+  index.html has same gate in its appInit().
 PROTECTS: Three-zone architecture. Members Zone assumes valid session. No guest fallback.
 BITES YOU WHEN: You add a new Members Zone HTML page and forget the auth gate.
   Guest arrives via direct URL → sees broken app with null profile, RPC errors everywhere.
@@ -1156,15 +1157,15 @@ SYMPTOM: Guest lands in Members Zone, no redirect, broken UI, console full of au
 FIX: Every new Members Zone page must include at DOMContentLoaded:
   const session = await Promise.race([
     ColosseumAuth?.ready?.then(() => ColosseumAuth.currentUser),
-    new Promise(r => setTimeout(r, 4000))
+    new Promise(r => setTimeout(r, 6000))
   ]);
   if (!session && !ColosseumAuth?.isPlaceholderMode?.()) {
-    window.location.href = 'colosseum-plinko.html'; return;
+    window.location.href = 'moderator-plinko.html'; return;
   }
-EXEMPT PAGES: colosseum-auto-debate.html, colosseum-debate-landing.html (ungated by design
-  per LM-067 rage-click funnel). colosseum-login.html (stays for Supabase redirects per LM-047).
-  colosseum-plinko.html (IS the gate). colosseum-terms.html (static).
-SESSION: 32.
+EXEMPT PAGES: moderator-auto-debate.html, moderator-debate-landing.html (ungated by design
+  per LM-067 rage-click funnel). moderator-login.html (stays for Supabase redirects per LM-047).
+  moderator-plinko.html (IS the gate). moderator-terms.html (static).
+SESSION: 32. Timeout corrected Session 163.
 ```
 
 ---
@@ -1259,7 +1260,7 @@ SYMPTOM: Regulatory risk. Also: users may believe AI debates reflect
   platform editorial positions.
 FIX: Every page/component that renders AI-generated content must include
   the AI badge from colosseum-legal-snippets.html. Badge CSS + HTML in
-  that file. Check: colosseum-auto-debate.html (always), arena AI sparring
+  that file. Check: moderator-auto-debate.html (always), arena AI sparring
   (always), debate-landing (conditional on debate type).
 SESSION: 36.
 ```
@@ -1277,7 +1278,7 @@ BITES YOU WHEN: You add a new data collection mechanism (analytics, tracking,
   Or when the B2B data play launches and the privacy policy doesn't cover
   the sharing of aggregated analytics with commercial partners.
 SYMPTOM: FTC enforcement action. State AG investigation. Civil penalties.
-FIX: Privacy policy (colosseum-privacy.html) must be updated EVERY TIME
+FIX: Privacy policy (moderator-privacy.html) must be updated EVERY TIME
   data practices change. Current policy covers aggregated/de-identified
   sharing (Section 5). If you ever share identifiable data, the policy
   must be updated FIRST, before the sharing begins.
@@ -1381,7 +1382,7 @@ SYMPTOM: Copyright infringement lawsuit with no safe harbor defense.
 FIX: Register at copyright.gov/dmca-directory. $6. Takes 5 minutes.
   Requires: legal name, mailing address, email (dmca@thecolosseum.app).
   Set a calendar reminder to renew every 3 years.
-  Also: publish the DMCA agent contact info on colosseum-terms.html
+  Also: publish the DMCA agent contact info on moderator-terms.html
   (already done in Session 36 Terms of Service rebuild).
 SESSION: 36.
 ```
@@ -1674,8 +1675,8 @@ FIX: When upgrading supabase-js:
   2. Regenerate hash: shasum -b -a 384 supabase-js-file | awk '{print $1}' | xxd -r -p | base64
   3. Update integrity="sha384-..." on all 6 pages
   4. Test before pushing to main (LM-033 — Vercel auto-deploys)
-  Files: index.html, colosseum-login.html, colosseum-plinko.html,
-  colosseum-profile-depth.html, colosseum-settings.html, colosseum-auto-debate.html
+  Files: index.html, moderator-login.html, moderator-plinko.html,
+  moderator-profile-depth.html, moderator-settings.html, moderator-auto-debate.html
 SESSION: 40.
 ```
 
@@ -1794,7 +1795,7 @@ BITES YOU WHEN: You change the threshold without updating both
   the SQL function AND the JS confirm message text.
 SYMPTOM: SQL says 25%, JS message says different number.
 FIX: Threshold lives in check_ranked_eligible() function body.
-  JS confirm dialog references it in colosseum-arena.js showRankedPicker().
+  JS confirm dialog references it in src/arena.ts showRankedPicker().
 SESSION: 44.
 ```
 
@@ -1922,7 +1923,7 @@ SYMPTOM: Buttons stop working. Data stops loading. No error shown to user.
 FIX: Use ColosseumAuth.safeRpc('fn_name', { args }) instead of supabase.rpc().
   On 401: refreshes session once, retries. On refresh failure: signs user out
   cleanly so they land on login page.
-  Added to colosseum-auth.js Session 47. Not yet backfilled into all modules —
+  Added to src/auth.ts Session 47. Not yet backfilled into all modules —
   modules still use supabase.rpc() directly. Migrate high-traffic modules
   (arena, home, async) when touching those files.
 SESSION: 47.
@@ -1955,11 +1956,11 @@ SESSION: 49 (caught via research before shipping).
 
 ## LM-142: returnTo parameter is an open redirect vector
 ```
-DECISION (Session 50): Added ?returnTo= parameter to colosseum-plinko.html
-  and colosseum-login.html so users return where they came from after auth.
+DECISION (Session 50): Added ?returnTo= parameter to moderator-plinko.html
+  and moderator-login.html so users return where they came from after auth.
 BITES YOU WHEN: Attacker crafts a link like
-  colosseum-plinko.html?returnTo=//evil.com or
-  colosseum-plinko.html?returnTo=javascript:alert(1).
+  moderator-plinko.html?returnTo=//evil.com or
+  moderator-plinko.html?returnTo=javascript:alert(1).
   Protocol-relative URLs (//evil.com) bypass a naive "no ://" check.
   javascript: and data: URIs bypass a "starts with /" check if you don't
   also block "//".
@@ -2119,8 +2120,8 @@ BITES YOU WHEN: supabase-client.js line 92 builds URLs via:
   This was live from Session 51 (DRY_RUN=false) through Session 59.
 SYMPTOM: pm2 logs show "✅ Debate created: https://colosseum-six.vercel.appnull?id=..."
   No errors. No warnings. Links look almost right at a glance.
-FIX: Set debateLandingPath to '/colosseum-debate-landing.html'.
-  sed -i "s|debateLandingPath: null,|debateLandingPath: '/colosseum-debate-landing.html',|"
+FIX: Set debateLandingPath to '/moderator-debate-landing.html'.
+  sed -i "s|debateLandingPath: null,|debateLandingPath: '/moderator-debate-landing.html',|"
 RULE: NEVER set a URL path segment to null in a config object.
   Use empty string '' if you want no path, or remove the property entirely.
   JavaScript string concatenation with null produces the literal word "null".
@@ -2264,20 +2265,20 @@ SESSION: 60.
 
 ---
 
-## LM-155: showToast() and friendlyError() live in colosseum-config.js
+## LM-155: showToast() and friendlyError() live in src/config.ts
 ```
 DECISION (Session 60): Global toast and error translation added to
-  colosseum-config.js as ColosseumConfig.showToast() and
+  src/config.ts as ColosseumConfig.showToast() and
   ColosseumConfig.friendlyError().
 BITES YOU WHEN: You call showToast() or friendlyError() from a page that
-  doesn't load colosseum-config.js. Currently all pages do, but if a new
+  doesn't load src/config.ts. Currently all pages do, but if a new
   lightweight page is added without the config script, these functions
   won't exist. Optional chaining (ColosseumConfig?.showToast?.()) protects
   against crashes, but the toast simply won't appear.
 SYMPTOM: No toast shown, no error thrown. Silent failure.
-FIX: Ensure colosseum-config.js is loaded on every page that uses these
+FIX: Ensure src/config.ts is loaded on every page that uses these
   functions. Or add a null check with console.warn fallback.
-RULE: showToast() and friendlyError() require colosseum-config.js.
+RULE: showToast() and friendlyError() require src/config.ts.
   All arena error patches use optional chaining as a safety net.
 SESSION: 60.
 ```
@@ -2383,7 +2384,7 @@ BITES YOU WHEN: You add a new milestone key in JS but forget to add it to the
   won't block the new key, so users could double-claim.
 SYMPTOM: "Unknown milestone" error, or milestone claimed twice under different keys.
 FIX: Milestone keys must match exactly between JS (MILESTONES object in
-  colosseum-tokens.js) and SQL (VALUES list in claim_milestone()). Never
+  src/tokens.ts) and SQL (VALUES list in claim_milestone()). Never
   rename a key after go-live without a migration to update existing earn logs.
 SESSION: 72.
 ```
@@ -2434,7 +2435,7 @@ SESSION: 77.
 ## LM-163: card-generator.js requires `canvas` npm package on VPS
 ```
 DECISION (Session 77): Server-side share card generation uses the `canvas`
-  npm package (node-canvas) to port colosseum-cards.js to Node.js.
+  npm package (node-canvas) to port src/cards.ts to Node.js.
 PROTECTS: Bot army can generate ESPN-style debate result PNGs without a browser.
 BITES YOU WHEN: VPS rebuild or npm clean install forgets to install canvas.
   canvas has native dependencies (Cairo, Pango) — `npm install canvas` must
@@ -2575,7 +2576,7 @@ SCHEMA DIFFERENCES:
   - format (debates) vs mode (arena_debates) — different enum values
   - debates has elo_change_a/b, recording_url, transcript — arena doesn't
   - arena has score_a/score_b — debates doesn't
-CLIENT VIOLATIONS: colosseum-scoring.js L195 and L215 query `debates`
+CLIENT VIOLATIONS: src/scoring.ts L195 and L215 query `debates`
   table directly (bypassing castle defense RPC pattern).
 FIX: Session 101 consolidation plan (DEBATE-TABLE-CONSOLIDATION-PLAN.md):
   Expand arena_debates schema → migrate data → re-point FKs → update all
@@ -2588,12 +2589,12 @@ SESSION: 100 (identified), 101 (fix). RESOLVED Session 101.
 
 ## LM-170: landing_vote_counts table — anonymous votes on debate-landing page
 ```
-DECISION (Session 103): colosseum-debate-landing.html was localStorage-only for
+DECISION (Session 103): moderator-debate-landing.html was localStorage-only for
   voting. Added landing_vote_counts table + 2 SECURITY DEFINER RPCs
   (cast_landing_vote, get_landing_votes), both granted to anon role.
   RLS enabled with zero policies (deny all direct access).
 BITES YOU WHEN: You add new demo debates to the hardcoded DEBATES object in
-  colosseum-debate-landing.html but don't seed them in landing_vote_counts.
+  moderator-debate-landing.html but don't seed them in landing_vote_counts.
   The page will work fine (optimistic +1 render) but the counts won't persist
   server-side until someone actually votes.
 ALSO BITES YOU WHEN: You test in Claude.ai artifact preview and see
@@ -2636,17 +2637,18 @@ SESSION: 77 (streak_freezes added), 117 (questions_answered added, docs correcte
 ## LM-172: questions_answered — tier thresholds vs available questions
 ```
 DECISION (Session 117): Tier system has 6 tiers at 0/10/25/50/75/100 questions.
-  Current questionnaire has only 39 questions across 12 sections.
-  Users can reach Tier 2 (Contender, 25 questions) but NOT Tier 3+ (Gladiator
-  needs 50, Champion 75, Legend 100).
-BITES YOU WHEN: Marketing or UI implies users can reach Legend tier. They can't
-  yet. The tier banner correctly shows progress but the goal posts are unreachable.
-FIX: Either add more questions to the questionnaire, or recalibrate thresholds
-  to fit 39 questions (e.g., 5/10/20/30/39). Thresholds are defined in two places:
-  1. colosseum-tiers.js TIER_THRESHOLDS array (client display)
+  UPDATED Session 164: Questionnaire expanded from 39→100 questions across 20 sections
+  (8 new B2B-driven sections added). ALL tier thresholds are now reachable.
+  Tier 3 Gladiator (50 questions), Tier 4 Champion (75 questions), Tier 5 Legend
+  (100 questions) are all achievable.
+BITES YOU WHEN: You add new questions and accidentally allow the count to exceed
+  100 without updating the tier threshold ceiling. Or if you reduce the question
+  count without recalibrating thresholds.
+FIX: Thresholds are defined in two places:
+  1. src/tiers.ts TIER_THRESHOLDS array (client display)
   2. RPCs that enforce server-side (place_stake, purchase_power_up — Phase 2+)
   Both must change together.
-SESSION: 117.
+SESSION: 117 (documented), 164 (questionnaire expanded to 100 questions).
 ```
 
 ---
@@ -2781,7 +2783,7 @@ DECISION (Session 124): get_my_milestones and claim_milestone RPCs both
   is `earn_type`. Second bug: claim_milestone tried to store text milestone
   keys (like 'first_hot_take') in `reference_id` which is UUID type.
 BITES YOU WHEN: Any page loads (get_my_milestones fires on every page load
-  via colosseum-tokens.js init). Console shows 400 error on every page.
+  via src/tokens.ts init). Console shows 400 error on every page.
 SYMPTOM: "column action does not exist" 400 error in console on every page
   load. Milestones never load, milestone toasts never fire.
 FIX: Milestones stored as earn_type = 'milestone:key_name' pattern.
@@ -2835,7 +2837,7 @@ SESSION: 101 (thought it was done), 124 (last holdout found and fixed).
 
 ## LM-182: Double settle_stakes call in endCurrentDebate
 ```
-DECISION (Session 123): endCurrentDebate() in colosseum-arena.js called
+DECISION (Session 123): endCurrentDebate() in src/arena.ts called
   ColosseumStaking.settleStakes() twice — once from Session 109 (no
   multiplier param) and once from Session 110 (with power-up multiplier).
   Session 110 added the multiplier-aware version but didn't remove the
@@ -2903,7 +2905,7 @@ SESSION: 121 (found and fixed).
 
 ## LM-185: IIFE modules must use ColosseumAuth.safeRpc not bare safeRpc
 ```
-DECISION (Session 121): colosseum-staking.js and colosseum-powerups.js are
+DECISION (Session 121): src/staking.ts and src/powerups.ts are
   IIFEs (Immediately Invoked Function Expressions) that don't expose window
   globals. They call safeRpc() but safeRpc doesn't exist at window scope —
   it's a method on ColosseumAuth.

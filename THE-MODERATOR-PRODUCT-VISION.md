@@ -1,4 +1,4 @@
-# THE COLOSSEUM — PRODUCT VISION
+# THE MODERATOR — PRODUCT VISION
 ### The Design North Star — Read When Building Features
 ### Created: Session 35 (March 5, 2026)
 
@@ -40,7 +40,7 @@
 
 2.1.1. 92% of mobile users view video with sound off (Verizon Media / Publicis study).
 2.1.2. 41% of videos are completely incomprehensible without sound/captions.
-2.1.3. The Colosseum's core product is "listen to two people argue." If sound is off, product is invisible.
+2.1.3. The Moderator's core product is "listen to two people argue." If sound is off, product is invisible.
 2.1.4. Clubhouse proved this kills platforms. Audio-only, massive hype, collapsed. Demanded ears in a world where ears aren't available.
 
 ## 2.2. The Solution — Make It a Visual Game
@@ -156,7 +156,7 @@
 ## 4.4. Pattern Interrupt
 
 4.4.1. Standard feed is static images + autoplay clips that all look the same.
-4.4.2. A Colosseum clip in the feed: gauge swinging, fireworks, numbers moving, crowd counter climbing.
+4.4.2. A Moderator clip in the feed: gauge swinging, fireworks, numbers moving, crowd counter climbing.
 4.4.3. Looks like nothing else. Thumb stops because brain says "what is that?"
 4.4.4. Unusual visuals in first frame trigger curiosity before a single word is spoken.
 
@@ -201,7 +201,7 @@
 | Final score reveal | "Great debate — here's a quick word from our sponsor before the results." | 10-second ad framed as brief pause. |
 | After debate ends | "Thanks for watching — we think you'd like this one starting in 15 minutes." | Retention. Push to next debate. |
 | Replay entry | "Welcome back — here's what 4,218 people saw last night." | Social proof + ad pre-roll. |
-| First signup | "Welcome to The Colosseum — looking forward to seeing you in the arena." | Identity. You belong here. |
+| First signup | "Welcome to The Moderator — looking forward to seeing you in the arena." | Identity. You belong here. |
 | Return visit | "Good to see you again — here's what's happening tonight." | Habit loop. You're a regular. |
 | Inactive 3+ days | Push: "We miss you — 3 debates tonight and one's in your category." | FOMO + warmth. Not a threat. |
 | Moderator fireworks | "The crowd loved that one." | Debater validation. Keep performing. |
@@ -241,7 +241,7 @@
 # 8. DMs (SIMPLE — ONE TABLE)
 
 8.1. After a debate, energy has nowhere to go. Winner on a high, loser fired up, audience has opinions.
-8.2. DMs keep that energy inside The Colosseum instead of leaking to Twitter or group chats.
+8.2. DMs keep that energy inside The Moderator instead of leaking to Twitter or group chats.
 8.3. Not a social platform. No feeds, no posting, no content profiles. Just DMs.
 8.4. Schema: one table — sender, receiver, message, timestamp.
 8.5. Use cases: "you killed it" / "you were robbed" / "good game" / trash talk.

@@ -54,7 +54,7 @@ This DB trigger raises an exception on direct UPDATEs to 4 protected columns (`l
 
 ## Build System
 
-**Vite** is the build system. `npm run build` runs `vite build && cp colosseum-*.js dist/ && cp og-card-default.png dist/`.
+**Vite** is the build system. `npm run build` runs `vite build && cp og-card-default.png dist/`.
 
 Vercel config (`vercel.json`): `buildCommand: "npm run build"`, `outputDirectory: "dist"`.
 
@@ -83,6 +83,7 @@ Source lives in `src/`. Compiled output goes to `dist/`. Never edit `dist/` dire
 | `src/paywall.ts` | Paywall gating logic |
 | `src/staking.ts` | Token staking system |
 | `src/tiers.ts` | Questionnaire tier lookup, badge rendering, progress calculation |
+| `src/nudge.ts` | Polite engagement toast engine. Suppression: once per session per ID, 24h cooldown, 3-per-session cap. |
 | `src/reference-arsenal.ts` | 5-step forge form, reference card renderer, arsenal list |
 
 ### Page Modules (src/pages/*.ts)
@@ -132,7 +133,7 @@ New columns:
 - `arena_debates.mod_requested_by UUID NULL`
 - Partial index on `arena_debates(mod_status) WHERE mod_status = 'waiting'`
 
-New RPCs: `browse_mod_queue`, `request_to_moderate` (FOR UPDATE SKIP LOCKED), `respond_to_mod_request`, `get_mod_profile`, `update_mod_categories`. Fixed: `assign_moderator`, `score_moderator`.
+New RPCs: `browse_mod_queue`, `request_to_moderate` (FOR UPDATE SKIP LOCKED), `respond_to_mod_request`, `get_mod_profile`, `update_mod_categories`, `request_mod_for_debate`, `get_debate_mod_status`. Fixed: `assign_moderator`, `score_moderator`.
 
 ## Design DNA
 
@@ -146,8 +147,7 @@ New RPCs: `browse_mod_queue`, `request_to_moderate` (FOR UPDATE SKIP LOCKED), `r
 ## Important Documentation
 
 - `THE-MODERATOR-NEW-TESTAMENT.md` — condensed project knowledge, key decisions, current state
-- `THE-MODERATOR-OLD-TESTAMENT.md` — all session build logs (1-173)
-- `THE-MODERATOR-LAND-MINE-MAP.md` — 185+ documented pitfalls. **Read before any SQL, schema, auth, or deployment change.**
+- `THE-MODERATOR-OLD-TESTAMENT.md` — all session build logs (1-191)
+- `THE-MODERATOR-LAND-MINE-MAP.md` — 194+ documented pitfalls. **Read before any SQL, schema, auth, or deployment change.**
 - `THE-MODERATOR-PUNCH-LIST.md` — single source of truth for all open work
 - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play
-- `THE-MODERATOR-WAR-PLAN.md` — 5-phase strategy, open decisions
