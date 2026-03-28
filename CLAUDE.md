@@ -13,7 +13,7 @@ Solo founder project. **Vite + TypeScript build pipeline** — all source files 
 **Three-zone model:**
 - **Ring 6 — Static Mirror** (Cloudflare Pages at `colosseum-f30.pages.dev`): Pure HTML, zero JS, zero auth. Bot army links route here.
 - **Plinko Gate** (`moderator-plinko.html`): 4-step signup (OAuth → Age → Username → Done)
-- **Members Zone** (Vercel at `colosseum-six.vercel.app`): Full app, auto-deploys from GitHub via Vite build
+- **Members Zone** (Vercel at `themoderator.app`): Full app, auto-deploys from GitHub via Vite build
 
 **Backend:** Supabase project `faomczmipsccwbhpivmp`. 41+ tables, 55+ server functions, RLS hardened.
 

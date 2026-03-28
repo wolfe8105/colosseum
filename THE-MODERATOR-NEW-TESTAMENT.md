@@ -113,7 +113,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. Vercel (colosseum-six.vercel.app): auto-deploys from GitHub, Vite build live (Session 130). Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags.
 
 ## Toolchain
 | Tool | Purpose |
@@ -134,7 +134,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 | `src/payments.ts` | Stripe Checkout, token purchases |
 | `src/notifications.ts` | Notification center |
 | `src/paywall.ts` | 4 contextual paywall variants, `gate()` helper |
-| `src/async.ts` | Hot takes feed, predictions, rivals display, react toggle, challenge modal |
+| `src/async.ts` | Hot takes feed, predictions, rivals display, react toggle, challenge modal. First-vote nudge wired (Session 190). |
 | `src/share.ts` | Web Share API, clipboard, referrals, deep links |
 | `src/leaderboard.ts` | Elo/Wins/Streak tabs, time filters, My Rank |
 | `src/cards.ts` | Canvas share card generator, 4 sizes, ESPN aesthetic |
@@ -148,6 +148,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 | `src/voicememo.ts` | Voice memo mode |
 | `src/analytics.ts` | Funnel analytics: visitor UUID, page_view, UTM. Uses raw fetch() — intentional, fires before auth init. |
 | `src/navigation.ts` | Register/call pattern for page navigation. Zero window.navigateTo refs. (Session 163) |
+| `src/nudge.ts` | Polite engagement toast engine. Suppression: once per session per ID, 24h cooldown per ID, 3-per-session cap. (F-35B, Session 190) |
 | `src/reference-arsenal.ts` | 5-step forge form, reference card renderer, arsenal list + library browser (Session 147) |
 
 ## Page Modules (src/pages/*.ts)

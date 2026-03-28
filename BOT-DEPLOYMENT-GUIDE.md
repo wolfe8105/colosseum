@@ -11,7 +11,7 @@
 | Telegram | `/debate Is Mahomes the GOAT?` | Creates inline poll in group chat + link to Colosseum |
 | Discord | `/settle Is Mahomes the GOAT?` | Creates rich embed poll with vote buttons + link to Colosseum |
 
-Both bots: vote tracking, hot takes, trending placeholder, branding/watermark on every output, link to `colosseum-six.vercel.app/debate` on every interaction.
+Both bots: vote tracking, hot takes, trending placeholder, branding/watermark on every output, link to `themoderator.app/debate` on every interaction.
 
 ---
 
@@ -181,7 +181,7 @@ Note: Slash commands can take up to 1 hour to appear globally in Discord. For in
 |----------|----------|-------------|
 | `BOT_TOKEN` | ✅ | Token from @BotFather |
 | `WEBHOOK_URL` | ✅ prod | Your Railway/Render URL (not needed for local dev) |
-| `COLOSSEUM_URL` | ❌ | Override base URL (defaults to colosseum-six.vercel.app) |
+| `COLOSSEUM_URL` | ❌ | Override base URL (defaults to themoderator.app) |
 | `PORT` | ❌ | Server port (defaults to 3000, Railway sets automatically) |
 
 ### Discord Bot
@@ -189,7 +189,7 @@ Note: Slash commands can take up to 1 hour to appear globally in Discord. For in
 |----------|----------|-------------|
 | `BOT_TOKEN` | ✅ | Token from Discord Developer Portal |
 | `APPLICATION_ID` | ✅ | Application ID from Discord Developer Portal |
-| `COLOSSEUM_URL` | ❌ | Override base URL (defaults to colosseum-six.vercel.app) |
+| `COLOSSEUM_URL` | ❌ | Override base URL (defaults to themoderator.app) |
 
 ---
 

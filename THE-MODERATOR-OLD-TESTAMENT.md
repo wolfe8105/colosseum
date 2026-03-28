@@ -1667,3 +1667,33 @@ Full codebase audit via Claude Code CLI. 120+ issues found across 43 files. 29 c
 
 **Files changed:** `src/auth.ts`, `src/pages/settings.ts`, `moderator-settings.html`. Supabase: `assign_moderator`, `score_moderator` (fixed), `browse_mod_queue`, `request_to_moderate`, `respond_to_mod_request`, `get_mod_profile`, `update_mod_categories` (new). Schema: `profiles.mod_categories`, `arena_debates.mod_status`, `arena_debates.mod_requested_by`, 2 indexes.
 
+---
+
+## Session 190 — March 28, 2026
+
+**F-35B — In-app nudge toasts: CLOSED**
+
+Confirmed `src/nudge.ts` already existed with full suppression logic (once/session per ID, 24h cooldown per ID, 3/session cap). 7 of 8 trigger points already wired. Missing: first_vote nudge in `src/async.ts` hot take reaction flow.
+
+Fix: added `import { nudge } from './nudge.ts'` to `async.ts`. Added `nudge('first_vote', '🗳️ Vote cast. Your voice shapes the verdict.')` inside `react_hot_take` success block, scoped to `reacted === true` only (not on toggle-off). TypeScript clean — zero src/ errors.
+
+**F-35 fully closed.** A (newsletter cron, Session 187) + B (toasts, Session 190) both complete.
+
+**H-03 partial — api/profile.js BASE_URL fix:**
+
+`api/profile.js` had `BASE_URL` hardcoded to `'https://colosseum-six.vercel.app'`. Fixed to `process.env.BASE_URL || 'https://themoderator.app'`. Consistent with SUPABASE_URL pattern two lines above it.
+
+`BASE_URL=https://themoderator.app` env var added to Vercel (all environments). Deployed to production in 25s. Confirmed live.
+
+**Domain confirmed:** `themoderator.app` is the live production domain, wired to Vercel. `colosseum-six.vercel.app` still works but is no longer the canonical URL.
+
+**Bible doc updates:**
+- NT: Vercel URL updated, `nudge.ts` added to modules table, `async.ts` entry updated
+- Punch List: F-35 closed, H-03 progress noted, session 190 in change log
+- CLAUDE.md: Members Zone URL updated
+- BOT-DEPLOYMENT-GUIDE.md: 3 colosseum-six refs → themoderator.app
+- WAR-PLAN.md: domain status updated to ✅ themoderator.app
+- OT: this entry
+
+**Files changed:** `src/async.ts`, `api/profile.js`, 5 bible docs.
+

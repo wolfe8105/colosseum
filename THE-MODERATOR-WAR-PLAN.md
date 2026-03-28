@@ -67,7 +67,7 @@ The old projections ($22M Year 1) were fantasy math. The bot army projections ($
 
 ## 2.1. What's Real and Working
 
-- ✅ Full web app live at colosseum-six.vercel.app
+- ✅ Full web app live at themoderator.app
 - ✅ 29 Supabase tables, RLS hardened, 30+ server functions
 - ✅ Auth working end-to-end (signup → verify → login)
 - ✅ Guest access — anonymous users see everything, auth only for actions
@@ -317,7 +317,7 @@ These ideas came from the 502-item master list and 26 sessions of brainstorming.
 
 6.4. **Launch date:** What's real? The original pitch deck said Feb 25, 2026 (already passed). No new date set.
 
-6.5. **Domain:** No custom domain purchased. Still on colosseum-six.vercel.app.
+6.5. **Domain:** ✅ themoderator.app — purchased, DNS wired to Vercel, live in production (Session 190).
 
 6.6. **Stripe production:** When to switch from sandbox to live? Before or after first real users?
 
