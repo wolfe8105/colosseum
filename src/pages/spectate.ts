@@ -69,6 +69,7 @@ interface SpectatorChatMessage {
   const loading = document.getElementById('loading');
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let chatPollTimer: ReturnType<typeof setInterval> | null = null;
+  let lastChatMessageAt: string | null = null;
   let lastMessageTime: string | null = null;
   let debateData: SpectateDebate | null = null;
   let chatMessages: SpectatorChatMessage[] = [];
@@ -239,6 +240,9 @@ interface SpectatorChatMessage {
       try {
         const { data: chatData } = await rpc('get_spectator_chat', { p_debate_id: debateId, p_limit: 100 });
         chatMessages = chatData || [];
+        if (chatMessages.length > 0) {
+          lastChatMessageAt = chatMessages[chatMessages.length - 1].created_at;
+        }
       } catch(e) {
         chatMessages = [];
       }
@@ -652,10 +656,14 @@ interface SpectatorChatMessage {
     chatPollTimer = setInterval(async () => {
       try {
         const { data: freshChat } = await rpc('get_spectator_chat', { p_debate_id: debateId, p_limit: 100 });
-        if (freshChat && freshChat.length !== chatMessages.length) {
-          chatMessages = freshChat;
-          refreshChatUI();
-        }
+        if (!freshChat || freshChat.length === 0) return;
+        const newMessages = lastChatMessageAt
+          ? freshChat.filter((m: SpectatorChatMessage) => m.created_at > lastChatMessageAt!)
+          : freshChat;
+        if (newMessages.length === 0) return;
+        chatMessages.push(...newMessages);
+        lastChatMessageAt = chatMessages[chatMessages.length - 1].created_at;
+        refreshChatUI();
       } catch (e) {
         // Silent fail on chat poll
       }
