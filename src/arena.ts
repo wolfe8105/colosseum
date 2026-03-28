@@ -1220,6 +1220,7 @@ async function loadAvailableModerators(overlay: HTMLElement): Promise<void> {
   const container = overlay.querySelector('#mod-picker-humans') as HTMLElement | null;
   if (!container || !mods || mods.length === 0) return;
 
+  container.replaceChildren();
   mods.forEach((m) => {
     const initial = ((m as AvailableModerator).display_name || (m as AvailableModerator).username || '?')[0].toUpperCase();
     const opt = document.createElement('div');
@@ -1951,7 +1952,7 @@ export function enterRoom(debate: CurrentDebate): void {
       const modBar = document.createElement('div');
       modBar.className = 'arena-mod-bar';
       modBar.innerHTML = `<span class="mod-icon">\u2696\uFE0F</span> Moderator: ${escapeHTML(debate.moderatorName)}`;
-      vsBar.parentNode!.insertBefore(modBar, vsBar.nextSibling);
+      vsBar.parentNode?.insertBefore(modBar, vsBar.nextSibling);
     }
   }
 
@@ -1998,7 +1999,7 @@ export function enterRoom(debate: CurrentDebate): void {
         const barContainer = document.createElement('div');
         barContainer.innerHTML = barHtml;
         if (barContainer.firstElementChild) {
-          messagesEl.parentNode!.insertBefore(barContainer.firstElementChild, messagesEl.nextSibling);
+          messagesEl.parentNode?.insertBefore(barContainer.firstElementChild, messagesEl.nextSibling);
         }
       }
       // Wire activation handlers
@@ -2755,7 +2756,7 @@ export function showReferenceForm(): void {
 
   const messages = document.getElementById('arena-messages');
   if (messages) {
-    messages.parentNode!.insertBefore(form, messages.nextSibling);
+    messages.parentNode?.insertBefore(form, messages.nextSibling);
   } else {
     screenEl?.appendChild(form);
   }
