@@ -1385,6 +1385,8 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
           feedEl.innerHTML = `<div class="arena-queue-feed-label">\uD83D\uDC41\uFE0F Live in the Arena</div>`
             + cards.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('');
         }
+      } else {
+        feedEl.innerHTML = `<div class="arena-queue-feed-label" style="opacity:0.4;">— no active debates in this category —</div>`;
       }
     } catch { /* feed is optional */ }
   })();
