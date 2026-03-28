@@ -97,22 +97,33 @@ export interface CreateHotTakeResult {
   id: string;
 }
 
-export type CategoryFilter = 'all' | 'politics' | 'sports' | 'entertainment' | 'trending' | 'technology' | string;
+export type CategoryFilter =
+  | 'all'
+  | 'politics'
+  | 'sports'
+  | 'entertainment'
+  | 'trending'
+  | 'technology'
+  | string;
 
 // ============================================================
 // MODULE EXPORTS
 // ============================================================
 
-declare const ModeratorTokens: {
-  claimHotTake: (id: string) => void;
-  claimReaction: (id: string) => void;
-  claimPrediction: (id: string) => void;
-  requireTokens: (amount: number, label: string) => boolean;
-} | undefined;
+declare const ModeratorTokens:
+  | {
+      claimHotTake: (id: string) => void;
+      claimReaction: (id: string) => void;
+      claimPrediction: (id: string) => void;
+      requireTokens: (amount: number, label: string) => boolean;
+    }
+  | undefined;
 
-declare const ModeratorArena: {
-  enterQueue: (mode: string, topic: string) => void;
-} | undefined;
+declare const ModeratorArena:
+  | {
+      enterQueue: (mode: string, topic: string) => void;
+    }
+  | undefined;
 
 // ============================================================
 // ESCAPE (imported from config.ts)
@@ -142,12 +153,78 @@ const _wiredContainers: WeakSet<HTMLElement> = new WeakSet();
 
 const PLACEHOLDER_TAKES: Record<string, HotTake[]> = {
   all: [
-    { id: 't1', user_id: 'u1', user: 'SHARPMIND', elo: 1847, text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.', section: 'trending', reactions: 1247, challenges: 23, time: '2h', userReacted: false },
-    { id: 't2', user_id: 'u2', user: 'BOLDCLAIM', elo: 1280, text: "Patrick Mahomes is already the greatest QB ever. Stats don't lie.", section: 'sports', reactions: 531, challenges: 11, time: '45m', userReacted: false },
-    { id: 't3', user_id: 'u3', user: 'SENATEWATCH', elo: 1340, text: 'Term limits would fix 80% of Congress overnight. Change my mind.', section: 'politics', reactions: 312, challenges: 4, time: '12m', userReacted: false },
-    { id: 't4', user_id: 'u4', user: 'FILMTAKES', elo: 1190, text: 'Christopher Nolan peaked at The Dark Knight. Everything since is style over substance.', section: 'entertainment', reactions: 402, challenges: 8, time: '15m', userReacted: false },
-    { id: 't5', user_id: 'u5', user: 'TECHBRO_NO', elo: 1590, text: "Every generation thinks they're living through the apocalypse. AI doomerism is no different.", section: 'trending', reactions: 894, challenges: 17, time: '3h', userReacted: false },
-    { id: 't6', user_id: 'u6', user: 'HOOPHEAD', elo: 1420, text: 'The NBA play-in tournament is the best thing the league has done in 20 years.', section: 'sports', reactions: 247, challenges: 6, time: '8m', userReacted: false },
+    {
+      id: 't1',
+      user_id: 'u1',
+      user: 'SHARPMIND',
+      elo: 1847,
+      text: 'AI is going to make 50% of white-collar jobs obsolete by 2030. Not a question of if.',
+      section: 'trending',
+      reactions: 1247,
+      challenges: 23,
+      time: '2h',
+      userReacted: false,
+    },
+    {
+      id: 't2',
+      user_id: 'u2',
+      user: 'BOLDCLAIM',
+      elo: 1280,
+      text: "Patrick Mahomes is already the greatest QB ever. Stats don't lie.",
+      section: 'sports',
+      reactions: 531,
+      challenges: 11,
+      time: '45m',
+      userReacted: false,
+    },
+    {
+      id: 't3',
+      user_id: 'u3',
+      user: 'SENATEWATCH',
+      elo: 1340,
+      text: 'Term limits would fix 80% of Congress overnight. Change my mind.',
+      section: 'politics',
+      reactions: 312,
+      challenges: 4,
+      time: '12m',
+      userReacted: false,
+    },
+    {
+      id: 't4',
+      user_id: 'u4',
+      user: 'FILMTAKES',
+      elo: 1190,
+      text: 'Christopher Nolan peaked at The Dark Knight. Everything since is style over substance.',
+      section: 'entertainment',
+      reactions: 402,
+      challenges: 8,
+      time: '15m',
+      userReacted: false,
+    },
+    {
+      id: 't5',
+      user_id: 'u5',
+      user: 'TECHBRO_NO',
+      elo: 1590,
+      text: "Every generation thinks they're living through the apocalypse. AI doomerism is no different.",
+      section: 'trending',
+      reactions: 894,
+      challenges: 17,
+      time: '3h',
+      userReacted: false,
+    },
+    {
+      id: 't6',
+      user_id: 'u6',
+      user: 'HOOPHEAD',
+      elo: 1420,
+      text: 'The NBA play-in tournament is the best thing the league has done in 20 years.',
+      section: 'sports',
+      reactions: 247,
+      challenges: 6,
+      time: '8m',
+      userReacted: false,
+    },
   ],
   politics: [],
   sports: [],
@@ -156,9 +233,45 @@ const PLACEHOLDER_TAKES: Record<string, HotTake[]> = {
 };
 
 const PLACEHOLDER_PREDICTIONS: Prediction[] = [
-  { debate_id: 'd1', topic: 'Should the Electoral College Be Abolished?', p1: 'ConstitutionFan', p2: 'DirectDemocrat', p1_elo: 1340, p2_elo: 1290, total: 847, pct_a: 38, pct_b: 62, user_pick: null, status: 'live' },
-  { debate_id: 'd2', topic: "MJ vs LeBron — Who's the Real GOAT?", p1: 'ChicagoBull', p2: 'AkronHammer', p1_elo: 1580, p2_elo: 1620, total: 2341, pct_a: 55, pct_b: 45, user_pick: null, status: 'live' },
-  { debate_id: 'd3', topic: 'AI Will Replace 50% of Jobs by 2030', p1: 'TechRealist', p2: 'HumanFirst', p1_elo: 1490, p2_elo: 1310, total: 1205, pct_a: 67, pct_b: 33, user_pick: null, status: 'scheduled' },
+  {
+    debate_id: 'd1',
+    topic: 'Should the Electoral College Be Abolished?',
+    p1: 'ConstitutionFan',
+    p2: 'DirectDemocrat',
+    p1_elo: 1340,
+    p2_elo: 1290,
+    total: 847,
+    pct_a: 38,
+    pct_b: 62,
+    user_pick: null,
+    status: 'live',
+  },
+  {
+    debate_id: 'd2',
+    topic: "MJ vs LeBron — Who's the Real GOAT?",
+    p1: 'ChicagoBull',
+    p2: 'AkronHammer',
+    p1_elo: 1580,
+    p2_elo: 1620,
+    total: 2341,
+    pct_a: 55,
+    pct_b: 45,
+    user_pick: null,
+    status: 'live',
+  },
+  {
+    debate_id: 'd3',
+    topic: 'AI Will Replace 50% of Jobs by 2030',
+    p1: 'TechRealist',
+    p2: 'HumanFirst',
+    p1_elo: 1490,
+    p2_elo: 1310,
+    total: 1205,
+    pct_a: 67,
+    pct_b: 33,
+    user_pick: null,
+    status: 'scheduled',
+  },
 ];
 
 // Populate category filters
@@ -207,20 +320,27 @@ export function init(): void {
 export async function fetchTakes(section?: string): Promise<void> {
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return;
-
   try {
-    let query = (sb as unknown as {
-      from: (table: string) => {
-        select: (cols: string) => {
-          order: (col: string, opts: { ascending: boolean }) => {
-            limit: (n: number) => {
-              eq: (col: string, val: string) => unknown;
-            } & Promise<{ data: unknown[] | null; error: unknown }>;
+    let query = (
+      sb as unknown as {
+        from: (table: string) => {
+          select: (cols: string) => {
+            order: (
+              col: string,
+              opts: { ascending: boolean }
+            ) => {
+              limit: (n: number) => {
+                eq: (col: string, val: string) => unknown;
+              } & Promise<{ data: unknown[] | null; error: unknown }>;
+            };
           };
         };
-      };
-    }).from('hot_takes')
-      .select('id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating, token_balance)')
+      }
+    )
+      .from('hot_takes')
+      .select(
+        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating, token_balance)'
+      )
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -228,7 +348,10 @@ export async function fetchTakes(section?: string): Promise<void> {
       query = query.eq('section', section) as typeof query;
     }
 
-    const { data, error } = await (query as unknown as Promise<{ data: unknown[] | null; error: unknown }>);
+    const { data, error } = await (query as unknown as Promise<{
+      data: unknown[] | null;
+      error: unknown;
+    }>);
     if (error) throw error;
 
     if (data && data.length > 0) {
@@ -258,7 +381,10 @@ export async function fetchTakes(section?: string): Promise<void> {
             from: (table: string) => {
               select: (cols: string) => {
                 eq: (col: string, val: string) => {
-                  in: (col: string, vals: string[]) => Promise<{ data: Array<{ hot_take_id: string }> | null }>;
+                  in: (
+                    col: string,
+                    vals: string[]
+                  ) => Promise<{ data: Array<{ hot_take_id: string }> | null }>;
                 };
               };
             };
@@ -267,14 +393,19 @@ export async function fetchTakes(section?: string): Promise<void> {
             .from('hot_take_reactions')
             .select('hot_take_id')
             .eq('user_id', userId)
-            .in('hot_take_id', hotTakes.map((t) => t.id));
+            .in(
+              'hot_take_id',
+              hotTakes.map((t) => t.id)
+            );
           if (reacts) {
             const reactedIds = new Set(reacts.map((r) => r.hot_take_id));
             hotTakes.forEach((t) => {
               t.userReacted = reactedIds.has(t.id);
             });
           }
-        } catch { /* non-critical */ }
+        } catch {
+          /* non-critical */
+        }
       }
     }
   } catch (e) {
@@ -285,26 +416,43 @@ export async function fetchTakes(section?: string): Promise<void> {
 export async function fetchPredictions(): Promise<void> {
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return;
-
   try {
-    const { data, error } = await safeRpc<Record<string, unknown>[]>('get_hot_predictions', { p_limit: 10 });
+    const { data, error } = await safeRpc<Record<string, unknown>[]>(
+      'get_hot_predictions',
+      { p_limit: 10 }
+    );
     if (error) throw error;
-
     if (data && (data as Record<string, unknown>[]).length > 0) {
       predictions = (data as Record<string, unknown>[]).map((d) => ({
         debate_id: d['debate_id'] as string,
         topic: d['topic'] as string,
-        p1: (d['p1_username'] as string) || (d['p1_display_name'] as string) || 'Side A',
-        p2: (d['p2_username'] as string) || (d['p2_display_name'] as string) || 'Side B',
+        p1:
+          (d['p1_username'] as string) ||
+          (d['p1_display_name'] as string) ||
+          'Side A',
+        p2:
+          (d['p2_username'] as string) ||
+          (d['p2_display_name'] as string) ||
+          'Side B',
         p1_elo: (d['p1_elo'] as number) || 1200,
         p2_elo: (d['p2_elo'] as number) || 1200,
         total: (d['prediction_count'] as number) || 0,
-        pct_a: (d['prediction_count'] as number) > 0
-          ? Math.round(((d['picks_a'] as number) / (d['prediction_count'] as number)) * 100)
-          : 50,
-        pct_b: (d['prediction_count'] as number) > 0
-          ? Math.round(((d['picks_b'] as number) / (d['prediction_count'] as number)) * 100)
-          : 50,
+        pct_a:
+          (d['prediction_count'] as number) > 0
+            ? Math.round(
+                ((d['picks_a'] as number) /
+                  (d['prediction_count'] as number)) *
+                  100
+              )
+            : 50,
+        pct_b:
+          (d['prediction_count'] as number) > 0
+            ? Math.round(
+                ((d['picks_b'] as number) /
+                  (d['prediction_count'] as number)) *
+                  100
+              )
+            : 50,
         user_pick: null,
         status: d['status'] as string,
       }));
@@ -314,15 +462,19 @@ export async function fetchPredictions(): Promise<void> {
   }
 }
 
-export async function fetchStandaloneQuestions(category?: string): Promise<void> {
+export async function fetchStandaloneQuestions(
+  category?: string
+): Promise<void> {
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return;
-
   try {
-    const { data, error } = await safeRpc<StandaloneQuestion[]>('get_prediction_questions', {
-      p_limit: 20,
-      p_category: category || null,
-    });
+    const { data, error } = await safeRpc<StandaloneQuestion[]>(
+      'get_prediction_questions',
+      {
+        p_limit: 20,
+        p_category: category || null,
+      }
+    );
     if (error) throw error;
     if (data && Array.isArray(data) && data.length > 0) {
       standaloneQuestions = data as StandaloneQuestion[];
@@ -338,26 +490,34 @@ export async function fetchStandaloneQuestions(category?: string): Promise<void>
 
 function _wireTakeDelegation(container: HTMLElement): void {
   container.addEventListener('click', (e: Event) => {
-    const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    const btn = (e.target as HTMLElement).closest(
+      '[data-action]'
+    ) as HTMLElement | null;
     if (!btn) return;
-
     const action = btn.dataset['action'];
     if (action === 'react') react(btn.dataset['id'] ?? '');
     else if (action === 'challenge') challenge(btn.dataset['id'] ?? '');
-    else if (action === 'share') shareTake(btn.dataset['id'] ?? '', btn.dataset['text'] ?? '');
+    else if (action === 'share')
+      shareTake(btn.dataset['id'] ?? '', btn.dataset['text'] ?? '');
     else if (action === 'expand') {
       const card = btn.closest('.hot-take-card');
       if (!card) return;
-      const textEl = card.querySelector('[data-action="expand"]') as HTMLElement | null;
+      const textEl = card.querySelector(
+        '[data-action="expand"]'
+      ) as HTMLElement | null;
       if (textEl) {
         textEl.style.display = '';
         textEl.style.webkitLineClamp = 'unset';
         textEl.style.overflow = 'visible';
       }
-      const moreEl = card.querySelectorAll('[data-action="expand"]')[1] as HTMLElement | undefined;
+      const moreEl = card.querySelectorAll('[data-action="expand"]')[1] as
+        | HTMLElement
+        | undefined;
       if (moreEl && moreEl.textContent?.includes('tap')) moreEl.remove();
     } else if (action === 'profile') {
-      if (btn.dataset['username']) window.location.href = '/u/' + encodeURIComponent(btn.dataset['username']);
+      if (btn.dataset['username'])
+        window.location.href =
+          '/u/' + encodeURIComponent(btn.dataset['username']);
       else showUserProfile(btn.dataset['userId'] ?? '');
     }
   });
@@ -365,13 +525,17 @@ function _wireTakeDelegation(container: HTMLElement): void {
 
 function _wirePredictionDelegation(container: HTMLElement): void {
   container.addEventListener('click', (e: Event) => {
-    const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    const btn = (e.target as HTMLElement).closest(
+      '[data-action]'
+    ) as HTMLElement | null;
     if (!btn) return;
-
     if (btn.dataset['action'] === 'predict') {
       void placePrediction(btn.dataset['id'] ?? '', btn.dataset['pick'] ?? '');
     } else if (btn.dataset['action'] === 'standalone-pick') {
-      void pickStandaloneQuestion(btn.dataset['id'] ?? '', btn.dataset['pick'] ?? '');
+      void pickStandaloneQuestion(
+        btn.dataset['id'] ?? '',
+        btn.dataset['pick'] ?? ''
+      );
     } else if (btn.dataset['action'] === 'create-prediction') {
       openCreatePredictionForm();
     }
@@ -380,14 +544,19 @@ function _wirePredictionDelegation(container: HTMLElement): void {
 
 function _wireRivalDelegation(container: HTMLElement): void {
   container.addEventListener('click', (e: Event) => {
-    const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    const btn = (e.target as HTMLElement).closest(
+      '[data-action]'
+    ) as HTMLElement | null;
     if (!btn) return;
-
     if (btn.dataset['action'] === 'profile') {
-      if (btn.dataset['username']) window.location.href = '/u/' + encodeURIComponent(btn.dataset['username']);
+      if (btn.dataset['username'])
+        window.location.href =
+          '/u/' + encodeURIComponent(btn.dataset['username']);
       else showUserProfile(btn.dataset['userId'] ?? '');
     } else if (btn.dataset['action'] === 'accept-rival') {
-      respondRival(btn.dataset['id'] ?? '', true).then(() => void refreshRivals());
+      respondRival(btn.dataset['id'] ?? '', true).then(() =>
+        void refreshRivals()
+      );
     }
   });
 }
@@ -406,7 +575,10 @@ export function loadHotTakes(category: CategoryFilter = 'all'): void {
     _wiredContainers.add(container);
   }
 
-  const takes = category === 'all' ? hotTakes : hotTakes.filter((t) => t.section === category);
+  const takes =
+    category === 'all'
+      ? hotTakes
+      : hotTakes.filter((t) => t.section === category);
 
   if (takes.length === 0) {
     container.innerHTML = `
@@ -428,7 +600,6 @@ function _renderTake(t: HotTake): string {
   const safeId = esc(t.id);
   const safeUserId = esc(t.user_id);
   const safeUsername = esc(t.username ?? '');
-
   const profileAttr = userClickable
     ? `data-action="profile" data-user-id="${safeUserId}" data-username="${safeUsername}" style="cursor:pointer;"`
     : '';
@@ -553,10 +724,13 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
   const safeA = esc(q.side_a_label);
   const safeB = esc(q.side_b_label);
   const safeId = esc(q.id);
-  const total = Number(q.total_picks) || (Number(q.picks_a) + Number(q.picks_b)) || 0;
+  const total =
+    Number(q.total_picks) || Number(q.picks_a) + Number(q.picks_b) || 0;
   const pctA = total > 0 ? Math.round((Number(q.picks_a) / total) * 100) : 50;
   const pctB = total > 0 ? 100 - pctA : 50;
-  const creator = esc(q.creator_display_name ?? q.creator_username ?? 'Anonymous');
+  const creator = esc(
+    q.creator_display_name ?? q.creator_username ?? 'Anonymous'
+  );
   const userPick = q._userPick ?? null;
 
   return `
@@ -597,9 +771,16 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
 // ACTIONS
 // ============================================================
 
-export async function placePrediction(debateId: string, side: string): Promise<void> {
+export async function placePrediction(
+  debateId: string,
+  side: string
+): Promise<void> {
   if (!requireAuth('place predictions')) return;
-  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(100, 'place predictions')) return;
+  if (
+    typeof ModeratorTokens !== 'undefined' &&
+    !ModeratorTokens.requireTokens(100, 'place predictions')
+  )
+    return;
 
   const pred = predictions.find((p) => p.debate_id === debateId);
   if (!pred) return;
@@ -612,7 +793,10 @@ export async function placePrediction(debateId: string, side: string): Promise<v
     const countA = Math.round((pred.total * pred.pct_a) / 100);
     pred.total++;
     const newCountA = countA + (side === 'a' ? 1 : 0);
-    pred.pct_a = Math.min(99, Math.max(1, Math.round((newCountA / pred.total) * 100)));
+    pred.pct_a = Math.min(
+      99,
+      Math.max(1, Math.round((newCountA / pred.total) * 100))
+    );
     pred.pct_b = 100 - pred.pct_a;
   }
 
@@ -632,7 +816,8 @@ export async function placePrediction(debateId: string, side: string): Promise<v
         if (predContainer) renderPredictions(predContainer);
         return;
       }
-      if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimPrediction(debateId);
+      if (typeof ModeratorTokens !== 'undefined')
+        ModeratorTokens.claimPrediction(debateId);
     } catch (e) {
       console.error('place_prediction exception:', e);
     }
@@ -641,7 +826,10 @@ export async function placePrediction(debateId: string, side: string): Promise<v
   showToast(`🔮 Predicted ${side === 'a' ? pred.p1 : pred.p2} wins!`, 'success');
 }
 
-export async function pickStandaloneQuestion(questionId: string, side: string): Promise<void> {
+export async function pickStandaloneQuestion(
+  questionId: string,
+  side: string
+): Promise<void> {
   if (!requireAuth('make predictions')) return;
 
   const q = standaloneQuestions.find((x) => x.id === questionId);
@@ -687,18 +875,20 @@ export async function pickStandaloneQuestion(questionId: string, side: string): 
     }
   }
 
-  showToast(`🔮 Picked ${side === 'a' ? q.side_a_label : q.side_b_label}!`, 'success');
+  showToast(
+    `🔮 Picked ${side === 'a' ? q.side_a_label : q.side_b_label}!`,
+    'success'
+  );
 }
 
 export function openCreatePredictionForm(): void {
   if (!requireAuth('create predictions')) return;
 
   document.getElementById('create-prediction-sheet')?.remove();
-
   const overlay = document.createElement('div');
   overlay.id = 'create-prediction-sheet';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
-
+  overlay.style.cssText =
+    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   overlay.innerHTML = `
     <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;"></div>
@@ -738,70 +928,79 @@ export function openCreatePredictionForm(): void {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
-
   document.body.appendChild(overlay);
 
   const topicEl = document.getElementById('cpq-topic') as HTMLTextAreaElement;
   topicEl.addEventListener('input', () => {
-    document.getElementById('cpq-topic-count')!.textContent = topicEl.value.length + '/200';
+    document.getElementById('cpq-topic-count')!.textContent =
+      topicEl.value.length + '/200';
   });
 
-  document.getElementById('cpq-cancel')!.addEventListener('click', () => overlay.remove());
+  document.getElementById('cpq-cancel')!.addEventListener('click', () =>
+    overlay.remove()
+  );
 
-  document.getElementById('cpq-submit')!.addEventListener('click', async () => {
-    const topic = topicEl.value.trim();
-    const sideA = (document.getElementById('cpq-side-a') as HTMLInputElement).value.trim() || 'Yes';
-    const sideB = (document.getElementById('cpq-side-b') as HTMLInputElement).value.trim() || 'No';
-    const category = (document.getElementById('cpq-category') as HTMLSelectElement).value || null;
+  document
+    .getElementById('cpq-submit')!
+    .addEventListener('click', async () => {
+      const topic = topicEl.value.trim();
+      const sideA =
+        (document.getElementById('cpq-side-a') as HTMLInputElement).value.trim() ||
+        'Yes';
+      const sideB =
+        (document.getElementById('cpq-side-b') as HTMLInputElement).value.trim() ||
+        'No';
+      const category =
+        (document.getElementById('cpq-category') as HTMLSelectElement).value ||
+        null;
 
-    if (topic.length < 10) {
-      showToast('Question must be at least 10 characters', 'error');
-      return;
-    }
-
-    const btn = document.getElementById('cpq-submit')!;
-    btn.textContent = 'POSTING...';
-    btn.style.opacity = '0.5';
-
-    if (getSupabaseClient() && !getIsPlaceholderMode()) {
-      try {
-        const { error } = await safeRpc('create_prediction_question', {
-          p_topic: topic,
-          p_side_a_label: sideA,
-          p_side_b_label: sideB,
-          p_category: category,
-        });
-        if (error) throw error;
-      } catch (e) {
-        console.error('create_prediction_question error:', e);
-        showToast('Failed to create prediction', 'error');
-        btn.textContent = 'POST';
-        btn.style.opacity = '1';
+      if (topic.length < 10) {
+        showToast('Question must be at least 10 characters', 'error');
         return;
       }
-    }
 
-    standaloneQuestions.unshift({
-      id: 'local-' + Date.now(),
-      topic,
-      side_a_label: sideA,
-      side_b_label: sideB,
-      category,
-      picks_a: 0,
-      picks_b: 0,
-      total_picks: 0,
-      creator_display_name: getCurrentProfile()?.display_name ?? 'You',
-      _userPick: null,
+      const btn = document.getElementById('cpq-submit')!;
+      btn.textContent = 'POSTING...';
+      btn.style.opacity = '0.5';
+
+      if (getSupabaseClient() && !getIsPlaceholderMode()) {
+        try {
+          const { error } = await safeRpc('create_prediction_question', {
+            p_topic: topic,
+            p_side_a_label: sideA,
+            p_side_b_label: sideB,
+            p_category: category,
+          });
+          if (error) throw error;
+        } catch (e) {
+          console.error('create_prediction_question error:', e);
+          showToast('Failed to create prediction', 'error');
+          btn.textContent = 'POST';
+          btn.style.opacity = '1';
+          return;
+        }
+      }
+
+      standaloneQuestions.unshift({
+        id: 'local-' + Date.now(),
+        topic,
+        side_a_label: sideA,
+        side_b_label: sideB,
+        category,
+        picks_a: 0,
+        picks_b: 0,
+        total_picks: 0,
+        creator_display_name:
+          getCurrentProfile()?.display_name ?? 'You',
+        _userPick: null,
+      });
+
+      overlay.remove();
+      showToast('🔮 Prediction posted!', 'success');
+      const predContainer = document.getElementById('predictions-feed');
+      if (predContainer) renderPredictions(predContainer);
+      void fetchStandaloneQuestions();
     });
-
-    overlay.remove();
-    showToast('🔮 Prediction posted!', 'success');
-
-    const predContainer = document.getElementById('predictions-feed');
-    if (predContainer) renderPredictions(predContainer);
-
-    void fetchStandaloneQuestions();
-  });
 }
 
 // ============================================================
@@ -811,7 +1010,6 @@ export function openCreatePredictionForm(): void {
 export async function react(takeId: string): Promise<void> {
   if (!requireAuth('react to hot takes')) return;
   if (reactingIds.has(takeId)) return;
-
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
 
@@ -837,10 +1035,13 @@ export async function react(takeId: string): Promise<void> {
         loadHotTakes(currentFilter);
         if ((data as ReactResult).reacted) {
           nudge('first_vote', '\uD83D\uDDF3\uFE0F Vote cast. Your voice shapes the verdict.');
-          if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimReaction(takeId);
+          if (typeof ModeratorTokens !== 'undefined')
+            ModeratorTokens.claimReaction(takeId);
         }
       }
-    } catch { /* handled */ }
+    } catch {
+      /* handled */
+    }
   }
 
   reactingIds.delete(takeId);
@@ -848,25 +1049,26 @@ export async function react(takeId: string): Promise<void> {
 
 export function challenge(takeId: string): void {
   if (!requireAuth('challenge someone to a debate')) return;
-  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(50, 'challenge someone')) return;
-
+  if (
+    typeof ModeratorTokens !== 'undefined' &&
+    !ModeratorTokens.requireTokens(50, 'challenge someone')
+  )
+    return;
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
-
   _showChallengeModal(take);
 }
 
 function _showChallengeModal(take: HotTake): void {
   document.getElementById('challenge-modal')?.remove();
-
   const safeUser = esc(take.user);
   const safeText = esc(take.text);
   _pendingChallengeId = take.id;
 
   const modal = document.createElement('div');
   modal.id = 'challenge-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
-
+  modal.style.cssText =
+    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `
     <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
@@ -895,11 +1097,17 @@ function _showChallengeModal(take: HotTake): void {
     </div>`;
 
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) { modal.remove(); return; }
-    const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    if (e.target === modal) {
+      modal.remove();
+      return;
+    }
+    const btn = (e.target as HTMLElement).closest(
+      '[data-action]'
+    ) as HTMLElement | null;
     if (!btn) return;
     if (btn.dataset['action'] === 'cancel-challenge') modal.remove();
-    else if (btn.dataset['action'] === 'submit-challenge') void _submitChallenge(_pendingChallengeId);
+    else if (btn.dataset['action'] === 'submit-challenge')
+      void _submitChallenge(_pendingChallengeId);
   });
 
   document.body.appendChild(modal);
@@ -909,8 +1117,9 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
   if (!takeId) return;
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
-
-  const textarea = document.getElementById('challenge-response') as HTMLTextAreaElement | null;
+  const textarea = document.getElementById(
+    'challenge-response'
+  ) as HTMLTextAreaElement | null;
   const text = textarea?.value?.trim();
   if (!text) {
     if (textarea) textarea.style.borderColor = '#cc2936';
@@ -955,16 +1164,21 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
 
 export async function postTake(): Promise<void> {
   if (!requireAuth('post hot takes')) return;
-  if (typeof ModeratorTokens !== 'undefined' && !ModeratorTokens.requireTokens(25, 'post hot takes')) return;
+  if (
+    typeof ModeratorTokens !== 'undefined' &&
+    !ModeratorTokens.requireTokens(25, 'post hot takes')
+  )
+    return;
 
-  const input = document.getElementById('hot-take-input') as HTMLTextAreaElement | null;
+  const input = document.getElementById(
+    'hot-take-input'
+  ) as HTMLTextAreaElement | null;
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
   const profile = getCurrentProfile();
   const section = currentFilter === 'all' ? 'trending' : currentFilter;
-
   const newTake: HotTake = {
     id: 't_' + Date.now(),
     user_id: getCurrentUser()?.id ?? '',
@@ -985,10 +1199,13 @@ export async function postTake(): Promise<void> {
 
   if (getSupabaseClient() && !getIsPlaceholderMode()) {
     try {
-      const { data, error } = await safeRpc<CreateHotTakeResult>('create_hot_take', {
-        p_content: text,
-        p_section: section,
-      });
+      const { data, error } = await safeRpc<CreateHotTakeResult>(
+        'create_hot_take',
+        {
+          p_content: text,
+          p_section: section,
+        }
+      );
       if (error) {
         console.error('create_hot_take error:', error);
         hotTakes = snapshot;
@@ -996,7 +1213,8 @@ export async function postTake(): Promise<void> {
         showToast('Post failed — try again', 'error');
       } else if (data && (data as CreateHotTakeResult).id) {
         newTake.id = (data as CreateHotTakeResult).id;
-        if (typeof ModeratorTokens !== 'undefined') ModeratorTokens.claimHotTake((data as CreateHotTakeResult).id);
+        if (typeof ModeratorTokens !== 'undefined')
+          ModeratorTokens.claimHotTake((data as CreateHotTakeResult).id);
       }
     } catch {
       hotTakes = snapshot;
@@ -1018,7 +1236,8 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
     _wiredContainers.add(container);
   }
 
-  const rivals: RivalEntry[] = (await getMyRivals()) as RivalEntry[] ?? [];
+  const rivals: RivalEntry[] =
+    ((await getMyRivals()) as RivalEntry[]) ?? [];
 
   if (!rivals.length) {
     container.innerHTML = `
@@ -1031,29 +1250,42 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
 
   container.innerHTML = `
     <div style="padding:0 0 8px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:#cc2936;">⚔️ HATED RIVALS</div>
-    ${rivals.map((r) => {
-      const safeName = esc((r.rival_display_name ?? r.rival_username ?? 'Unknown').toUpperCase());
-      const safeInitial = esc((r.rival_display_name ?? r.rival_username ?? '?')[0]?.toUpperCase() ?? '');
-      const safeRivalId = esc(r.rival_id);
-      const safeRivalUsername = esc(r.rival_username ?? '');
-      const safeId = esc(r.id);
+    ${rivals
+      .map((r) => {
+        const safeName = esc(
+          (
+            r.rival_display_name ??
+            r.rival_username ??
+            'Unknown'
+          ).toUpperCase()
+        );
+        const safeInitial = esc(
+          (r.rival_display_name ?? r.rival_username ?? '?')[0]?.toUpperCase() ??
+            ''
+        );
+        const safeRivalId = esc(r.rival_id);
+        const safeRivalUsername = esc(r.rival_username ?? '');
+        const safeId = esc(r.id);
 
-      return `
-        <div style="background:#132240;border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-          <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">${safeInitial}</div>
-          <div style="flex:1;">
-            <div style="font-weight:700;font-size:14px;color:#f0f0f0;">${safeName}</div>
-            <div style="font-size:11px;color:#6a7a90;">ELO ${Number(r.rival_elo ?? 1200)} · ${Number(r.rival_wins ?? 0)}W-${Number(r.rival_losses ?? 0)}L</div>
-          </div>
-          <div style="text-align:right;">
-            ${r.status === 'pending'
-              ? (r.direction === 'received'
-                ? `<button data-action="accept-rival" data-id="${safeId}" style="padding:6px 12px;background:#cc2936;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
-                : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">PENDING</span>')
-              : '<span style="font-size:11px;color:#cc2936;font-weight:700;letter-spacing:1px;">⚔️ ACTIVE</span>'}
-          </div>
-        </div>`;
-    }).join('')}`;
+        return `
+          <div style="background:#132240;border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+            <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">${safeInitial}</div>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:14px;color:#f0f0f0;">${safeName}</div>
+              <div style="font-size:11px;color:#6a7a90;">ELO ${Number(r.rival_elo ?? 1200)} · ${Number(r.rival_wins ?? 0)}W-${Number(r.rival_losses ?? 0)}L</div>
+            </div>
+            <div style="text-align:right;">
+              ${
+                r.status === 'pending'
+                  ? r.direction === 'received'
+                    ? `<button data-action="accept-rival" data-id="${safeId}" style="padding:6px 12px;background:#cc2936;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
+                    : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">PENDING</span>'
+                  : '<span style="font-size:11px;color:#cc2936;font-weight:700;letter-spacing:1px;">⚔️ ACTIVE</span>'
+              }
+            </div>
+          </div>`;
+      })
+      .join('')}`;
 }
 
 export async function refreshRivals(): Promise<void> {
@@ -1085,6 +1317,7 @@ export function getComposerHTML(): string {
 }
 
 // ============================================================
+
 export const ModeratorAsync = {
   loadHotTakes,
   fetchTakes,
@@ -1099,18 +1332,33 @@ export const ModeratorAsync = {
   postTake,
   getComposerHTML,
   _submitChallenge,
-  get predictions() { return predictions; },
+  get predictions() {
+    return predictions;
+  },
 } as const;
 
+// ============================================================
+// DOCUMENT-LEVEL DELEGATION — post-take button
+// Named reference so destroy() can remove it cleanly.
+// ============================================================
+
+const _onDocClick = (e: Event): void => {
+  const btn = (e.target as HTMLElement).closest('[data-action="post-take"]');
+  if (btn) void postTake();
+};
+
+document.addEventListener('click', _onDocClick);
+
+// ============================================================
+// DESTROY — call on page teardown / hot-nav away
+// ============================================================
+
+export function destroy(): void {
+  document.removeEventListener('click', _onDocClick);
+}
 
 // ============================================================
 // AUTO-INIT
 // ============================================================
 
 ready.then(() => init());
-
-// Wire post-take button delegation on document level
-document.addEventListener('click', (e) => {
-  const btn = (e.target as HTMLElement).closest('[data-action="post-take"]');
-  if (btn) void postTake();
-});
