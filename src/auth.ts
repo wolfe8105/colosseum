@@ -9,7 +9,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { escapeHTML, SUPABASE_URL, SUPABASE_ANON_KEY, placeholderMode, APP } from './config.ts';
+import { escapeHTML, UUID_RE, SUPABASE_URL, SUPABASE_ANON_KEY, placeholderMode, APP } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -157,8 +157,6 @@ export interface LogInParams {
 // ============================================================
 // UUID VALIDATOR
 // ============================================================
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isUUID(s: unknown): s is string {
   return typeof s === 'string' && UUID_RE.test(s);

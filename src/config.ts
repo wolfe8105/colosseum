@@ -257,6 +257,11 @@ const SECTIONS: readonly TopicSection[] = [
 // XSS PROTECTION
 // ============================================================
 
+/** UUID v4 regex. Canonical — do not duplicate in other modules. */
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// ============================================================
+
 /** OWASP 5-char HTML escape. Canonical implementation — do not duplicate. */
 export function escapeHTML(str: string | null | undefined): string {
   if (str == null) return '';

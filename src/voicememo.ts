@@ -9,7 +9,7 @@
  */
 
 import { safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from './auth.ts';
-import { escapeHTML, FEATURES } from './config.ts';
+import { escapeHTML, FEATURES, showToast } from './config.ts';
 import { loadHotTakes } from './async.ts';
 import type { SafeRpcResult } from './auth.ts';
 
@@ -93,18 +93,6 @@ export function _truncate(str: string | undefined | null, max: number): string {
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
-function showToast(msg: string): void {
-  const toast = document.createElement('div');
-  toast.style.cssText =
-    'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#132240;color:#f0f0f0;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;border:1px solid rgba(212,168,67,0.2);box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 2500);
-}
 
 // ============================================================
 // RECORDING

@@ -9,6 +9,7 @@
 
 import { safeRpc, getIsPlaceholderMode } from './auth.ts';
 import type { SafeRpcResult } from './auth.ts';
+import { UUID_RE } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -42,8 +43,6 @@ export interface PlacePredictionResult {
 // ============================================================
 // UUID VALIDATION
 // ============================================================
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Validate UUID format before use in PostgREST .or() filter (Session 17 bug fix) */
 export function validateUUID(id: string): string {

@@ -139,7 +139,7 @@ let hotTakes: HotTake[] = [];
 let predictions: Prediction[] = [];
 let standaloneQuestions: StandaloneQuestion[] = [];
 let currentFilter: CategoryFilter = 'all';
-export let _pendingChallengeId: string | null = null;
+let _pendingChallengeId: string | null = null;
 
 /** FIX #3: Debounce lock for react toggle (LM-015) */
 const reactingIds: Set<string> = new Set();

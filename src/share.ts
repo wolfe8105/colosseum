@@ -10,7 +10,7 @@
  * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
-import { APP } from './config.ts';
+import { APP, showToast } from './config.ts';
 import { getCurrentUser, ready } from './auth.ts';
 import { navigateTo } from './navigation.ts';
 
@@ -65,14 +65,6 @@ function generateRefCode(userId: string): string {
   return `${base}-${rand}`;
 }
 
-function showToast(msg: string): void {
-  const t = document.createElement('div');
-  t.style.cssText =
-    'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#2ecc71;color:#fff;padding:12px 24px;border-radius:8px;font-weight:700;z-index:9999;font-size:14px;';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
 
 async function share({ title, text, url }: ShareData): Promise<void> {
   if (navigator.share) {

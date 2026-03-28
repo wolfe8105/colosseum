@@ -13,6 +13,7 @@
 import {
   escapeHTML,
   placeholderMode,
+  showToast,
   STRIPE_PUBLISHABLE_KEY,
   STRIPE_PRICES,
   STRIPE_FUNCTION_URL,
@@ -86,14 +87,6 @@ function isMinor(): boolean {
   return getCurrentProfile()?.is_minor === true;
 }
 
-function showToast(msg: string, type: 'success' | 'error' = 'success'): void {
-  const t = document.createElement('div');
-  const bg = type === 'error' ? '#e74c3c' : '#2ecc71';
-  t.style.cssText = `position:fixed;top:80px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:12px 24px;border-radius:8px;font-weight:700;z-index:9999;font-size:14px;`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
-}
 
 function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): void {
   const existing = document.getElementById('payment-placeholder-modal');
