@@ -181,6 +181,13 @@ function createPanel(): void {
       renderList((btn as HTMLElement).dataset['filter'] as NotificationFilter ?? 'all');
     });
   });
+
+  // Delegated click handler for notification items — wired once here,
+  // not re-added on every renderList() call.
+  document.getElementById('notif-list')?.addEventListener('click', (e: Event) => {
+    const item = (e.target as HTMLElement).closest('.notif-item') as HTMLElement | null;
+    if (item) markRead(item.dataset['id'] ?? '');
+  });
 }
 
 function renderList(filter: NotificationFilter = 'all'): void {
@@ -228,10 +235,6 @@ function renderList(filter: NotificationFilter = 'all'): void {
       </div>`;
     })
     .join('');
-
-  list.querySelectorAll('.notif-item').forEach((item) => {
-    item.addEventListener('click', () => markRead((item as HTMLElement).dataset['id'] ?? ''));
-  });
 }
 
 // ============================================================
