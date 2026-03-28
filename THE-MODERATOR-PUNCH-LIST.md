@@ -1,0 +1,261 @@
+# THE MODERATOR — PUNCH LIST
+### Created: Session 162 (March 23, 2026)
+
+> **What this is:** The single source of truth for everything that needs doing.
+> Loads every session via project knowledge. Read this first, pick what's next, go.
+> Four sections: Housekeeping, Bugs, Features, Dependency Tiers. Each item has a status.
+>
+> **Status key:** ⏳ = open, 🔶 = in progress, ✅ = done, ❌ = won't do, 🅿️ = parked (blocked)
+
+---
+
+# SECTION 1: HOUSEKEEPING (clear before adding features)
+
+These are tech debt, cleanup, and infrastructure items. None are features — they're the foundation work that prevents future sessions from hitting landmines.
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| H-01 | 3 page modules have `any` annotations (`spectate.ts`, `groups.ts`, `home.ts`) | ✅ | Session 165–166. `home.ts`: 4 `any` → `Category`, `Profile`, `User`. `groups.ts`: 4 `any` → `SupabaseClient`, `User`, `GroupListItem`. `spectate.ts`: 14 `any` → `SpectateDebate`, `DebateMessage`, `SpectatorChatMessage`. All eslint-disables removed. Vite build clean. |
+| H-02 | `(window as any).navigateTo` in `home.ts` | ✅ | Session 163. Created `src/navigation.ts` with register/call pattern. 4 consumers updated. Zero `window.navigateTo` refs remain. |
+| H-03 | Bible docs stale after Colosseum→Moderator rename | 🔶 | Session 173: NT fully rewritten (build logs moved to OT, all refs updated, modules/pages tables current). OT updated (sessions 108-173 appended). CLAUDE.md fully rewritten. War Plan, Wiring Manifest, Land Mine Map internal content still have "Colosseum" references — not yet updated. Session 190: api/profile.js BASE_URL fixed (env var + fallback updated to themoderator.app). Env var set in Vercel. Deployed. |
+| H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ✅ | Session 163. Non-issue — stale Wiring Manifest reference. Arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
+| H-05 | Bot army quarantined from rename | ⏳ | `bot-config.ts`, `bot-engine.ts`, `lib/*`, `tests/*` still say "Colosseum" internally. Intentional during Session 160 but needs eventual cleanup. |
+| H-06 | Stripe Edge Function templates use old imports | ⏳ | Not urgent until Stripe goes live. Will block monetization when that time comes. |
+| H-07 | Edge Function CORS allowlist missing mirror domain | ⏳ | OK since mirror is pure HTML. Cleanup item. |
+| H-08 | 3 older RLS policies still have `{public}` scope | ⏳ | Low priority security hygiene. |
+| H-09 | `bot-engine.js` straggler in repo root | ✅ | Session 163. Already deleted. |
+| H-10 | TS Migration Plan — remove from project knowledge | ✅ | Session 163. Removed. |
+| H-11 | Navigation Architecture — remove from project knowledge | ✅ | Session 163. Removed. |
+| H-12 | Land Mine Map internal filenames are pre-TS-migration | ⏳ | References `colosseum-auth.js`, `colosseum-arena.js` etc. throughout. Failure patterns are still valid — only the filenames are stale. Needs a pass to update to `src/auth.ts`, `src/arena.ts` etc. |
+| H-13 | Wiring Manifest internal filenames are pre-TS-migration | ⏳ | Same issue as H-12. Every file reference in the Wiring Manifest uses pre-migration names. Patterns valid, names stale. |
+| H-14 | THE-MODERATOR-TEST-WALKTHROUGH.md needs full update | ⏳ | URLs, filenames, arena scenarios (4 modes, F-01, F-02, F-46, F-47), retire bot army scenario section. Dedicated session required. |
+| H-15 | PRODUCT-WALKTHROUGH.md needs continuation | ⏳ | Only one screen documented (Mode Select). Walk every screen in a dedicated session. |
+
+---
+
+# SECTION 2: BUGS (things that are broken right now)
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| B-01 | Arena view renders blank | ✅ | Session 163. Not a bug — arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
+| B-02 | Auth redirect loop on cold visit | ✅ | Session 163. Root cause: 4000ms page timeout vs 5000ms auth timeout = 1s gap. Fix: 4000→6000ms in home.ts, profile-depth.ts, settings.ts. |
+| B-03 | `get_my_milestones` — column 'action' does not exist | ✅ | Fixed Session 124. |
+| B-04 | `claim_milestone` — column 'action' does not exist | ✅ | Fixed Session 124. |
+| B-05 | Tier threshold gap — Tiers 3-5 unreachable | ✅ | Session 164. Expanded questionnaire from 39→100 questions (12→20 sections). 8 new B2B-driven sections added. All tier thresholds (10/25/50/75/100) now reachable. |
+| B-06 | AI Sparring pre-debate navigation bug | ✅ | Session 163. Not reproducible — killed by TS migration Session 142. |
+| B-07 | No responsive breakpoints | ✅ | Session 165. `@media (min-width: 768px)` content constraint: `.screen` capped at `max-width: 640px` + centered. Home screen (ring nav) exempted. Profile-depth grid 4-col on desktop. Groups/settings get body constraint. CSS only. |
+| B-08 | AI sparring badge mobile overlap | ✅ | Session 169. `ai-generated-badge` div moved out of `.arena-room-header` flex row, placed between header and `.arena-vs-bar` as its own centered element with `align-self:center`. |
+| B-09 | Spectator feed not filtered by category | ⏳ | Session 173 (Product Walkthrough). User queued in Couples Court sees AI/Politics debate card. Feed should only show live debates in same category. If none exist in that category, fall back to general feed. |
+
+---
+
+# SECTION 3: FEATURES (things that could be added)
+
+Organized by area. Priority column is empty — Pat decides priority, not the doc.
+
+## 3A. Arena / Debates
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-01 | Waiting room | | ✅ Full research doc | Layer 1 ✅ Session 167: dual search ring, 4-phase status, 60s AI fallback prompt, 180s hard timeout, cancel button. Layer 2 ✅ Session 169: queue population count, spectator feed. Layer 3 ✅ Session 170: category-scoped queues with backoff. |
+| F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | ✅ Session 168. 12s countdown, accept/decline buttons, respond_to_match + check_match_acceptance RPCs, player_a_ready/player_b_ready columns. |
+| F-03 | Entrance sequence / battle animations | | 🔶 Concept only | Plays on debate entry. Ties to group identity system. **Dep: needs F-31 (cosmetics defined) + F-21 (intro music).** |
+| F-04 | Instant rematch from post-debate | | ❌ No spec | Button exists in nav map, no design. |
+| F-05 | Debate recording + replay | | ✅ Attack Plan 3.1 | Synced transcript, timestamp comments, analytics overlay. |
+| F-06 | Debate analytics overlay | | ✅ Attack Plan 3.1 | Speaking time, argument count, interruption count, score timeline. **Dep: needs F-05 (recording).** |
+| F-07 | Spectator features (pulse, chat, live share) | | ❌ No spec | Conceptual. |
+| F-08 | Tournament system | | ❌ No spec | Brackets, elimination, Swiss. Feature Room Map "New E". |
+| F-45 | Desktop-optimized arena layout | | ❌ No spec | Two-column, sidebar stats. Currently phone UI centered with empty space on desktop. |
+| F-46 | Private lobby / invite-only debate | | ✅ Session 173 | ✅ DONE. 3 visibility modes: username challenge, group members only, shareable join code. Client: showPrivateLobbyPicker, showUserSearchPicker, showGroupLobbyPicker, createAndWaitPrivateLobby, startPrivateLobbyPoll, joinWithCode. SQL: create_private_lobby, check_private_lobby, join_private_lobby, cancel_private_lobby, search_users_by_username. Columns on arena_debates: visibility, join_code, invited_user_id, lobby_group_id. No debate_invites table needed. |
+| F-47 | Moderator Marketplace | | ✅ Session 179 | ✅ DONE. SQL Phases 1-3 ✅. Client Steps 1-6 ✅. Step 7 ✅ (renderModScoring: debaters get 👍/👎, spectators get slider 1–50, wired to score_moderator RPC). Step 8 ✅ (8 test cases in tests/f47-moderator-scoring.test.ts, all passing). |
+| F-48 | Mod-initiated debate | | ❌ No spec | Mod creates debate, sets topic/category, two debaters join via lobby or join code. Reverse of F-47. Reuses F-46 private lobby infrastructure. |
+
+## 3B. Token Economy / Staking
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-09 | Token prediction staking | | ✅ TOKEN-STAKING-POWERUP-PLAN.docx | Parimutuel pool, pre-debate only. Design decisions locked. |
+| F-10 | Power-up shop | | ✅ Same plan doc | 4 power-ups designed (2x Multiplier, Silence, Shield, Reveal). Schema exists. |
+| F-11 | Marketplace (cosmetics + references) | | ❌ No spec | Feature Room Map "New C". Buy/sell/trade. **Dep: needs F-31 + F-27.** |
+| F-12 | Seasonal token boosts | | 🅿️ Session 182 | Another mechanism for people to earn tokens. Parked until token economy needs tuning. No design work needed until then. **Phase 6 open decisions (from TOKEN-STAKING-POWERUP-PLAN.docx, doc deleted Session 191):** (1) Platform rake: 0% at launch — revisit if token inflation becomes a problem, obvious fix is 5–10% rake on staking pools as a token sink. (2) Silence power-up in text debate mode: unresolved — block opponent typing for 10s, or audio-only? Needs testing. (3) Power-up pricing (15/25/20/30 tokens): starting points only, requires real earn-rate data before finalizing. |
+| F-13 | Fantasy league-style picks | | ❌ Session 182 | **Scratched.** |
+
+## 3C. Groups
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-14 | Role hierarchy (Leader, Co-Leader, Elder, Member) | | ✅ Research doc §3 | ✅ DONE. Session 181. 4 roles with permission matrix. SQL + client complete. |
+| F-15 | Kick/ban/promote | | ✅ Research doc §3 | ✅ DONE. Session 181. Tied to role hierarchy. SQL + client complete. |
+| F-16 | Group settings (edit name, description, type, requirements) | | ✅ Research doc §4 | Post-creation editing. |
+| F-17 | Entry requirements (min Elo, tier, profile completion) | | ✅ Research doc §5 | Gate group membership. |
+| F-18 | Audition system (debate-based entry with group vote) | | ✅ Research doc §5 | Exhibition only (no Elo). Leader sets entry rule via dropdown: allowed by leader, must debate leader, must debate member, must win vs leader, must win vs member. Session 166. **Dep: needs F-17 (entry requirements).** |
+| F-19 | Three-tier banner progression | | ✅ Research doc §6 | Avg group win %: 0–25% standard icons, 26–50% custom static, 51%+ custom animated (10s max, 1080p small-space). Auto-unlock, permanent. Same rules for battle animations. Session 166. |
+| F-20 | Shared fate mechanic | | ✅ Session 166 | Token multiplier: `floor(avg_questions / 100 × win_pct × 80)`. 25Q × 50% = 10%. Max 80%. Permanent once reached. Lookup table in Session 166 chat. |
+| F-21 | Intro music (personal + group, 2 tiers) | | ✅ Session 166 | Renamed from "battle cries." Tier 1: 10 standard intros for everyone. Tier 2: custom 10-sec upload unlocked at 35%+ profile questions answered. |
+| F-22 | GvG battle animations | | 🔶 Concept in research doc | 4 tracks, 3 tiers each. Ties to entrance sequence. **Dep: needs F-03.** |
+
+## 3D. Social
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-23 | DM/Chat system | | ✅ Attack Plan 2.4 | Messages table, realtime, content filter, block user. Full schema designed. |
+| F-24 | Search (users, debates, topics) | | ✅ Attack Plan 2.5 | User search, topic search, filtered lobby. |
+| F-25 | Rival online alerts | | ✅ Session 182 | Renamed from "rivalry feed expansion." When a rival comes online, user gets an in-your-face popup even mid-debate: "that no good SOB [username] is in the [category] lobby looking for a debate." Fallback if popup too disruptive: red dot on nav element indicating rival presence. Needs Supabase Realtime presence tracking — when user comes online, check if any of their rivals' 5 rival slots include them, fire alert. **Popup is Tier 0. Email delivery is Tier 1 (needs F-35).** |
+| F-26 | Follow notifications | | ✅ Session 182 | Renamed from "follow recommendations." NOT a suggestion engine — just deliver notifications when followed users are online or have a new archived debate. Follows table and follow/unfollow UI already exist. Work is wiring follow events to whatever notification channel exists (email for now via F-35, push later). **Dep: needs F-35 for email delivery.** |
+
+## 3E. Reference Arsenal
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-27 | Reference Library (browse by category) | | 🔶 Session 99 brainstorm | Feature Room Map "New A" — most connected new room. |
+| F-28 | Bounty board ("I need a source proving X") | | 🔶 Session 99 brainstorm | Could be leaderboard subsection or standalone. **Dep: needs F-27 (reference library).** |
+| F-29 | Source Meta Report | | ✅ Session 182 | Public-facing weekly/monthly marketing content piece. Like ESPN power rankings but for debate sources. Content: most cited source per category, most persuasive source (highest win rate when cited), most contested topic, sources that flipped the most debates, biggest Elo movers. Data already exists in reference tracking system — report is a formatted query published as a webpage or email blast. Bot army or blog distributes it. Drives organic SEO, positions app as serious source-quality platform. |
+| F-30 | Reference marketplace | | ❌ No spec | Buy/sell/trade verified sources. Subset of F-11. **Dep: needs F-27 + F-11.** |
+
+## 3F. Profile / Identity
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-31 | Cosmetics/achievements store | | ⏳ Session 182 | Needs brainstorming session to define item categories (borders, badges, effects, titles, avatar frames, debate room themes, entrance animations) and what's earnable vs purchasable. OT references `cosmetics-shop-expanded.json` (45 items) but file no longer in repo. **Brainstorm before code.** |
+| F-32 | AI Coach / post-debate feedback | | ✅ Attack Plan 3.3 | Argument strength analysis, improvement tips. |
+| F-33 | Verified Gladiator badge | | 🔶 Session 68 concept | Voice intro for Ranked, profile depth as humanness proxy. |
+| F-34 | Trust scores | | ❌ Session 182 | **Scratched.** |
+
+## 3G. Notifications / Engagement
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-35 | Weekly newsletter + in-app toasts | | ✅ Session 190 | **(A) Newsletter via Resend** ✅ Session 187: newsletter.ts on VPS, cron live (Thu 8PM EST). **(B) In-app nudge toasts** ✅ Session 190: nudge.ts module (suppression: once/session, 24h cooldown, 3/session cap). 8 trigger points wired: enter_debate (arena.ts), round_end (arena.ts), final_score win/loss (arena.ts), return_visit (tokens.ts), first_signup (plinko.ts), replay_entry (spectate.ts), first_vote spectate (spectate.ts), first_vote hot-take feed (async.ts — added Session 190). |
+| F-36 | 7-day onboarding drip | | 🅿️ Session 182 | Product Vision §7.1 has day-by-day design (Day 1: show up → badge, Day 2: first vote, Day 3: watch debate, escalating rewards, titles "Rookie"→"Regular"→"Gladiator"). **Parked: blocked on F-35 (delivery) + F-31 (awards/rewards defined).** |
+| F-37 | Granular notification preferences | | 🅿️ Session 182 | User control panel — toggles per notification type (DMs, tournaments, bounties, citations, marketplace, rival alerts, follow activity). Feature Room Map lists this as furniture in Settings (Room 6). **Parked: blocked on F-35 (can't control channels that don't exist yet).** |
+
+## 3H. External / Growth
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-38 | Browser extension ("Take it to The Moderator") | | 🅿️ Session 182 | Concept: browser button lets users pull arguments from Reddit/Twitter into the platform for a proper debate. War Plan §4.6 + OT §8.5.4. No technical design, no wireframe, no auth flow spec. **Parked: blocked on 50+ organic users.** |
+| F-39 | Embeddable challenge links | | ✅ Session 182 | URL you paste into Reddit, Twitter, Discord, group chats. Format: `moderator.app/challenge?topic=X&user=Y`. Other person clicks, lands on challenge page (works without auth — guest sees OG tags with topic and challenger), signs up/logs in, auto-routed into private lobby. Extends F-46 infrastructure (create_private_lobby, join_private_lobby already exist). New work: public URL format, guest landing page with OG tags, signup flow that preserves challenge context, auto-routing after auth. Every link posted anywhere = user acquisition funnel. |
+| F-40 | Mirror pages with live counts | | 🔶 Partial | Mirror generator runs every 5 min. No live counts yet. |
+| F-41 | Celebrity/influencer challenge events | | ❌ Session 182 | **Way back burner.** Conceptual. |
+
+## 3I. B2B / Revenue
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-42 | B2B data dashboard / API | | ✅ Session 182 | Industry standard for alt data vendors is API access. War Chest §14.2 lists requirements: topic-level access controls, real-time vs delayed feeds, custom dashboards per client, API gating by tier. Delivery: buyer gets API key → hits endpoints scoped to paid topics/categories → gets JSON. Tier 1 = delayed (24-48h lag), Tier 2 = near-real-time, Tier 3 = real-time streaming + raw exports. Dashboard is a nice-to-have web portal on top. Auto-generated Data Integrity Report ships with every delivery (War Chest describes this). **Parked: blocked on having a buyer. War Chest §14.3: "not day-one architecture, build when first buyer is close."** |
+| F-43 | Google Ads in structural slots | | ✅ Session 182 | Renamed from "structural ad inventory." Using Google Ads (not custom ad server). Product Vision §3 defines 6 ad slots per debate at natural transition points: final score reveal, debater scorecards, moderator's verdict, pre-debate lobby, replay entry, highlight clip pre-roll. Three pricing tiers: Tier 1 (live debate breaks, premium), Tier 2 (replay breaks), Tier 3 (highlights + lobby, entry-level). Full ad format research in `THE-MODERATOR-AD-STRATEGY-RESEARCH.docx` (15 formats, eCPM data, revenue projections at 4 growth stages). Implementation work: Google AdSense integration at the 6 structural slot trigger points. |
+| F-44 | Stripe subscription tiers ($9.99/$19.99/$29.99) | | 🔶 Schema exists | Shop UI built. Stripe integration needs Edge Function fix (H-06). |
+
+## 3J. UX / Onboarding
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-35.3 | Orange Dot indicator | | ✅ Session 182 | Persistent indicator on nav for unclaimed token-earning opportunities (daily login not claimed, milestone ready, streak freeze available, unread notification). Current notification bell polls every 30s for unread count — Orange Dot is a second, always-visible indicator specifically for token actions. Simple highlight, not guided walkthrough. |
+
+---
+
+# SECTION 4: DEPENDENCY TIERS (build order)
+
+Features ordered by what can go first. Check this before picking work.
+
+**Tier 0 — no dependencies, can build now:**
+- F-04 Instant rematch
+- F-05 Debate recording + replay
+- F-07 Spectator features
+- F-08 Tournament system
+- F-09 Token prediction staking
+- F-10 Power-up shop
+- F-16 Group settings
+- F-17 Entry requirements
+- F-19 Three-tier banner progression
+- F-20 Shared fate mechanic
+- F-21 Intro music
+- F-23 DM/Chat system
+- F-24 Search
+- F-25 Rival online alerts (popup only — email needs F-35)
+- F-27 Reference Library
+- F-29 Source meta report
+- F-32 AI Coach
+- F-33 Verified Gladiator badge
+- F-35 Newsletter + in-app toasts ✅ DONE
+- F-39 Challenge links (extends F-46, already done)
+- F-40 Mirror pages with live counts
+- F-43 Google Ads in structural slots
+- F-45 Desktop-optimized arena layout
+- F-48 Mod-initiated debate (extends F-46 + F-47, both done)
+- F-31 Cosmetics brainstorm (design session, no code)
+- F-35.3 Orange Dot indicator
+- F-12 Seasonal token boosts (parked — use when token economy needs tuning)
+
+**Tier 1 — needs one Tier 0 item first:**
+- F-06 Debate analytics overlay → needs F-05 (recording)
+- F-18 Audition system → needs F-17 (entry requirements)
+- F-25 Rival online alerts (email delivery) → needs F-35
+- F-26 Follow notifications → needs F-35
+- F-28 Bounty board → needs F-27 (reference library)
+- F-37 Notification preferences → needs F-35
+
+**Tier 2 — needs two+ Tier 0/1 items:**
+- F-03 Entrance sequence / battle animations → needs F-31 + F-21
+- F-22 GvG battle animations → needs F-03
+- F-36 Onboarding drip → needs F-35 + F-31
+- F-11 Marketplace → needs F-31 + F-27
+- F-30 Reference marketplace → needs F-27 + F-11
+
+**Tier 3 — blocked by external conditions:**
+- F-38 Browser extension → needs 50+ users
+- F-42 B2B data dashboard / API → needs a buyer
+- F-41 Celebrity/influencer events → way back burner
+
+**Scratched:** F-13, F-34
+
+---
+
+# OPEN QUESTIONS FROM RESEARCH DOCS
+
+These are unresolved design questions that block specific features. Captured here so they don't get lost.
+
+1. ~~What milestones trigger each group banner tier unlock? (F-19)~~ ✅ Session 166. Avg group win %: 0–25% = standard icons we provide, 26–50% = custom static flag, 51%+ = custom animated flag (max 10s, 1080p small-space equivalent).
+2. ~~Does the group leader spend tokens to unlock tiers, or automatic at threshold? (F-19)~~ ✅ Session 166. Automatic at threshold. Permanent unlock — once crossed, never revoked.
+3. ~~Animated banner format constraints — GIF size limit, loop duration? (F-19)~~ ✅ Session 166. Answered by Q1: max 10 sec, sized for 1080p equivalent in a small space. Same rules for battle animations.
+4. ~~Battle cry audio format and duration constraints? (F-21)~~ ✅ Session 166. Renamed to "intro music." Two tiers: (a) 10 standard intros we provide for everyone, (b) custom 10-sec intro music upload unlocked at 35%+ profile questions answered.
+5. ~~Exact shared fate calculation formula — percentage, flat, scaled by group size? (F-20)~~ ✅ Session 166. Formula: `floor(avg_questions / 100 × win_pct × 80)`. Anchor: 25 avg Q's × 50% win rate = 10% token multiplier. Max: 80% at 100 Q's × 100% wins. Permanent once reached.
+6. ~~Audition debate: affects Elo or exhibition only? (F-18)~~ ✅ Session 166. Exhibition only. Group leader sets entry rule via dropdown: allowed by leader, must debate leader, must debate member, must win vs leader, must win vs member.
+7. Member contribution tracking: what metrics, how displayed? (F-14) — **Still open.**
+
+---
+
+# SOURCE DOCUMENTS
+
+This punch list was compiled from:
+- THE-MODERATOR-NEW-TESTAMENT.md (known bugs, tech debt, infrastructure status)
+- TYPESCRIPT-MIGRATION-PLAN.md (Phase 6 status, remaining items)
+- THE-MODERATOR-NAVIGATION-ARCHITECTURE.md (screen inventory, planned screens)
+- THE-MODERATOR-WAR-PLAN.md (shelved features, open decisions)
+- THE-MODERATOR-PRODUCT-VISION.md (psychology framework, ad model, gamification)
+- MODERATOR-FEATURE-ROOM-MAP.md (Ideas Master Map placement, ~90 items, 7 new rooms)
+- SESSION-RESEARCH-WAITING-ROOM-AND-GROUPS.md (waiting room + groups deep design)
+- TOKEN-STAKING-POWERUP-PLAN.docx (staking + power-up implementation plan)
+- THE-MODERATOR-ATTACK-PLAN.md (original roadmap — DMs, search, replay, AI coach)
+- Session handoffs 143, 144, 160, 161, 163, 164
+
+---
+
+# CHANGE LOG
+
+| Date | Session | What |
+|------|---------|------|
+| 2026-03-23 | 162 | Initial creation. 11 housekeeping, 6 bugs, 44 features, 7 open questions. |
+| 2026-03-23 | 163 | B-01/B-02/B-03/B-04/B-06 closed. H-02/H-04/H-09/H-10/H-11 closed. B-07 added. |
+| 2026-03-23 | 164 | B-05 closed. Profile depth expanded 39→100 questions (12→20 sections) for B2B data coverage. |
+| 2026-03-23 | 165 | B-07 closed (responsive breakpoints, CSS only). H-01 partial: home.ts + groups.ts `any` removed. F-45 added. |
+| 2026-03-23 | 166 | H-01 closed. spectate.ts: 14 `any` → 3 interfaces. 6 of 7 open questions answered: F-18 audition (exhibition, 5 entry rules), F-19 banners (win% tiers, auto/permanent), F-20 shared fate (token multiplier formula), F-21 renamed to intro music (2 tiers). Q7 still open. |
+| 2026-03-23 | 167 | F-01 Layer 1 done. Queue screen upgrade: dual search ring, 4-phase status text, 60s AI fallback prompt, 180s hard timeout, cancel button. F-02 JS started (not uploaded). |
+| 2026-03-23 | 168 | F-02 done. Match found accept/decline screen. 7 new functions, MatchAcceptResponse interface, matchFound view. SQL migration: player_a_ready/player_b_ready columns, respond_to_match + check_match_acceptance RPCs. |
+| 2026-03-23 | 169 | B-08 done (AI sparring badge mobile overlap). F-01 Layer 2 done: queue population count + spectator feed. SQL: check_queue_status() replaced via moderator-queue-population-migration.sql. |
+| 2026-03-25 | 173 | F-46 complete (private lobby). F-47 SQL Phases 1-3 done, Client Step 4 done (mod category chips). H-03 partial: NT rewritten, OT updated (108-173), CLAUDE.md rewritten. |
+| 2026-03-25 | 174 | F-47 Steps 5-6 done. Step 5: Mod Queue tab (MOD QUEUE button lobby-gated by is_moderator, showModQueue screen, loadModQueue 5s poll, claimModRequest race-condition-safe). browse_mod_queue() RPC fixed (ambiguous id→debate_id, added 'live' to status filter). Step 6: Debater opt-in toggle in category picker, request_mod_for_debate RPC, get_debate_mod_status RPC, startModStatusPoll in debate room, showModRequestModal with 30s countdown, handleModResponse accept/decline. F-48 added (mod-initiated debate concept). Files: src/arena.ts (GitHub), browse_mod_queue + request_mod_for_debate + get_debate_mod_status (Supabase). |
+| 2026-03-26 | 179 | F-46 closed (verified complete: 5 RPCs live in Supabase, all columns on arena_debates, client fully wired). F-47 closed (Step 7 renderModScoring confirmed implemented, Step 8 8 tests passing — jsdom added to devDependencies). Vitest: 113 tests passing. |
+| 2026-03-28 | 190 | F-35B closed: nudge.ts confirmed complete, first_vote nudge added to async.ts. H-03 partial: api/profile.js BASE_URL → process.env.BASE_URL with themoderator.app fallback. Env var set in Vercel, deployed. Domain confirmed: themoderator.app live on Vercel production. |
+| 2026-03-28 | 191 | Repo cleanup session. 22 docs deleted (OT records all). H-12/H-13/H-14/H-15 added (LMM + Wiring Manifest filename staleness, QA walkthrough, product walkthrough). Token staking open decisions added to F-12. Open decisions in NT updated (domain removed, subscription pricing + minors policy + Stripe timing added). War Plan and Feature Room Map deleted — content absorbed. |
+| 2026-03-27 | 182 | Major spec session. F-13 scratched. F-34 scratched. F-41 way back burner. Specs written for: F-12 (parked token mechanism), F-25 (rival online alerts with popup + red dot fallback), F-26 renamed to follow notifications (not recommendations), F-29 (public source meta report for marketing), F-35 renamed to weekly newsletter + in-app toasts (full content list defined, Resend delivery, 10 polite nudge touchpoints), F-35.3 (Orange Dot = unclaimed token indicator), F-36 parked (blocked on F-35 + F-31), F-37 parked (blocked on F-35), F-38 parked (blocked on 50+ users), F-39 (challenge links extending F-46 with public URLs), F-42 (API-first B2B delivery, tiered access, parked until buyer), F-43 renamed to Google Ads in structural slots. B-09 added (spectator feed category filter). Section 4 added: full dependency tier map across all open features. F-31 needs brainstorming session before code. |
