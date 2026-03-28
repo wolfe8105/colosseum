@@ -69,6 +69,7 @@ export interface TokenSummary {
 
 let lastKnownBalance: number | null = null;
 const milestoneClaimed = new Set<string>();
+let dailyLoginClaimed = false;
 
 // ============================================================
 // MILESTONE DEFINITIONS
@@ -217,6 +218,18 @@ function _updateBalanceDisplay(newBalance: number | null | undefined): void {
 }
 
 // ============================================================
+// ORANGE DOT (F-35.3)
+// ============================================================
+
+function updateOrangeDot(): void {
+  const profile = getCurrentProfile();
+  const hasFreezes = (profile?.streak_freezes ?? 0) > 0;
+  const show = !dailyLoginClaimed || hasFreezes;
+  const dot = document.getElementById('token-dot');
+  if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
+// ============================================================
 // SAFE RPC HELPER (uses imported safeRpc from auth.ts)
 // ============================================================
 
@@ -298,8 +311,13 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
     if (result.error !== 'Already claimed today') {
       console.warn('[Tokens] Daily login:', result.error);
     }
+    // Daily already claimed — mark and update dot regardless
+    dailyLoginClaimed = true;
+    updateOrangeDot();
     return null;
   }
+  dailyLoginClaimed = true;
+  updateOrangeDot();
   _updateBalanceDisplay(result.new_balance);
   let label = 'Daily login';
   if (result.freeze_used) {
@@ -421,8 +439,15 @@ export function init(): void {
       if (profile.token_balance != null) {
         _updateBalanceDisplay(profile.token_balance);
       }
+      // Reset daily state on each auth cycle, show dot optimistically
+      dailyLoginClaimed = false;
+      updateOrangeDot();
       claimDailyLogin();
       _loadMilestones();
+    } else {
+      // Logged out — hide dot
+      const dot = document.getElementById('token-dot');
+      if (dot) dot.style.display = 'none';
     }
   });
 }
