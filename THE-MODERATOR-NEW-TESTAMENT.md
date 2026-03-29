@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 191 (March 28, 2026)
+### Last Updated: Session 195 (March 29, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -103,7 +103,7 @@
 
 1. **Money pipe connected** — Stripe Checkout live (sandbox), Edge Functions deployed, webhooks listening. Still sandbox mode.
 2. **Single-player to multiplayer (in progress)** — follows, modals, predictions, rivals, arena, 4 debate modes, AI sparring, guest access, waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. Needs real users.
-3. **No audience** — Bot army deployed, DRY_RUN=false. Bluesky image posting LIVE. Leg 1 ENABLED (10 replies/day). Lemmy DEAD. Reddit pending API approval. Discord deferred.
+3. **No audience** — Bot army quarantined (growth strategy discontinued, Session 195). VPS remains up ($6/mo), PM2 idle. No active posting on any platform.
 
 ---
 
@@ -123,7 +123,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army on DigitalOcean VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21), PM2 managed, DRY_RUN=false. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags.
 
 ## Toolchain
 | Tool | Purpose |
@@ -139,6 +139,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 ## TypeScript Source Modules (src/*.ts)
 | File | Purpose |
 |------|---------|
+| `src/app-config.ts` | Economy constants loader: fetches milestone tokens/freezes + power-up costs from `app_config` table. 60-min cache, fallback to hardcoded. (Session 195) |
 | `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
 | `src/auth.ts` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()`, `updateModCategories()` |
 | `src/payments.ts` | Stripe Checkout, token purchases |
@@ -190,7 +191,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 - `leg2-bluesky-poster.ts` — Image-first Bluesky posting with uploadBlob()
 - `ai-generator.ts` — Auto-debate AI content + template fallback (125 combos/side)
 - `supabase-client.ts` — Bot Supabase client + CATEGORY_TO_SLUG mapping
-- `category-classifier.ts` — Keyword-based headline to category router (word-boundary regex)
+- `category-classifier.ts` — Keyword-based headline to category router (word-boundary regex). Keywords now loaded from `classifier_keywords` Supabase table (Session 195). Fallback to hardcoded arrays if DB unavailable.
 
 ## Legal Compliance
 Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA agent NOT registered. Legal emails NOT created (need domain).
@@ -223,14 +224,12 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 
 # 10. BOT-DRIVEN GROWTH
 
+**QUARANTINED — Session 195.** Bot army as a growth strategy has been discontinued. VPS remains up ($6/mo) and files remain in repo for reference, but PM2 is idle and no platforms are actively posting.
+
+Previous architecture (preserved for reference):
 - Three-leg architecture: Leg 1 (Reactive), Leg 2 (Proactive), Leg 3 (Auto-Debate Rage-Click)
-- Content-first strategy: Native image posts with ESPN-style share cards stop the scroll; text+link spam is dead
-- Daily capacity: ~370 L1 mentions, 5-10 L2 posts, 3 L3 auto-debates
-- Combined daily reach: ~6,000-40,000+ impressions
-- Actual monthly cost: $6-16/mo
-- Bot army LIVE (DRY_RUN=false). All bot links to colosseum-f30.pages.dev (mirror).
-- Platforms: Bluesky LIVE (image posting + Leg 1 replies enabled, 10/day). Lemmy DEAD. Reddit pending. Discord deferred.
-- Groq TPD cap (100k tokens/day free tier) — falls back to 125-combo template system.
+- Platforms attempted: Bluesky (was live), Lemmy (dead), Reddit (pending API), Discord (deferred)
+- Groq TPD cap (100k tokens/day free tier) — falls back to 125-combo template system
 
 ---
 
@@ -244,9 +243,8 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - Google OAuth re-enable + SMTP fix (currently: signup via Google fails, email confirm broken)
 
 ## Monitoring
-- Leg 1 Bluesky — `pm2 logs` for [LEG1][BLUESKY], watch follower count on wolfe8105.bsky.social
 - Cloudflare Web Analytics — check for real visits
-- Bot stats: bot_stats_24h + auto_debate_stats + event_log + pm2 logs
+- Supabase: bot_stats_24h + auto_debate_stats + event_log (historical data intact)
 
 ---
 
