@@ -936,3 +936,5 @@ const webrtc = {
 } as const;
 
 export default webrtc;
+
+window.addEventListener('beforeunload', leaveDebate);

@@ -136,7 +136,7 @@ async function fetchLeaderboard(): Promise<void> {
       }
     }
   } catch (e) {
-    console.warn('Leaderboard fetch failed:', e);
+    console.error('Leaderboard fetch failed:', e);
     liveData = null;
   }
   isLoading = false;
@@ -247,6 +247,11 @@ export function showEloExplainer(): void {
 // ============================================================
 
 function renderList(): string {
+  if (liveData === null && !isLoading) {
+    return `<div style="text-align:center;padding:40px 20px;color:#a0a8b8;font-size:14px;">
+      Couldn't load rankings. Check your connection and try again.
+    </div>`;
+  }
   const data = getData();
   const sorted = [...data].sort((a, b) => {
     if (currentTab === 'elo') return b.elo - a.elo;
