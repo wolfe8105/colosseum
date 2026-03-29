@@ -71,6 +71,7 @@ interface SpectatorChatMessage {
   let chatPollTimer: ReturnType<typeof setInterval> | null = null;
   let lastChatMessageAt: string | null = null;
   let lastMessageTime: string | null = null;
+  let lastRenderedMessageCount = 0;
   let debateData: SpectateDebate | null = null;
   let chatMessages: SpectatorChatMessage[] = [];
   let chatOpen = true;
@@ -232,7 +233,8 @@ interface SpectatorChatMessage {
           .select('*')
           .eq('debate_id', debateId)
           .order('round', { ascending: true })
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true })
+          .limit(100);
         messages = directMsgs || [];
       }
 
@@ -422,6 +424,7 @@ interface SpectatorChatMessage {
     html += '<div class="footer fade-up">Live debate on <a href="/">The Moderator</a> · <a href="/moderator-terms.html">Terms</a></div>';
 
     app.innerHTML = html;
+    lastRenderedMessageCount = messages.length;
 
     wireVoteButtons(d);
     wireShareButtons(d);
@@ -621,17 +624,20 @@ interface SpectatorChatMessage {
           const { data: msgData } = await rpc('get_debate_messages', { p_debate_id: debateId });
           allMessages = msgData || [];
         } catch(e) {
-          const { data: directMsgs } = await sb.from('debate_messages').select('*').eq('debate_id', debateId).order('round').order('created_at');
+          const { data: directMsgs } = await sb.from('debate_messages').select('*').eq('debate_id', debateId).order('round').order('created_at').limit(100);
           allMessages = directMsgs || [];
         }
 
         if (allMessages.length > 0) {
           const messagesEl = document.getElementById('messages');
           if (messagesEl) {
-            const currentCount = messagesEl.querySelectorAll('.msg:not(.msg-empty)').length;
-            if (allMessages.length > currentCount) {
-              messagesEl.innerHTML = renderMessages(allMessages, freshDebate);
-              messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+            if (allMessages.length > lastRenderedMessageCount) {
+              const newMessages = allMessages.slice(lastRenderedMessageCount);
+              const newHtml = renderMessages(newMessages, freshDebate);
+              const atBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 80;
+              messagesEl.insertAdjacentHTML('beforeend', newHtml);
+              lastRenderedMessageCount = allMessages.length;
+              if (atBottom) messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
             }
           }
         }
