@@ -57,14 +57,19 @@ export interface SettleResult {
 
 /** Place a stake on a debate side. */
 export async function placeStake(debateId: string, side: string, amount: number | string): Promise<StakeResult> {
-  if (!debateId || !side || !amount) {
+  if (!debateId || !side) {
     return { success: false, error: 'Missing required fields' };
+  }
+
+  const parsedAmount = parseInt(String(amount), 10);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    return { success: false, error: 'Amount must be a positive number' };
   }
 
   const result = await safeRpc<StakeResult>('place_stake', {
     p_debate_id: debateId,
     p_side: side,
-    p_amount: parseInt(String(amount), 10),
+    p_amount: parsedAmount,
   });
 
   if (result.error) {

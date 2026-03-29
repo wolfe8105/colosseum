@@ -71,6 +71,9 @@ let currentTime: LeaderboardTimeFilter = 'all';
 let liveData: LeaderboardEntry[] | null = null;
 let myRank: number | null = null;
 let isLoading = false;
+let currentOffset = 0;
+let hasMore = false;
+const PAGE_SIZE = 50;
 
 // ============================================================
 // PLACEHOLDER DATA
@@ -93,7 +96,7 @@ const PLACEHOLDER_DATA: LeaderboardEntry[] = [
 // DATA FETCHING
 // ============================================================
 
-async function fetchLeaderboard(): Promise<void> {
+async function fetchLeaderboard(append = false): Promise<void> {
   if (isLoading) return;
 
   const sb = getSupabaseClient();
@@ -108,15 +111,16 @@ async function fetchLeaderboard(): Promise<void> {
 
     const { data, error } = await safeRpc<LeaderboardRpcRow[]>('get_leaderboard', {
       p_sort_by: sortCol,
-      p_limit: 50,
-      p_offset: 0,
+      p_limit: PAGE_SIZE,
+      p_offset: currentOffset,
     });
 
     if (error || !data || (data as LeaderboardRpcRow[]).length === 0) {
-      liveData = null;
+      if (!append) liveData = null;
+      hasMore = false;
     } else {
-      liveData = (data as LeaderboardRpcRow[]).map((p, i) => ({
-        rank: i + 1,
+      const rows = (data as LeaderboardRpcRow[]).map((p, i) => ({
+        rank: currentOffset + i + 1,
         id: p.id,
         username: p.username ?? '',
         user: (p.username ?? p.display_name ?? 'ANON').toUpperCase(),
@@ -129,15 +133,19 @@ async function fetchLeaderboard(): Promise<void> {
         debates: Number(p.debates_completed) || 0,
       }));
 
+      hasMore = rows.length === PAGE_SIZE;
+      liveData = append ? [...(liveData ?? []), ...rows] : rows;
+
       const me = getCurrentUser()?.id;
-      if (me) {
+      if (me && !append) {
         const idx = liveData.findIndex((p) => p.id === me);
         myRank = idx >= 0 ? idx + 1 : null;
       }
     }
   } catch (e) {
     console.error('Leaderboard fetch failed:', e);
-    liveData = null;
+    if (!append) liveData = null;
+    hasMore = false;
   }
   isLoading = false;
 }
@@ -313,7 +321,16 @@ function renderList(): string {
           </div>
         </div>`;
     })
-    .join('');
+    .join('')
+    + (hasMore ? `
+      <div style="text-align:center;padding:16px;">
+        <button onclick="ModeratorLeaderboard.loadMore()" style="
+          padding:10px 28px;border-radius:8px;border:1px solid rgba(212,168,67,0.3);
+          background:rgba(212,168,67,0.08);color:#d4a843;
+          font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+          letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+        ">LOAD MORE</button>
+      </div>` : '');
 }
 
 // ============================================================
@@ -418,6 +435,8 @@ export function render(): void {
 
 export async function setTab(tab: LeaderboardTab): Promise<void> {
   currentTab = tab;
+  currentOffset = 0;
+  hasMore = false;
   liveData = null;
   render();
   await fetchLeaderboard();
@@ -426,9 +445,19 @@ export async function setTab(tab: LeaderboardTab): Promise<void> {
 
 export function setTime(time: LeaderboardTimeFilter): void {
   currentTime = time;
+  currentOffset = 0;
+  hasMore = false;
   // NOTE: Week/month time filters require time-bucketed stats
   // which don't exist yet in the schema.
   render();
+}
+
+export async function loadMore(): Promise<void> {
+  if (isLoading || !hasMore) return;
+  currentOffset += PAGE_SIZE;
+  await fetchLeaderboard(true);
+  const lbList = document.getElementById('lb-list');
+  if (lbList) lbList.innerHTML = renderList();
 }
 
 // ============================================================
@@ -455,6 +484,7 @@ export const ModeratorLeaderboard = {
   render,
   setTab,
   setTime,
+  loadMore,
   showEloExplainer,
 } as const;
 

@@ -195,6 +195,7 @@ export function cancelRecording(): void {
 }
 
 function cleanup(): void {
+  if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
   if (recordingStream) {
     recordingStream.getTracks().forEach((t) => t.stop());
     recordingStream = null;
