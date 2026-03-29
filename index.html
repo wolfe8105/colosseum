@@ -341,7 +341,7 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
   <button class="dropdown-item danger" id="logout-btn">🚪 Log Out</button>
 </div>
 
-<div class="mod-content main-content">
+<div class="mod-content main-content" id="mod-content">
   <div class="screen active" id="screen-home"><div class="spoke-wheel" id="spokeWheel"></div></div>
   <div class="screen" id="screen-arena"></div>
   <div class="screen" id="screen-profile">
@@ -439,6 +439,54 @@ body::after{content:'';position:fixed;inset:0;background:none;z-index:-1}
     </div>
     <div id="arsenal-content"></div>
   </div>
+
+  <!-- F-45: Desktop panel — hidden on mobile, visible ≥1024px -->
+  <aside id="desktop-panel">
+    <div class="dp-card dp-profile-card">
+      <div class="dp-avatar" id="dp-avatar">?</div>
+      <div class="dp-name" id="dp-name">GLADIATOR</div>
+      <div class="dp-tier" id="dp-tier">FREE TIER</div>
+    </div>
+
+    <div class="dp-card">
+      <div class="dp-label">ELO RATING</div>
+      <div class="dp-elo" id="dp-elo">1200</div>
+    </div>
+
+    <div class="dp-card dp-stats-grid">
+      <div class="dp-stat">
+        <div class="dp-stat-val" id="dp-wins">0</div>
+        <div class="dp-stat-lbl">WINS</div>
+      </div>
+      <div class="dp-stat">
+        <div class="dp-stat-val" id="dp-losses">0</div>
+        <div class="dp-stat-lbl">LOSSES</div>
+      </div>
+      <div class="dp-stat">
+        <div class="dp-stat-val" id="dp-streak">0</div>
+        <div class="dp-stat-lbl">STREAK</div>
+      </div>
+    </div>
+
+    <div class="dp-card">
+      <div class="dp-label">TOKENS</div>
+      <div class="dp-tokens">🪙 <span id="dp-tokens">0</span></div>
+    </div>
+
+    <div class="dp-card">
+      <div class="dp-label">PROFILE DEPTH</div>
+      <div class="dp-depth-bar">
+        <div class="dp-depth-fill" id="dp-depth-fill" style="width:0%"></div>
+      </div>
+      <div class="dp-depth-pct" id="dp-depth-pct">0% complete</div>
+    </div>
+
+    <div class="dp-card dp-nav-links">
+      <a href="moderator-profile-depth.html" class="dp-link">📊 Complete Profile</a>
+      <a href="moderator-groups.html" class="dp-link">👥 Groups</a>
+      <a href="moderator-settings.html" class="dp-link">⚙️ Settings</a>
+    </div>
+  </aside>
 </div>
 
 <div class="mod-sweep-bottom"></div>
