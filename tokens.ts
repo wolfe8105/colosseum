@@ -5,14 +5,13 @@
  * Depends on: config.ts, auth.ts
  *
  * Migration: Session 126 (Phase 2), Session 138 (cutover — imports replace globalThis reads)
- * Session 195 (L1): milestone token/freeze amounts loaded from app_config table via app-config.ts.
  */
 
 import { showToast, escapeHTML } from './config.ts';
 import { safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode, onChange } from './auth.ts';
+import { getUnreadCount } from './notifications.ts';
 import type { Profile } from './auth.ts';
 import { nudge } from './nudge.ts';
-import { initAppConfig, getMilestoneTokens, getMilestoneFreezes } from './app-config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -75,24 +74,22 @@ let dailyLoginClaimed = false;
 
 // ============================================================
 // MILESTONE DEFINITIONS
-// tokens/freezes here are display fallbacks only.
-// Live values come from app_config via app-config.ts.
 // ============================================================
 
 export const MILESTONES: Readonly<Record<MilestoneKey, MilestoneDefinition>> = {
-  first_hot_take:    { tokens: 25,  label: 'First Hot Take',      icon: '🔥' },
-  first_debate:      { tokens: 50,  label: 'First Debate',        icon: '⚔️' },
-  first_vote:        { tokens: 10,  label: 'First Vote',          icon: '🗳️' },
-  first_reaction:    { tokens: 5,   label: 'First Reaction',      icon: '👊' },
-  first_ai_sparring: { tokens: 15,  label: 'First AI Sparring',   icon: '🤖' },
-  first_prediction:  { tokens: 10,  label: 'First Prediction',    icon: '🎯' },
-  profile_3_sections:  { tokens: 30,  label: '3 Profile Sections',  icon: '📝' },
-  profile_6_sections:  { tokens: 75,  label: '6 Profile Sections',  icon: '📋' },
-  profile_12_sections: { tokens: 150, label: 'All 12 Sections',     icon: '🏆' },
-  verified_gladiator:  { tokens: 100, label: 'Verified Gladiator',  icon: '🛡️' },
-  streak_7:   { tokens: 0, label: '7-Day Streak',   icon: '❄️', freezes: 1 },
-  streak_30:  { tokens: 0, label: '30-Day Streak',  icon: '❄️', freezes: 3 },
-  streak_100: { tokens: 0, label: '100-Day Streak', icon: '❄️', freezes: 5 },
+  first_hot_take:     { tokens: 25,  label: 'First Hot Take',    icon: '🔥' },
+  first_debate:       { tokens: 50,  label: 'First Debate',      icon: '⚔️' },
+  first_vote:         { tokens: 10,  label: 'First Vote',        icon: '🗳️' },
+  first_reaction:     { tokens: 5,   label: 'First Reaction',    icon: '👊' },
+  first_ai_sparring:  { tokens: 15,  label: 'First AI Sparring', icon: '🤖' },
+  first_prediction:   { tokens: 10,  label: 'First Prediction',  icon: '🎯' },
+  profile_3_sections: { tokens: 30,  label: '3 Profile Sections', icon: '📝' },
+  profile_6_sections: { tokens: 75,  label: '6 Profile Sections', icon: '📋' },
+  profile_12_sections:{ tokens: 150, label: 'All 12 Sections',   icon: '🏆' },
+  verified_gladiator: { tokens: 100, label: 'Verified Gladiator', icon: '🛡️' },
+  streak_7:           { tokens: 0,   label: '7-Day Streak',      icon: '❄️', freezes: 1 },
+  streak_30:          { tokens: 0,   label: '30-Day Streak',      icon: '❄️', freezes: 3 },
+  streak_100:         { tokens: 0,   label: '100-Day Streak',     icon: '❄️', freezes: 5 },
 } as const;
 
 // ============================================================
@@ -145,8 +142,8 @@ function _injectCSS(): void {
       animation: milestoneSlide 3.5s ease-in-out forwards;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
-    .milestone-toast .mt-icon  { font-size:28px; display:block; margin-bottom:4px; }
-    .milestone-toast .mt-label { color:#D4A843; font-family:"Cinzel",serif; font-size:14px; letter-spacing:1px; }
+    .milestone-toast .mt-icon   { font-size:28px; display:block; margin-bottom:4px; }
+    .milestone-toast .mt-label  { color:#D4A843; font-family:"Cinzel",serif; font-size:14px; letter-spacing:1px; }
     .milestone-toast .mt-reward { font-size:13px; margin-top:4px; color:#a0a8b8; }
   `;
   document.head.appendChild(style);
@@ -177,7 +174,8 @@ function _tokenToast(tokens: number, label: string): void {
   if (!tokens || tokens <= 0) return;
   _injectCSS();
   _coinFlyUp();
-  showToast(`+${tokens} 🪙 ${label}`, 'success');
+  const msg = `+${tokens} 🪙 ${label}`;
+  showToast(msg, 'success');
 }
 
 function _milestoneToast(icon: string, label: string, tokens: number, freezes: number): void {
@@ -185,8 +183,8 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
   const el = document.createElement('div');
   el.className = 'milestone-toast';
   let rewardText = '';
-  if (tokens > 0)  rewardText = `+${Number(tokens)} 🪙 tokens`;
-  if (freezes > 0) rewardText = `+${Number(freezes)} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
+  if (tokens > 0)              rewardText = `+${Number(tokens)} 🪙 tokens`;
+  if (freezes > 0)             rewardText = `+${Number(freezes)} ❄️ streak freeze${freezes > 1 ? 's' : ''}`;
   if (tokens > 0 && freezes > 0) rewardText = `+${Number(tokens)} 🪙 + ${Number(freezes)} ❄️`;
   el.innerHTML = `
     <span class="mt-icon">${escapeHTML(icon || '🏆')}</span>
@@ -225,15 +223,14 @@ function _updateBalanceDisplay(newBalance: number | null | undefined): void {
 // ============================================================
 
 function updateOrangeDot(): void {
-  const profile = getCurrentProfile();
-  const hasFreezes = (profile?.streak_freezes ?? 0) > 0;
-  const show = !dailyLoginClaimed || hasFreezes;
+  const hasUnread = getUnreadCount() > 0;
+  const show = !dailyLoginClaimed || hasUnread;
   const dot = document.getElementById('token-dot');
   if (dot) dot.style.display = show ? 'block' : 'none';
 }
 
 // ============================================================
-// SAFE RPC HELPER
+// SAFE RPC HELPER (uses imported safeRpc from auth.ts)
 // ============================================================
 
 async function _rpc(fnName: string, args: Record<string, unknown> = {}): Promise<ClaimResult | null> {
@@ -262,7 +259,8 @@ export function requireTokens(amount: number, actionLabel?: string): boolean {
   const balance = profile.token_balance || 0;
   if (balance >= amount) return true;
   const deficit = amount - balance;
-  showToast(`Need ${amount} tokens to ${actionLabel ?? 'do that'} (${deficit} more to go)`, 'error');
+  const msg = `Need ${amount} tokens to ${actionLabel ?? 'do that'} (${deficit} more to go)`;
+  showToast(msg, 'error');
   return false;
 }
 
@@ -274,22 +272,15 @@ export async function claimMilestone(key: MilestoneKey): Promise<ClaimResult | n
   if (milestoneClaimed.has(key)) return null;
   const def = MILESTONES[key];
   if (!def) return null;
-
   const result = await _rpc('claim_milestone', { p_milestone_key: key });
   if (!result?.success) {
     if (result?.error === 'Already claimed') milestoneClaimed.add(key);
     return null;
   }
-
   milestoneClaimed.add(key);
   if (result.new_balance != null) _updateBalanceDisplay(result.new_balance);
-
-  // Use live values from app_config, fall back to result from RPC, then hardcoded
-  const tokens  = result.tokens_earned  ?? await getMilestoneTokens(key)  ?? def.tokens  ?? 0;
-  const freezes = result.freezes_earned ?? await getMilestoneFreezes(key) ?? def.freezes ?? 0;
-  _milestoneToast(def.icon, def.label, tokens, freezes);
-
-  console.log(`[Tokens] Milestone: ${key} → +${tokens} tokens, +${freezes} freezes`);
+  _milestoneToast(def.icon, def.label, result.tokens_earned ?? 0, result.freezes_earned ?? 0);
+  console.log(`[Tokens] Milestone: ${key} → +${result.tokens_earned ?? 0} tokens, +${result.freezes_earned ?? 0} freezes`);
   return result;
 }
 
@@ -320,6 +311,7 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
     if (result.error !== 'Already claimed today') {
       console.warn('[Tokens] Daily login:', result.error);
     }
+    // Daily already claimed — mark and update dot regardless
     dailyLoginClaimed = true;
     updateOrangeDot();
     return null;
@@ -437,25 +429,23 @@ export function getBalance(): number | null {
 }
 
 // ============================================================
-// INIT
+// INIT (matches moderator-tokens.js _init())
 // ============================================================
 
 export function init(): void {
   _injectCSS();
-
-  // Warm the app_config cache before any milestone claims fire
-  void initAppConfig();
-
   onChange((user, profile) => {
     if (user && profile) {
       if (profile.token_balance != null) {
         _updateBalanceDisplay(profile.token_balance);
       }
+      // Reset daily state on each auth cycle, show dot optimistically
       dailyLoginClaimed = false;
       updateOrangeDot();
       claimDailyLogin();
       _loadMilestones();
     } else {
+      // Logged out — hide dot
       const dot = document.getElementById('token-dot');
       if (dot) dot.style.display = 'none';
     }
@@ -487,7 +477,9 @@ const tokens = {
 export default tokens;
 
 // ============================================================
-// AUTO-INIT
+
+// ============================================================
+// AUTO-INIT (same pattern as .js IIFE)
 // ============================================================
 
 if (document.readyState === 'loading') {
