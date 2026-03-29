@@ -19,6 +19,12 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.s
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
 const BASE_URL = process.env.BASE_URL || 'https://themoderator.app';
 
+// In-memory cache: username → { html, expiresAt }
+// Survives across requests within the same serverless instance.
+// TTL: 60 seconds. Protects Supabase from concurrent spikes on viral links.
+const profileCache = new Map();
+const CACHE_TTL_MS = 60_000;
+
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -404,6 +410,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check in-memory cache first
+    const cached = profileCache.get(username);
+    if (cached && cached.expiresAt > Date.now()) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+      return res.status(200).send(cached.html);
+    }
+
     // Query Supabase REST API directly (no SDK needed)
     const apiUrl = `${SUPABASE_URL}/rest/v1/profiles_public?username=eq.${encodeURIComponent(username)}&select=*&limit=1`;
     const response = await fetch(apiUrl, {
@@ -429,7 +443,10 @@ export default async function handler(req, res) {
     const profile = data[0];
     const html = buildProfileHtml(profile);
 
-    // Cache for 5 minutes — profile data doesn't change that fast
+    // Populate in-memory cache
+    profileCache.set(username, { html, expiresAt: Date.now() + CACHE_TTL_MS });
+
+    // Cache for 5 minutes at the CDN edge — profile data doesn't change that fast
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     return res.status(200).send(html);
