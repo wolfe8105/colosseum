@@ -460,7 +460,7 @@ function navigateTo(screenId: string){
   document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));
   const screen=document.getElementById('screen-'+screenId);if(screen)screen.classList.add('active');
   const btn=document.querySelector(`.bottom-nav-btn[data-screen="${screenId}"]`);if(btn)btn.classList.add('active');
-  try{localStorage.setItem('colosseum_last_screen',screenId);}catch(e){}
+
 
   if(screenId==='profile'){
     ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed'));
@@ -872,8 +872,7 @@ async function appInit(){
 
   try{
     const urlScreen=new URLSearchParams(window.location.search).get('screen');
-    const lastScreen=urlScreen||localStorage.getItem('colosseum_last_screen');
-    if(lastScreen&&document.getElementById('screen-'+lastScreen)){navigateTo(lastScreen);}
+    if(urlScreen&&document.getElementById('screen-'+urlScreen)){navigateTo(urlScreen);}
   }catch(e){}
 
   loadFollowCounts();
