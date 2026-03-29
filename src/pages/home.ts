@@ -670,6 +670,18 @@ function updateUIFromProfile(user: User | null, profile: Profile | null){
   const depth=profile.profile_depth_pct||0;
   document.getElementById('profile-depth-fill').style.width=depth+'%';
   document.getElementById('profile-depth-text').innerHTML=`Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--gold);">unlock rewards</a>`;
+
+  // F-45: Desktop panel
+  const dpName=document.getElementById('dp-name');if(dpName)dpName.textContent=(profile.display_name||profile.username||'GLADIATOR').toUpperCase();
+  const dpTier=document.getElementById('dp-tier');if(dpTier)dpTier.textContent=tierLabels[tier]||'Free Tier';
+  const dpAvatar=document.getElementById('dp-avatar');if(dpAvatar)dpAvatar.textContent=(profile.display_name||profile.username||'?')[0].toUpperCase();
+  const dpElo=document.getElementById('dp-elo');if(dpElo)dpElo.textContent=String(profile.elo_rating||1200);
+  const dpWins=document.getElementById('dp-wins');if(dpWins)dpWins.textContent=String(profile.wins||0);
+  const dpLosses=document.getElementById('dp-losses');if(dpLosses)dpLosses.textContent=String(profile.losses||0);
+  const dpStreak=document.getElementById('dp-streak');if(dpStreak)dpStreak.textContent=String(profile.current_streak||0);
+  const dpTokens=document.getElementById('dp-tokens');if(dpTokens)dpTokens.textContent=(profile.token_balance||0).toLocaleString();
+  const dpDepthFill=document.getElementById('dp-depth-fill');if(dpDepthFill)dpDepthFill.style.width=depth+'%';
+  const dpDepthPct=document.getElementById('dp-depth-pct');if(dpDepthPct)dpDepthPct.textContent=depth+'% complete';
   const bioEl=document.getElementById('profile-bio-display');
   if(bioEl){
     const bio=profile.bio||'';
