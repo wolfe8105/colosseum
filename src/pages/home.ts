@@ -189,7 +189,7 @@ function buildLCARSNav() {
 
     s += `<g class="lcars-arc" data-id="${seg.id}" data-idx="${i}">`;
     s += `<path d="${d}" fill="${seg.color}" class="arc-path"/>`;
-    s += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${seg.textColor}" class="arc-label">${seg.label}</text>`;
+    s += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${seg.textColor}" class="arc-label">${escapeHTML(seg.label)}</text>`;
     s += `<text x="${clx}" y="${cly}" text-anchor="middle" dominant-baseline="central" fill="${seg.textColor}" class="arc-count"></text>`;
     s += `</g>`;
   });
