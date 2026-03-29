@@ -944,7 +944,7 @@ function renderPlaceholderCards(type: string): string {
 // POWER-UP SHOP
 // ============================================================
 
-export function showPowerUpShop(): void {
+export async function showPowerUpShop(): Promise<void> {
   if (!getCurrentUser() && !isPlaceholder()) {
     window.location.href = 'moderator-plinko.html';
     return;
@@ -952,7 +952,7 @@ export function showPowerUpShop(): void {
   view = 'powerUpShop' as ArenaView;
   pushArenaState('powerUpShop');
   const tokenBalance = Number(getCurrentProfile()?.token_balance) || 0;
-  const shopHtml = renderShop(tokenBalance);
+  const shopHtml = await renderShop(tokenBalance);
 
   if (screenEl) {
     screenEl.innerHTML = `
