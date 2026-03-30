@@ -26,6 +26,10 @@
   --mod-bg-card-hover: rgba(14,14,18,0.8);
   --mod-bg-card-active: rgba(255,255,255,0.08);
   --mod-bg-overlay: rgba(0,0,0,0.6);
+  --mod-bg-subtle: rgba(255,255,255,0.04);
+  --mod-bg-control: rgba(255,255,255,0.06);
+  --mod-bg-elevated: rgba(255,255,255,0.08);
+  --mod-bg-modal: rgba(14,14,18,0.92);
 
   /* --- Neon accents --- */
   --mod-cyan: #00ffee;
@@ -139,6 +143,10 @@
   --mod-bg-card-hover: rgba(255,255,255,0.8);
   --mod-bg-card-active: rgba(0,0,0,0.04);
   --mod-bg-overlay: rgba(234,238,242,0.7);
+  --mod-bg-subtle: rgba(0,0,0,0.03);
+  --mod-bg-control: rgba(0,0,0,0.04);
+  --mod-bg-elevated: rgba(0,0,0,0.06);
+  --mod-bg-modal: rgba(255,255,255,0.95);
 
   /* --- Neon accents (toned for light bg) --- */
   --mod-cyan: #00b8d4;
