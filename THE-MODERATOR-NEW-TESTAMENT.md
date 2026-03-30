@@ -124,7 +124,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API. Session 206: `/go` guest AI Sparring page live (moderator-go.html + api/go-respond.js). GROQ_API_KEY added to Vercel env vars. middleware.js CORS fixed (themoderator.app added). get_arena_feed RPC now accepts p_category. 5 moderator discovery touchpoints deployed (F-50): post-debate nudge, arena lobby banner, home feed card, newsletter spotlight, Plinko 5-step signup with mod opt-in.
 
 ## Toolchain
 | Tool | Purpose |
@@ -178,13 +178,14 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 | `moderator-privacy.html` | Privacy Policy |
 | `moderator-debate-landing.html` | Ungated landing, vote without signup, OG tags |
 | `moderator-auto-debate.html` | AI vs AI debate page, ungated voting, rage-click funnel |
-| `moderator-plinko.html` | Plinko Gate — 4-step signup (OAuth, Age, Username, Done) |
+| `moderator-plinko.html` | Plinko Gate — 5-step signup (OAuth, Age, Username, Moderator Opt-In, Done). Session 206: mod opt-in step added. |
 | `moderator-groups.html` | Groups: discover, rankings, challenges, GvG. Bottom tab bar (Session 205). |
 | `moderator-spectate.html` | Spectator view for live debates |
+| `moderator-go.html` | `/go` — Guest AI Sparring. No auth, no DB. Topic input, For/Against, voice/text, 3 rounds, running score, verdict. Session 206. |
 
 ## Database: 25+ SQL migrations, 41+ tables, 55+ server functions
 ## Supabase Edge Functions: ai-sparring, ai-moderator, stripe-* (templates)
-## Vercel Serverless: api/profile.js (public profile pages at /u/username)
+## Vercel Serverless: api/profile.js (public profiles at /u/username), api/challenge.js (F-39 challenge links), api/go-respond.js (guest AI Sparring, calls Groq)
 
 ## VPS Bot Files (TypeScript — source .ts in repo, compiled .js in dist/)
 - `bot-engine.ts` — PM2-managed orchestrator, legs 1/2/3

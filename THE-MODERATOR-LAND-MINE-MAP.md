@@ -3102,3 +3102,65 @@ FIX: If you want both debaters to register disapproval, remove ON CONFLICT and
   (debate_id, scorer_id) before any schema changes.
 SESSION: 178.
 ```
+
+## LM-195: middleware.js CORS allowlist must include every production domain
+
+```
+WHAT: middleware.js enforces CORS on all /api/* routes. The ALLOWED_ORIGINS
+  array must contain every domain that calls Vercel serverless functions.
+BITES YOU WHEN: You add a new domain or rename the app and forget to update
+  middleware.js. All /api/* POST requests from the missing domain return 403
+  with {"error":"Origin not allowed"}. Supabase calls are NOT affected (they
+  go direct to Supabase, not through /api/*).
+CURRENT LIST (Session 206):
+  - https://colosseum-six.vercel.app
+  - https://thecolosseum.app (legacy)
+  - https://themoderator.app (production)
+  - localhost:3000/5173 (dev/preview only)
+FIX: Add any new production domain to the ALLOWED_ORIGINS array in middleware.js.
+SESSION: 206.
+```
+
+## LM-196: get_arena_feed RPC accepts p_category — default NULL returns all
+
+```
+WHAT: get_arena_feed(p_limit int DEFAULT 20, p_category text DEFAULT NULL).
+  When p_category is NULL, returns all categories (original behavior).
+  When set, filters both arena_debates and auto_debates sub-queries.
+BITES YOU WHEN: You add a new category to the app but the auto_debates table
+  uses a different category slug. The arena_debates table uses the QUEUE
+  category slug (e.g., 'couples'), auto_debates uses whatever Leg 3 wrote.
+  Filter mismatch = auto-debates vanish from the feed for that category.
+FIX: Verify category slugs match between arena_debates and auto_debates.
+SESSION: 206.
+```
+
+## LM-197: /go page is fully standalone — no auth, no Supabase, no arena.ts
+
+```
+WHAT: moderator-go.html is a self-contained page. It calls api/go-respond.js
+  (Vercel serverless) which calls Groq directly. No Supabase auth, no database
+  writes, no tokens, no Elo. Debates are ephemeral and not saved.
+BITES YOU WHEN: You try to add features that require auth (saving debates,
+  earning tokens, recording stats). The page has zero Supabase client — you'd
+  need to add the full auth init flow to make any of that work.
+ALSO: GROQ_API_KEY must be set in Vercel env vars, not just Supabase Edge
+  Function secrets. They're separate key stores.
+FIX: If /go needs auth features in the future, either add supabase-js init
+  or redirect authenticated actions to the main arena.
+SESSION: 206.
+```
+
+## LM-198: Plinko is now 5 steps, not 4
+
+```
+WHAT: TOTAL_STEPS = 5 in src/pages/plinko.ts. Step order:
+  1. OAuth/Email → 2. Age Gate → 3. Username → 4. Moderator Opt-In → 5. Done
+BITES YOU WHEN: Email confirmation return paths hardcode step numbers. They
+  should go to step 5 (Done), skipping the mod opt-in since the user already
+  signed up. If you add more steps, update all goToStep() targets.
+ALSO: The mod opt-in step calls toggleModerator(true) from auth.ts. If that
+  RPC fails, the user still proceeds to step 5 — it shows an error toast but
+  doesn't block signup.
+SESSION: 206.
+```
