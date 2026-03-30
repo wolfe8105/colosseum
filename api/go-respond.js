@@ -47,7 +47,9 @@ YOUR RULES:
 - Final round: land your knockout — one memorable line that sticks
 - Keep responses under 60 words
 
-Respond ONLY with your debate argument. No labels, no preamble, no "AI:" prefix.`;
+After your argument, on a NEW line, rate the user's argument from 1-10 in this exact format: [SCORE:X]
+Score generously for passion and real examples. Score low for vague claims or weak logic. Be fair but not easy.
+The score is for the user's argument ONLY, not yours.`;
 }
 
 function buildScoringPrompt(topic, side, history) {
