@@ -59,14 +59,14 @@ function _injectCSS(): void {
       transform: translateX(-50%);
       z-index: 99998;
       background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
-      border: 2px solid #cc2936;
+      border: 2px solid var(--mod-magenta);
       border-radius: 14px;
       padding: 18px 20px;
       min-width: 280px;
       max-width: 340px;
       box-shadow: 0 0 30px rgba(204,41,54,0.4), 0 8px 32px rgba(0,0,0,0.6);
       animation: rivalSlideIn 0.4s ease-out forwards;
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--mod-font-ui);
     }
     #rival-alert-popup.dismissing {
       animation: rivalSlideOut 0.3s ease-in forwards;
@@ -77,24 +77,24 @@ function _injectCSS(): void {
       margin-bottom: 6px;
     }
     #rival-alert-popup .rap-title {
-      font-family: 'Cinzel', serif;
+      font-family: var(--mod-font-display);
       font-size: 13px;
       letter-spacing: 2px;
-      color: #cc2936;
+      color: var(--mod-magenta);
       text-align: center;
       margin-bottom: 4px;
     }
     #rival-alert-popup .rap-name {
-      font-family: 'Cinzel', serif;
+      font-family: var(--mod-font-display);
       font-size: 20px;
       font-weight: 700;
-      color: #f0f0f0;
+      color: var(--mod-text-heading);
       text-align: center;
       margin-bottom: 4px;
     }
     #rival-alert-popup .rap-sub {
       font-size: 13px;
-      color: #a0a8b8;
+      color: var(--mod-text-sub);
       text-align: center;
       margin-bottom: 14px;
     }
@@ -105,11 +105,11 @@ function _injectCSS(): void {
     #rival-alert-popup .rap-challenge {
       flex: 1;
       padding: 10px;
-      background: #cc2936;
+      background: var(--mod-magenta);
       color: #fff;
       border: none;
       border-radius: 8px;
-      font-family: 'Cinzel', serif;
+      font-family: var(--mod-font-display);
       font-size: 13px;
       letter-spacing: 1px;
       font-weight: 700;
@@ -118,11 +118,11 @@ function _injectCSS(): void {
     #rival-alert-popup .rap-dismiss {
       flex: 1;
       padding: 10px;
-      background: rgba(255,255,255,0.06);
-      color: #a0a8b8;
-      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--mod-bg-subtle);
+      color: var(--mod-text-sub);
+      border: 1px solid var(--mod-border-primary);
       border-radius: 8px;
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--mod-font-ui);
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;

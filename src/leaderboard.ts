@@ -256,7 +256,7 @@ export function showEloExplainer(): void {
 
 function renderList(): string {
   if (liveData === null && !isLoading) {
-    return `<div style="text-align:center;padding:40px 20px;color:#a0a8b8;font-size:14px;">
+    return `<div style="text-align:center;padding:40px 20px;color:var(--mod-text-sub);font-size:14px;">
       Couldn't load rankings. Check your connection and try again.
     </div>`;
   }
@@ -325,9 +325,9 @@ function renderList(): string {
     + (hasMore ? `
       <div style="text-align:center;padding:16px;">
         <button onclick="ModeratorLeaderboard.loadMore()" style="
-          padding:10px 28px;border-radius:8px;border:1px solid rgba(212,168,67,0.3);
-          background:rgba(212,168,67,0.08);color:#d4a843;
-          font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+          padding:10px 28px;border-radius:8px;border:1px solid var(--mod-accent-border);
+          background:var(--mod-accent-muted);color:var(--mod-accent);
+          font-family:var(--mod-font-ui);font-size:13px;font-weight:700;
           letter-spacing:1px;text-transform:uppercase;cursor:pointer;
         ">LOAD MORE</button>
       </div>` : '');
