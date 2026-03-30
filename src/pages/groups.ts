@@ -418,9 +418,9 @@ async function loadGroupMembers(groupId: string) {
             data-username="${esc(m.username || '')}"
             data-display-name="${esc(name)}"
             data-role="${esc(role)}"
-            style="background:rgba(212,168,67,0.12);color:#d4a843;
-                   border:1px solid rgba(212,168,67,0.3);border-radius:6px;
-                   padding:5px 12px;font-family:'Barlow Condensed',sans-serif;
+            style="background:var(--mod-accent-muted);color:var(--mod-accent);
+                   border:1px solid var(--mod-accent-border);border-radius:6px;
+                   padding:5px 12px;font-family:var(--mod-font-ui);
                    font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">
             MANAGE
           </button>
@@ -486,41 +486,41 @@ function _injectMemberActionsModal() {
   modal.innerHTML = `
     <div style="
       background:rgba(13,22,40,0.98);
-      border:1px solid rgba(212,168,67,0.25);
+      border:1px solid var(--mod-accent-border);
       border-radius:14px;
       padding:24px;
       width:min(360px,90vw);
-      font-family:'Barlow Condensed',sans-serif;
+      font-family:var(--mod-font-ui);
     ">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
         <div id="mam-avatar" style="font-size:28px;">⚔️</div>
         <div>
-          <div id="mam-name" style="color:#f0f0f0;font-size:17px;font-weight:700;line-height:1.2;"></div>
-          <div id="mam-role-label" style="color:rgba(160,168,184,0.7);font-size:13px;margin-top:2px;"></div>
+          <div id="mam-name" style="color:var(--mod-text-heading);font-size:17px;font-weight:700;line-height:1.2;"></div>
+          <div id="mam-role-label" style="color:var(--mod-text-sub);font-size:13px;margin-top:2px;"></div>
         </div>
       </div>
 
       <div id="mam-promote-section" style="margin-bottom:16px;">
-        <div style="color:rgba(160,168,184,0.6);font-size:11px;letter-spacing:1px;margin-bottom:8px;">CHANGE ROLE</div>
+        <div style="color:var(--mod-text-sub);font-size:11px;letter-spacing:1px;margin-bottom:8px;">CHANGE ROLE</div>
         <div style="display:flex;gap:8px;">
           <select id="mam-promote-select" style="
             flex:1;
-            background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.15);
+            background:var(--mod-bg-subtle);
+            border:1px solid var(--mod-border-primary);
             border-radius:8px;
-            color:#f0f0f0;
-            font-family:'Barlow Condensed',sans-serif;
+            color:var(--mod-text-heading);
+            font-family:var(--mod-font-ui);
             font-size:14px;
             padding:8px 10px;
             cursor:pointer;
           "></select>
           <button id="mam-promote-btn" style="
-            background:rgba(212,168,67,0.15);
-            color:#d4a843;
-            border:1px solid rgba(212,168,67,0.4);
+            background:var(--mod-accent-muted);
+            color:var(--mod-accent);
+            border:1px solid var(--mod-accent-border);
             border-radius:8px;
             padding:8px 16px;
-            font-family:'Bebas Neue',sans-serif;
+            font-family:var(--mod-font-ui);
             font-size:14px;
             letter-spacing:1px;
             cursor:pointer;
@@ -529,7 +529,7 @@ function _injectMemberActionsModal() {
         </div>
       </div>
 
-      <div style="border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;"></div>
+      <div style="border-top:1px solid var(--mod-border-secondary);margin:16px 0;"></div>
 
       <div id="mam-kick-section" style="margin-bottom:12px;">
         <button id="mam-kick-btn" style="
@@ -539,7 +539,7 @@ function _injectMemberActionsModal() {
           border:1px solid rgba(255,165,0,0.3);
           border-radius:8px;
           padding:10px;
-          font-family:'Bebas Neue',sans-serif;
+          font-family:var(--mod-font-ui);
           font-size:15px;
           letter-spacing:1px;
           cursor:pointer;
@@ -547,16 +547,16 @@ function _injectMemberActionsModal() {
       </div>
 
       <div id="mam-ban-section" style="margin-bottom:20px;">
-        <div style="color:rgba(160,168,184,0.6);font-size:11px;letter-spacing:1px;margin-bottom:6px;">BAN REASON (optional)</div>
+        <div style="color:var(--mod-text-sub);font-size:11px;letter-spacing:1px;margin-bottom:6px;">BAN REASON (optional)</div>
         <textarea id="mam-ban-reason" maxlength="280" placeholder="Reason for ban…" style="
           width:100%;
           min-height:56px;
           resize:vertical;
-          background:rgba(255,255,255,0.04);
-          border:1px solid rgba(255,255,255,0.1);
+          background:var(--mod-bg-subtle);
+          border:1px solid var(--mod-border-primary);
           border-radius:8px;
-          color:#f0f0f0;
-          font-family:'Source Sans 3',sans-serif;
+          color:var(--mod-text-heading);
+          font-family:var(--mod-font-ui);
           font-size:13px;
           padding:8px 10px;
           line-height:1.4;
@@ -565,28 +565,28 @@ function _injectMemberActionsModal() {
         "></textarea>
         <button id="mam-ban-btn" style="
           width:100%;
-          background:rgba(193,39,45,0.15);
-          color:#cc2936;
-          border:1px solid rgba(193,39,45,0.4);
+          background:var(--mod-accent-muted);
+          color:var(--mod-magenta);
+          border:1px solid var(--mod-accent-border);
           border-radius:8px;
           padding:10px;
-          font-family:'Bebas Neue',sans-serif;
+          font-family:var(--mod-font-ui);
           font-size:15px;
           letter-spacing:1px;
           cursor:pointer;
         ">🚫 BAN MEMBER</button>
       </div>
 
-      <div id="mam-error" style="display:none;color:#cc2936;font-size:13px;margin-bottom:12px;"></div>
+      <div id="mam-error" style="display:none;color:var(--mod-magenta);font-size:13px;margin-bottom:12px;"></div>
 
       <button id="mam-cancel-btn" style="
         width:100%;
-        background:rgba(255,255,255,0.05);
-        color:rgba(160,168,184,0.7);
-        border:1px solid rgba(255,255,255,0.1);
+        background:var(--mod-bg-subtle);
+        color:var(--mod-text-sub);
+        border:1px solid var(--mod-border-primary);
         border-radius:8px;
         padding:10px;
-        font-family:'Bebas Neue',sans-serif;
+        font-family:var(--mod-font-ui);
         font-size:14px;
         letter-spacing:1px;
         cursor:pointer;
