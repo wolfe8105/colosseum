@@ -7,6 +7,8 @@
 // 2. CORS wildcard → allowlist (A05 fix)
 // 3. Zero external imports — only built-in Deno APIs + fetch
 //
+// Session 207: Added themoderator.app to CORS, 10s Groq timeout
+//
 // Deploy: supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
 // Env var required: GROQ_API_KEY (shared with ai-sparring)
 // ============================================================
@@ -14,6 +16,7 @@
 const ALLOWED_ORIGINS = [
   'https://colosseum-six.vercel.app',
   'https://thecolosseum.app',
+  'https://themoderator.app',
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
@@ -89,12 +92,16 @@ ${debateContext ? `\nRECENT ARGUMENTS:\n${debateContext}` : ''}
 
 Rule on this evidence: ALLOW or DENY?`;
 
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 10000);
+
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${groqKey}`,
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [
@@ -105,6 +112,7 @@ Rule on this evidence: ALLOW or DENY?`;
         max_tokens: 100,
       }),
     });
+    clearTimeout(fetchTimeout);
 
     if (!groqRes.ok) {
       throw new Error(`Groq API error: ${groqRes.status}`);
@@ -143,7 +151,11 @@ Rule on this evidence: ALLOW or DENY?`;
     );
 
   } catch (err) {
-    console.error('AI Moderator error:', err);
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.error('AI Moderator Groq timeout (10s)');
+    } else {
+      console.error('AI Moderator error:', err);
+    }
 
     // On any error, default to ALLOW (LM-087: debate can't hang)
     return new Response(
