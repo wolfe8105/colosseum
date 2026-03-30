@@ -252,6 +252,7 @@ let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
 let signalingChannel: RealtimeChannel | null = null;
+let activeWaveform: WaveformResult | null = null;
 
 const DEFAULT_TURN_STATE: TurnState = {
   stepIndex: -1,
@@ -827,6 +828,12 @@ export function leaveDebate(): void {
     signalingChannel = null;
   }
 
+  if (activeWaveform) {
+    activeWaveform.stop();
+    activeWaveform.audioCtx.close().catch(() => { /* already closed */ });
+    activeWaveform = null;
+  }
+
   debateState = {
     debateId: null,
     role: null,
@@ -882,11 +889,12 @@ export function createWaveform(stream: MediaStream, canvasElement: HTMLCanvasEle
   }
 
   draw();
-  return {
+  activeWaveform = {
     analyser,
     audioCtx,
     stop: () => cancelAnimationFrame(rafHandle),
   };
+  return activeWaveform;
 }
 
 // ============================================================
