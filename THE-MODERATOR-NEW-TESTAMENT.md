@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 195 (March 29, 2026)
+### Last Updated: Session 205 (March 30, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -24,6 +24,7 @@
 | QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — stale, update in future session |
 | Screen-by-screen build queue | **PRODUCT-WALKTHROUGH.md** — barely started, continue in future session |
 | Security rules, file conventions, build system | **CLAUDE.md** |
+| Security & identity roadmap (YubiKey, WebAuthn, passkeys) | **THE-MODERATOR-SECURITY-ROADMAP.md** |
 
 ---
 
@@ -69,7 +70,7 @@
 - Async debate mode is survival-critical (liquidity problem)
 - Predictions = core engagement loop
 - Spoke carousel (6 tiles, hollow center, 18 degree tilt, thumb-spin)
-- Visual: Cinzel + Barlow Condensed, diagonal gradient, dark frosted glass cards, navy/red/white/gold
+- Visual: Antonio font (display + UI + body), cyberpunk neon palette (cyan/magenta/orange on black), frosted glass cards. All styles via `var(--mod-*)` CSS tokens. (Updated Session 205 — replaced Cinzel/Barlow/navy/gold)
 - Login: OAuth dominant, email collapsed behind toggle
 - All table writes locked behind server functions — client JS uses `supabase.rpc()` for all mutations
 - Bot-driven growth: fully automated 24/7 bot army, $6-16/mo actual cost
@@ -123,7 +124,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API.
 
 ## Toolchain
 | Tool | Purpose |
@@ -161,6 +162,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 | `src/navigation.ts` | Register/call pattern for page navigation. Zero window.navigateTo refs. (Session 163) |
 | `src/nudge.ts` | Polite engagement toast engine. Suppression: once per session per ID, 24h cooldown per ID, 3-per-session cap. (F-35B, Session 190) |
 | `src/reference-arsenal.ts` | 5-step forge form, reference card renderer, arsenal list + library browser (Session 147) |
+| `src/rivals-presence.ts` | Rival online alert popup — injected CSS + DOM, slide-in/out animation, challenge/dismiss buttons |
 
 ## Page Modules (src/pages/*.ts)
 `home.ts`, `login.ts`, `plinko.ts`, `settings.ts`, `profile-depth.ts`, `debate-landing.ts`, `auto-debate.ts`, `spectate.ts`, `groups.ts`, `terms.ts`
@@ -177,7 +179,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 | `moderator-debate-landing.html` | Ungated landing, vote without signup, OG tags |
 | `moderator-auto-debate.html` | AI vs AI debate page, ungated voting, rage-click funnel |
 | `moderator-plinko.html` | Plinko Gate — 4-step signup (OAuth, Age, Username, Done) |
-| `moderator-groups.html` | Groups: discover, rankings, challenges, GvG |
+| `moderator-groups.html` | Groups: discover, rankings, challenges, GvG. Bottom tab bar (Session 205). |
 | `moderator-spectate.html` | Spectator view for live debates |
 
 ## Database: 25+ SQL migrations, 41+ tables, 55+ server functions
@@ -194,7 +196,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions,
 - `category-classifier.ts` — Keyword-based headline to category router (word-boundary regex). Keywords now loaded from `classifier_keywords` Supabase table (Session 195). Fallback to hardcoded arrays if DB unavailable.
 
 ## Legal Compliance
-Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA agent NOT registered. Legal emails NOT created (need domain).
+Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA agent registered (Session 204, tracking ID 280U2D1K, status: Payment Processing). Legal emails NOT created (need domain).
 
 ---
 
@@ -211,11 +213,13 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 
 # 9. DESIGN DNA
 
-- Fox News chyron energy + ESPN stat cards + gladiator gold
-- Palette: navy, red, white, GOLD
-- Fonts: Cinzel (display) + Barlow Condensed (body)
-- Background: diagonal gradient (#1a2d4a to #2d5a8e to #5b8abf to #7aa3d4 to #3d5a80)
-- Cards: dark frosted glass (rgba(10,17,40,0.6)) + backdrop-filter blur
+- Cyberpunk neon aesthetic — frosted glass cards, neon accent stripes, wet-pavement reflections
+- Palette: black base, cyan (trust), magenta (competition), orange (action)
+- Fonts: Antonio (display + UI + body) — all via `var(--mod-font-display)` / `var(--mod-font-ui)` tokens
+- Background: pure black `#000000` (dark theme), `#eaeef2` (light theme)
+- Cards: frosted glass `rgba(22,28,38,0.78)` + backdrop-filter blur + left neon stripe + gloss overlay
+- Design tokens: `src/moderator-tokens.css` (dark + light themes, semantic accent colors, typography, spacing, z-index). Shell layout: `src/lcars-shell.css` (header, tab bar, feed, cards, screen system, loading).
+- Session 205: All inline styles in .ts files migrated to CSS token variables. Zero hardcoded hex colors or old fonts remain (except Canvas API in cards.ts).
 - Mobile-forward: phone default, 44px touch targets, scroll-snap
 - Responsive: @media (min-width: 768px) — .screen max-width 640px centered (Session 165)
 - Topic tiers: Tier 1 Politics + Sports, Tier 2 Entertainment + Couples Court, Tier 3 Music/Movies/Cars
@@ -239,8 +243,8 @@ Previous architecture (preserved for reference):
 
 ## Pat Action Items
 - Reddit API approval — check email, resubmit if rejected (submitted March 4)
-- Register DMCA agent at copyright.gov ($6)
-- Google OAuth re-enable + SMTP fix (currently: signup via Google fails, email confirm broken)
+- ~~Register DMCA agent at copyright.gov ($6)~~ ✅ Session 204. Tracking ID 280U2D1K.
+- ~~Google OAuth re-enable + SMTP fix~~ ✅ Session 204. Both confirmed working.
 
 ## Monitoring
 - Cloudflare Web Analytics — check for real visits
@@ -266,7 +270,8 @@ Previous architecture (preserved for reference):
 - **`navigator.locks` orphan bug** — noOpLock mock must load before Supabase CDN. Lives in `src/auth.ts`.
 - **Auth safety timeout is 6000ms** (was 4000ms — fixed Session 163). In home.ts, profile-depth.ts, settings.ts.
 - **Auth uses `readyPromise` pattern** — never setTimeout for async state. INITIAL_SESSION is sole init path.
-- **Google OAuth provider disabled** (LM-189). Only way to create test accounts: Supabase dashboard with Auto Confirm on.
+- **Google OAuth provider confirmed working** (Session 204).
+- **SMTP confirmed working** (Session 204). Resend, port 465, noreply@themoderator.app.
 - **DOB stripped from JWT metadata** — handle_new_user trigger strips DOB. set_profile_dob RPC for OAuth users. Session 134.
 
 ## Build / Deploy
@@ -292,6 +297,7 @@ Previous architecture (preserved for reference):
 ## Navigation / Frontend
 - **`navigateTo` uses register/call pattern** — src/navigation.ts. Zero window.navigateTo refs. Session 163.
 - **Arena popstate: replaceState for forward, history.back for back** (LM-183). Arrow function wrapping required on listeners.
+- **Groups page is separate HTML** — `moderator-groups.html` is not an inline SPA screen. Has its own bottom tab bar (Session 205). Other tabs link back to `index.html?screen=X`.
 
 ## Arena / Debates
 - **AI debates must be created as `'pending'` not `'live'`** (LM-184). Flip to live happens in enterRoom() only.
@@ -299,6 +305,7 @@ Previous architecture (preserved for reference):
 - **Match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
 - **Token staking + power-up ALL PHASES COMPLETE** (Sessions 108-110/117-118/123-124). Phase 6 (polish/balance) remains.
 - **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned.
+- **AI Sparring upgraded** (Session 204): 6 rounds, beefed-up prompts (4-6 sentences, evidence, fallacy calls), AI scoring mode (4 criteria: Logic/Evidence/Delivery/Rebuttal with scorecard).
 
 ## F-47 Moderator Marketplace (Sessions 173-174)
 - profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index
