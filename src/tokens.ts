@@ -109,7 +109,7 @@ function _injectCSS(): void {
     }
     @keyframes tokenFlash {
       0%   { box-shadow:0 0 0 0 rgba(212,168,67,0); }
-      30%  { box-shadow:0 0 20px 8px rgba(212,168,67,0.4); }
+      30%  { box-shadow:0 0 20px 8px var(--mod-accent-border); }
       100% { box-shadow:0 0 0 0 rgba(212,168,67,0); }
     }
     @keyframes milestoneSlide {
@@ -129,7 +129,7 @@ function _injectCSS(): void {
       color:#0A0A1A; font-family:"Cinzel",serif; font-weight:700;
       padding:10px 20px; border-radius:8px; z-index:99999; font-size:15px;
       white-space:nowrap; animation: tokenFlash 0.6s ease-out;
-      box-shadow: 0 4px 12px rgba(212,168,67,0.3);
+      box-shadow: 0 4px 12px var(--mod-accent-border);
     }
     .milestone-toast {
       position:fixed; bottom:80px; left:50%; transform:translateX(-50%);

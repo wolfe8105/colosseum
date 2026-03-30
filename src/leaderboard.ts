@@ -162,7 +162,7 @@ function renderShimmer(): string {
   let rows = '';
   for (let i = 0; i < 6; i++) {
     rows += `
-      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.03);">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid var(--mod-border-subtle);">
         <div class="colo-shimmer" style="width:28px;height:20px;border-radius:4px;"></div>
         <div class="colo-shimmer" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;"></div>
         <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
@@ -185,12 +185,12 @@ export function showEloExplainer(): void {
   const modal = document.createElement('div');
   modal.id = 'elo-explainer-modal';
   modal.style.cssText =
-    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:coloFadeIn 0.2s ease;';
+    'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:coloFadeIn 0.2s ease;';
 
   modal.innerHTML = `
     <div style="
       background:linear-gradient(180deg,#12122A 0%,#1a2d4a 100%);
-      border:1px solid rgba(212,168,67,0.25);border-radius:16px 16px 0 0;
+      border:1px solid var(--mod-accent-border);border-radius:16px 16px 0 0;
       padding:24px 20px 32px;max-width:420px;width:100%;
       max-height:70vh;overflow-y:auto;
       animation:coloSlideUp 0.25s ease;
@@ -206,7 +206,7 @@ export function showEloExplainer(): void {
           Your Elo is a <strong style="color:#d4a843;">skill number</strong> that goes up when you win and down when you lose.
           Everyone starts at <strong style="color:#d4a843;">1200</strong>.
         </p>
-        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="background:var(--mod-bg-subtle);border-radius:8px;padding:14px;margin-bottom:14px;">
           <div style="font-weight:700;color:#d4a843;margin-bottom:8px;font-size:13px;letter-spacing:1px;">HOW IT MOVES</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;">
@@ -227,7 +227,7 @@ export function showEloExplainer(): void {
             </div>
           </div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="background:var(--mod-bg-subtle);border-radius:8px;padding:14px;margin-bottom:14px;">
           <div style="font-weight:700;color:#d4a843;margin-bottom:8px;font-size:13px;letter-spacing:1px;">WHAT THE NUMBERS MEAN</div>
           <div style="display:flex;flex-direction:column;gap:4px;font-size:14px;">
             <div><span style="color:#a0a8b8;">1000–1199</span> — Getting started</div>
@@ -290,9 +290,9 @@ function renderList(): string {
         creator: '#d4a843',
         champion: '#cc2936',
         contender: '#2a5aab',
-        free: 'rgba(255,255,255,0.15)',
+        free: 'var(--mod-border-primary)',
       };
-      const tierBorder = tierBorderMap[p.tier] ?? 'rgba(255,255,255,0.15)';
+      const tierBorder = tierBorderMap[p.tier] ?? 'var(--mod-border-primary)';
 
       const safeUsername = escHtml(p.username ?? '');
 
@@ -300,7 +300,7 @@ function renderList(): string {
         <div data-username="${safeUsername}" style="
           display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
           background:${p.rank <= 3 ? 'rgba(212,168,67,0.04)' : 'transparent'};
-          border-bottom:1px solid rgba(255,255,255,0.03);
+          border-bottom:1px solid var(--mod-border-subtle);
         ">
           <div style="width:28px;text-align:center;font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:${rankColor};">
             ${p.rank <= 3 ? ['🥇', '🥈', '🥉'][p.rank - 1] : p.rank}
@@ -356,8 +356,8 @@ export function render(): void {
       </div>
 
       <div style="
-        background:linear-gradient(135deg,rgba(212,168,67,0.12) 0%,rgba(204,41,54,0.08) 100%);
-        border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px;margin-bottom:16px;
+        background:linear-gradient(135deg,var(--mod-accent-muted) 0%,rgba(204,41,54,0.08) 100%);
+        border:1px solid var(--mod-accent-border);border-radius:12px;padding:14px;margin-bottom:16px;
         display:flex;align-items:center;gap:12px;
       ">
         <div style="
@@ -381,13 +381,13 @@ export function render(): void {
           <button class="lb-tab ${currentTab === tab ? 'active' : ''}" onclick="ModeratorLeaderboard.setTab('${tab}')" style="
             flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
             font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-            background:${currentTab === tab ? 'rgba(212,168,67,0.15)' : 'rgba(255,255,255,0.05)'};
+            background:${currentTab === tab ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
             color:${currentTab === tab ? '#d4a843' : '#a0a8b8'};
           ">${tab === 'elo' ? 'ELO' : tab === 'wins' ? 'WINS' : '🔥 STREAK'}${
               tab === 'elo'
                 ? `<span onclick="event.stopPropagation();ModeratorLeaderboard.showEloExplainer();" style="
               display:inline-block;width:16px;height:16px;border-radius:50%;
-              background:rgba(212,168,67,0.25);color:#d4a843;
+              background:var(--mod-accent-border);color:#d4a843;
               font-size:10px;line-height:16px;text-align:center;
               margin-left:6px;cursor:pointer;vertical-align:middle;
               font-family:serif;font-weight:700;
@@ -404,7 +404,7 @@ export function render(): void {
             (t) => `
           <button onclick="ModeratorLeaderboard.setTime('${t}')" style="
             padding:6px 14px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;
-            background:${currentTime === t ? 'rgba(204,41,54,0.15)' : 'rgba(255,255,255,0.05)'};
+            background:${currentTime === t ? 'rgba(204,41,54,0.15)' : 'var(--mod-bg-subtle)'};
             color:${currentTime === t ? '#cc2936' : '#a0a8b8'};white-space:nowrap;
           ">${t === 'all' ? 'ALL TIME' : t === 'week' ? 'THIS WEEK' : 'THIS MONTH'}</button>`
           )

@@ -321,7 +321,7 @@ export function showToast(msg: string, type: ToastType = 'info'): void {
     'max-width:90vw',
     'text-align:center',
     'box-shadow:0 4px 20px rgba(0,0,0,0.4)',
-    'border:1px solid rgba(255,255,255,0.1)',
+    'border:1px solid var(--mod-border-primary)',
     'animation:coloToastIn 0.25s ease',
   ].join(';');
   toast.textContent = msg;

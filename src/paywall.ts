@@ -117,7 +117,7 @@ export function show(variant: PaywallVariant = 'general'): void {
   const modal = document.createElement('div');
   modal.id = 'paywall-modal';
   modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;
+    position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;
     display:flex;align-items:flex-end;justify-content:center;padding:0;
   `;
 
@@ -128,22 +128,22 @@ export function show(variant: PaywallVariant = 'general'): void {
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       transform:translateY(100%);transition:transform 0.3s ease;
     ">
-      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="text-align:center;margin-bottom:20px;">
         <div style="font-size:40px;margin-bottom:8px;">${escapeHTML(v.icon)}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${escapeHTML(v.title)}</div>
         <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${escapeHTML(v.subtitle)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,168,67,0.08);border-radius:8px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
           <span style="color:#d4a843;">✓</span>
           <span style="color:#f0f0f0;font-size:13px;">Ad-free experience</span>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,168,67,0.08);border-radius:8px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
           <span style="color:#d4a843;">✓</span>
           <span style="color:#f0f0f0;font-size:13px;">30+ tokens per day</span>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,168,67,0.08);border-radius:8px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
           <span style="color:#d4a843;">✓</span>
           <span style="color:#f0f0f0;font-size:13px;">Priority matchmaking & more</span>
         </div>

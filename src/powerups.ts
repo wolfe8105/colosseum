@@ -388,14 +388,14 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
 
   const popup = document.createElement('div');
   popup.id = 'powerup-reveal-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);animation:arenaFadeIn 0.3s ease;';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--mod-bg-overlay);animation:arenaFadeIn 0.3s ease;';
   popup.innerHTML = `
     <div style="background:#12122a;border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
       <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:2px;text-align:center;margin-bottom:12px;">👁️ OPPONENT'S LOADOUT</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${items.length > 0 ? items.join('') : '<div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);text-align:center;">No power-ups equipped</div>'}
       </div>
-      <button id="reveal-close-btn" style="display:block;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-size:13px;cursor:pointer;">DISMISS</button>
+      <button id="reveal-close-btn" style="display:block;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-size:13px;cursor:pointer;">DISMISS</button>
     </div>
   `;
   document.body.appendChild(popup);

@@ -644,7 +644,7 @@ export function renderPredictions(container: HTMLElement): void {
     container.innerHTML = `
       <div style="text-align:center;padding:20px;">
         <div style="color:#6a7a90;font-size:13px;margin-bottom:12px;">No active predictions yet.</div>
-        <button data-action="create-prediction" style="padding:10px 20px;border-radius:20px;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.1);color:#d4a843;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE PREDICTION</button>
+        <button data-action="create-prediction" style="padding:10px 20px;border-radius:20px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE PREDICTION</button>
       </div>`;
     return;
   }
@@ -652,7 +652,7 @@ export function renderPredictions(container: HTMLElement): void {
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 8px;">
       <div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:#d4a843;">🔮 PREDICTIONS</div>
-      <button data-action="create-prediction" style="padding:5px 12px;border-radius:14px;border:1px solid rgba(212,168,67,0.25);background:rgba(212,168,67,0.08);color:#d4a843;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE</button>
+      <button data-action="create-prediction" style="padding:5px 12px;border-radius:14px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE</button>
     </div>
     ${predictions.map((p) => _renderPredictionCard(p)).join('')}
     ${standaloneQuestions.map((q) => _renderStandaloneCard(q)).join('')}`;
@@ -666,7 +666,7 @@ function _renderPredictionCard(p: Prediction): string {
   const isLive = p.status === 'live' || p.status === 'in_progress';
 
   return `
-    <div style="background:#132240;border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         ${isLive ? '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cc2936;font-weight:600;letter-spacing:1px;"><span style="width:6px;height:6px;background:#cc2936;border-radius:50%;animation:livePulse 1.5s ease-in-out infinite;"></span>LIVE</span>' : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">UPCOMING</span>'}
         <span style="font-size:11px;color:#6a7a90;">${Number(p.total)} predictions</span>
@@ -675,8 +675,8 @@ function _renderPredictionCard(p: Prediction): string {
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button data-action="predict" data-id="${safeDebateId}" data-pick="a" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
-          background:${p.user_pick === 'a' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
-          border:1px solid ${p.user_pick === 'a' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
+          background:${p.user_pick === 'a' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
+          border:1px solid ${p.user_pick === 'a' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP1}</div>
           <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p1_elo)}</div>
@@ -684,15 +684,15 @@ function _renderPredictionCard(p: Prediction): string {
         <div style="display:flex;align-items:center;font-family:'Cinzel',serif;font-size:12px;color:#cc2936;letter-spacing:1px;">VS</div>
         <button data-action="predict" data-id="${safeDebateId}" data-pick="b" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
-          background:${p.user_pick === 'b' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
-          border:1px solid ${p.user_pick === 'b' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
+          background:${p.user_pick === 'b' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
+          border:1px solid ${p.user_pick === 'b' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP2}</div>
           <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p2_elo)}</div>
         </button>
       </div>
-      <div style="position:relative;height:24px;background:rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${Number(p.pct_a)}%;background:linear-gradient(90deg,rgba(212,168,67,0.3),rgba(212,168,67,0.15));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
+      <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${Number(p.pct_a)}%;background:linear-gradient(90deg,var(--mod-accent-border),var(--mod-accent-muted));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
           <span style="color:#d4a843;">${Number(p.pct_a)}%</span>
           <span style="color:#a0a8b8;">${Number(p.pct_b)}%</span>
@@ -716,7 +716,7 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
   const userPick = q._userPick ?? null;
 
   return `
-    <div style="background:#132240;border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:11px;color:#d4a843;letter-spacing:1px;">COMMUNITY</span>
         <span style="font-size:11px;color:#6a7a90;">${total} picks · by ${creator}</span>
@@ -725,22 +725,22 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button data-action="standalone-pick" data-id="${safeId}" data-pick="a" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
-          background:${userPick === 'a' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
-          border:1px solid ${userPick === 'a' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
+          background:${userPick === 'a' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
+          border:1px solid ${userPick === 'a' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeA}</div>
         </button>
         <div style="display:flex;align-items:center;font-family:'Cinzel',serif;font-size:12px;color:#cc2936;letter-spacing:1px;">VS</div>
         <button data-action="standalone-pick" data-id="${safeId}" data-pick="b" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
-          background:${userPick === 'b' ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.04)'};
-          border:1px solid ${userPick === 'b' ? 'rgba(212,168,67,0.4)' : 'rgba(255,255,255,0.08)'};
+          background:${userPick === 'b' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
+          border:1px solid ${userPick === 'b' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeB}</div>
         </button>
       </div>
-      <div style="position:relative;height:24px;background:rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${pctA}%;background:linear-gradient(90deg,rgba(212,168,67,0.3),rgba(212,168,67,0.15));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
+      <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${pctA}%;background:linear-gradient(90deg,var(--mod-accent-border),var(--mod-accent-muted));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
           <span style="color:#d4a843;">${pctA}%</span>
           <span style="color:#a0a8b8;">${pctB}%</span>
@@ -869,30 +869,30 @@ export function openCreatePredictionForm(): void {
   document.getElementById('create-prediction-sheet')?.remove();
   const overlay = document.createElement('div');
   overlay.id = 'create-prediction-sheet';
-  overlay.style.cssText =
-    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+
   overlay.innerHTML = `
     <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));">
-      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;"></div>
+      <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 16px;"></div>
       <div style="font-family:'Cinzel',serif;font-size:16px;letter-spacing:2px;color:#d4a843;text-align:center;margin-bottom:16px;">CREATE PREDICTION</div>
       <div style="margin-bottom:12px;">
         <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">QUESTION</label>
-        <textarea id="cpq-topic" maxlength="200" placeholder="Will AI replace most jobs by 2030?" style="width:100%;min-height:60px;padding:10px 12px;background:#0a1628;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;resize:none;outline:none;"></textarea>
+        <textarea id="cpq-topic" maxlength="200" placeholder="Will AI replace most jobs by 2030?" style="width:100%;min-height:60px;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;resize:none;outline:none;"></textarea>
         <div id="cpq-topic-count" style="font-size:10px;color:#6a7a90;text-align:right;margin-top:2px;">0/200</div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:12px;">
         <div style="flex:1;">
           <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">SIDE A</label>
-          <input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          <input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
         </div>
         <div style="flex:1;">
           <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">SIDE B</label>
-          <input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          <input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
         </div>
       </div>
       <div style="margin-bottom:16px;">
         <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">CATEGORY (optional)</label>
-        <select id="cpq-category" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;">
+        <select id="cpq-category" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;">
           <option value="">None</option>
           <option value="politics">Politics</option>
           <option value="sports">Sports</option>
@@ -902,7 +902,7 @@ export function openCreatePredictionForm(): void {
         </select>
       </div>
       <div style="display:flex;gap:8px;">
-        <button id="cpq-cancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:#a0a8b8;font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;cursor:pointer;">CANCEL</button>
+        <button id="cpq-cancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--mod-border-primary);background:none;color:#a0a8b8;font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;cursor:pointer;">CANCEL</button>
         <button id="cpq-submit" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#b8922e,#d4a843);color:#0a1628;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">POST</button>
       </div>
     </div>`;
@@ -1049,25 +1049,25 @@ function _showChallengeModal(take: HotTake): void {
 
   const modal = document.createElement('div');
   modal.id = 'challenge-modal';
-  modal.style.cssText =
-    'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+
   modal.innerHTML = `
     <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
-      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="font-family:'Cinzel',serif;font-size:22px;letter-spacing:2px;color:#cc2936;text-align:center;margin-bottom:4px;">⚔️ CHALLENGE</div>
       <div style="color:#a0a8b8;text-align:center;font-size:13px;margin-bottom:16px;">You disagree with ${safeUser}?</div>
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);border-radius:10px;padding:14px;margin-bottom:16px;">
         <div style="font-size:13px;color:#f0f0f0;line-height:1.4;">"${safeText}"</div>
         <div style="font-size:11px;color:#6a7a90;margin-top:6px;">— ${safeUser} (ELO ${Number(take.elo)})</div>
       </div>
       <textarea id="challenge-response" placeholder="Your counter-argument..." style="
-        width:100%;background:#1a2d4a;border:1px solid rgba(255,255,255,0.1);border-radius:10px;
+        width:100%;background:#1a2d4a;border:1px solid var(--mod-border-primary);border-radius:10px;
         color:#f0f0f0;padding:12px;font-size:14px;resize:none;height:80px;
         font-family:'Barlow Condensed',sans-serif;margin-bottom:12px;box-sizing:border-box;
       "></textarea>
       <div style="display:flex;gap:8px;">
         <button data-action="cancel-challenge" style="
-          flex:1;padding:12px;background:#1a2d4a;color:#a0a8b8;border:1px solid rgba(255,255,255,0.1);
+          flex:1;padding:12px;background:#1a2d4a;color:#a0a8b8;border:1px solid var(--mod-border-primary);
           border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;
         ">CANCEL</button>
         <button data-action="submit-challenge" style="
@@ -1281,9 +1281,9 @@ export async function refreshRivals(): Promise<void> {
 
 export function getComposerHTML(): string {
   return `
-    <div style="background:#132240;border:1px solid rgba(212,168,67,0.15);border-radius:12px;padding:14px;margin-bottom:16px;">
+    <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:16px;">
       <textarea id="hot-take-input" placeholder="Drop a hot take..." style="
-        width:100%;background:#1a2d4a;border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+        width:100%;background:#1a2d4a;border:1px solid var(--mod-border-secondary);border-radius:10px;
         color:#f0f0f0;padding:12px;font-size:14px;resize:none;height:60px;
         font-family:'Barlow Condensed',sans-serif;margin-bottom:8px;box-sizing:border-box;
       " maxlength="280"></textarea>

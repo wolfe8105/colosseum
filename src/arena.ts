@@ -409,7 +409,7 @@ function injectCSS(): void {
 
     /* MODE SELECT OVERLAY */
     .arena-mode-overlay { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; justify-content: flex-end; }
-    .arena-mode-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
+    .arena-mode-backdrop { position: absolute; inset: 0; background: var(--mod-bg-overlay); }
     .arena-mode-sheet { position: relative; background: var(--mod-bg-base); border-top: 1px solid var(--mod-border-primary); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; transform: translateY(0); animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
     @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .arena-mode-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--mod-border-secondary); margin: 0 auto 16px; }
@@ -498,7 +498,7 @@ function injectCSS(): void {
     .arena-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
     .arena-msg { max-width: 85%; padding: 10px 14px; border-radius: var(--mod-radius-lg); font-size: 14px; line-height: 1.5; word-break: break-word; }
     .arena-msg.side-a { align-self: flex-start; background: var(--mod-accent-muted); border: 1px solid var(--mod-accent-border); color: var(--mod-text-primary); border-bottom-left-radius: var(--mod-radius-sm); }
-    .arena-msg.side-b { align-self: flex-end; background: rgba(85,94,120,0.12); border: 1px solid rgba(85,94,120,0.2); color: var(--mod-text-primary); border-bottom-right-radius: var(--mod-radius-sm); }
+    .arena-msg.side-b { align-self: flex-end; background: var(--mod-bg-subtle); border: 1px solid var(--mod-bg-subtle); color: var(--mod-text-primary); border-bottom-right-radius: var(--mod-radius-sm); }
     .arena-msg .msg-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
     .arena-msg.side-a .msg-label { color: var(--mod-accent); }
     .arena-msg.side-b .msg-label { color: var(--mod-bar-secondary); }
@@ -506,7 +506,7 @@ function injectCSS(): void {
     .arena-msg.system { align-self: center; max-width: 90%; background: var(--mod-bg-card); border: 1px solid var(--mod-border-subtle); color: var(--mod-text-muted); font-size: 12px; text-align: center; border-radius: var(--mod-radius-md); }
 
     /* AI TYPING INDICATOR */
-    .arena-typing { align-self: flex-end; padding: 10px 18px; background: rgba(85,94,120,0.08); border: 1px solid rgba(85,94,120,0.12); border-radius: var(--mod-radius-lg); border-bottom-right-radius: var(--mod-radius-sm); display: flex; gap: 4px; }
+    .arena-typing { align-self: flex-end; padding: 10px 18px; background: var(--mod-bg-subtle); border: 1px solid var(--mod-bg-subtle); border-radius: var(--mod-radius-lg); border-bottom-right-radius: var(--mod-radius-sm); display: flex; gap: 4px; }
     .arena-typing .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mod-bar-secondary); animation: typingDot 1.4s ease-in-out infinite; }
     .arena-typing .dot:nth-child(2) { animation-delay: 0.2s; }
     .arena-typing .dot:nth-child(3) { animation-delay: 0.4s; }
@@ -602,8 +602,8 @@ function injectCSS(): void {
     /* SESSION 39: MODERATOR UI */
 
     /* Reference submit button */
-    .arena-ref-btn { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--mod-radius-md);border:1px solid rgba(85,94,120,0.3);background:rgba(85,94,120,0.08);color:var(--mod-bar-secondary);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-left:8px;white-space:nowrap; }
-    .arena-ref-btn:active { background:rgba(85,94,120,0.2); }
+    .arena-ref-btn { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-bg-subtle);background:var(--mod-bg-subtle);color:var(--mod-bar-secondary);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-left:8px;white-space:nowrap; }
+    .arena-ref-btn:active { background:var(--mod-bg-subtle); }
 
     /* Reference submit form (inline under messages) */
     .arena-ref-form { padding:10px 16px;border-top:1px solid var(--mod-border-subtle);background:var(--mod-bg-card); }
@@ -614,15 +614,15 @@ function injectCSS(): void {
     .arena-ref-side-btn { flex:1;padding:8px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center; }
     .arena-ref-side-btn.active { border-color:var(--mod-accent-border);color:var(--mod-accent);background:var(--mod-accent-muted); }
     .arena-ref-actions { display:flex;gap:8px; }
-    .arena-ref-submit { flex:1;padding:8px;border-radius:var(--mod-radius-md);border:none;background:rgba(85,94,120,0.15);color:var(--mod-bar-secondary);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer; }
-    .arena-ref-submit:active { background:rgba(85,94,120,0.3); }
+    .arena-ref-submit { flex:1;padding:8px;border-radius:var(--mod-radius-md);border:none;background:var(--mod-bg-subtle);color:var(--mod-bar-secondary);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer; }
+    .arena-ref-submit:active { background:var(--mod-bg-subtle); }
     .arena-ref-cancel { padding:8px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-subtle);background:none;color:var(--mod-text-muted);font-size:12px;cursor:pointer; }
 
     /* Moderator ruling panel (bottom sheet) */
 
     /* Ranked / Casual picker */
     .arena-rank-overlay { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; justify-content: flex-end; }
-    .arena-rank-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
+    .arena-rank-backdrop { position: absolute; inset: 0; background: var(--mod-bg-overlay); }
     .arena-rank-sheet { position: relative; background: var(--mod-bg-base); border-top: 1px solid var(--mod-border-primary); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); max-height: 70vh; overflow-y: auto; animation: sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
     .arena-rank-title { font-family: var(--mod-font-ui); font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-muted); text-transform: uppercase; text-align: center; margin-bottom: 4px; }
     .arena-rank-subtitle { font-size: 13px; color: var(--mod-text-body); text-align: center; margin-bottom: 16px; }
@@ -635,20 +635,20 @@ function injectCSS(): void {
     .arena-rank-card-name { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size); font-weight: var(--mod-font-card-title-weight); letter-spacing: var(--mod-font-card-title-spacing); color: var(--mod-text-primary); }
     .arena-rank-card-desc { font-size: 12px; color: var(--mod-text-body); line-height: 1.5; }
     .arena-rank-card-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: var(--mod-radius-pill); margin-top: 8px; }
-    .arena-rank-card.casual .arena-rank-card-badge { background: rgba(85,94,120,0.15); color: var(--mod-bar-primary); }
+    .arena-rank-card.casual .arena-rank-card-badge { background: var(--mod-bg-subtle); color: var(--mod-bar-primary); }
     .arena-rank-card.ranked .arena-rank-card-badge { background: var(--mod-accent-muted); color: var(--mod-accent); }
     .arena-rank-cancel { display: block; width: 100%; padding: 14px; border: 1px solid var(--mod-border-primary); background: none; border-radius: var(--mod-radius-md); color: var(--mod-text-muted); font-family: var(--mod-font-ui); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
 
     /* Ranked/Casual badge in queue + post-debate */
     .arena-rank-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; border-radius: var(--mod-radius-pill); margin-bottom: 8px; }
-    .arena-rank-badge.casual { background: rgba(85,94,120,0.15); color: var(--mod-bar-primary); }
+    .arena-rank-badge.casual { background: var(--mod-bg-subtle); color: var(--mod-bar-primary); }
     .arena-rank-badge.ranked { background: var(--mod-accent-muted); color: var(--mod-accent); }
     .arena-elo-change { font-size: 14px; font-weight: 700; margin-top: 8px; letter-spacing: 1px; }
     .arena-elo-change.positive { color: var(--mod-status-open); }
     .arena-elo-change.negative { color: var(--mod-accent); }
     .arena-elo-change.neutral { color: var(--mod-text-muted); }
     .mod-ruling-overlay { position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end; }
-    .mod-ruling-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.6); }
+    .mod-ruling-backdrop { position:absolute;inset:0;background:var(--mod-bg-overlay); }
     .mod-ruling-sheet { position:relative;background:var(--mod-bg-base);border-top:2px solid var(--mod-accent);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + var(--safe-bottom));max-height:70vh;overflow-y:auto;animation:sheetSlideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
     .mod-ruling-handle { width:36px;height:4px;border-radius:2px;background:var(--mod-border-secondary);margin:0 auto 12px; }
     .mod-ruling-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center;margin-bottom:4px; }
@@ -717,7 +717,7 @@ function injectCSS(): void {
     .mod-score-val { font-family:var(--mod-font-ui);font-size:16px;color:var(--mod-accent);margin-top:4px; }
 
     /* SESSION 113: Transcript bottom sheet */
-    .arena-transcript-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center; }
+    .arena-transcript-overlay { position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center; }
     .arena-transcript-sheet { background:var(--mod-bg-base);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;padding-bottom:max(12px,env(safe-area-inset-bottom)); }
     .arena-transcript-header { padding:16px 20px 12px;border-bottom:1px solid var(--mod-border-subtle);flex-shrink:0; }
     .arena-transcript-handle { width:40px;height:4px;background:var(--mod-border-secondary);border-radius:2px;margin:0 auto 12px; }
@@ -727,7 +727,7 @@ function injectCSS(): void {
     .arena-transcript-round { font-size:10px;color:var(--mod-text-muted);letter-spacing:2px;text-align:center;padding:8px 0 4px;text-transform:uppercase; }
     .arena-transcript-msg { padding:10px 14px;border-radius:var(--mod-radius-lg);max-width:85%; }
     .arena-transcript-msg.side-a { background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);align-self:flex-start; }
-    .arena-transcript-msg.side-b { background:rgba(85,94,120,0.12);border:1px solid rgba(85,94,120,0.2);align-self:flex-end; }
+    .arena-transcript-msg.side-b { background:var(--mod-bg-subtle);border:1px solid var(--mod-bg-subtle);align-self:flex-end; }
     .arena-transcript-msg .t-name { font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px; }
     .arena-transcript-msg.side-a .t-name { color:var(--mod-accent); }
     .arena-transcript-msg.side-b .t-name { color:var(--mod-bar-secondary); }
@@ -1289,7 +1289,7 @@ function showCategoryPicker(mode: string, topic: string): void {
   overlay.innerHTML = `
     <style>
       .arena-cat-overlay { position:fixed; inset:0; z-index:300; display:flex; align-items:flex-end; }
-      .arena-cat-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+      .arena-cat-backdrop { position:absolute; inset:0; background:var(--mod-bg-overlay); }
       .arena-cat-sheet { position:relative; width:100%; background:var(--mod-bg-base); border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0; padding:20px 20px calc(20px + var(--safe-bottom)); z-index:1; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
       @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
       .arena-cat-handle { width:36px; height:4px; border-radius:2px; background:var(--mod-border-primary); margin:0 auto 16px; }
@@ -3266,7 +3266,7 @@ export function showPrivateLobbyPicker(): void {
   overlay.innerHTML = `
     <style>
       #arena-private-overlay { position:fixed;inset:0;z-index:300;display:flex;align-items:flex-end; }
-      .arena-private-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.5); }
+      .arena-private-backdrop { position:absolute;inset:0;background:var(--mod-bg-overlay); }
       .arena-private-sheet { position:relative;width:100%;background:var(--mod-bg-base);border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0;padding:20px 20px calc(20px + var(--safe-bottom));z-index:1;animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
       @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
       .arena-private-handle { width:36px;height:4px;border-radius:2px;background:var(--mod-border-primary);margin:0 auto 16px; }
@@ -3360,7 +3360,7 @@ function showUserSearchPicker(mode: string, topic: string): void {
   overlay.innerHTML = `
     <style>
       #arena-user-search-overlay { position:fixed;inset:0;z-index:300;display:flex;align-items:flex-end; }
-      .arena-user-search-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.5); }
+      .arena-user-search-backdrop { position:absolute;inset:0;background:var(--mod-bg-overlay); }
       .arena-user-search-sheet { position:relative;width:100%;background:var(--mod-bg-base);border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0;padding:20px 20px calc(20px + var(--safe-bottom));z-index:1;max-height:70vh;display:flex;flex-direction:column;animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
       .arena-user-search-handle { width:36px;height:4px;border-radius:2px;background:var(--mod-border-primary);margin:0 auto 16px; }
       .arena-user-search-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center;margin-bottom:16px; }
@@ -3448,7 +3448,7 @@ async function showGroupLobbyPicker(mode: string, topic: string): Promise<void> 
   overlay.innerHTML = `
     <style>
       #arena-group-pick-overlay { position:fixed;inset:0;z-index:300;display:flex;align-items:flex-end; }
-      .arena-group-pick-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.5); }
+      .arena-group-pick-backdrop { position:absolute;inset:0;background:var(--mod-bg-overlay); }
       .arena-group-pick-sheet { position:relative;width:100%;background:var(--mod-bg-base);border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0;padding:20px 20px calc(20px + var(--safe-bottom));z-index:1;max-height:70vh;overflow-y:auto;animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
       .arena-group-pick-handle { width:36px;height:4px;border-radius:2px;background:var(--mod-border-primary);margin:0 auto 16px; }
       .arena-group-pick-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;text-align:center;margin-bottom:16px; }
@@ -4059,7 +4059,7 @@ function showModRequestModal(modName: string, modId: string, debateId: string): 
   let secondsLeft = 30;
   const modal = document.createElement('div');
   modal.id = 'mod-request-modal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--mod-bg-overlay);';
   modal.innerHTML = `
     <div style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-lg);padding:28px 24px;max-width:320px;width:90%;text-align:center;">
       <div style="font-size:32px;margin-bottom:12px;">🧑‍⚖️</div>

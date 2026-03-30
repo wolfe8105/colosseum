@@ -694,10 +694,10 @@ export async function showUserProfile(userId: string): Promise<void> {
 
   const modal = document.createElement('div');
   modal.id = 'user-profile-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `
     <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
-      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="text-align:center;color:#6a7a90;font-size:13px;">Loading profile...</div>
     </div>`;
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
@@ -735,27 +735,27 @@ export async function showUserProfile(userId: string): Promise<void> {
       ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:#d4a843;text-decoration:none;">View full profile →</a>` : ''}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
+      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
         <div style="font-family:'Cinzel',serif;font-size:18px;color:#d4a843;">${Number(profile.elo_rating) || 1200}</div>
         <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">ELO</div>
       </div>
-      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
+      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
         <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.wins) || 0}-${Number(profile.losses) || 0}</div>
         <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">W-L</div>
       </div>
-      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
+      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
         <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.followers) || 0}</div>
         <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWERS</div>
       </div>
-      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 4px;">
+      <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
         <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.following) || 0}</div>
         <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWING</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:rgba(255,255,255,0.08);color:#a0a8b8;border:1px solid rgba(255,255,255,0.15);' : 'background:#d4a843;color:#0a1628;'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
-      <button id="upm-rival-btn" style="flex:1;padding:12px;background:rgba(204,41,54,0.15);color:#cc2936;border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
-      <button style="padding:12px 16px;background:rgba(255,255,255,0.05);color:#a0a8b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-size:14px;cursor:pointer;" onclick="document.getElementById('user-profile-modal')?.remove()">✕</button>
+      <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:var(--mod-bg-control);color:#a0a8b8;border:1px solid var(--mod-border-primary);' : 'background:#d4a843;color:#0a1628;'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
+      <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:#cc2936;border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
+      <button style="padding:12px 16px;background:var(--mod-bg-subtle);color:#a0a8b8;border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" onclick="document.getElementById('user-profile-modal')?.remove()">✕</button>
     </div>`;
 
   // Follow button handler
@@ -777,7 +777,7 @@ export async function showUserProfile(userId: string): Promise<void> {
       if (result.success && followBtn) {
         isFollowing = true;
         followBtn.textContent = 'FOLLOWING';
-        followBtn.style.background = 'rgba(255,255,255,0.08)';
+        followBtn.style.background = 'var(--mod-bg-control)';
         followBtn.style.color = '#a0a8b8';
       }
     }
@@ -795,7 +795,7 @@ export async function showUserProfile(userId: string): Promise<void> {
     const result = await declareRival(userId);
     if (result.success && rivalBtn) {
       rivalBtn.textContent = '⚔️ SENT';
-      rivalBtn.style.background = 'rgba(204,41,54,0.3)';
+      rivalBtn.style.background = 'var(--mod-magenta-glow)';
       (rivalBtn as HTMLButtonElement).disabled = true;
     } else if (rivalBtn) {
       console.error('declareRival failed:', result.error);
@@ -993,10 +993,10 @@ export function requireAuth(actionLabel?: string): boolean {
   const safeLabel = esc(actionLabel ?? 'do that');
   const modal = document.createElement('div');
   modal.id = 'auth-gate-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
   const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
   modal.innerHTML = `
-    <div style="background:#12122A;border:1px solid rgba(212,168,67,0.3);border-radius:12px;padding:28px 24px;max-width:340px;width:90%;text-align:center;">
+    <div style="background:#12122A;border:1px solid var(--mod-accent-border);border-radius:12px;padding:28px 24px;max-width:340px;width:90%;text-align:center;">
       <div style="font-size:32px;margin-bottom:12px;">⚔️</div>
       <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#D4A843;margin-bottom:8px;">JOIN THE ARENA</div>
       <div style="font-size:14px;color:#ccc;margin-bottom:20px;">Sign in to ${safeLabel}</div>

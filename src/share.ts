@@ -152,7 +152,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
   const modal = document.createElement('div');
   modal.id = 'post-debate-share';
   modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;
+    position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;
     display:flex;align-items:flex-end;justify-content:center;
   `;
 
@@ -176,7 +176,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
           font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;
         ">📤 SHARE</button>
         <button id="post-debate-invite-btn" style="
-          flex:1;padding:14px;background:#1a2d4a;color:#d4a843;border:1px solid rgba(212,168,67,0.3);border-radius:10px;
+          flex:1;padding:14px;background:#1a2d4a;color:#d4a843;border:1px solid var(--mod-accent-border);border-radius:10px;
           font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;
         ">📨 INVITE</button>
       </div>
