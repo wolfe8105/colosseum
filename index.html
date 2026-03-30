@@ -10,8 +10,10 @@
 <script>
 (function(){
   var d=document.documentElement;
-  var light=window.matchMedia('(prefers-color-scheme:light)').matches;
-  if(light){d.setAttribute('data-theme','light');document.getElementById('meta-theme-color').content='#eaeef2';}
+  var s=localStorage.getItem('theme');
+  var t=s||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');
+  d.setAttribute('data-theme',t);
+  if(t==='light'){var m=document.getElementById('meta-theme-color');if(m)m.content='#eaeef2';}
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100..700&display=swap" rel="stylesheet">

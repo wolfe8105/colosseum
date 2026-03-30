@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Armory — The Moderator</title>
   <meta name="theme-color" content="#000000" id="meta-theme-color">
-  <script>(function(){var d=document.documentElement;var light=window.matchMedia("(prefers-color-scheme:light)").matches;if(light){d.setAttribute("data-theme","light");var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
+  <script>(function(){var d=document.documentElement;var s=localStorage.getItem("theme");var t=s||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");d.setAttribute("data-theme",t);if(t==="light"){var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000" id="meta-theme-color">
-<script>(function(){var d=document.documentElement;var light=window.matchMedia("(prefers-color-scheme:light)").matches;if(light){d.setAttribute("data-theme","light");var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
+<script>(function(){var d=document.documentElement;var s=localStorage.getItem("theme");var t=s||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");d.setAttribute("data-theme",t);if(t==="light"){var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
 <title>The Moderator — Enter the Arena</title>
 
 <style>
