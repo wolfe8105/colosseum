@@ -307,13 +307,13 @@ async function loadGroupHotTakes(groupId: string) {
       composerHtml = `<div style="background:rgba(19,34,64,0.6);border:1px solid var(--mod-accent-muted);border-radius:10px;padding:12px;margin-bottom:14px;">
         <textarea id="group-take-input" placeholder="Drop a hot take in this group…" maxlength="280" style="
           width:100%;min-height:52px;resize:vertical;background:var(--mod-bg-subtle);
-          border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;
+          border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);
           font-family:'Source Sans 3',sans-serif;font-size:14px;padding:10px 12px;line-height:1.4;
         "></textarea>
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;">
           <span style="font-size:11px;color:var(--mod-text-sub);" id="group-take-count">0/280</span>
           <button id="group-take-post" style="
-            background:#cc2936;color:#fff;border:none;border-radius:8px;
+            background:var(--mod-magenta);color:#fff;border:none;border-radius:8px;
             padding:8px 20px;font-family:'Bebas Neue',sans-serif;font-size:14px;
             letter-spacing:1px;cursor:pointer;
           ">POST</button>
@@ -356,7 +356,7 @@ async function postGroupHotTake(groupId: string) {
   if (!input) return;
   const text = input.value.trim();
   if (!text) {
-    input.style.borderColor = '#cc2936';
+    input.style.borderColor = 'var(--mod-magenta)';
     setTimeout(() => { input.style.borderColor = 'var(--mod-border-primary)'; }, 1500);
     return;
   }

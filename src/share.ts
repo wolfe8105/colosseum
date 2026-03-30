@@ -158,30 +158,30 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
 
   modal.innerHTML = `
     <div style="
-      background:linear-gradient(180deg,#132240 0%,#0a1628 100%);
+      background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);
       border-top-left-radius:20px;border-top-right-radius:20px;
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       text-align:center;
     ">
       <div style="font-size:48px;margin-bottom:8px;">${won ? '🏆' : '⚔️'}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:${won ? '#d4a843' : '#f0f0f0'};">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:${won ? 'var(--mod-accent)' : 'var(--mod-text-heading)'};">
         ${won ? 'YOU WON' : 'GOOD DEBATE'}
       </div>
-      <div style="color:#a0a8b8;font-size:14px;margin:8px 0 20px;">
+      <div style="color:var(--mod-text-sub);font-size:14px;margin:8px 0 20px;">
         ${won ? 'Share your win with the world.' : 'Challenge them to a rematch?'}
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button id="post-debate-share-btn" style="
-          flex:1;padding:14px;background:#cc2936;color:#fff;border:none;border-radius:10px;
+          flex:1;padding:14px;background:var(--mod-magenta);color:#fff;border:none;border-radius:10px;
           font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;
         ">📤 SHARE</button>
         <button id="post-debate-invite-btn" style="
-          flex:1;padding:14px;background:#1a2d4a;color:#d4a843;border:1px solid var(--mod-accent-border);border-radius:10px;
+          flex:1;padding:14px;background:var(--mod-bg-card);color:var(--mod-accent);border:1px solid var(--mod-accent-border);border-radius:10px;
           font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;
         ">📨 INVITE</button>
       </div>
       <button id="post-debate-skip-btn" style="
-        width:100%;padding:12px;background:none;color:#a0a8b8;border:none;font-size:13px;cursor:pointer;
+        width:100%;padding:12px;background:none;color:var(--mod-text-sub);border:none;font-size:13px;cursor:pointer;
       ">Skip</button>
     </div>
   `;

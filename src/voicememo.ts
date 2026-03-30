@@ -321,7 +321,7 @@ function updateRecorderUI(): void {
   if (timerEl) {
     timerEl.textContent = `${min}:${sec}`;
     timerEl.classList.remove('idle');
-    if (remaining <= 10) timerEl.style.color = '#cc2936';
+    if (remaining <= 10) timerEl.style.color = 'var(--mod-magenta)';
   }
 }
 
@@ -449,14 +449,14 @@ export function renderPlayer(voiceUrl: string, duration: number): string {
     ">
       <button data-action="play-inline" data-player="${id}" style="
         width:40px;height:40px;border-radius:50%;
-        background:#d4a843;border:none;color:#0a1628;
+        background:var(--mod-accent);border:none;color:var(--mod-bg-base);
         font-size:16px;cursor:pointer;display:flex;
         align-items:center;justify-content:center;flex-shrink:0;
         -webkit-tap-highlight-color:transparent;
       " id="${id}-btn">▶</button>
       <div style="flex:1;">
-        <div style="font-size:11px;color:#a0a8b8;letter-spacing:0.5px;">🎤 VOICE TAKE</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#f0f0f0;letter-spacing:1px;">${min}:${sec}</div>
+        <div style="font-size:11px;color:var(--mod-text-sub);letter-spacing:0.5px;">🎤 VOICE TAKE</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;">${min}:${sec}</div>
       </div>
       <audio id="${id}" src="${safeUrl}" preload="metadata" style="display:none;"></audio>
     </div>

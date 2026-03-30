@@ -123,7 +123,7 @@ export function show(variant: PaywallVariant = 'general'): void {
 
   modal.innerHTML = `
     <div id="paywall-sheet" style="
-      background:linear-gradient(180deg,#132240 0%,#0a1628 100%);
+      background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);
       border-top-left-radius:20px;border-top-right-radius:20px;
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       transform:translateY(100%);transition:transform 0.3s ease;
@@ -131,30 +131,30 @@ export function show(variant: PaywallVariant = 'general'): void {
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="text-align:center;margin-bottom:20px;">
         <div style="font-size:40px;margin-bottom:8px;">${escapeHTML(v.icon)}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4a843;">${escapeHTML(v.title)}</div>
-        <div style="color:#a0a8b8;font-size:14px;margin-top:6px;">${escapeHTML(v.subtitle)}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--mod-accent);">${escapeHTML(v.title)}</div>
+        <div style="color:var(--mod-text-sub);font-size:14px;margin-top:6px;">${escapeHTML(v.subtitle)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
-          <span style="color:#d4a843;">✓</span>
-          <span style="color:#f0f0f0;font-size:13px;">Ad-free experience</span>
+          <span style="color:var(--mod-accent);">✓</span>
+          <span style="color:var(--mod-text-heading);font-size:13px;">Ad-free experience</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
-          <span style="color:#d4a843;">✓</span>
-          <span style="color:#f0f0f0;font-size:13px;">30+ tokens per day</span>
+          <span style="color:var(--mod-accent);">✓</span>
+          <span style="color:var(--mod-text-heading);font-size:13px;">30+ tokens per day</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mod-accent-muted);border-radius:8px;">
-          <span style="color:#d4a843;">✓</span>
-          <span style="color:#f0f0f0;font-size:13px;">Priority matchmaking & more</span>
+          <span style="color:var(--mod-accent);">✓</span>
+          <span style="color:var(--mod-text-heading);font-size:13px;">Priority matchmaking & more</span>
         </div>
       </div>
       <button id="paywall-cta-btn" style="
-        width:100%;padding:14px;background:#cc2936;color:#fff;border:none;border-radius:10px;
+        width:100%;padding:14px;background:var(--mod-magenta);color:#fff;border:none;border-radius:10px;
         font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;
         margin-bottom:8px;
       ">${escapeHTML(v.cta)}</button>
       <button id="paywall-dismiss-btn" style="
-        width:100%;padding:12px;background:none;color:#a0a8b8;border:none;
+        width:100%;padding:12px;background:none;color:var(--mod-text-sub);border:none;
         font-size:13px;cursor:pointer;
       ">Maybe later</button>
     </div>
