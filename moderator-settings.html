@@ -41,14 +41,14 @@
     align-items: center;
     justify-content: center;
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 10px;
     color: var(--mod-text-primary);
     font-size: 20px;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .back-btn:active { background: var(--mod-bg-base); }
+  .back-btn:active { background: var(--mod-bg-card-active); }
 
   .page-title {
     font-family: var(--mod-font-ui);
@@ -71,7 +71,7 @@
 
   .settings-card {
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 12px;
     overflow: hidden;
   }
@@ -83,7 +83,7 @@
     justify-content: space-between;
     min-height: 50px;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid var(--mod-border-secondary);
   }
   .settings-row:last-child { border-bottom: none; }
 
@@ -137,7 +137,7 @@
   /* === INPUT === */
   .settings-input {
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 8px;
     padding: 8px 12px;
     color: var(--mod-text-primary);
@@ -183,20 +183,20 @@
   .settings-btn.outline {
     background: transparent;
     color: var(--mod-text-muted);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--mod-border-primary);
   }
-  .settings-btn.outline:active { background: var(--mod-bg-base); }
+  .settings-btn.outline:active { background: var(--mod-bg-card-active); }
   .settings-btn.danger {
     background: transparent;
     color: var(--mod-accent);
-    border: 1px solid rgba(231,76,60,0.3);
+    border: 1px solid var(--mod-accent-border);
   }
-  .settings-btn.danger:active { background: rgba(231,76,60,0.1); }
+  .settings-btn.danger:active { background: var(--mod-accent-muted); }
 
   /* === CONFIRM MODAL === */
   .modal-overlay {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: var(--mod-bg-overlay);
     display: none; align-items: center; justify-content: center;
     padding: 16px;
     z-index: 9999;
@@ -204,7 +204,7 @@
   .modal-overlay.open { display: flex; }
   .modal-card {
     background: var(--mod-bg-base);
-    border: 1px solid rgba(231,76,60,0.3);
+    border: 1px solid var(--mod-accent-border);
     border-radius: 14px;
     padding: 24px 20px;
     width: 100%;
@@ -226,14 +226,14 @@
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions button { flex: 1; min-height: 44px; border-radius: 8px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; }
   .modal-cancel { background: var(--mod-bg-base); color: var(--mod-text-muted); }
-  .modal-confirm { background: var(--mod-accent); color: #fff; }
+  .modal-confirm { background: var(--mod-accent); color: var(--mod-text-on-accent); }
 
   /* === TOAST === */
   .toast {
     position: fixed;
     bottom: 90px; left: 50%; transform: translateX(-50%);
     background: var(--mod-status-open);
-    color: #fff;
+    color: var(--mod-text-on-accent);
     padding: 10px 20px;
     border-radius: 8px;
     font-weight: 700;
@@ -248,7 +248,7 @@
   .version-text {
     text-align: center;
     font-size: 12px;
-    color: rgba(160,168,184,0.4);
+    color: var(--mod-text-muted);
     margin-top: 20px;
   }
 
@@ -258,10 +258,10 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(10, 17, 40, 0.85);
+    background: var(--mod-bg-overlay);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(240, 192, 64, 0.15);
+    border-top: 1px solid var(--mod-border-primary);
     padding: 10px 20px;
     display: flex;
     justify-content: center;
@@ -282,7 +282,7 @@
     color: var(--mod-accent-text);
   }
   .moderator-legal-footer .footer-sep {
-    color: rgba(240, 192, 64, 0.3);
+    color: var(--mod-text-muted);
     font-weight: 300;
   }
   .moderator-legal-footer .footer-copy {

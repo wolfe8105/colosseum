@@ -39,7 +39,7 @@
     min-width: 44px; min-height: 44px;
     display: flex; align-items: center; justify-content: center;
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 10px;
     color: var(--mod-text-primary);
     font-size: 20px;
@@ -114,7 +114,7 @@
 
   .section-tile {
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 12px;
     padding: 14px 10px;
     text-align: center;
@@ -123,7 +123,7 @@
     position: relative;
     transition: border-color 0.2s;
   }
-  .section-tile:active { background: var(--mod-bg-base); }
+  .section-tile:active { background: var(--mod-bg-card-active); }
   .section-tile.complete { border-color: var(--mod-status-open); }
   .section-tile.active-section { border-color: var(--mod-text-heading); }
 
@@ -184,7 +184,7 @@
 
   .question-card {
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 10px;
     padding: 14px 16px;
     margin-bottom: 10px;
@@ -201,7 +201,7 @@
     padding: 6px 14px;
     border-radius: 20px;
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--mod-border-primary);
     color: var(--mod-text-muted);
     font-size: 13px;
     cursor: pointer;
@@ -216,7 +216,7 @@
     min-height: 44px;
     padding: 10px 14px;
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 8px;
     color: var(--mod-text-primary);
     font-family: var(--mod-font-ui);
@@ -257,7 +257,7 @@
     min-height: 44px;
     padding: 10px 14px;
     background: var(--mod-bg-base);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 8px;
     color: var(--mod-text-primary);
     font-family: var(--mod-font-ui);
@@ -318,7 +318,7 @@
   /* === TIER DISPLAY === */
   .tier-banner {
     background: linear-gradient(135deg, var(--mod-bg-base), var(--mod-bg-base));
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid var(--mod-border-primary);
     border-radius: 12px;
     padding: 14px 16px;
     margin-bottom: 20px;
@@ -393,10 +393,10 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(10, 17, 40, 0.85);
+    background: var(--mod-bg-overlay);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(240, 192, 64, 0.15);
+    border-top: 1px solid var(--mod-border-primary);
     padding: 10px 20px;
     display: flex;
     justify-content: center;
@@ -417,7 +417,7 @@
     color: var(--mod-accent-text);
   }
   .moderator-legal-footer .footer-sep {
-    color: rgba(240, 192, 64, 0.3);
+    color: var(--mod-text-muted);
     font-weight: 300;
   }
   .moderator-legal-footer .footer-copy {
