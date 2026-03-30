@@ -409,7 +409,7 @@ export function loadHotTakes(category: CategoryFilter = 'all'): void {
 
   if (takes.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center;padding:40px 16px;color:#a0a8b8;">
+      <div style="text-align:center;padding:40px 16px;color:var(--mod-text-sub);">
         <div style="font-size:36px;margin-bottom:8px;">🤫</div>
         <div style="font-size:14px;">No takes here yet. Be the first.</div>
       </div>`;
@@ -438,33 +438,33 @@ function _renderTake(t: HotTake): string {
       padding:14px;margin-bottom:10px;
     ">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div ${profileAttr} style="width:32px;height:32px;border-radius:50%;background:#1a2d4a;border:2px solid #d4a843;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#d4a843;${userClickable ? 'cursor:pointer;' : ''}">
+        <div ${profileAttr} style="width:32px;height:32px;border-radius:50%;background:var(--mod-bg-card);border:2px solid var(--mod-accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mod-accent);${userClickable ? 'cursor:pointer;' : ''}">
           ${safeInitial}
         </div>
         <div>
-          <span ${profileAttr} style="font-weight:700;font-size:13px;color:#f0f0f0;${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
-          <span style="font-size:11px;color:#d4a843;margin-left:6px;">🪙 ${Number(t.tokens || 0)}</span>
+          <span ${profileAttr} style="font-weight:700;font-size:13px;color:var(--mod-text-heading);${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
+          <span style="font-size:11px;color:var(--mod-accent);margin-left:6px;">🪙 ${Number(t.tokens || 0)}</span>
         </div>
         <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
       </div>
-      <div data-action="expand" data-id="${safeId}" style="font-size:14px;line-height:1.5;color:#f0f0f0;margin-bottom:12px;cursor:pointer;${t.text.length > 150 ? 'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;' : ''}">${safeText}</div>${t.text.length > 150 ? '<div data-action="expand" data-id="' + safeId + '" style="font-size:12px;color:#d4a843;cursor:pointer;margin-top:-8px;margin-bottom:12px;">tap to read more</div>' : ''}
+      <div data-action="expand" data-id="${safeId}" style="font-size:14px;line-height:1.5;color:var(--mod-text-heading);margin-bottom:12px;cursor:pointer;${t.text.length > 150 ? 'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;' : ''}">${safeText}</div>${t.text.length > 150 ? '<div data-action="expand" data-id="' + safeId + '" style="font-size:12px;color:var(--mod-accent);cursor:pointer;margin-top:-8px;margin-bottom:12px;">tap to read more</div>' : ''}
       <div style="display:flex;align-items:center;gap:12px;">
         <button data-action="react" data-id="${safeId}" style="
           display:flex;align-items:center;gap:4px;background:${t.userReacted ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           border:1px solid ${t.userReacted ? 'rgba(204,41,54,0.3)' : 'var(--mod-border-secondary)'};
-          color:${t.userReacted ? '#cc2936' : '#a0a8b8'};
+          color:${t.userReacted ? 'var(--mod-magenta)' : 'var(--mod-text-sub)'};
           padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
         ">🔥 ${Number(t.reactions)}</button>
         <button data-action="challenge" data-id="${safeId}" style="
           display:flex;align-items:center;gap:4px;
           background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);
-          color:#cc2936;padding:6px 12px;border-radius:20px;
+          color:var(--mod-magenta);padding:6px 12px;border-radius:20px;
           font-size:12px;font-weight:700;cursor:pointer;
         ">⚔️ BET. (${Number(t.challenges)})</button>
         <button data-action="share" data-id="${safeId}" data-text="${esc(t.text)}" style="
           display:flex;align-items:center;gap:4px;
           background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);
-          color:#a0a8b8;padding:6px 12px;border-radius:20px;
+          color:var(--mod-text-sub);padding:6px 12px;border-radius:20px;
           font-size:12px;cursor:pointer;
         ">↗ Share</button>
       </div>
@@ -490,14 +490,14 @@ export function renderPredictions(container: HTMLElement): void {
     container.innerHTML = `
       <div style="text-align:center;padding:20px;">
         <div style="color:#6a7a90;font-size:13px;margin-bottom:12px;">No active predictions yet.</div>
-        <button data-action="create-prediction" style="padding:10px 20px;border-radius:20px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE PREDICTION</button>
+        <button data-action="create-prediction" style="padding:10px 20px;border-radius:20px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE PREDICTION</button>
       </div>`;
     return;
   }
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 8px;">
-      <div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:#d4a843;">🔮 PREDICTIONS</div>
+      <div style="font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;color:var(--mod-accent);">🔮 PREDICTIONS</div>
       <button data-action="create-prediction" style="padding:5px 12px;border-radius:14px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE</button>
     </div>
     ${predictions.map((p) => _renderPredictionCard(p)).join('')}
@@ -514,34 +514,34 @@ function _renderPredictionCard(p: Prediction): string {
   return `
     <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        ${isLive ? '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cc2936;font-weight:600;letter-spacing:1px;"><span style="width:6px;height:6px;background:#cc2936;border-radius:50%;animation:livePulse 1.5s ease-in-out infinite;"></span>LIVE</span>' : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">UPCOMING</span>'}
+        ${isLive ? '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mod-magenta);font-weight:600;letter-spacing:1px;"><span style="width:6px;height:6px;background:var(--mod-magenta);border-radius:50%;animation:livePulse 1.5s ease-in-out infinite;"></span>LIVE</span>' : '<span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">UPCOMING</span>'}
         <span style="font-size:11px;color:#6a7a90;">${Number(p.total)} predictions</span>
       </div>
-      <div style="font-family:'Cinzel',serif;font-size:14px;color:#f0f0f0;margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
+      <div style="font-family:var(--mod-font-display);font-size:14px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button data-action="predict" data-id="${safeDebateId}" data-pick="a" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
           background:${p.user_pick === 'a' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           border:1px solid ${p.user_pick === 'a' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP1}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeP1}</div>
           <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p1_elo)}</div>
         </button>
-        <div style="display:flex;align-items:center;font-family:'Cinzel',serif;font-size:12px;color:#cc2936;letter-spacing:1px;">VS</div>
+        <div style="display:flex;align-items:center;font-family:var(--mod-font-display);font-size:12px;color:var(--mod-magenta);letter-spacing:1px;">VS</div>
         <button data-action="predict" data-id="${safeDebateId}" data-pick="b" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
           background:${p.user_pick === 'b' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           border:1px solid ${p.user_pick === 'b' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeP2}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeP2}</div>
           <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p2_elo)}</div>
         </button>
       </div>
       <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
         <div style="position:absolute;left:0;top:0;height:100%;width:${Number(p.pct_a)}%;background:linear-gradient(90deg,var(--mod-accent-border),var(--mod-accent-muted));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
-          <span style="color:#d4a843;">${Number(p.pct_a)}%</span>
-          <span style="color:#a0a8b8;">${Number(p.pct_b)}%</span>
+          <span style="color:var(--mod-accent);">${Number(p.pct_a)}%</span>
+          <span style="color:var(--mod-text-sub);">${Number(p.pct_b)}%</span>
         </div>
       </div>
     </div>`;
@@ -561,32 +561,32 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
   return `
     <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:11px;color:#d4a843;letter-spacing:1px;">COMMUNITY</span>
+        <span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">COMMUNITY</span>
         <span style="font-size:11px;color:#6a7a90;">${total} picks · by ${creator}</span>
       </div>
-      <div style="font-family:'Cinzel',serif;font-size:14px;color:#f0f0f0;margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
+      <div style="font-family:var(--mod-font-display);font-size:14px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button data-action="standalone-pick" data-id="${safeId}" data-pick="a" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
           background:${userPick === 'a' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           border:1px solid ${userPick === 'a' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeA}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeA}</div>
         </button>
-        <div style="display:flex;align-items:center;font-family:'Cinzel',serif;font-size:12px;color:#cc2936;letter-spacing:1px;">VS</div>
+        <div style="display:flex;align-items:center;font-family:var(--mod-font-display);font-size:12px;color:var(--mod-magenta);letter-spacing:1px;">VS</div>
         <button data-action="standalone-pick" data-id="${safeId}" data-pick="b" style="
           flex:1;padding:10px 8px;border-radius:10px;cursor:pointer;text-align:center;border:none;
           background:${userPick === 'b' ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           border:1px solid ${userPick === 'b' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;">${safeB}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeB}</div>
         </button>
       </div>
       <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
         <div style="position:absolute;left:0;top:0;height:100%;width:${pctA}%;background:linear-gradient(90deg,var(--mod-accent-border),var(--mod-accent-muted));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
-          <span style="color:#d4a843;">${pctA}%</span>
-          <span style="color:#a0a8b8;">${pctB}%</span>
+          <span style="color:var(--mod-accent);">${pctA}%</span>
+          <span style="color:var(--mod-text-sub);">${pctB}%</span>
         </div>
       </div>
     </div>`;
@@ -699,27 +699,27 @@ export function openCreatePredictionForm(): void {
   overlay.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
 
   overlay.innerHTML = `
-    <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));">
+    <div style="background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 16px;"></div>
-      <div style="font-family:'Cinzel',serif;font-size:16px;letter-spacing:2px;color:#d4a843;text-align:center;margin-bottom:16px;">CREATE PREDICTION</div>
+      <div style="font-family:var(--mod-font-display);font-size:16px;letter-spacing:2px;color:var(--mod-accent);text-align:center;margin-bottom:16px;">CREATE PREDICTION</div>
       <div style="margin-bottom:12px;">
-        <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">QUESTION</label>
-        <textarea id="cpq-topic" maxlength="200" placeholder="Will AI replace most jobs by 2030?" style="width:100%;min-height:60px;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;resize:none;outline:none;"></textarea>
+        <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">QUESTION</label>
+        <textarea id="cpq-topic" maxlength="200" placeholder="Will AI replace most jobs by 2030?" style="width:100%;min-height:60px;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;resize:none;outline:none;"></textarea>
         <div id="cpq-topic-count" style="font-size:10px;color:#6a7a90;text-align:right;margin-top:2px;">0/200</div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:12px;">
         <div style="flex:1;">
-          <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">SIDE A</label>
-          <input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE A</label>
+          <input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;">
         </div>
         <div style="flex:1;">
-          <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">SIDE B</label>
-          <input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE B</label>
+          <input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;">
         </div>
       </div>
       <div style="margin-bottom:16px;">
-        <label style="font-size:11px;color:#a0a8b8;letter-spacing:1px;display:block;margin-bottom:4px;">CATEGORY (optional)</label>
-        <select id="cpq-category" style="width:100%;padding:10px 12px;background:#0a1628;border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;">
+        <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">CATEGORY (optional)</label>
+        <select id="cpq-category" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;-webkit-appearance:none;">
           <option value="">None</option>
           <option value="politics">Politics</option>
           <option value="sports">Sports</option>
@@ -729,8 +729,8 @@ export function openCreatePredictionForm(): void {
         </select>
       </div>
       <div style="display:flex;gap:8px;">
-        <button id="cpq-cancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--mod-border-primary);background:none;color:#a0a8b8;font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;cursor:pointer;">CANCEL</button>
-        <button id="cpq-submit" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#b8922e,#d4a843);color:#0a1628;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">POST</button>
+        <button id="cpq-cancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-sub);font-family:var(--mod-font-display);font-size:13px;letter-spacing:2px;cursor:pointer;">CANCEL</button>
+        <button id="cpq-submit" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--mod-accent);color:var(--mod-bg-base);font-family:var(--mod-font-display);font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">POST</button>
       </div>
     </div>`;
 
@@ -864,27 +864,27 @@ function _showChallengeModal(take: HotTake): void {
   modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
 
   modal.innerHTML = `
-    <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
+    <div style="background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="font-family:'Cinzel',serif;font-size:22px;letter-spacing:2px;color:#cc2936;text-align:center;margin-bottom:4px;">⚔️ CHALLENGE</div>
-      <div style="color:#a0a8b8;text-align:center;font-size:13px;margin-bottom:16px;">You disagree with ${safeUser}?</div>
+      <div style="font-family:var(--mod-font-display);font-size:22px;letter-spacing:2px;color:var(--mod-magenta);text-align:center;margin-bottom:4px;">⚔️ CHALLENGE</div>
+      <div style="color:var(--mod-text-sub);text-align:center;font-size:13px;margin-bottom:16px;">You disagree with ${safeUser}?</div>
       <div style="background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="font-size:13px;color:#f0f0f0;line-height:1.4;">"${safeText}"</div>
+        <div style="font-size:13px;color:var(--mod-text-heading);line-height:1.4;">"${safeText}"</div>
         <div style="font-size:11px;color:#6a7a90;margin-top:6px;">— ${safeUser} (ELO ${Number(take.elo)})</div>
       </div>
       <textarea id="challenge-response" placeholder="Your counter-argument..." style="
-        width:100%;background:#1a2d4a;border:1px solid var(--mod-border-primary);border-radius:10px;
-        color:#f0f0f0;padding:12px;font-size:14px;resize:none;height:80px;
-        font-family:'Barlow Condensed',sans-serif;margin-bottom:12px;box-sizing:border-box;
+        width:100%;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;
+        color:var(--mod-text-heading);padding:12px;font-size:14px;resize:none;height:80px;
+        font-family:var(--mod-font-ui);margin-bottom:12px;box-sizing:border-box;
       "></textarea>
       <div style="display:flex;gap:8px;">
         <button data-action="cancel-challenge" style="
-          flex:1;padding:12px;background:#1a2d4a;color:#a0a8b8;border:1px solid var(--mod-border-primary);
+          flex:1;padding:12px;background:var(--mod-bg-card);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);
           border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;
         ">CANCEL</button>
         <button data-action="submit-challenge" style="
-          flex:1;padding:12px;background:#cc2936;color:#fff;border:none;
-          border-radius:10px;font-family:'Cinzel',serif;font-size:16px;
+          flex:1;padding:12px;background:var(--mod-magenta);color:#fff;border:none;
+          border-radius:10px;font-family:var(--mod-font-display);font-size:16px;
           letter-spacing:2px;cursor:pointer;
         ">⚔️ BET.</button>
       </div>
@@ -909,7 +909,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
   const textarea = document.getElementById('challenge-response') as HTMLTextAreaElement | null;
   const text = textarea?.value?.trim();
   if (!text) {
-    if (textarea) textarea.style.borderColor = '#cc2936';
+    if (textarea) textarea.style.borderColor = 'var(--mod-magenta)';
     return;
   }
 
@@ -1026,7 +1026,7 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
   }
 
   container.innerHTML = `
-    <div style="padding:0 0 8px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:#cc2936;">⚔️ HATED RIVALS</div>
+    <div style="padding:0 0 8px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;color:var(--mod-magenta);">⚔️ HATED RIVALS</div>
     ${rivals.map((r) => {
       const safeName = esc((r.rival_display_name ?? r.rival_username ?? 'Unknown').toUpperCase());
       const safeInitial = esc((r.rival_display_name ?? r.rival_username ?? '?')[0]?.toUpperCase() ?? '');
@@ -1036,17 +1036,17 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
 
       return `
         <div style="background:#132240;border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-          <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #cc2936;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#cc2936;cursor:pointer;">${safeInitial}</div>
+          <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:var(--mod-bg-card);border:2px solid var(--mod-magenta);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--mod-magenta);cursor:pointer;">${safeInitial}</div>
           <div style="flex:1;">
-            <div style="font-weight:700;font-size:14px;color:#f0f0f0;">${safeName}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);">${safeName}</div>
             <div style="font-size:11px;color:#6a7a90;">ELO ${Number(r.rival_elo ?? 1200)} · ${Number(r.rival_wins ?? 0)}W-${Number(r.rival_losses ?? 0)}L</div>
           </div>
           <div style="text-align:right;">
             ${r.status === 'pending'
               ? (r.direction === 'received'
-                ? `<button data-action="accept-rival" data-id="${safeId}" style="padding:6px 12px;background:#cc2936;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
-                : '<span style="font-size:11px;color:#d4a843;letter-spacing:1px;">PENDING</span>')
-              : '<span style="font-size:11px;color:#cc2936;font-weight:700;letter-spacing:1px;">⚔️ ACTIVE</span>'}
+                ? `<button data-action="accept-rival" data-id="${safeId}" style="padding:6px 12px;background:var(--mod-magenta);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">ACCEPT</button>`
+                : '<span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">PENDING</span>')
+              : '<span style="font-size:11px;color:var(--mod-magenta);font-weight:700;letter-spacing:1px;">⚔️ ACTIVE</span>'}
           </div>
         </div>`;
     }).join('')}`;
@@ -1065,15 +1065,15 @@ export function getComposerHTML(): string {
   return `
     <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:16px;">
       <textarea id="hot-take-input" placeholder="Drop a hot take..." style="
-        width:100%;background:#1a2d4a;border:1px solid var(--mod-border-secondary);border-radius:10px;
-        color:#f0f0f0;padding:12px;font-size:14px;resize:none;height:60px;
-        font-family:'Barlow Condensed',sans-serif;margin-bottom:8px;box-sizing:border-box;
+        width:100%;background:var(--mod-bg-card);border:1px solid var(--mod-border-secondary);border-radius:10px;
+        color:var(--mod-text-heading);padding:12px;font-size:14px;resize:none;height:60px;
+        font-family:var(--mod-font-ui);margin-bottom:8px;box-sizing:border-box;
       " maxlength="280"></textarea>
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div id="take-char-count" style="font-size:11px;color:#6a7a90;">0 / 280</div>
         <button data-action="post-take" style="
-          background:#cc2936;color:#fff;border:none;border-radius:8px;
-          padding:8px 20px;font-family:'Cinzel',serif;font-size:14px;
+          background:var(--mod-magenta);color:#fff;border:none;border-radius:8px;
+          padding:8px 20px;font-family:var(--mod-font-display);font-size:14px;
           letter-spacing:1px;cursor:pointer;
         ">POST</button>
       </div>

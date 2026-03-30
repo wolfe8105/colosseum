@@ -181,25 +181,25 @@ export function showEloExplainer(): void {
 
   modal.innerHTML = `
     <div style="
-      background:linear-gradient(180deg,#12122A 0%,#1a2d4a 100%);
+      background:linear-gradient(180deg,#12122A 0%,var(--mod-bg-card) 100%);
       border:1px solid var(--mod-accent-border);border-radius:16px 16px 0 0;
       padding:24px 20px 32px;max-width:420px;width:100%;
       max-height:70vh;overflow-y:auto;
       animation:coloSlideUp 0.25s ease;
     ">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-family:'Cinzel',serif;font-size:18px;color:#d4a843;font-weight:700;letter-spacing:2px;">⚔️ ELO RATING</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-accent);font-weight:700;letter-spacing:2px;">⚔️ ELO RATING</div>
         <button onclick="document.getElementById('elo-explainer-modal').remove()" style="
-          background:none;border:none;color:#a0a8b8;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;
+          background:none;border:none;color:var(--mod-text-sub);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;
         ">&times;</button>
       </div>
-      <div style="color:#e0e4ec;font-family:'Barlow Condensed',sans-serif;font-size:15px;line-height:1.6;">
+      <div style="color:#e0e4ec;font-family:var(--mod-font-ui);font-size:15px;line-height:1.6;">
         <p style="margin-bottom:14px;">
-          Your Elo is a <strong style="color:#d4a843;">skill number</strong> that goes up when you win and down when you lose.
-          Everyone starts at <strong style="color:#d4a843;">1200</strong>.
+          Your Elo is a <strong style="color:var(--mod-accent);">skill number</strong> that goes up when you win and down when you lose.
+          Everyone starts at <strong style="color:var(--mod-accent);">1200</strong>.
         </p>
         <div style="background:var(--mod-bg-subtle);border-radius:8px;padding:14px;margin-bottom:14px;">
-          <div style="font-weight:700;color:#d4a843;margin-bottom:8px;font-size:13px;letter-spacing:1px;">HOW IT MOVES</div>
+          <div style="font-weight:700;color:var(--mod-accent);margin-bottom:8px;font-size:13px;letter-spacing:1px;">HOW IT MOVES</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="color:#4caf50;font-size:18px;">▲</span>
@@ -207,26 +207,26 @@ export function showEloExplainer(): void {
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="color:#4caf50;font-size:18px;">▲</span>
-              <span>Beat someone ranked <em>lower</em> than you = <strong style="color:#a0a8b8;">small gain</strong></span>
+              <span>Beat someone ranked <em>lower</em> than you = <strong style="color:var(--mod-text-sub);">small gain</strong></span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#cc2936;font-size:18px;">▼</span>
-              <span>Lose to someone ranked <em>lower</em> = <strong style="color:#cc2936;">big drop</strong></span>
+              <span style="color:var(--mod-magenta);font-size:18px;">▼</span>
+              <span>Lose to someone ranked <em>lower</em> = <strong style="color:var(--mod-magenta);">big drop</strong></span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#cc2936;font-size:18px;">▼</span>
-              <span>Lose to someone ranked <em>higher</em> = <strong style="color:#a0a8b8;">small drop</strong></span>
+              <span style="color:var(--mod-magenta);font-size:18px;">▼</span>
+              <span>Lose to someone ranked <em>higher</em> = <strong style="color:var(--mod-text-sub);">small drop</strong></span>
             </div>
           </div>
         </div>
         <div style="background:var(--mod-bg-subtle);border-radius:8px;padding:14px;margin-bottom:14px;">
-          <div style="font-weight:700;color:#d4a843;margin-bottom:8px;font-size:13px;letter-spacing:1px;">WHAT THE NUMBERS MEAN</div>
+          <div style="font-weight:700;color:var(--mod-accent);margin-bottom:8px;font-size:13px;letter-spacing:1px;">WHAT THE NUMBERS MEAN</div>
           <div style="display:flex;flex-direction:column;gap:4px;font-size:14px;">
-            <div><span style="color:#a0a8b8;">1000–1199</span> — Getting started</div>
+            <div><span style="color:var(--mod-text-sub);">1000–1199</span> — Getting started</div>
             <div><span style="color:#4caf50;">1200–1399</span> — Solid debater</div>
             <div><span style="color:#2a5aab;">1400–1599</span> — Sharp mind</div>
-            <div><span style="color:#cc2936;">1600–1799</span> — Heavy hitter</div>
-            <div><span style="color:#d4a843;">1800+</span> — Gladiator elite</div>
+            <div><span style="color:var(--mod-magenta);">1600–1799</span> — Heavy hitter</div>
+            <div><span style="color:var(--mod-accent);">1800+</span> — Gladiator elite</div>
           </div>
         </div>
         <p style="color:#6a7a90;font-size:13px;">
@@ -270,12 +270,12 @@ function renderList(): string {
         currentTab === 'wins' ? 'WINS' :
         '🔥';
 
-      const medalColors: Record<number, string> = { 1: '#d4a843', 2: '#a8a8a8', 3: '#b87333' };
+      const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: '#a8a8a8', 3: '#b87333' };
       const rankColor = medalColors[p.rank] ?? '#6a7a90';
 
       const tierBorderMap: Record<string, string> = {
-        creator: '#d4a843',
-        champion: '#cc2936',
+        creator: 'var(--mod-accent)',
+        champion: 'var(--mod-magenta)',
         contender: '#2a5aab',
         free: 'var(--mod-border-primary)',
       };
@@ -289,21 +289,21 @@ function renderList(): string {
           background:${p.rank <= 3 ? 'rgba(212,168,67,0.04)' : 'transparent'};
           border-bottom:1px solid var(--mod-border-subtle);
         ">
-          <div style="width:28px;text-align:center;font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:${rankColor};">
+          <div style="width:28px;text-align:center;font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:${rankColor};">
             ${p.rank <= 3 ? ['🥇', '🥈', '🥉'][p.rank - 1] : p.rank}
           </div>
           <div style="
-            width:36px;height:36px;border-radius:50%;background:#1a2d4a;
+            width:36px;height:36px;border-radius:50%;background:var(--mod-bg-card);
             border:2px solid ${tierBorder};
             display:flex;align-items:center;justify-content:center;
-            font-weight:700;color:#f0f0f0;font-size:13px;
+            font-weight:700;color:var(--mod-text-heading);font-size:13px;
           ">${escHtml(p.user[0] ?? '')}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13px;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}</div>
+            <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}</div>
             <div style="font-size:11px;color:#6a7a90;">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:${currentTab === 'streak' && p.streak >= 5 ? '#cc2936' : '#d4a843'};">${Number(stat) || 0}</div>
+            <div style="font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:${currentTab === 'streak' && p.streak >= 5 ? 'var(--mod-magenta)' : 'var(--mod-accent)'};">${Number(stat) || 0}</div>
             <div style="font-size:9px;color:#6a7a90;letter-spacing:1px;">${statLabel}</div>
           </div>
         </div>`;
@@ -329,8 +329,8 @@ export function render(): void {
   container.innerHTML = `
     <div style="padding:4px 0;">
       <div style="text-align:center;padding:16px 0 12px;">
-        <div style="font-family:'Cinzel',serif;font-size:24px;letter-spacing:3px;color:#d4a843;font-weight:700;">🏆 RANKINGS</div>
-        <div style="color:#a0a8b8;font-size:13px;">The numbers speak for themselves.</div>
+        <div style="font-family:var(--mod-font-display);font-size:24px;letter-spacing:3px;color:var(--mod-accent);font-weight:700;">🏆 RANKINGS</div>
+        <div style="color:var(--mod-text-sub);font-size:13px;">The numbers speak for themselves.</div>
       </div>
 
       <div style="
@@ -339,15 +339,15 @@ export function render(): void {
         display:flex;align-items:center;gap:12px;
       ">
         <div style="
-          width:40px;height:40px;border-radius:50%;background:#1a2d4a;border:2px solid #d4a843;
-          display:flex;align-items:center;justify-content:center;font-weight:700;color:#d4a843;font-size:14px;
+          width:40px;height:40px;border-radius:50%;background:var(--mod-bg-card);border:2px solid var(--mod-accent);
+          display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--mod-accent);font-size:14px;
         ">${myName[0] ?? ''}</div>
         <div style="flex:1;">
-          <div style="font-weight:700;font-size:14px;color:#f0f0f0;">${myName}</div>
-          <div style="font-size:12px;color:#a0a8b8;">ELO ${myElo} · ${myWins}W</div>
+          <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);">${myName}</div>
+          <div style="font-size:12px;color:var(--mod-text-sub);">ELO ${myElo} · ${myWins}W</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-family:'Cinzel',serif;font-size:20px;color:#d4a843;font-weight:700;">${rankDisplay}</div>
+          <div style="font-family:var(--mod-font-display);font-size:20px;color:var(--mod-accent);font-weight:700;">${rankDisplay}</div>
           <div style="font-size:10px;color:#6a7a90;">YOUR RANK</div>
         </div>
       </div>
@@ -358,14 +358,14 @@ export function render(): void {
             (tab) => `
           <button class="lb-tab ${currentTab === tab ? 'active' : ''}" onclick="ModeratorLeaderboard.setTab('${tab}')" style="
             flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
-            font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+            font-family:var(--mod-font-ui);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
             background:${currentTab === tab ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
-            color:${currentTab === tab ? '#d4a843' : '#a0a8b8'};
+            color:${currentTab === tab ? 'var(--mod-accent)' : 'var(--mod-text-sub)'};
           ">${tab === 'elo' ? 'ELO' : tab === 'wins' ? 'WINS' : '🔥 STREAK'}${
               tab === 'elo'
                 ? `<span onclick="event.stopPropagation();ModeratorLeaderboard.showEloExplainer();" style="
               display:inline-block;width:16px;height:16px;border-radius:50%;
-              background:var(--mod-accent-border);color:#d4a843;
+              background:var(--mod-accent-border);color:var(--mod-accent);
               font-size:10px;line-height:16px;text-align:center;
               margin-left:6px;cursor:pointer;vertical-align:middle;
               font-family:serif;font-weight:700;
@@ -383,7 +383,7 @@ export function render(): void {
           <button onclick="ModeratorLeaderboard.setTime('${t}')" style="
             padding:6px 14px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;
             background:${currentTime === t ? 'rgba(204,41,54,0.15)' : 'var(--mod-bg-subtle)'};
-            color:${currentTime === t ? '#cc2936' : '#a0a8b8'};white-space:nowrap;
+            color:${currentTime === t ? 'var(--mod-magenta)' : 'var(--mod-text-sub)'};white-space:nowrap;
           ">${t === 'all' ? 'ALL TIME' : t === 'week' ? 'THIS WEEK' : 'THIS MONTH'}</button>`
           )
           .join('')}

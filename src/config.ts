@@ -290,9 +290,9 @@ export function showToast(msg: string, type: ToastType = 'info'): void {
   if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
 
   const colors: Record<ToastType, { bg: string; text: string }> = {
-    success: { bg: '#d4a843', text: '#0a1628' },
-    error:   { bg: '#cc2936', text: '#ffffff' },
-    info:    { bg: 'rgba(26,45,74,0.95)', text: '#f0f0f0' },
+    success: { bg: 'var(--mod-accent)', text: 'var(--mod-bg-base)' },
+    error:   { bg: 'var(--mod-magenta)', text: '#ffffff' },
+    info:    { bg: 'rgba(26,45,74,0.95)', text: 'var(--mod-text-heading)' },
   };
   const c = colors[type];
 
@@ -308,7 +308,7 @@ export function showToast(msg: string, type: ToastType = 'info'): void {
     `color:${c.text}`,
     'padding:12px 24px',
     'border-radius:8px',
-    'font-family:"Barlow Condensed",sans-serif',
+    'font-family:var(--mod-font-ui)',
     'font-weight:700',
     'font-size:14px',
     'letter-spacing:0.5px',

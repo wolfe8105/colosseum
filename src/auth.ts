@@ -693,7 +693,7 @@ export async function showUserProfile(userId: string): Promise<void> {
   modal.id = 'user-profile-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `
-    <div style="background:linear-gradient(180deg,#132240 0%,#0a1628 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
+    <div style="background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="text-align:center;color:#6a7a90;font-size:13px;">Loading profile...</div>
     </div>`;
@@ -703,7 +703,7 @@ export async function showUserProfile(userId: string): Promise<void> {
   const profile = await getPublicProfile(userId);
   if (!profile || profile.error) {
     const container = modal.querySelector('div > div:last-child');
-    if (container) container.innerHTML = '<div style="text-align:center;color:#cc2936;font-size:14px;">User not found</div>';
+    if (container) container.innerHTML = '<div style="text-align:center;color:var(--mod-magenta);font-size:14px;">User not found</div>';
     return;
   }
 
@@ -725,34 +725,34 @@ export async function showUserProfile(userId: string): Promise<void> {
 
   modalInner.innerHTML += `
     <div style="text-align:center;margin-bottom:16px;">
-      <div style="width:64px;height:64px;border-radius:50%;border:3px solid #b8922e;background:rgb(10,17,40);color:#d4a843;font-family:'Cinzel',serif;font-size:${avatarFontSize};font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">${initial}</div>
-      <div style="font-family:'Cinzel',serif;font-size:18px;letter-spacing:2px;color:#f0f0f0;">${safeName}</div>
-      <div style="font-size:11px;color:#b8922e;letter-spacing:2px;margin-top:4px;">${tierLabel}</div>
-      ${safeBio ? `<div style="font-size:13px;color:#a0a8b8;margin-top:8px;line-height:1.4;">${safeBio}</div>` : ''}
-      ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:#d4a843;text-decoration:none;">View full profile →</a>` : ''}
+      <div style="width:64px;height:64px;border-radius:50%;border:3px solid var(--mod-accent);background:rgb(10,17,40);color:var(--mod-accent);font-family:var(--mod-font-display);font-size:${avatarFontSize};font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">${initial}</div>
+      <div style="font-family:var(--mod-font-display);font-size:18px;letter-spacing:2px;color:var(--mod-text-heading);">${safeName}</div>
+      <div style="font-size:11px;color:var(--mod-accent);letter-spacing:2px;margin-top:4px;">${tierLabel}</div>
+      ${safeBio ? `<div style="font-size:13px;color:var(--mod-text-sub);margin-top:8px;line-height:1.4;">${safeBio}</div>` : ''}
+      ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--mod-accent);text-decoration:none;">View full profile →</a>` : ''}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;">
       <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
-        <div style="font-family:'Cinzel',serif;font-size:18px;color:#d4a843;">${Number(profile.elo_rating) || 1200}</div>
-        <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">ELO</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-accent);">${Number(profile.elo_rating) || 1200}</div>
+        <div style="font-size:10px;color:var(--mod-text-sub);letter-spacing:1px;">ELO</div>
       </div>
       <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
-        <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.wins) || 0}-${Number(profile.losses) || 0}</div>
-        <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">W-L</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-text-heading);">${Number(profile.wins) || 0}-${Number(profile.losses) || 0}</div>
+        <div style="font-size:10px;color:var(--mod-text-sub);letter-spacing:1px;">W-L</div>
       </div>
       <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
-        <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.followers) || 0}</div>
-        <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWERS</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-text-heading);">${Number(profile.followers) || 0}</div>
+        <div style="font-size:10px;color:var(--mod-text-sub);letter-spacing:1px;">FOLLOWERS</div>
       </div>
       <div style="flex:1;text-align:center;background:rgb(10,17,40);border:1px solid var(--mod-border-primary);border-radius:10px;padding:10px 4px;">
-        <div style="font-family:'Cinzel',serif;font-size:18px;color:#f0f0f0;">${Number(profile.following) || 0}</div>
-        <div style="font-size:10px;color:#a0a8b8;letter-spacing:1px;">FOLLOWING</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-text-heading);">${Number(profile.following) || 0}</div>
+        <div style="font-size:10px;color:var(--mod-text-sub);letter-spacing:1px;">FOLLOWING</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:var(--mod-bg-control);color:#a0a8b8;border:1px solid var(--mod-border-primary);' : 'background:#d4a843;color:#0a1628;'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
-      <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:#cc2936;border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
-      <button style="padding:12px 16px;background:var(--mod-bg-subtle);color:#a0a8b8;border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" onclick="document.getElementById('user-profile-modal')?.remove()">✕</button>
+      <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:var(--mod-bg-control);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);' : 'background:var(--mod-accent);color:var(--mod-bg-base);'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
+      <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:var(--mod-magenta);border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
+      <button style="padding:12px 16px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" onclick="document.getElementById('user-profile-modal')?.remove()">✕</button>
     </div>`;
 
   // Follow button handler
@@ -766,8 +766,8 @@ export async function showUserProfile(userId: string): Promise<void> {
       if (result.success && followBtn) {
         isFollowing = false;
         followBtn.textContent = 'FOLLOW';
-        followBtn.style.background = '#d4a843';
-        followBtn.style.color = '#0a1628';
+        followBtn.style.background = 'var(--mod-accent)';
+        followBtn.style.color = 'var(--mod-bg-base)';
       }
     } else {
       const result = await followUser(userId);
@@ -775,7 +775,7 @@ export async function showUserProfile(userId: string): Promise<void> {
         isFollowing = true;
         followBtn.textContent = 'FOLLOWING';
         followBtn.style.background = 'var(--mod-bg-control)';
-        followBtn.style.color = '#a0a8b8';
+        followBtn.style.color = 'var(--mod-text-sub)';
       }
     }
     if (followBtn) followBtn.style.opacity = '1';
@@ -995,10 +995,10 @@ export function requireAuth(actionLabel?: string): boolean {
   modal.innerHTML = `
     <div style="background:#12122A;border:1px solid var(--mod-accent-border);border-radius:12px;padding:28px 24px;max-width:340px;width:90%;text-align:center;">
       <div style="font-size:32px;margin-bottom:12px;">⚔️</div>
-      <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#D4A843;margin-bottom:8px;">JOIN THE ARENA</div>
+      <div style="font-family:var(--mod-font-display);font-size:20px;font-weight:700;color:var(--mod-accent);margin-bottom:8px;">JOIN THE ARENA</div>
       <div style="font-size:14px;color:#ccc;margin-bottom:20px;">Sign in to ${safeLabel}</div>
-      <a href="moderator-plinko.html?returnTo=${returnTo}" style="display:block;background:#D4A843;color:#0A0A1A;font-family:'Cinzel',serif;font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
-      <a href="moderator-login.html?returnTo=${returnTo}" style="display:block;color:#D4A843;font-size:14px;text-decoration:none;">Already have an account? Log in</a>
+      <a href="moderator-plinko.html?returnTo=${returnTo}" style="display:block;background:var(--mod-accent);color:var(--mod-bg-base);font-family:var(--mod-font-display);font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
+      <a href="moderator-login.html?returnTo=${returnTo}" style="display:block;color:var(--mod-accent);font-size:14px;text-decoration:none;">Already have an account? Log in</a>
       <button onclick="this.closest('#auth-gate-modal').remove()" style="margin-top:14px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;">Maybe later</button>
     </div>
   `;

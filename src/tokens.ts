@@ -123,25 +123,25 @@ function _injectCSS(): void {
     }
     .token-earn-toast {
       position:fixed; top:20px; left:50%; transform:translateX(-50%);
-      background:linear-gradient(135deg, #D4A843 0%, #b8942e 100%);
-      color:#0A0A1A; font-family:"Cinzel",serif; font-weight:700;
+      background:linear-gradient(135deg, var(--mod-accent) 0%, #b8942e 100%);
+      color:var(--mod-bg-base); font-family:var(--mod-font-display); font-weight:700;
       padding:10px 20px; border-radius:8px; z-index:99999; font-size:15px;
       white-space:nowrap; animation: tokenFlash 0.6s ease-out;
       box-shadow: 0 4px 12px var(--mod-accent-border);
     }
     .milestone-toast {
       position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
-      background:linear-gradient(135deg, #1a2d4a 0%, #2d5a8e 100%);
-      border:2px solid #D4A843; color:#f0f0f0;
-      font-family:"Barlow Condensed",sans-serif; font-weight:600;
+      background:linear-gradient(135deg, var(--mod-bg-card) 0%, #2d5a8e 100%);
+      border:2px solid var(--mod-accent); color:var(--mod-text-heading);
+      font-family:var(--mod-font-ui); font-weight:600;
       padding:14px 24px; border-radius:12px; z-index:99999; font-size:15px;
       text-align:center; max-width:320px;
       animation: milestoneSlide 3.5s ease-in-out forwards;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
     .milestone-toast .mt-icon   { font-size:28px; display:block; margin-bottom:4px; }
-    .milestone-toast .mt-label  { color:#D4A843; font-family:"Cinzel",serif; font-size:14px; letter-spacing:1px; }
-    .milestone-toast .mt-reward { font-size:13px; margin-top:4px; color:#a0a8b8; }
+    .milestone-toast .mt-label  { color:var(--mod-accent); font-family:var(--mod-font-display); font-size:14px; letter-spacing:1px; }
+    .milestone-toast .mt-reward { font-size:13px; margin-top:4px; color:var(--mod-text-sub); }
   `;
   document.head.appendChild(style);
 }
@@ -186,7 +186,7 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
   el.innerHTML = `
     <span class="mt-icon">${escapeHTML(icon || '🏆')}</span>
     <span class="mt-label">MILESTONE UNLOCKED</span>
-    <div style="font-size:16px;margin-top:2px;color:#f0f0f0;">${escapeHTML(label)}</div>
+    <div style="font-size:16px;margin-top:2px;color:var(--mod-text-heading);">${escapeHTML(label)}</div>
     <div class="mt-reward">${escapeHTML(rewardText)}</div>
   `;
   document.body.appendChild(el);

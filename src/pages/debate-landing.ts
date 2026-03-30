@@ -300,13 +300,13 @@ async function loadBackendCounts(): Promise<void> {
 // ============================================================
 
 function spawnConfetti(): void {
-  const colors = ['#d4a843', '#cc2936', '#2ecc71', '#5b8abf', '#f0f0f0', '#e63946'];
+  const colors = ['var(--mod-accent)', 'var(--mod-magenta)', '#2ecc71', '#5b8abf', 'var(--mod-text-heading)', '#e63946'];
   for (let i = 0; i < 30; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
     el.style.left = Math.random() * 100 + 'vw';
     el.style.top = (Math.random() * 30 - 10) + 'vh';
-    el.style.background = colors[Math.floor(Math.random() * colors.length)] ?? '#d4a843';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)] ?? 'var(--mod-accent)';
     el.style.animationDelay = (Math.random() * 0.4) + 's';
     el.style.animationDuration = (0.8 + Math.random() * 0.6) + 's';
     document.body.appendChild(el);
@@ -344,7 +344,7 @@ function downloadCard(): void {
 
 function showToast(msg: string): void {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(10,17,40,0.95);color:#f0f0f0;padding:10px 20px;border-radius:10px;font-family:var(--font-body);font-size:14px;font-weight:600;z-index:9999;border:1px solid var(--mod-border-primary);backdrop-filter:blur(10px);';
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(10,17,40,0.95);color:var(--mod-text-heading);padding:10px 20px;border-radius:10px;font-family:var(--font-body);font-size:14px;font-weight:600;z-index:9999;border:1px solid var(--mod-border-primary);backdrop-filter:blur(10px);';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);

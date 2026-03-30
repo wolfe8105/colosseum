@@ -74,7 +74,7 @@ const debateId = urlParams.get('id');
 
 // UUID validation
 if (debateId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(debateId)) {
-  if (app) app.innerHTML = '<div style="text-align:center;padding:40px;color:#cc2936;font-size:16px;">Invalid debate link.</div>';
+  if (app) app.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mod-magenta);font-size:16px;">Invalid debate link.</div>';
   if (loadingEl) loadingEl.style.display = 'none';
 } else if (!debateId) {
   // No ID — fetch latest and redirect
