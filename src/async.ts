@@ -500,7 +500,7 @@ function _wireTakeDelegation(container: HTMLElement): void {
     else if (action === 'share')
       shareTake(btn.dataset['id'] ?? '', btn.dataset['text'] ?? '');
     else if (action === 'expand') {
-      const card = btn.closest('.hot-take-card');
+      const card = btn.closest('.mod-card');
       if (!card) return;
       const textEl = card.querySelector(
         '[data-action="expand"]'
@@ -582,7 +582,7 @@ export function loadHotTakes(category: CategoryFilter = 'all'): void {
 
   if (takes.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center;padding:40px 16px;color:#a0a8b8;">
+      <div style="text-align:center;padding:40px 16px;color:var(--mod-text-sub);">
         <div style="font-size:36px;margin-bottom:8px;">🤫</div>
         <div style="font-size:14px;">No takes here yet. Be the first.</div>
       </div>`;
@@ -603,42 +603,24 @@ function _renderTake(t: HotTake): string {
   const profileAttr = userClickable
     ? `data-action="profile" data-user-id="${safeUserId}" data-username="${safeUsername}" style="cursor:pointer;"`
     : '';
+  const catLabel = (t.section || 'general').toUpperCase();
+  const truncate = t.text.length > 150;
 
   return `
-    <div class="hot-take-card" data-id="${safeId}" style="
-      background:#132240;border:1px solid rgba(255,255,255,0.06);border-radius:12px;
-      padding:14px;margin-bottom:10px;
-    ">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div ${profileAttr} style="width:32px;height:32px;border-radius:50%;background:#1a2d4a;border:2px solid #d4a843;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#d4a843;${userClickable ? 'cursor:pointer;' : ''}">
-          ${safeInitial}
-        </div>
-        <div>
-          <span ${profileAttr} style="font-weight:700;font-size:13px;color:#f0f0f0;${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
-          <span style="font-size:11px;color:#d4a843;margin-left:6px;">🪙 ${Number(t.tokens || 0)}</span>
-        </div>
-        <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
+    <div class="mod-card" data-id="${safeId}" style="margin-bottom:12px;">
+      <div class="gloss"></div>
+      <div class="mod-card-category">${catLabel}</div>
+      <div class="mod-card-meta">
+        <span class="mod-card-avatar" ${profileAttr}>${safeInitial}</span>
+        <span ${profileAttr}>${safeUser}</span>
+        <span style="color:var(--mod-cyan);">🪙 ${Number(t.tokens || 0)}</span>
+        <span style="margin-left:auto;">${esc(t.time)}</span>
       </div>
-      <div data-action="expand" data-id="${safeId}" style="font-size:14px;line-height:1.5;color:#f0f0f0;margin-bottom:12px;cursor:pointer;${t.text.length > 150 ? 'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;' : ''}">${safeText}</div>${t.text.length > 150 ? '<div data-action="expand" data-id="' + safeId + '" style="font-size:12px;color:#d4a843;cursor:pointer;margin-top:-8px;margin-bottom:12px;">tap to read more</div>' : ''}
-      <div style="display:flex;align-items:center;gap:12px;">
-        <button data-action="react" data-id="${safeId}" style="
-          display:flex;align-items:center;gap:4px;background:${t.userReacted ? 'rgba(204,41,54,0.15)' : 'rgba(255,255,255,0.05)'};
-          border:1px solid ${t.userReacted ? 'rgba(204,41,54,0.3)' : 'rgba(255,255,255,0.08)'};
-          color:${t.userReacted ? '#cc2936' : '#a0a8b8'};
-          padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
-        ">🔥 ${Number(t.reactions)}</button>
-        <button data-action="challenge" data-id="${safeId}" style="
-          display:flex;align-items:center;gap:4px;
-          background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);
-          color:#cc2936;padding:6px 12px;border-radius:20px;
-          font-size:12px;font-weight:700;cursor:pointer;
-        ">⚔️ BET. (${Number(t.challenges)})</button>
-        <button data-action="share" data-id="${safeId}" data-text="${esc(t.text)}" style="
-          display:flex;align-items:center;gap:4px;
-          background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
-          color:#a0a8b8;padding:6px 12px;border-radius:20px;
-          font-size:12px;cursor:pointer;
-        ">↗ Share</button>
+      <div class="mod-card-text" data-action="expand" data-id="${safeId}" style="cursor:pointer;${truncate ? 'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;' : ''}">${safeText}</div>${truncate ? `<div data-action="expand" data-id="${safeId}" style="font-size:12px;color:var(--mod-cyan);cursor:pointer;margin-top:-4px;margin-bottom:10px;position:relative;">tap to read more</div>` : ''}
+      <div class="mod-card-actions">
+        <button class="mod-card-btn ${t.userReacted ? 'mod-btn-reacted' : 'mod-btn-agree'}" data-action="react" data-id="${safeId}">🔥 ${Number(t.reactions)}</button>
+        <button class="mod-card-btn mod-btn-challenge" data-action="challenge" data-id="${safeId}">⚔️ BET. (${Number(t.challenges)})</button>
+        <button class="mod-card-btn mod-btn-disagree" data-action="share" data-id="${safeId}" data-text="${esc(t.text)}">↗ SHARE</button>
       </div>
     </div>`;
 }
