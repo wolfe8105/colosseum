@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#000000" id="meta-theme-color">
 <title>The Moderator</title>
+<script>
+(function(){
+  var d=document.documentElement;
+  var light=window.matchMedia('(prefers-color-scheme:light)').matches;
+  if(light){d.setAttribute('data-theme','light');document.getElementById('meta-theme-color').content='#eaeef2';}
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100..700&display=swap" rel="stylesheet">
 
 <style>
