@@ -22,6 +22,7 @@ import {
   showUserProfile,
   getMyRivals,
   respondRival,
+  toggleModerator,
   ready,
 } from './auth.ts';
 import type { SafeRpcResult } from './auth.ts';
@@ -499,7 +500,16 @@ function _wireTakeDelegation(container: HTMLElement): void {
     else if (action === 'challenge') challenge(btn.dataset['id'] ?? '');
     else if (action === 'share')
       shareTake(btn.dataset['id'] ?? '', btn.dataset['text'] ?? '');
-    else if (action === 'expand') {
+    else if (action === 'become-mod') {
+      void toggleModerator(true).then((result) => {
+        if (!result.error) {
+          showToast('🧑‍⚖️ You are now a Moderator!', 'success');
+          loadHotTakes(currentFilter);
+        }
+      });
+    } else if (action === 'mod-signup') {
+      window.location.href = 'moderator-plinko.html';
+    } else if (action === 'expand') {
       const card = btn.closest('.mod-card');
       if (!card) return;
       const textEl = card.querySelector(
@@ -589,7 +599,16 @@ export function loadHotTakes(category: CategoryFilter = 'all'): void {
     return;
   }
 
-  container.innerHTML = takes.map((t) => _renderTake(t)).join('');
+  const rendered = takes.map((t) => _renderTake(t));
+
+  // Inject moderator recruitment card at position 2 (after 2nd take)
+  const user = getCurrentUser();
+  const profile = getCurrentProfile();
+  if (!profile?.is_moderator && rendered.length >= 2) {
+    rendered.splice(2, 0, _renderModeratorCard(!user));
+  }
+
+  container.innerHTML = rendered.join('');
 }
 
 function _renderTake(t: HotTake): string {
@@ -642,6 +661,25 @@ function _renderTake(t: HotTake): string {
           font-size:12px;cursor:pointer;
         ">↗ Share</button>
       </div>
+    </div>`;
+}
+
+function _renderModeratorCard(isGuest = false): string {
+  const btnLabel = isGuest ? 'SIGN UP TO MODERATE' : 'BECOME A MODERATOR';
+  const btnAction = isGuest ? 'mod-signup' : 'become-mod';
+  return `
+    <div class="hot-take-card" style="
+      background:#132240;border:1px solid var(--mod-cyan);border-left:3px solid var(--mod-cyan);
+      border-radius:12px;padding:14px;margin-bottom:10px;
+    ">
+      <div style="font-family:var(--mod-font-display);font-size:15px;color:var(--mod-cyan);letter-spacing:1px;margin-bottom:6px;">MODERATORS WANTED</div>
+      <div style="font-size:13px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.5;">Judge debates, earn tokens, build your reputation.</div>
+      <button data-action="${btnAction}" style="
+        display:flex;align-items:center;gap:4px;
+        background:rgba(0,224,255,0.08);border:1px solid var(--mod-cyan);
+        color:var(--mod-cyan);padding:8px 16px;border-radius:20px;
+        font-size:12px;font-weight:700;cursor:pointer;
+      ">🧑‍⚖️ ${btnLabel}</button>
     </div>`;
 }
 

@@ -9,7 +9,7 @@
  */
 
 // ES imports (replaces window globals)
-import { oauthLogin, signUp, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from '../auth.ts';
+import { oauthLogin, signUp, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, toggleModerator, ready } from '../auth.ts';
 import { isAnyPlaceholder } from '../config.ts';
 import { nudge } from '../nudge.ts';
 
@@ -30,7 +30,7 @@ let signupPassword = '';
 let signupDob = '';
 let _isMinor = false;
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const isPlaceholder: boolean = isAnyPlaceholder;
 
@@ -199,7 +199,7 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
 
   if (isPlaceholder) {
     showMsg('step3-msg', 'Demo mode — account created!', 'success');
-    setTimeout(() => goToStep(4), 600);
+    setTimeout(() => goToStep(5), 600);
     return;
   }
 
@@ -264,7 +264,24 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
 });
 
 // ============================================================
-// STEP 4: ENTER
+// STEP 4: MODERATOR OPT-IN
+// ============================================================
+
+document.getElementById('btn-enable-mod')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-enable-mod') as HTMLButtonElement | null;
+  if (btn) { btn.disabled = true; btn.textContent = 'ENABLING...'; }
+  try {
+    await toggleModerator(true);
+  } catch { /* non-critical — proceed to step 5 regardless */ }
+  goToStep(5);
+});
+
+document.getElementById('btn-skip-mod')?.addEventListener('click', () => {
+  goToStep(5);
+});
+
+// ============================================================
+// STEP 5: ENTER
 // ============================================================
 
 document.getElementById('btn-enter')?.addEventListener('click', () => {
@@ -285,7 +302,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (event === 'SIGNED_IN' && session?.user) {
         const hash = window.location.hash;
 
-        // Email confirmation return
+        // Email confirmation return — skip mod step (step 5 = YOU'RE IN)
         if (hash && (hash.includes('type=signup') || hash.includes('type=email'))) {
           const welcome = document.getElementById('welcome-text');
           if (welcome) welcome.textContent = 'Email confirmed! Welcome to the arena.';
@@ -293,7 +310,7 @@ window.addEventListener('DOMContentLoaded', () => {
           if (window.history?.replaceState) {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }
-          goToStep(4);
+          goToStep(5);
           return;
         }
 
@@ -315,7 +332,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (hasRealSession) {
         const welcome = document.getElementById('welcome-text');
         if (welcome) welcome.textContent = 'Email confirmed! Welcome to the arena.';
-        goToStep(4);
+        goToStep(5);
       }
     }
     // SESSION 64: Clear hash immediately — tokens in URL leak via Referer

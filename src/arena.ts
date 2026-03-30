@@ -20,6 +20,7 @@ import {
   safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile,
   assignModerator, getDebateReferences, declareRival, showUserProfile,
   submitReference, ruleOnReference, scoreModerator, getAvailableModerators,
+  toggleModerator,
   ready,
 } from './auth.ts';
 import {
@@ -795,6 +796,12 @@ export function renderLobby(): void {
         <button class="arena-secondary-btn" id="arena-powerup-shop-btn">\u26A1 POWER-UPS</button>
       </div>
       ${profile?.is_moderator ? `<div class="arena-btn-row" style="margin-top:0;"><button class="arena-secondary-btn" id="arena-mod-queue-btn" style="width:100%;">🧑‍⚖️ MOD QUEUE</button></div>` : ''}
+      ${getCurrentUser() && !profile?.is_moderator ? `
+      <div id="arena-mod-banner" style="background:var(--mod-bg-card);border:1px solid var(--mod-cyan);border-radius:10px;padding:14px 16px;margin-top:8px;text-align:center;">
+        <div style="font-family:var(--mod-font-display);font-size:15px;color:var(--mod-cyan);letter-spacing:1px;margin-bottom:4px;">THE MODERATOR NEEDS MODERATORS</div>
+        <div style="font-size:12px;color:var(--mod-text-sub);margin-bottom:10px;">Judge debates. Score arguments. Build your rep.</div>
+        <button class="arena-secondary-btn" id="arena-become-mod-btn" style="width:100%;border-color:var(--mod-cyan);color:var(--mod-cyan);">🧑‍⚖️ BECOME A MODERATOR</button>
+      </div>` : ''}
       <div class="arena-btn-row" style="margin-top:0;">
         <input id="arena-join-code-input" type="text" maxlength="6" placeholder="JOIN CODE" style="flex:1;padding:10px 14px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:13px;letter-spacing:3px;text-transform:uppercase;outline:none;min-height:44px;">
         <button class="arena-secondary-btn" id="arena-join-code-btn" style="flex:0 0 auto;padding:10px 18px;">GO</button>
@@ -827,6 +834,17 @@ export function renderLobby(): void {
   document.getElementById('arena-powerup-shop-btn')?.addEventListener('click', showPowerUpShop);
   document.getElementById('arena-private-btn')?.addEventListener('click', showPrivateLobbyPicker);
   document.getElementById('arena-mod-queue-btn')?.addEventListener('click', showModQueue);
+
+  // Wire moderator recruitment banner
+  document.getElementById('arena-become-mod-btn')?.addEventListener('click', async () => {
+    const result = await toggleModerator(true);
+    if (!result.error) {
+      showToast('🧑‍⚖️ You are now a Moderator!', 'success');
+      renderLobby();
+    } else {
+      showToast('⚠️ Could not enable moderator mode. Try again.', 'error');
+    }
+  });
 
   // Wire join code input
   const joinCodeInput = document.getElementById('arena-join-code-input') as HTMLInputElement | null;
@@ -2787,6 +2805,11 @@ export async function endCurrentDebate(): Promise<void> {
     </div>
   `;
   screenEl?.appendChild(post);
+
+  // FIX 1: Post-debate moderator recruitment nudge
+  if (getCurrentUser() && getCurrentProfile()?.is_moderator !== true) {
+    nudge('become_moderator_post_debate', '🧑‍⚖️ Think you could call it better? Become a Moderator → Settings');
+  }
 
   // Session 39: Moderator scoring section
   if (debate.moderatorId && debate.moderatorName) {

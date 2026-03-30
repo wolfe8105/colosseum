@@ -54,6 +54,12 @@ interface PlatformStats {
   totalDebatesThisWeek: number;
 }
 
+interface TopMod {
+  display_name: string;
+  mod_debates_count: number;
+  mod_approval_pct: number;
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function sleep(ms: number): Promise<void> {
@@ -158,6 +164,21 @@ async function fetchWeeklyDebateCounts(userIds: string[]): Promise<Map<string, n
   return map;
 }
 
+async function fetchTopModerator(): Promise<TopMod | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('display_name, mod_debates_count, mod_approval_pct')
+    .eq('is_moderator', true)
+    .gt('mod_debates_count', 0)
+    .order('mod_approval_pct', { ascending: false })
+    .order('mod_debates_count', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+  return data as TopMod;
+}
+
 async function fetchPlatformStats(): Promise<PlatformStats> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -214,6 +235,7 @@ function buildEmailHtml(
   groupCount: number,
   weeklyDebates: number,
   platform: PlatformStats,
+  topMod: TopMod | null = null,
 ): string {
   const name = profile.display_name || profile.username || 'Gladiator';
   const hook = getEngagementHook(profile, followCount, groupCount);
@@ -328,6 +350,25 @@ function buildEmailHtml(
                 <!-- Group section (conditional) -->
                 ${groupSection}
 
+                <!-- Moderator Spotlight -->
+                <tr>
+                  <td style="padding: 0 0 24px 0;">
+                    <div style="background: rgba(255,255,255,0.05); border-left: 3px solid #00c8ff; border-radius: 4px; padding: 16px 20px;">
+                      <p style="margin: 0 0 6px 0; font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #00c8ff;">Moderator Spotlight</p>
+                      ${topMod ? `
+                      <p style="margin: 0 0 8px 0; font-family: Arial, sans-serif; font-size: 15px; color: #e8eaf0; line-height: 1.5;">
+                        <strong style="color: #ffffff;">${topMod.display_name}</strong> leads the mod board this week —
+                        <strong style="color: #ffffff;">${topMod.mod_debates_count} debates</strong> judged with a
+                        <strong style="color: #00c8ff;">${Math.round(topMod.mod_approval_pct)}% approval rating</strong>.
+                      </p>` : `
+                      <p style="margin: 0 0 8px 0; font-family: Arial, sans-serif; font-size: 15px; color: #e8eaf0; line-height: 1.5;">
+                        The Moderator needs moderators. Be the first.
+                      </p>`}
+                      <a href="${APP_URL}/settings" style="display: inline-block; background-color: #00c8ff; color: #0d1b2e; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-decoration: none; padding: 9px 20px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;">Become a Moderator →</a>
+                    </div>
+                  </td>
+                </tr>
+
                 <!-- Platform Wide -->
                 <tr>
                   <td style="padding: 0 0 24px 0;">
@@ -413,12 +454,13 @@ async function main(): Promise<void> {
 
   // 2. Batch fetch all data
   log('Fetching profile data...');
-  const [profiles, followCounts, groupCounts, weeklyDebates, platform] = await Promise.all([
+  const [profiles, followCounts, groupCounts, weeklyDebates, platform, topMod] = await Promise.all([
     fetchProfiles(userIds),
     fetchFollowCounts(userIds),
     fetchGroupCounts(userIds),
     fetchWeeklyDebateCounts(userIds),
     fetchPlatformStats(),
+    fetchTopModerator(),
   ]);
 
   log(`Platform stats: ${platform.totalDebatesThisWeek} debates, top category: ${platform.topCategory}`);
@@ -440,7 +482,7 @@ async function main(): Promise<void> {
     const groupCount   = groupCounts.get(user.id)   ?? 0;
     const debateCount  = weeklyDebates.get(user.id) ?? 0;
 
-    const html    = buildEmailHtml(profile, followCount, groupCount, debateCount, platform);
+    const html    = buildEmailHtml(profile, followCount, groupCount, debateCount, platform, topMod);
     const subject = `${profile.display_name || profile.username}, your week in the arena 🏛`;
 
     const ok = await sendEmail(user.email, subject, html);
