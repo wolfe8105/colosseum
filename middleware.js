@@ -27,8 +27,8 @@ const MAX_REQUESTS = 30;     // 30 requests per minute per IP
 // Allowed origins — ONLY your domain
 const ALLOWED_ORIGINS = [
   'https://colosseum-six.vercel.app',
-  'https://thecolosseum.app',           // future custom domain
-  // PLACEHOLDER: Add your custom domain here when you buy one
+  'https://thecolosseum.app',           // legacy domain
+  'https://themoderator.app',           // production domain
 ];
 
 // In development, also allow localhost
