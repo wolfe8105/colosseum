@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="var(--mod-bg-base)">
+<meta name="theme-color" content="#000000" id="meta-theme-color">
+<script>(function(){var d=document.documentElement;var light=window.matchMedia("(prefers-color-scheme:light)").matches;if(light){d.setAttribute("data-theme","light");var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
 <title>Settings — The Moderator</title>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Antonio:wght@100..700&display=swap');
 
   :root {
     --safe-top: env(safe-area-inset-top, 0px);
