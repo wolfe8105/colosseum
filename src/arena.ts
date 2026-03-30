@@ -204,6 +204,7 @@ const QUEUE_CATEGORIES: readonly QueueCategory[] = [
 const MATCH_ACCEPT_SEC = 12;
 const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 const ROUND_DURATION = 120;
+const AI_TOTAL_ROUNDS = 6;
 export const TEXT_MAX_CHARS = 2000;
 
 const AI_TOPICS: readonly string[] = [
@@ -556,6 +557,34 @@ function injectCSS(): void {
     .arena-post-btn.primary { background: var(--mod-bar-accent); background-image: var(--mod-gloss); color: var(--mod-text-on-accent); }
     .arena-post-btn.secondary { background: none; border: 1px solid var(--mod-border-primary); color: var(--mod-text-body); }
     .arena-post-btn:active { transform: scale(0.96); }
+
+    /* AI JUDGING STATE */
+    .arena-judging { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 20px; text-align: center; }
+    .arena-judging-icon { font-size: 56px; margin-bottom: 16px; animation: arenaJudgePulse 2s ease-in-out infinite; }
+    .arena-judging-text { font-family: var(--mod-font-ui); font-size: 13px; font-weight: 600; letter-spacing: 3px; color: var(--mod-text-body); text-transform: uppercase; margin-bottom: 8px; }
+    .arena-judging-sub { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 20px; }
+    @keyframes arenaJudgePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }
+
+    /* AI SCORECARD */
+    .ai-scorecard { width: 100%; max-width: 380px; margin: 0 auto 20px; text-align: left; }
+    .ai-scorecard-header { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; padding: 12px 16px; border-radius: var(--mod-radius-md); background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); }
+    .ai-scorecard-side { text-align: center; min-width: 80px; }
+    .ai-scorecard-name { font-size: 11px; color: var(--mod-text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+    .ai-scorecard-total { font-family: var(--mod-font-ui); font-size: 28px; font-weight: 700; }
+    .ai-scorecard-total.winner { color: var(--mod-accent); }
+    .ai-scorecard-total.loser { color: var(--mod-text-muted); }
+    .ai-scorecard-vs { font-family: var(--mod-font-ui); font-size: 11px; color: var(--mod-text-muted); letter-spacing: 2px; }
+    .ai-scorecard-breakdown { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .ai-score-criterion { padding: 10px 14px; border-radius: var(--mod-radius-md); background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); }
+    .ai-score-criterion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .ai-score-criterion-label { font-size: 12px; font-weight: 600; color: var(--mod-text-body); letter-spacing: 0.5px; }
+    .ai-score-criterion-nums { font-family: var(--mod-font-ui); font-size: 13px; font-weight: 700; color: var(--mod-text-muted); }
+    .ai-score-bars { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+    .ai-score-bar { height: 6px; border-radius: 3px; min-width: 4px; transition: width 0.8s ease; }
+    .ai-score-bar.mine { background: var(--mod-accent); }
+    .ai-score-bar.theirs { background: var(--mod-bar-secondary); opacity: 0.5; }
+    .ai-score-reason { font-size: 11px; color: var(--mod-text-muted); line-height: 1.4; font-style: italic; }
+    .ai-scorecard-verdict { text-align: center; font-size: 13px; color: var(--mod-text-body); font-weight: 500; padding: 10px 16px; border-radius: var(--mod-radius-md); background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); line-height: 1.4; }
 
     /* SPECTATOR COUNT */
     .arena-spectator-bar { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; font-size: 11px; color: var(--mod-text-muted); }
@@ -1755,7 +1784,7 @@ async function startAIDebate(topic: string): Promise<void> {
     role: 'a',
     mode: 'ai',
     round: 1,
-    totalRounds: 3,
+    totalRounds: AI_TOTAL_ROUNDS,
     opponentName: 'AI Sparring Bot',
     opponentElo: 1200,
     ranked: false,
@@ -2255,6 +2284,118 @@ function generateSimulatedResponse(_round: number): string {
   return randomFrom(responses);
 }
 
+// ============================================================
+// AI SCORING — post-debate analysis
+// ============================================================
+
+interface CriterionScore {
+  score: number;
+  reason: string;
+}
+
+interface SideScores {
+  logic: CriterionScore;
+  evidence: CriterionScore;
+  delivery: CriterionScore;
+  rebuttal: CriterionScore;
+}
+
+interface AIScoreResult {
+  side_a: SideScores;
+  side_b: SideScores;
+  overall_winner: string;
+  verdict: string;
+}
+
+async function requestAIScoring(topic: string, messages: DebateMessage[]): Promise<AIScoreResult | null> {
+  const messageHistory = messages.map((m) => ({
+    role: m.role,
+    content: m.text,
+  }));
+
+  try {
+    const supabaseUrl = SUPABASE_URL;
+    if (!supabaseUrl) throw new Error('No supabase URL');
+
+    const edgeUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai-sparring';
+    const anonKey = SUPABASE_ANON_KEY;
+
+    const res = await fetch(edgeUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(anonKey ? { Authorization: 'Bearer ' + anonKey } : {}),
+      },
+      body: JSON.stringify({ mode: 'score', topic, messageHistory }),
+    });
+
+    if (!res.ok) throw new Error('Scoring API error: ' + res.status);
+    const data = await res.json() as { scores?: AIScoreResult };
+    if (data?.scores) return data.scores;
+    throw new Error('No scores in response');
+  } catch (err) {
+    console.warn('[Arena] AI scoring failed, falling back to random:', err);
+    return null;
+  }
+}
+
+function sumSideScore(side: SideScores): number {
+  return side.logic.score + side.evidence.score + side.delivery.score + side.rebuttal.score;
+}
+
+function renderAIScorecard(
+  myName: string,
+  oppName: string,
+  myRole: DebateRole,
+  scores: AIScoreResult
+): string {
+  const mySide = myRole === 'a' ? scores.side_a : scores.side_b;
+  const oppSide = myRole === 'a' ? scores.side_b : scores.side_a;
+  const myTotal = sumSideScore(mySide);
+  const oppTotal = sumSideScore(oppSide);
+
+  function renderBar(label: string, mine: CriterionScore, theirs: CriterionScore): string {
+    const myPct = mine.score * 10;
+    const theirPct = theirs.score * 10;
+    return `
+      <div class="ai-score-criterion">
+        <div class="ai-score-criterion-header">
+          <span class="ai-score-criterion-label">${label}</span>
+          <span class="ai-score-criterion-nums">${mine.score} \u2014 ${theirs.score}</span>
+        </div>
+        <div class="ai-score-bars">
+          <div class="ai-score-bar mine" style="width: ${myPct}%"></div>
+          <div class="ai-score-bar theirs" style="width: ${theirPct}%"></div>
+        </div>
+        <div class="ai-score-reason">${escapeHTML(mine.reason)}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="ai-scorecard">
+      <div class="ai-scorecard-header">
+        <div class="ai-scorecard-side">
+          <div class="ai-scorecard-name">${escapeHTML(myName)}</div>
+          <div class="ai-scorecard-total ${myTotal >= oppTotal ? 'winner' : 'loser'}">${myTotal}</div>
+        </div>
+        <div class="ai-scorecard-vs">VS</div>
+        <div class="ai-scorecard-side">
+          <div class="ai-scorecard-name">${escapeHTML(oppName)}</div>
+          <div class="ai-scorecard-total ${oppTotal >= myTotal ? 'winner' : 'loser'}">${oppTotal}</div>
+        </div>
+      </div>
+      <div class="ai-scorecard-breakdown">
+        ${renderBar('\uD83E\uDDE0 LOGIC', mySide.logic, oppSide.logic)}
+        ${renderBar('\uD83D\uDCDA EVIDENCE', mySide.evidence, oppSide.evidence)}
+        ${renderBar('\uD83C\uDFA4 DELIVERY', mySide.delivery, oppSide.delivery)}
+        ${renderBar('\u2694\uFE0F REBUTTAL', mySide.rebuttal, oppSide.rebuttal)}
+      </div>
+      <div class="ai-scorecard-verdict">${escapeHTML(scores.verdict)}</div>
+    </div>
+  `;
+}
+
 function advanceRound(): void {
   const debate = currentDebate!;
   if (debate.round >= debate.totalRounds) {
@@ -2511,7 +2652,35 @@ export async function endCurrentDebate(): Promise<void> {
   // Generate scores
   let scoreA: number;
   let scoreB: number;
-  if (debate.mode === 'ai' || !debate.opponentId) {
+  let aiScores: AIScoreResult | null = null;
+
+  if (debate.mode === 'ai' && debate.messages.length > 0) {
+    // Show "judging" state while AI scores
+    if (screenEl) {
+      screenEl.innerHTML = '';
+      const judging = document.createElement('div');
+      judging.className = 'arena-post arena-fade-in';
+      judging.innerHTML = `
+        <div class="arena-judging">
+          <div class="arena-judging-icon">\u2696\uFE0F</div>
+          <div class="arena-judging-text">THE JUDGE IS REVIEWING...</div>
+          <div class="arena-judging-sub">Analyzing ${debate.messages.length} arguments across ${debate.round} rounds</div>
+          <div class="arena-typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      `;
+      screenEl.appendChild(judging);
+    }
+
+    aiScores = await requestAIScoring(debate.topic, debate.messages);
+    if (aiScores) {
+      scoreA = sumSideScore(aiScores.side_a);
+      scoreB = sumSideScore(aiScores.side_b);
+    } else {
+      // Fallback if scoring API fails
+      scoreA = 60 + Math.floor(Math.random() * 30);
+      scoreB = 60 + Math.floor(Math.random() * 30);
+    }
+  } else if (debate.mode === 'ai' || !debate.opponentId) {
     scoreA = 60 + Math.floor(Math.random() * 30);
     scoreB = 60 + Math.floor(Math.random() * 30);
   } else {
@@ -2597,6 +2766,7 @@ export async function endCurrentDebate(): Promise<void> {
         <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreB : scoreA)}</div>
       </div>
     </div>
+    ${aiScores ? renderAIScorecard(myName, debate.opponentName, debate.role, aiScores) : ''}
     ${debate.opponentId && debate.mode !== 'ai' ? `
     <div class="arena-post-actions" style="margin-bottom:0">
       <button class="arena-post-btn secondary" id="arena-add-rival">\u2694\uFE0F ADD RIVAL</button>
