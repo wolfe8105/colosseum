@@ -118,6 +118,9 @@ function loadSettings(): void {
   setChecked('set-privacy-online', saved.privacy_online !== false);
   setChecked('set-privacy-challenges', saved.privacy_challenges !== false);
 
+  // Dark mode toggle — reads from data-theme attribute (set by head script from localStorage)
+  setChecked('set-dark-mode', document.documentElement.getAttribute('data-theme') !== 'light');
+
   // If auth module has a profile, prefer that over localStorage
   const profile = getCurrentProfile();
   if (profile) {
@@ -208,6 +211,16 @@ function saveSettings(): void {
 }
 
 document.getElementById('save-btn')?.addEventListener('click', saveSettings);
+
+// Dark mode toggle — immediate effect, separate from save button
+getEl<HTMLInputElement>('set-dark-mode')?.addEventListener('change', (e: Event) => {
+  const isDark = (e.target as HTMLInputElement).checked;
+  const theme = isDark ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  const meta = document.getElementById('meta-theme-color');
+  if (meta) meta.setAttribute('content', isDark ? '#000000' : '#eaeef2');
+});
 
 // Bio character counter
 getEl<HTMLTextAreaElement>('set-bio')?.addEventListener('input', (e: Event) => {
