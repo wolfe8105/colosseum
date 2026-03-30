@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="You Think You're Right? Prove It. — The Moderator">
+<meta property="og:description" content="Debate an AI on any topic. Voice or text. No signup needed. Just pick a side and start arguing.">
+<meta property="og:image" content="https://themoderator.app/og-card-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://themoderator.app/go">
+<meta property="og:site_name" content="The Moderator">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="You Think You're Right? Prove It. — The Moderator">
+<meta name="twitter:description" content="Debate an AI on any topic. Voice or text. No signup needed.">
+<meta name="twitter:image" content="https://themoderator.app/og-card-default.png">
+
+<title>You Think You're Right? Prove It. — The Moderator</title>
+<link rel="canonical" href="https://themoderator.app/go">
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;height:100%}
+
+:root {
+  --bg: #000000;
+  --card: rgba(22,28,38,0.78);
+  --card-border: rgba(255,255,255,0.12);
+  --cyan: #00ffee;
+  --cyan-glow: rgba(0,255,238,0.25);
+  --magenta: #ff1a75;
+  --magenta-glow: rgba(255,26,117,0.25);
+  --orange: #ff8800;
+  --orange-glow: rgba(255,136,0,0.3);
+  --text: #b8c0d0;
+  --text-heading: #e8eaf0;
+  --text-muted: #4a5060;
+  --text-sub: #7a8298;
+  --border: rgba(255,255,255,0.12);
+  --border-subtle: rgba(255,255,255,0.05);
+  --font: 'Antonio', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Top bar */
+.top-bar {
+  width: 100%; padding: calc(12px + var(--safe-top)) 16px 12px;
+  background: rgba(6,6,8,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: var(--font); font-size: 18px; font-weight: 700;
+  letter-spacing: 4px; color: var(--cyan); text-transform: uppercase;
+  text-decoration: none;
+}
+.logo .the {
+  font-weight: 300; color: var(--text-sub); font-size: 10px;
+  letter-spacing: 5px; display: block; line-height: 1; margin-bottom: -2px;
+}
+
+/* Container */
+.container {
+  width: 100%; max-width: 520px; padding: 0 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  margin-top: 24px; padding-bottom: calc(40px + var(--safe-bottom));
+}
+
+/* Setup screen */
+.setup-header {
+  text-align: center; margin-bottom: 4px;
+}
+.setup-title {
+  font-size: 26px; font-weight: 700; letter-spacing: 3px;
+  color: var(--text-heading); text-transform: uppercase;
+}
+.setup-sub {
+  font-size: 14px; color: var(--text-sub); letter-spacing: 1px;
+  margin-top: 6px; font-weight: 300;
+}
+
+.input-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px; backdrop-filter: blur(12px);
+}
+.input-label {
+  font-size: 12px; font-weight: 500; letter-spacing: 2px;
+  color: var(--cyan); text-transform: uppercase; margin-bottom: 10px;
+}
+.topic-input {
+  width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; color: var(--text-heading);
+  font-family: var(--font); font-size: 16px; font-weight: 400;
+  letter-spacing: 0.5px; outline: none; transition: border-color 0.2s;
+}
+.topic-input::placeholder { color: var(--text-muted); }
+.topic-input:focus { border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+
+/* Side picker */
+.side-picker {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.side-btn {
+  flex: 1; padding: 14px; border-radius: 10px;
+  border: 2px solid var(--border); background: transparent;
+  font-family: var(--font); font-size: 15px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  color: var(--text-sub); transition: all 0.2s;
+}
+.side-btn:active { transform: scale(0.97); }
+.side-btn[data-selected="true"][data-side="for"] {
+  border-color: var(--cyan); color: var(--cyan);
+  background: rgba(0,255,238,0.08); box-shadow: 0 0 16px var(--cyan-glow);
+}
+.side-btn[data-selected="true"][data-side="against"] {
+  border-color: var(--magenta); color: var(--magenta);
+  background: rgba(255,26,117,0.08); box-shadow: 0 0 16px var(--magenta-glow);
+}
+
+/* Start button */
+.start-btn {
+  width: 100%; padding: 16px; border-radius: 12px; border: none;
+  background: var(--orange); color: #000; font-family: var(--font);
+  font-size: 18px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 0 20px var(--orange-glow);
+}
+.start-btn:active { transform: scale(0.97); }
+.start-btn:disabled {
+  opacity: 0.3; cursor: not-allowed; box-shadow: none;
+}
+
+/* Debate screen */
+.debate-screen { display: none; flex-direction: column; gap: 12px; }
+.debate-screen.active { display: flex; }
+.setup-screen.hidden { display: none; }
+
+.round-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+}
+.round-label {
+  font-size: 13px; font-weight: 500; letter-spacing: 2px;
+  color: var(--cyan); text-transform: uppercase;
+}
+.round-dots { display: flex; gap: 6px; }
+.round-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--border); background: transparent;
+}
+.round-dot.done { background: var(--cyan); border-color: var(--cyan); }
+.round-dot.current { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 8px var(--orange-glow); }
+
+.topic-banner {
+  text-align: center; padding: 10px;
+  font-size: 15px; font-weight: 600; letter-spacing: 1px;
+  color: var(--text-heading); text-transform: uppercase;
+}
+.topic-side-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 500; letter-spacing: 2px;
+  margin-top: 4px;
+}
+.topic-side-tag.for { background: rgba(0,255,238,0.12); color: var(--cyan); }
+.topic-side-tag.against { background: rgba(255,26,117,0.12); color: var(--magenta); }
+
+/* Chat bubbles */
+.chat-area {
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 200px; max-height: 50vh; overflow-y: auto;
+  padding: 4px 0;
+}
+.bubble {
+  max-width: 85%; padding: 14px 16px; border-radius: 14px;
+  font-size: 15px; font-weight: 400; line-height: 1.5;
+  letter-spacing: 0.3px; animation: bubbleIn 0.3s ease-out;
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bubble.user {
+  align-self: flex-end; background: rgba(0,255,238,0.1);
+  border: 1px solid rgba(0,255,238,0.2); color: var(--text-heading);
+  border-bottom-right-radius: 4px;
+}
+.bubble.ai {
+  align-self: flex-start; background: rgba(255,26,117,0.1);
+  border: 1px solid rgba(255,26,117,0.2); color: var(--text-heading);
+  border-bottom-left-radius: 4px;
+}
+.bubble-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.bubble.user .bubble-label { color: var(--cyan); }
+.bubble.ai .bubble-label { color: var(--magenta); }
+
+/* AI thinking indicator */
+.ai-thinking {
+  align-self: flex-start; padding: 14px 20px;
+  background: rgba(255,26,117,0.06); border: 1px solid rgba(255,26,117,0.15);
+  border-radius: 14px; border-bottom-left-radius: 4px;
+  display: flex; gap: 6px; align-items: center;
+}
+.ai-thinking .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--magenta);
+  animation: thinkPulse 1.2s ease-in-out infinite;
+}
+.ai-thinking .dot:nth-child(2) { animation-delay: 0.2s; }
+.ai-thinking .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes thinkPulse {
+  0%,100% { opacity: 0.2; } 50% { opacity: 1; }
+}
+
+/* Input area */
+.input-area {
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.text-input {
+  flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; color: var(--text-heading);
+  font-family: var(--font); font-size: 15px; font-weight: 400;
+  outline: none; resize: none; min-height: 44px; max-height: 120px;
+  transition: border-color 0.2s;
+}
+.text-input::placeholder { color: var(--text-muted); }
+.text-input:focus { border-color: var(--cyan); }
+
+.mic-btn {
+  width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--border);
+  background: transparent; color: var(--text-sub); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; transition: all 0.2s; flex-shrink: 0;
+}
+.mic-btn:active { transform: scale(0.93); }
+.mic-btn.recording {
+  border-color: var(--magenta); color: var(--magenta);
+  background: rgba(255,26,117,0.1); box-shadow: 0 0 16px var(--magenta-glow);
+  animation: micPulse 1s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%,100% { box-shadow: 0 0 16px var(--magenta-glow); }
+  50% { box-shadow: 0 0 28px var(--magenta-glow); }
+}
+
+.send-btn {
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: var(--orange); color: #000; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all 0.2s; flex-shrink: 0;
+  box-shadow: 0 0 12px var(--orange-glow);
+}
+.send-btn:active { transform: scale(0.93); }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+
+.input-hint {
+  text-align: center; font-size: 11px; color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* Signup CTA */
+.signup-cta {
+  display: none; text-align: center; padding: 14px;
+  background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.25);
+  border-radius: 12px; animation: ctaPulse 2s ease-in-out infinite;
+}
+.signup-cta.visible { display: block; }
+@keyframes ctaPulse {
+  0%,100% { border-color: rgba(255,136,0,0.25); box-shadow: none; }
+  50% { border-color: rgba(255,136,0,0.5); box-shadow: 0 0 16px var(--orange-glow); }
+}
+.signup-cta a {
+  color: var(--orange); text-decoration: none; font-weight: 700;
+  font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+}
+.signup-cta .cta-sub {
+  font-size: 11px; color: var(--text-sub); margin-top: 4px; letter-spacing: 0.5px;
+}
+
+/* Verdict screen */
+.verdict-screen { display: none; flex-direction: column; gap: 16px; text-align: center; }
+.verdict-screen.active { display: flex; }
+
+.verdict-title {
+  font-size: 22px; font-weight: 700; letter-spacing: 3px;
+  color: var(--text-heading); text-transform: uppercase;
+}
+.verdict-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px 20px; backdrop-filter: blur(12px);
+}
+.score-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+}
+.score-item {
+  text-align: center;
+}
+.score-value {
+  font-size: 36px; font-weight: 700; color: var(--cyan);
+}
+.score-label {
+  font-size: 11px; font-weight: 500; letter-spacing: 2px;
+  color: var(--text-sub); text-transform: uppercase; margin-top: 2px;
+}
+.verdict-text {
+  font-size: 15px; color: var(--text); line-height: 1.5;
+  padding: 12px; border-top: 1px solid var(--border-subtle);
+}
+.verdict-overall {
+  font-size: 48px; font-weight: 700; margin-bottom: 8px;
+}
+.verdict-overall-label {
+  font-size: 12px; color: var(--text-sub); letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.big-signup-btn {
+  display: block; width: 100%; padding: 18px; border-radius: 12px;
+  background: var(--orange); color: #000; border: none;
+  font-family: var(--font); font-size: 18px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; text-align: center;
+  box-shadow: 0 0 24px var(--orange-glow);
+  animation: ctaPulse 2s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.big-signup-btn:active { transform: scale(0.97); }
+
+.retry-btn {
+  display: block; width: 100%; padding: 14px; border-radius: 12px;
+  background: transparent; color: var(--text-sub);
+  border: 1px solid var(--border);
+  font-family: var(--font); font-size: 14px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; text-align: center; transition: all 0.2s;
+}
+.retry-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.footer-note {
+  text-align: center; font-size: 12px; color: var(--text-muted);
+  letter-spacing: 0.5px; padding: 12px 0;
+}
+.footer-note a { color: var(--cyan); text-decoration: none; }
+
+@media (min-width: 768px) {
+  .container { margin-top: 48px; }
+  .setup-title { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="https://themoderator.app" class="logo"><span class="the">THE</span>MODERATOR</a>
+</div>
+
+<div class="container">
+
+  <!-- SETUP -->
+  <div class="setup-screen" id="setup">
+    <div class="setup-header">
+      <div class="setup-title">You Think You're Right?</div>
+      <div class="setup-sub">Prove it. Pick any topic. Choose your side. Debate an AI. No signup needed.</div>
+    </div>
+
+    <div class="input-card">
+      <div class="input-label">What do you want to debate?</div>
+      <input type="text" class="topic-input" id="topic" placeholder="e.g. US airstrikes on Iran are justified" maxlength="200" autocomplete="off">
+    </div>
+
+    <div class="input-card">
+      <div class="input-label">Pick your side</div>
+      <div class="side-picker">
+        <button class="side-btn" data-side="for" data-selected="false" id="btn-for">👍 For</button>
+        <button class="side-btn" data-side="against" data-selected="false" id="btn-against">👎 Against</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start" disabled>Start Debating</button>
+
+    <div class="footer-note">3 rounds · Voice or text · Takes 2 minutes</div>
+  </div>
+
+  <!-- DEBATE -->
+  <div class="debate-screen" id="debate">
+    <div class="round-bar">
+      <div class="round-label" id="round-label">Round 1 of 3</div>
+      <div class="round-dots" id="round-dots">
+        <div class="round-dot current"></div>
+        <div class="round-dot"></div>
+        <div class="round-dot"></div>
+      </div>
+    </div>
+
+    <div class="topic-banner">
+      <div id="debate-topic"></div>
+      <div class="topic-side-tag" id="debate-side-tag"></div>
+    </div>
+
+    <div class="chat-area" id="chat"></div>
+
+    <div class="input-area" id="input-area">
+      <textarea class="text-input" id="user-input" placeholder="Type your argument..." rows="1"></textarea>
+      <button class="mic-btn" id="mic" title="Hold to speak">🎙️</button>
+      <button class="send-btn" id="send" disabled title="Send">➤</button>
+    </div>
+    <div class="input-hint" id="input-hint">Tap 🎙️ to speak or type your argument</div>
+
+    <div class="signup-cta" id="signup-cta">
+      <a href="https://themoderator.app/login">⚡ Sign Up Free — Debate Real People</a>
+      <div class="cta-sub">Leaderboards · Elo Rankings · Voice Debates · Groups</div>
+    </div>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="verdict-screen" id="verdict">
+    <div class="verdict-title">Debate Over</div>
+
+    <div class="verdict-card">
+      <div class="verdict-overall" id="verdict-score"></div>
+      <div class="verdict-overall-label">Your Score</div>
+      <div class="score-grid" id="score-grid"></div>
+      <div class="verdict-text" id="verdict-text"></div>
+    </div>
+
+    <a href="https://themoderator.app/login" class="big-signup-btn">⚡ Sign Up — Debate Real People</a>
+    <button class="retry-btn" id="retry">↻ Debate Another Topic</button>
+
+    <div class="footer-note">
+      <a href="https://themoderator.app">The Moderator</a> — Where opinions fight.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// /go — Ephemeral AI Sparring (No Auth, No DB)
+// ============================================================
+
+const TOTAL_ROUNDS = 3;
+const API_URL = '/api/go-respond';
+
+let state = {
+  topic: '',
+  side: '',
+  round: 1,
+  messageHistory: [],
+  recognition: null,
+  isRecording: false,
+  debateOver: false,
+};
+
+// DOM
+const setupEl = document.getElementById('setup');
+const debateEl = document.getElementById('debate');
+const verdictEl = document.getElementById('verdict');
+const topicInput = document.getElementById('topic');
+const btnFor = document.getElementById('btn-for');
+const btnAgainst = document.getElementById('btn-against');
+const startBtn = document.getElementById('start');
+const chatArea = document.getElementById('chat');
+const userInput = document.getElementById('user-input');
+const micBtn = document.getElementById('mic');
+const sendBtn = document.getElementById('send');
+const signupCta = document.getElementById('signup-cta');
+const retryBtn = document.getElementById('retry');
+
+// Side picker
+function pickSide(side) {
+  state.side = side;
+  btnFor.dataset.selected = side === 'for' ? 'true' : 'false';
+  btnAgainst.dataset.selected = side === 'against' ? 'true' : 'false';
+  checkReady();
+}
+btnFor.addEventListener('click', () => pickSide('for'));
+btnAgainst.addEventListener('click', () => pickSide('against'));
+
+// Enable start when ready
+function checkReady() {
+  startBtn.disabled = !(topicInput.value.trim().length >= 3 && state.side);
+}
+topicInput.addEventListener('input', checkReady);
+
+// Start debate
+startBtn.addEventListener('click', () => {
+  state.topic = topicInput.value.trim();
+  state.round = 1;
+  state.messageHistory = [];
+  state.debateOver = false;
+  chatArea.innerHTML = '';
+  signupCta.classList.remove('visible');
+
+  setupEl.classList.add('hidden');
+  debateEl.classList.add('active');
+  verdictEl.classList.remove('active');
+
+  document.getElementById('debate-topic').textContent = state.topic;
+  const sideTag = document.getElementById('debate-side-tag');
+  sideTag.textContent = state.side === 'for' ? 'You: FOR' : 'You: AGAINST';
+  sideTag.className = 'topic-side-tag ' + state.side;
+
+  updateRoundUI();
+  userInput.focus();
+});
+
+// Round UI
+function updateRoundUI() {
+  document.getElementById('round-label').textContent = `Round ${state.round} of ${TOTAL_ROUNDS}`;
+  const dots = document.getElementById('round-dots').children;
+  for (let i = 0; i < TOTAL_ROUNDS; i++) {
+    dots[i].className = 'round-dot' + (i < state.round - 1 ? ' done' : i === state.round - 1 ? ' current' : '');
+  }
+}
+
+// Auto-resize textarea
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+  sendBtn.disabled = !userInput.value.trim();
+});
+
+// Send argument
+async function sendArgument() {
+  const text = userInput.value.trim();
+  if (!text || state.debateOver) return;
+
+  // Add user bubble
+  addBubble('user', text);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // Show thinking
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'ai-thinking';
+  thinkingEl.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  chatArea.appendChild(thinkingEl);
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: state.topic,
+        side: state.side,
+        round: state.round,
+        totalRounds: TOTAL_ROUNDS,
+        userArg: text,
+        messageHistory: state.messageHistory,
+      }),
+    });
+
+    thinkingEl.remove();
+
+    if (!res.ok) throw new Error('AI failed');
+
+    const data = await res.json();
+    const aiResponse = data.response;
+
+    // Update history
+    state.messageHistory.push({ role: 'user', content: text });
+    state.messageHistory.push({ role: 'assistant', content: aiResponse });
+
+    addBubble('ai', aiResponse);
+
+    // Show signup CTA after round 1
+    if (state.round === 1) {
+      signupCta.classList.add('visible');
+    }
+
+    // Advance round or end
+    if (state.round >= TOTAL_ROUNDS) {
+      state.debateOver = true;
+      document.getElementById('input-area').style.display = 'none';
+      document.getElementById('input-hint').textContent = 'Scoring your performance...';
+      await showVerdict();
+    } else {
+      state.round++;
+      updateRoundUI();
+      userInput.focus();
+    }
+
+  } catch (err) {
+    thinkingEl.remove();
+    addBubble('ai', 'Something went wrong. Try again.');
+    console.error('[go] AI error:', err);
+  }
+}
+
+sendBtn.addEventListener('click', sendArgument);
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (userInput.value.trim()) sendArgument();
+  }
+});
+
+// Add chat bubble
+function addBubble(role, text) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + role;
+  const label = role === 'user' ? 'You' : 'AI Opponent';
+  bubble.innerHTML = `<div class="bubble-label">${label}</div>${escapeHtml(text)}`;
+  chatArea.appendChild(bubble);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Web Speech API
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    micBtn.style.display = 'none';
+    return;
+  }
+  state.recognition = new SR();
+  state.recognition.continuous = false;
+  state.recognition.interimResults = true;
+  state.recognition.lang = 'en-US';
+
+  state.recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    userInput.value = transcript;
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    sendBtn.disabled = !transcript.trim();
+  };
+
+  state.recognition.onend = () => {
+    state.isRecording = false;
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎙️';
+  };
+
+  state.recognition.onerror = (e) => {
+    console.error('[go] Speech error:', e.error);
+    state.isRecording = false;
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎙️';
+  };
+}
+
+micBtn.addEventListener('click', () => {
+  if (!state.recognition) return;
+  if (state.isRecording) {
+    state.recognition.stop();
+  } else {
+    userInput.value = '';
+    state.recognition.start();
+    state.isRecording = true;
+    micBtn.classList.add('recording');
+    micBtn.textContent = '⏹️';
+  }
+});
+
+// Verdict
+async function showVerdict() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: state.topic,
+        side: state.side,
+        action: 'score',
+        messageHistory: state.messageHistory,
+      }),
+    });
+
+    const data = await res.json();
+    const s = data.scores || { logic: 6, evidence: 5, delivery: 6, rebuttal: 5, verdict: 'Not bad — keep practicing.' };
+
+    const overall = Math.round((s.logic + s.evidence + s.delivery + s.rebuttal) / 4 * 10) / 10;
+
+    debateEl.classList.remove('active');
+    verdictEl.classList.add('active');
+
+    document.getElementById('verdict-score').textContent = overall + '/10';
+    document.getElementById('verdict-score').style.color = overall >= 7 ? 'var(--cyan)' : overall >= 5 ? 'var(--orange)' : 'var(--magenta)';
+
+    document.getElementById('score-grid').innerHTML = [
+      { label: 'Logic', val: s.logic },
+      { label: 'Evidence', val: s.evidence },
+      { label: 'Delivery', val: s.delivery },
+      { label: 'Rebuttal', val: s.rebuttal },
+    ].map(item => `
+      <div class="score-item">
+        <div class="score-value">${item.val}</div>
+        <div class="score-label">${item.label}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('verdict-text').textContent = s.verdict;
+
+  } catch (err) {
+    console.error('[go] Scoring error:', err);
+    debateEl.classList.remove('active');
+    verdictEl.classList.add('active');
+    document.getElementById('verdict-score').textContent = '—';
+    document.getElementById('verdict-text').textContent = 'Scoring unavailable. But you showed up — that counts.';
+    document.getElementById('score-grid').innerHTML = '';
+  }
+}
+
+// Retry
+retryBtn.addEventListener('click', () => {
+  verdictEl.classList.remove('active');
+  setupEl.classList.remove('hidden');
+  document.getElementById('input-area').style.display = '';
+  document.getElementById('input-hint').textContent = 'Tap 🎙️ to speak or type your argument';
+  topicInput.value = '';
+  state.side = '';
+  btnFor.dataset.selected = 'false';
+  btnAgainst.dataset.selected = 'false';
+  startBtn.disabled = true;
+  topicInput.focus();
+});
+
+// Init
+initSpeech();
+</script>
+</body>
+</html>

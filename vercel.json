@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/u/:username", "destination": "/api/profile?username=:username" },
     { "source": "/challenge", "destination": "/api/challenge" },
+    { "source": "/go", "destination": "/moderator-go.html" },
     { "source": "/debate", "destination": "/moderator-debate-landing.html" },
     { "source": "/verdict", "destination": "/moderator-auto-debate.html" },
     { "source": "/login", "destination": "/moderator-login.html" },

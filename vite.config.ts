@@ -16,6 +16,7 @@ const htmlEntries = {
   terms:        resolve(__dirname, 'moderator-terms.html'),
   privacy:      resolve(__dirname, 'moderator-privacy.html'),
   cosmetics:    resolve(__dirname, 'moderator-cosmetics.html'),
+  go:           resolve(__dirname, 'moderator-go.html'),
 };
 
 export default defineConfig({
