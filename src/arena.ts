@@ -1403,12 +1403,20 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   document.getElementById('arena-queue-cancel')?.addEventListener('click', leaveQueue);
 
   // Fetch live debates for spectator feed (fire-and-forget)
+  // B-09: filter by selected category, fall back to general feed if empty
   (async () => {
     try {
-      const { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5, p_category: selectedCategory });
+      let { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5, p_category: selectedCategory });
       const feedEl = document.getElementById('arena-queue-feed');
       if (!feedEl || view !== 'queue') return;
-      const items = data as ArenaFeedItem[] | null;
+      let items = data as ArenaFeedItem[] | null;
+
+      // Fallback: if category filter returned nothing, load general feed
+      if ((!items || items.length === 0) && selectedCategory) {
+        const fallback = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5, p_category: null });
+        items = fallback.data as ArenaFeedItem[] | null;
+      }
+
       if (items && items.length > 0) {
         const live = items.filter((d: ArenaFeedItem) => d.status === 'live');
         const recent = items.filter((d: ArenaFeedItem) => d.status !== 'live').slice(0, 3);
@@ -1418,7 +1426,7 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
             + cards.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('');
         }
       } else {
-        feedEl.innerHTML = `<div class="arena-queue-feed-label" style="opacity:0.4;">— no active debates in this category —</div>`;
+        feedEl.innerHTML = `<div class="arena-queue-feed-label" style="opacity:0.4;">\u2014 no active debates right now \u2014</div>`;
       }
     } catch { /* feed is optional */ }
   })();
