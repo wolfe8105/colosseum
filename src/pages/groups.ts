@@ -263,14 +263,14 @@ async function loadGroupHotTakes(groupId: string) {
     const esc = escapeHTML;
     let composerHtml = '';
     if (currentUser) {
-      composerHtml = `<div style="background:rgba(19,34,64,0.6);border:1px solid rgba(212,168,67,0.15);border-radius:10px;padding:12px;margin-bottom:14px;">
+      composerHtml = `<div style="background:rgba(19,34,64,0.6);border:1px solid var(--mod-accent-muted);border-radius:10px;padding:12px;margin-bottom:14px;">
         <textarea id="group-take-input" placeholder="Drop a hot take in this group…" maxlength="280" style="
-          width:100%;min-height:52px;resize:vertical;background:rgba(255,255,255,0.04);
-          border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f0f0;
+          width:100%;min-height:52px;resize:vertical;background:var(--mod-bg-subtle);
+          border:1px solid var(--mod-border-primary);border-radius:8px;color:#f0f0f0;
           font-family:'Source Sans 3',sans-serif;font-size:14px;padding:10px 12px;line-height:1.4;
         "></textarea>
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;">
-          <span style="font-size:11px;color:rgba(160,168,184,0.6);" id="group-take-count">0/280</span>
+          <span style="font-size:11px;color:var(--mod-text-sub);" id="group-take-count">0/280</span>
           <button id="group-take-post" style="
             background:#cc2936;color:#fff;border:none;border-radius:8px;
             padding:8px 20px;font-family:'Bebas Neue',sans-serif;font-size:14px;
@@ -322,7 +322,7 @@ async function postGroupHotTake(groupId: string) {
   const text = input.value.trim();
   if (!text) {
     input.style.borderColor = '#cc2936';
-    setTimeout(() => { input.style.borderColor = 'rgba(255,255,255,0.1)'; }, 1500);
+    setTimeout(() => { input.style.borderColor = 'var(--mod-border-primary)'; }, 1500);
     return;
   }
   if (!currentUser) {
@@ -579,14 +579,14 @@ async function loadGroupChallenges(groupId: string) {
       let badge = '', actionHtml = '';
       switch (c.status) {
         case 'pending':
-          badge = '<span class="meta-pill" style="background:rgba(212,168,67,0.15);color:var(--gold);border:none;">PENDING</span>';
+          badge = '<span class="meta-pill" style="background:var(--mod-accent-muted);color:var(--gold);border:none;">PENDING</span>';
           if (isDefender && currentUser) {
             // UUID regex validation on challenge ID
             const cid = String(c.id);
             if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
               actionHtml = `<div style="display:flex;gap:6px;margin-top:8px;">
                 <button data-challenge-id="${esc(cid)}" data-action="accept" class="gvg-respond-btn" style="flex:1;background:rgba(46,204,113,0.15);color:var(--success);border:1px solid rgba(46,204,113,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
-                <button data-challenge-id="${esc(cid)}" data-action="decline" class="gvg-respond-btn" style="flex:1;background:rgba(193,39,45,0.15);color:var(--red);border:1px solid rgba(193,39,45,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">DECLINE</button>
+                <button data-challenge-id="${esc(cid)}" data-action="decline" class="gvg-respond-btn" style="flex:1;background:var(--mod-accent-muted);color:var(--red);border:1px solid rgba(193,39,45,0.3);border-radius:6px;padding:6px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">DECLINE</button>
               </div>`;
             }
           }
@@ -595,12 +595,12 @@ async function loadGroupChallenges(groupId: string) {
           badge = '<span class="meta-pill" style="background:rgba(46,204,113,0.15);color:var(--success);border:none;">ACCEPTED</span>'; break;
         case 'completed':
           badge = c.winner_group_id === groupId
-            ? '<span class="meta-pill" style="background:rgba(212,168,67,0.15);color:var(--gold);border:none;">WON ✨</span>'
-            : '<span class="meta-pill" style="background:rgba(193,39,45,0.15);color:var(--red);border:none;">LOST</span>'; break;
+            ? '<span class="meta-pill" style="background:var(--mod-accent-muted);color:var(--gold);border:none;">WON ✨</span>'
+            : '<span class="meta-pill" style="background:var(--mod-accent-muted);color:var(--red);border:none;">LOST</span>'; break;
         case 'declined':
-          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">DECLINED</span>'; break;
+          badge = '<span class="meta-pill" style="background:var(--mod-bg-subtle);color:var(--white-dim);border:none;">DECLINED</span>'; break;
         case 'expired':
-          badge = '<span class="meta-pill" style="background:rgba(255,255,255,0.06);color:var(--white-dim);border:none;">EXPIRED</span>'; break;
+          badge = '<span class="meta-pill" style="background:var(--mod-bg-subtle);color:var(--white-dim);border:none;">EXPIRED</span>'; break;
       }
 
       return `<div class="challenge-card">

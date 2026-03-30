@@ -96,7 +96,7 @@ export function _truncate(str: string | undefined | null, max: number): string {
 function showToast(msg: string): void {
   const toast = document.createElement('div');
   toast.style.cssText =
-    'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#132240;color:#f0f0f0;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;border:1px solid rgba(212,168,67,0.2);box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;';
+    'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#132240;color:#f0f0f0;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;border:1px solid var(--mod-accent-border);box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;';
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => {
@@ -445,7 +445,7 @@ export function renderPlayer(voiceUrl: string, duration: number): string {
   return `
     <div class="vm-inline-player" data-player-id="${id}" style="
       display:flex;align-items:center;gap:10px;
-      background:#132240;border:1px solid rgba(212,168,67,0.12);
+      background:#132240;border:1px solid var(--mod-accent-muted);
       border-radius:10px;padding:10px 12px;margin-top:8px;
     ">
       <button data-action="play-inline" data-player="${id}" style="

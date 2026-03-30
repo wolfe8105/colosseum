@@ -383,7 +383,7 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
   ptr.style.cssText = [
     'position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;',
     'gap:8px;padding:12px;opacity:0;transform:translateY(-100%);transition:opacity 0.2s;',
-    'pointer-events:none;z-index:10;color:rgba(212,168,67,0.9);font-size:13px;font-weight:600;letter-spacing:1px;'
+    'pointer-events:none;z-index:10;color:var(--mod-accent);font-size:13px;font-weight:600;letter-spacing:1px;'
   ].join('');
   overlayContent.style.position = 'relative';
   overlayContent.insertBefore(ptr, overlayContent.firstChild);
@@ -392,8 +392,8 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
   style.textContent = `
     #ptr-indicator { user-select:none; }
     .ptr-spinner { width:18px;height:18px;border-radius:50%;
-      border:2px solid rgba(212,168,67,0.3);
-      border-top-color:rgba(212,168,67,0.9);
+      border:2px solid var(--mod-accent-border);
+      border-top-color:var(--mod-accent);
       animation:none; }
     .ptr-spinner.spinning { animation:ptrSpin 0.7s linear infinite; }
     @keyframes ptrSpin { to { transform:rotate(360deg); } }

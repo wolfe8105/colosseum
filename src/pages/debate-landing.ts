@@ -344,7 +344,7 @@ function downloadCard(): void {
 
 function showToast(msg: string): void {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(10,17,40,0.95);color:#f0f0f0;padding:10px 20px;border-radius:10px;font-family:var(--font-body);font-size:14px;font-weight:600;z-index:9999;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(10px);';
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(10,17,40,0.95);color:#f0f0f0;padding:10px 20px;border-radius:10px;font-family:var(--font-body);font-size:14px;font-weight:600;z-index:9999;border:1px solid var(--mod-border-primary);backdrop-filter:blur(10px);';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
