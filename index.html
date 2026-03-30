@@ -406,26 +406,6 @@ html,body{height:100%;overflow:hidden}
   <button class="mod-tab bottom-nav-btn" data-screen="profile"><span class="mod-tab-icon">●</span><span>Profile</span></button>
 </nav>
 
-<!-- ===== BOTTOM SHEETS ===== -->
-<div class="mod-sheet-overlay" id="overlay-arena" onclick="document.getElementById('overlay-arena').classList.remove('open');document.getElementById('sheet-arena').classList.remove('open');"></div>
-<div class="mod-sheet" id="sheet-arena">
-  <div class="mod-sheet-handle"></div>
-  <div class="mod-sheet-title">Enter Arena</div>
-  <div class="mod-sheet-option" data-arena-mode="live"><span class="mod-sheet-option-icon">🎙</span><div><div class="mod-sheet-option-label">Live Audio</div><div class="mod-sheet-option-desc">Real-time voice debate, 5 rounds</div></div></div>
-  <div class="mod-sheet-option" data-arena-mode="text"><span class="mod-sheet-option-icon">✍</span><div><div class="mod-sheet-option-label">Text Battle</div><div class="mod-sheet-option-desc">Async text-based arguments</div></div></div>
-  <div class="mod-sheet-option" data-arena-mode="voice"><span class="mod-sheet-option-icon">🎙</span><div><div class="mod-sheet-option-label">Voice Memo</div><div class="mod-sheet-option-desc">Record and send voice clips</div></div></div>
-  <div class="mod-sheet-option" data-arena-mode="ai"><span class="mod-sheet-option-icon">🤖</span><div><div class="mod-sheet-option-label">AI Sparring</div><div class="mod-sheet-option-desc">Practice against AI — always available</div></div></div>
-</div>
-
-<div class="mod-sheet-overlay" id="overlay-spectate" onclick="document.getElementById('overlay-spectate').classList.remove('open');document.getElementById('sheet-spectate').classList.remove('open');"></div>
-<div class="mod-sheet" id="sheet-spectate">
-  <div class="mod-sheet-handle"></div>
-  <div class="mod-sheet-title">Join as Spectator</div>
-  <div class="mod-sheet-option"><span class="mod-sheet-option-icon">👁</span><div><div class="mod-sheet-option-label">Watch</div><div class="mod-sheet-option-desc">Listen and vote in real time</div></div></div>
-  <div class="mod-sheet-option"><span class="mod-sheet-option-icon">⚖</span><div><div class="mod-sheet-option-label">Moderate</div><div class="mod-sheet-option-desc">Score and judge the debate</div></div></div>
-  <div class="mod-sheet-option"><span class="mod-sheet-option-icon">🪙</span><div><div class="mod-sheet-option-label">Stake Tokens</div><div class="mod-sheet-option-desc">Bet on who wins</div></div></div>
-</div>
-
 <!-- ===== CATEGORY OVERLAY (legacy, still used by async.ts) ===== -->
 <div class="category-overlay" id="categoryOverlay">
   <div class="overlay-header"><span class="cat-title" id="overlayTitle">Category</span><button class="overlay-close" id="overlayClose">✕</button></div>
