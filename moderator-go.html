@@ -279,6 +279,35 @@ body {
 }
 
 /* Signup CTA */
+.running-score {
+  display: none; text-align: center; padding: 16px 20px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; backdrop-filter: blur(12px);
+}
+.running-score.visible { display: block; animation: scoreReveal 0.5s ease-out; }
+@keyframes scoreReveal {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+.running-score-number {
+  font-size: 56px; font-weight: 700; line-height: 1;
+  transition: color 0.3s;
+}
+.running-score-label {
+  font-size: 11px; font-weight: 500; letter-spacing: 3px;
+  color: var(--text-sub); text-transform: uppercase; margin-top: 4px;
+}
+.running-score-bar {
+  display: flex; gap: 4px; justify-content: center; margin-top: 10px; height: 6px;
+}
+.running-score-pip {
+  width: 40px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08);
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.running-score-pip.filled-high { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+.running-score-pip.filled-mid { background: var(--orange); box-shadow: 0 0 8px var(--orange-glow); }
+.running-score-pip.filled-low { background: var(--magenta); box-shadow: 0 0 8px var(--magenta-glow); }
+
 .signup-cta {
   display: none; text-align: center; padding: 14px;
   background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.25);
@@ -419,6 +448,23 @@ body {
 
     <div class="chat-area" id="chat"></div>
 
+    <div class="running-score" id="running-score">
+      <div class="running-score-number" id="running-score-number">—</div>
+      <div class="running-score-label">Your Score</div>
+      <div class="running-score-bar" id="running-score-bar">
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+        <div class="running-score-pip"></div>
+      </div>
+    </div>
+
     <div class="input-area" id="input-area">
       <textarea class="text-input" id="user-input" placeholder="Type your argument..." rows="1"></textarea>
       <button class="mic-btn" id="mic" title="Hold to speak">🎙️</button>
@@ -469,6 +515,7 @@ let state = {
   recognition: null,
   isRecording: false,
   debateOver: false,
+  roundScores: [],
 };
 
 // DOM
@@ -485,6 +532,50 @@ const micBtn = document.getElementById('mic');
 const sendBtn = document.getElementById('send');
 const signupCta = document.getElementById('signup-cta');
 const retryBtn = document.getElementById('retry');
+const runningScoreEl = document.getElementById('running-score');
+const runningScoreNumber = document.getElementById('running-score-number');
+const runningScoreBar = document.getElementById('running-score-bar');
+
+// Parse [SCORE:X] from AI response
+function parseScore(text) {
+  const match = text.match(/\[SCORE:\s*(\d+\.?\d*)\s*\]/i);
+  if (match) {
+    const score = Math.min(10, Math.max(1, parseFloat(match[1])));
+    const clean = text.replace(/\[SCORE:\s*\d+\.?\d*\s*\]/i, '').trim();
+    return { score, clean };
+  }
+  return { score: null, clean: text };
+}
+
+// Update running score display
+function updateScoreDisplay() {
+  if (state.roundScores.length === 0) return;
+  const avg = state.roundScores.reduce((a, b) => a + b, 0) / state.roundScores.length;
+  const rounded = Math.round(avg * 10) / 10;
+
+  runningScoreEl.classList.add('visible');
+  runningScoreNumber.textContent = rounded + '/10';
+
+  // Color based on score
+  if (rounded >= 7) runningScoreNumber.style.color = 'var(--cyan)';
+  else if (rounded >= 5) runningScoreNumber.style.color = 'var(--orange)';
+  else runningScoreNumber.style.color = 'var(--magenta)';
+
+  // Fill pips
+  const pips = runningScoreBar.children;
+  const filled = Math.round(rounded);
+  for (let i = 0; i < 10; i++) {
+    pips[i].className = 'running-score-pip';
+    if (i < filled) {
+      pips[i].classList.add(rounded >= 7 ? 'filled-high' : rounded >= 5 ? 'filled-mid' : 'filled-low');
+    }
+  }
+
+  // Re-trigger animation
+  runningScoreEl.classList.remove('visible');
+  void runningScoreEl.offsetHeight;
+  runningScoreEl.classList.add('visible');
+}
 
 // Side picker
 function pickSide(side) {
@@ -508,8 +599,10 @@ startBtn.addEventListener('click', () => {
   state.round = 1;
   state.messageHistory = [];
   state.debateOver = false;
+  state.roundScores = [];
   chatArea.innerHTML = '';
   signupCta.classList.remove('visible');
+  runningScoreEl.classList.remove('visible');
 
   setupEl.classList.add('hidden');
   debateEl.classList.add('active');
@@ -577,9 +670,16 @@ async function sendArgument() {
     if (!res.ok) throw new Error('AI failed');
 
     const data = await res.json();
-    const aiResponse = data.response;
+    const aiRaw = data.response;
 
-    // Update history
+    // Parse score from AI response
+    const { score, clean: aiResponse } = parseScore(aiRaw);
+    if (score !== null) {
+      state.roundScores.push(score);
+      updateScoreDisplay();
+    }
+
+    // Update history (store clean version without score tag)
     state.messageHistory.push({ role: 'user', content: text });
     state.messageHistory.push({ role: 'assistant', content: aiResponse });
 
@@ -736,6 +836,7 @@ async function showVerdict() {
 retryBtn.addEventListener('click', () => {
   verdictEl.classList.remove('active');
   setupEl.classList.remove('hidden');
+  runningScoreEl.classList.remove('visible');
   document.getElementById('input-area').style.display = '';
   document.getElementById('input-hint').textContent = 'Tap 🎙️ to speak or type your argument';
   topicInput.value = '';
