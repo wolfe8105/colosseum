@@ -97,8 +97,8 @@
   --mod-cat-tech-text: var(--mod-cyan);
 
   /* --- Stat blocks --- */
-  --mod-stat-bg: rgba(14,14,18,0.5);
-  --mod-stat-border: rgba(255,255,255,0.06);
+  --mod-stat-bg: var(--mod-bg-card);
+  --mod-stat-border: var(--mod-border-primary);
   --mod-stat-value: #e8eaf0;
   --mod-stat-label: #7a8298;
   --mod-stat-accent-bg: rgba(255,26,117,0.06);
