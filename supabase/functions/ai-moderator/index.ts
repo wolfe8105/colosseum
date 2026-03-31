@@ -1,4 +1,3 @@
-```ts
 // ============================================================
 // THE MODERATOR — AI MODERATOR Edge Function
 // Session 40: A08 hardened — removed deno.land import, CORS allowlist
@@ -202,4 +201,3 @@ Rule on this evidence: ALLOW or DENY?`;
     );
   }
 });
-```
