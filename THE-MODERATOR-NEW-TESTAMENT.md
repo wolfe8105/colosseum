@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 205 (March 30, 2026)
+### Last Updated: Session 210 (March 31, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -19,7 +19,7 @@
 | Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — every RPC, global, flow, blast radius. Note: file refs use pre-TS names, patterns still valid |
 | B2B strategy, pricing, buyer list, pitch | **THE-MODERATOR-WAR-CHEST.md** |
 | UI features, ad surfaces, gamification, mobile UX | **THE-MODERATOR-PRODUCT-VISION.md** |
-| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-191 |
+| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-210 |
 | Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — 77 design questions answered |
 | QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — stale, update in future session |
 | Screen-by-screen build queue | **PRODUCT-WALKTHROUGH.md** — barely started, continue in future session |
@@ -124,7 +124,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 62+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API. Session 206: `/go` guest AI Sparring page live (moderator-go.html + api/go-respond.js). GROQ_API_KEY added to Vercel env vars. middleware.js CORS fixed (themoderator.app added). get_arena_feed RPC now accepts p_category. 5 moderator discovery touchpoints deployed (F-50): post-debate nudge, arena lobby banner, home feed card, newsletter spotlight, Plinko 5-step signup with mod opt-in.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 66+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210) — 4 RPCs (create_mod_debate, join_mod_debate, check_mod_debate, cancel_mod_debate), client wired. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209): arena_debates.ruleset column, 4 RPCs updated, client 3-step picker, unplugged debate room conditionals. Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API. Session 206: `/go` guest AI Sparring page live (moderator-go.html + api/go-respond.js). GROQ_API_KEY added to Vercel env vars. middleware.js CORS fixed (themoderator.app added). get_arena_feed RPC now accepts p_category. 5 moderator discovery touchpoints deployed (F-50): post-debate nudge, arena lobby banner, home feed card, newsletter spotlight, Plinko 5-step signup with mod opt-in.
 
 ## Toolchain
 | Tool | Purpose |
@@ -321,7 +321,24 @@ Previous architecture (preserved for reference):
 - Client: MOD QUEUE button in Arena lobby, gated by is_moderator. showModQueue() view with 5s poll. claimModRequest() handles race condition gracefully.
 - Client: startModStatusPoll(debateId) runs in debate room (4s interval), surfaces showModRequestModal when mod_status='requested'. 30s auto-decline countdown.
 - selectedWantMod resets on renderLobby(). Modal cleaned up in endCurrentDebate().
-- F-48 concept: mod-initiated debate (reverse of F-47, reuses F-46 private lobby infrastructure).
+## Session 209 — Amplified vs Unplugged Ruleset System
+- `arena_debates.ruleset` TEXT column, DEFAULT 'amplified', CHECK ('amplified', 'unplugged')
+- Amplified = default. Boosts, Elo, tokens, staking — everything on.
+- Unplugged = stripped. No boosts, no Elo, no tokens. Staking allowed. Scoring determines winner.
+- AI Sparring always Amplified (no picker).
+- `update_arena_debate` — Elo gate includes `AND COALESCE(v_debate.ruleset, 'amplified') != 'unplugged'`. Unplugged skips Elo, XP, stats, group Elo.
+- `join_debate_queue` — new `p_ruleset` param, passes through to INSERT.
+- `create_private_lobby` — new `p_ruleset` param, passes through to INSERT.
+- `get_arena_feed` — returns ruleset column. Auto-debates hardcoded as 'amplified'.
+- Client: 3-step picker (Ranked/Casual → Amplified/Unplugged → Mode). Unplugged debate room hides ELO, power-ups, spectator bar. Post-debate skips token claims. Feed has 🎸 UNPLUGGED section. CSS: `.arena-rank-badge.unplugged` (warm amber #c29a58).
+
+## F-48 Mod-Initiated Debate (Session 210)
+- `arena_debates.debater_a` ALTER to allow NULL (mod creates before debaters join).
+- `create_mod_debate(p_mode, p_topic, p_category, p_ranked, p_ruleset)` — moderator-only. Inserts row with debater_a=NULL, debater_b=NULL, moderator_id=caller, mod_status='claimed', visibility='code'. Generates 6-char join code. Returns debate_id + join_code.
+- `join_mod_debate(p_join_code)` — fills first empty slot (debater_a if NULL, else debater_b). Second joiner sets status='matched'. FOR NO KEY UPDATE SKIP LOCKED for race safety. Guards: not the mod, not already joined, not full.
+- `check_mod_debate(p_debate_id)` — polled by mod and first-join debater (4s). Returns status, both debater names/IDs, topic, ruleset.
+- `cancel_mod_debate(p_debate_id)` — moderator-only, lobby status only, sets status='cancelled'.
+- Client: CREATE DEBATE button in Mod Queue → showModDebatePicker (mode, category, topic, ranked, ruleset) → createModDebate → showModDebateWaitingMod (join code + slot names). Debaters enter code via joinWithCode → join_private_lobby fails → falls back to join_mod_debate. First joiner gets waiting screen, second joiner gets matchFound. Mod enters room in modView=true (observer). Cancel calls cancel_mod_debate (not cancel_private_lobby).
 
 ## Session 178 — Live Debate Feed + Moderator Scoring + Dropout Penalties
 - `debate_feed_events` table — append-only B2B archive, one row per event (speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up). Columns: id BIGSERIAL, debate_id, user_id (NULL for system events), event_type, round (0-10), side (a/b/mod), content, score (1-5 for point_award), reference_id, metadata JSONB, created_at. SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only). Trigger: broadcast_feed_event → realtime.broadcast_changes on private channel 'debate:<uuid>'.
@@ -339,4 +356,4 @@ Previous architecture (preserved for reference):
 
 ---
 
-*For all session build logs (1-191) — see the Old Testament. For documented pitfalls — see the Land Mine Map. For open work — see the Punch List.*
+*For all session build logs (1-210) — see the Old Testament. For documented pitfalls — see the Land Mine Map. For open work — see the Punch List.*

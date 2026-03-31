@@ -1772,3 +1772,67 @@ Created Session 106 to place every feature from the Ideas Master Map (~90 items)
 - Wiring Manifest: same issue — file references need updating to src/*.ts names
 - THE-MODERATOR-TEST-WALKTHROUGH.md: kept, flagged for future dedicated update session
 - PRODUCT-WALKTHROUGH.md: kept, flagged for future dedicated continuation session
+
+---
+
+## Session 192 — March 28, 2026 — FULL BIBLE AUDIT
+
+Full doc audit across all 6 bible docs. H-12 closed (Land Mine Map filenames updated from colosseum-*.js to src/*.ts). H-13 closed (Wiring Manifest filenames updated, Section 3.7 Moderator System rewritten for F-47, Section 6B Page Load Map rewritten for post-TS reality, Section 8 Source Map overhauled). 5 stray files deleted from repo (session-85-88 chart traces, profile-depth-expansion.md). CLAUDE.md: War Plan ref removed, OT session count fixed, nudge.ts added, F-47 RPCs completed. Punch List: change log reordered chronologically, H-03 notes corrected. War Chest: title fixed, all Colosseum→Moderator, duplicate content removed. Product Vision: title and all Colosseum refs fixed. Land Mine Map: title, LM-172 corrected (100Q all tiers reachable), LM-084 corrected (6s timeout + correct filenames), LM-022 dead note removed, LM-051 rewritten, all HTML/JS filenames updated. Wiring Manifest: title, container counts corrected, tier thresholds fixed, maintenance log updated.
+
+---
+
+## Session 195 — March 29, 2026 — ADVERSARIAL AUDIT L1 + L8
+
+Adversarial audit layers resolved. L1 ✅: `app_config` table created (17 rows: 13 milestone configs + 4 power-up costs). `src/app-config.ts` new module — fetches live economy constants from Supabase, 60-min cache, hardcoded fallback. `src/tokens.ts` + `src/powerups.ts` updated to pull from app-config instead of hardcoded values. `src/arena.ts`: `showPowerUpShop()` made async, `await renderShop()`. L8 ❌ won't do: bot army growth strategy quarantined — `category-classifier.ts` has no live consumer, wiring it was pointless. Bot army quarantine confirmed and reflected in NT.
+
+---
+
+## Session 204 — March 30, 2026 — AI SPARRING UPGRADE + OAUTH + SMTP
+
+AI Sparring upgraded: 6 rounds (was 3), beefed-up prompts (4-6 sentences, evidence, fallacy calls), AI scoring mode with 4-criteria scorecard (Logic/Evidence/Delivery/Rebuttal). Google OAuth re-enabled and confirmed working. SMTP confirmed working (Resend, port 465, noreply@themoderator.app). DMCA agent registered at copyright.gov (Tracking ID 280U2D1K).
+
+---
+
+## Session 205 — March 30, 2026 — DESIGN TOKEN MIGRATION
+
+Full visual token migration. ~350 hardcoded rgba/hex/font values replaced with var(--mod-*) CSS tokens across 17 .ts files in 3 rounds (Claude Code rgba sweep, Claude Code hex+font sweep, manual stragglers in leaderboard.ts/rivals-presence.ts/groups.ts). moderator-groups.html: bottom tab bar added (Groups active, other tabs link to index.html?screen=X), back arrow removed from lobby view, legal footer removed for consistency with main app. H-16 added and closed. Zero old colors (#d4a843, #cc2936, #a0a8b8) or fonts (Cinzel, Barlow) remain in .ts files outside cards.ts Canvas API (correct — CSS vars don't work in Canvas).
+
+---
+
+## Session 206 — March 30, 2026 — /GO PAGE + MODERATOR DISCOVERY + FEED FIX
+
+B-09 closed: spectator feed category filter — root cause was get_arena_feed RPC had no p_category parameter, Supabase silently ignored client's param. Fix: added p_category TEXT DEFAULT NULL to RPC with WHERE clause. B-10 added and closed: middleware.js CORS missing themoderator.app (only had colosseum-six.vercel.app and thecolosseum.app). F-49 added and closed: /go guest AI Sparring page live (moderator-go.html + api/go-respond.js Vercel serverless function, Groq direct, no auth, no DB). GROQ_API_KEY added to Vercel env vars. F-50 added and closed: 5 moderator discovery touchpoints (post-debate nudge in arena.ts via nudge.ts, arena lobby inline banner, home feed card at position 2, newsletter spotlight, Plinko 5-step signup with mod opt-in at step 4). All gated: logged-in non-moderators only, disappear once is_moderator=true.
+
+---
+
+## Session 209 — March 31, 2026 — AMPLIFIED VS UNPLUGGED RULESET SYSTEM
+
+Amplified vs Unplugged ruleset system designed and deployed. Three open decisions from Session 208 resolved: database column type = TEXT with CHECK constraint (not boolean — extensible), "0 WATCHING" in Unplugged = hidden, Unplugged lobby section = visible by default. AI Sparring always Amplified (no ruleset picker — narrow difference, confusing UX).
+
+Full flow trace: 22 touch points across 7 layers mapped before code. Verified live RPCs by pulling prosrc from pg_proc for update_arena_debate, join_debate_queue, create_private_lobby. Confirmed ranked column exists in production.
+
+Database changes: arena_debates.ruleset TEXT DEFAULT 'amplified' CHECK constraint. update_arena_debate Elo gate updated (Unplugged skips Elo, XP, stats, group Elo). join_debate_queue + create_private_lobby: new p_ruleset param. get_arena_feed returns ruleset, auto-debates hardcoded 'amplified'.
+
+Client code: 138 insertions, 22 deletions via Claude Code branch claude/eager-villani. Interfaces updated (CurrentDebate, ArenaFeedItem, MatchData, JoinPrivateLobbyResult, ModDebateJoinResult). 3-step picker: Ranked/Casual → Amplified/Unplugged → Communication Mode. Unplugged debate room: badge 🎸, ELO hidden, power-ups hidden, spectator bar not rendered. Post-debate: token claims skipped, "🎸 Unplugged — No Rating Change". Lobby feed: new 🎸 UNPLUGGED section. All 10 CurrentDebate construction sites updated. CSS: .arena-rank-badge.unplugged (warm amber #c29a58).
+
+ai-moderator edge function: repo copy cleaned (markdown code fences stripped), auth validation added, localhost removed from CORS. Repo and production now in sync. 5 stale Claude Code branches deleted.
+
+Not fully tested: complete Unplugged debate end-to-end (Elo skip, token skip, post-debate screen), Unplugged lobby feed population, private Unplugged debate via join code, AI Sparring bypassing ruleset picker.
+
+---
+
+## Session 210 — March 31, 2026 — F-48 MOD-INITIATED DEBATE
+
+F-48 mod-initiated debate designed, built, and deployed.
+
+Design decisions: mod creates debate with same options as debaters (mode, category, topic, ranked/casual, amplified/unplugged). Debaters join via 6-char join code. First joiner picks side (same as existing flow). New create_mod_debate RPC (not modified create_private_lobby). Modified join_private_lobby not needed — joinWithCode client code already had join_mod_debate fallback from earlier scaffolding session.
+
+DB lifecycle problem identified and solved: existing flows assume debater_a = creator (NOT NULL). F-48 needs debater_a = NULL at creation. ALTER TABLE arena_debates ALTER COLUMN debater_a DROP NOT NULL. join_mod_debate fills first empty slot (debater_a if NULL, else debater_b). Second joiner sets status='matched'.
+
+SQL deployed: 1 ALTER + 4 RPCs. Pre-existing stubs with different return signatures required DROP FUNCTION before CREATE OR REPLACE. FOR NO KEY UPDATE SKIP LOCKED used (not FOR UPDATE) per web research — CYBERTEC and Vlad Mihalcea document that FOR UPDATE unnecessarily blocks child table FK inserts (debate_feed_events, staking tables reference arena_debates). cancel_mod_debate created separately because cancel_private_lobby checks caller = debater_a which is NULL in F-48 debates.
+
+Client edits (5 changes to arena.ts): (1) ModDebateCheckResult interface: added topic + ruleset fields. (2) showModDebatePicker: added ruleset picker dropdown. (3) createModDebate: reads ruleset from DOM, passes p_ruleset to RPC. (4) onModDebateReady: uses result.topic and result.ruleset instead of hardcoded 'Moderated Debate' and 'amplified'. (5) cancelModDebate: calls cancel_mod_debate instead of cancel_private_lobby.
+
+TypeScript: zero arena.ts compilation errors. Vitest: 8 F-48 tests passing, 77 total. F48-MOD-INITIATED-DEBATE.sql committed to repo for history.
+
+Not tested: full end-to-end (mod creates → two debaters join → debate plays out → post-debate), unplugged ruleset through mod-created debate, cancel after one debater joined, third person entering a full code.
