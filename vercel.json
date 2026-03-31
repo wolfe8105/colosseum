@@ -6,6 +6,7 @@
     { "source": "/u/:username", "destination": "/api/profile?username=:username" },
     { "source": "/challenge", "destination": "/api/challenge" },
     { "source": "/go", "destination": "/moderator-go.html" },
+    { "source": "/debate/:id", "destination": "/moderator-spectate.html?id=:id" },
     { "source": "/debate", "destination": "/moderator-debate-landing.html" },
     { "source": "/verdict", "destination": "/moderator-auto-debate.html" },
     { "source": "/login", "destination": "/moderator-login.html" },
