@@ -694,6 +694,8 @@ async function sendArgument() {
     if (state.round >= TOTAL_ROUNDS) {
       state.debateOver = true;
       document.getElementById('input-area').style.display = 'none';
+      // Let user read AI's final response before scoring
+      await new Promise(r => setTimeout(r, 3000));
       document.getElementById('input-hint').textContent = 'Scoring your performance...';
       await showVerdict();
     } else {
