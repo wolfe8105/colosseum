@@ -92,6 +92,7 @@ export interface CurrentDebate {
   modView?: boolean;
   debaterAName?: string;
   debaterBName?: string;
+  ruleset?: 'amplified' | 'unplugged';
 }
 
 export interface SelectedModerator {
@@ -108,6 +109,7 @@ export interface MatchData {
   opponent_id?: string | null;
   opponent_elo?: number;
   status?: string;
+  ruleset?: string;
 }
 
 interface MatchAcceptResponse {
@@ -127,6 +129,7 @@ export interface ArenaFeedItem {
   score_b?: number | null;
   debater_a_name?: string;
   debater_b_name?: string;
+  ruleset?: string;
 }
 
 export interface AutoDebateItem {
@@ -261,6 +264,7 @@ let screenEl: HTMLElement | null = null;
 let cssInjected = false;
 let selectedModerator: SelectedModerator | null = null;
 let selectedRanked = false;
+let selectedRuleset: 'amplified' | 'unplugged' = 'amplified';
 let selectedCategory: string | null = null;
 let privateLobbyPollTimer: ReturnType<typeof setInterval> | null = null;
 let privateLobbyDebateId: string | null = null;
@@ -313,6 +317,7 @@ function pushArenaState(viewName: string): void {
 const _onPopState = () => {
   // Clean up any overlays still in DOM
   document.getElementById('arena-rank-overlay')?.remove();
+  document.getElementById('arena-ruleset-overlay')?.remove();
   document.getElementById('arena-mode-overlay')?.remove();
   const rulingOverlay = document.getElementById('mod-ruling-overlay');
   if (rulingOverlay) { clearInterval(_rulingCountdownTimer!); rulingOverlay.remove(); }
@@ -737,6 +742,15 @@ function injectCSS(): void {
     .mod-score-submit { margin-top:8px;padding:10px 24px;border-radius:var(--mod-radius-md);border:none;background:var(--mod-bar-accent);background-image:var(--mod-gloss);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:13px;letter-spacing:1px;cursor:pointer; }
     .mod-score-submit:active { transform:scale(0.96); }
     .mod-scored { font-size:13px;color:var(--mod-status-open);margin-top:8px; }
+
+    /* Unplugged ruleset styles */
+    .arena-rank-badge.unplugged { background:rgba(194,154,88,0.12);border:1px solid rgba(194,154,88,0.35);color:#c29a58; }
+    .arena-rank-card.unplugged { border-color:rgba(194,154,88,0.35); }
+    .arena-rank-card.unplugged:hover,
+    .arena-rank-card.unplugged:active { border-color:#c29a58;background:rgba(194,154,88,0.06); }
+    .arena-rank-card.amplified:hover,
+    .arena-rank-card.amplified:active { border-color:var(--mod-accent-border);background:var(--mod-accent-muted); }
+    .arena-card-badge.unplugged { background:rgba(194,154,88,0.12);border:1px solid rgba(194,154,88,0.35);color:#c29a58; }
   `;
   document.head.appendChild(style);
 }
@@ -750,6 +764,7 @@ export function renderLobby(): void {
   selectedMode = null;
   selectedModerator = null;
   selectedRanked = false;
+  selectedRuleset = 'amplified';
   selectedCategory = null;
   selectedWantMod = false;
   if (privateLobbyPollTimer) { clearInterval(privateLobbyPollTimer); privateLobbyPollTimer = null; }
@@ -822,6 +837,10 @@ export function renderLobby(): void {
         <div class="arena-challenge-sub">Find a hot take you hate \u2192 challenge them to debate it</div>
       </div>
     </div>
+    <div class="arena-section" id="arena-unplugged-section">
+      <div class="arena-section-title"><span class="section-dot"></span> \uD83C\uDFB8 UNPLUGGED</div>
+      <div id="arena-unplugged-feed"></div>
+    </div>
     <div class="arena-section" id="arena-verdicts-section">
       <div class="arena-section-title"><span class="section-dot gold-dot"></span> RECENT VERDICTS</div>
       <div id="arena-verdicts-feed"></div>
@@ -880,6 +899,7 @@ export function renderLobby(): void {
 async function loadLobbyFeed(): Promise<void> {
   const liveFeed = document.getElementById('arena-live-feed');
   const verdictsFeed = document.getElementById('arena-verdicts-feed');
+  const unpluggedFeed = document.getElementById('arena-unplugged-feed');
   if (!liveFeed || !verdictsFeed) return;
 
   if (isPlaceholder()) {
@@ -911,8 +931,10 @@ async function loadLobbyFeed(): Promise<void> {
     }
 
     const feedData = data as ArenaFeedItem[];
-    const live = feedData.filter((d: ArenaFeedItem) => d.status === 'live' || d.status === 'pending');
-    const complete = feedData.filter((d: ArenaFeedItem) => d.status === 'complete' || d.status === 'voting' || d.source === 'auto_debate');
+    const unplugged = feedData.filter((d: ArenaFeedItem) => d.ruleset === 'unplugged');
+    const amplified = feedData.filter((d: ArenaFeedItem) => d.ruleset !== 'unplugged');
+    const live = amplified.filter((d: ArenaFeedItem) => d.status === 'live' || d.status === 'pending');
+    const complete = amplified.filter((d: ArenaFeedItem) => d.status === 'complete' || d.status === 'voting' || d.source === 'auto_debate');
 
     liveFeed.innerHTML = live.length > 0
       ? live.map((d: ArenaFeedItem) => renderArenaFeedCard(d, 'live')).join('')
@@ -921,6 +943,12 @@ async function loadLobbyFeed(): Promise<void> {
     verdictsFeed.innerHTML = complete.length > 0
       ? complete.map((d: ArenaFeedItem) => renderArenaFeedCard(d, 'verdict')).join('')
       : '<div class="arena-empty"><span class="empty-icon">\uD83D\uDCDC</span>No verdicts yet</div>';
+
+    if (unpluggedFeed) {
+      unpluggedFeed.innerHTML = unplugged.length > 0
+        ? unplugged.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('')
+        : '<div class="arena-empty"><span class="empty-icon">\uD83C\uDFB8</span>No unplugged debates yet</div>';
+    }
 
   } catch (err) {
     console.error('[Arena] Feed load error:', err);
@@ -932,6 +960,7 @@ async function loadLobbyFeed(): Promise<void> {
 function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const isAuto = d.source === 'auto_debate';
   const isLive = d.status === 'live';
+  const rulesetBadge = d.ruleset === 'unplugged' ? '<span class="arena-card-badge unplugged">\uD83C\uDFB8 UNPLUGGED</span>' : '';
   const badge = isLive ? '<span class="arena-card-badge live">\u25CF LIVE</span>'
     : isAuto ? '<span class="arena-card-badge ai">AI DEBATE</span>'
     : '<span class="arena-card-badge verdict">VERDICT</span>';
@@ -940,7 +969,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
   return `<div class="arena-card ${cardClass}" data-link="${isAuto ? 'moderator-auto-debate.html' : 'moderator-spectate.html'}?id=${encodeURIComponent(d.id)}">
-    <div class="arena-card-top">${badge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
+    <div class="arena-card-top">${badge}${rulesetBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">
       <span>${escapeHTML(d.debater_a_name || 'Side A')}</span>
@@ -1115,7 +1144,7 @@ export function showRankedPicker(): void {
 
       selectedRanked = isRanked;
       closeRankedPicker(true);
-      showModeSelect();
+      showRulesetPicker();
     });
   });
 
@@ -1126,6 +1155,72 @@ export function showRankedPicker(): void {
 
 export function closeRankedPicker(forward?: boolean): void {
   const overlay = document.getElementById('arena-rank-overlay');
+  if (overlay) {
+    overlay.remove();
+    if (forward) {
+      history.replaceState({ arenaView: 'lobby' }, '');
+    } else {
+      history.back();
+    }
+  }
+}
+
+export function showRulesetPicker(): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'arena-rank-overlay';
+  overlay.id = 'arena-ruleset-overlay';
+  overlay.innerHTML = `
+    <div class="arena-rank-backdrop" id="arena-ruleset-backdrop"></div>
+    <div class="arena-rank-sheet">
+      <div class="arena-mode-handle"></div>
+      <div class="arena-rank-title">Choose Your Ruleset</div>
+      <div class="arena-rank-subtitle">Full experience or pure debate.</div>
+
+      <div class="arena-rank-card amplified" data-ruleset="amplified">
+        <div class="arena-rank-card-header">
+          <div class="arena-rank-card-icon">\u26A1</div>
+          <div class="arena-rank-card-name">AMPLIFIED</div>
+        </div>
+        <div class="arena-rank-card-desc">
+          Boosts, ELO, tokens \u2014 the full experience.
+        </div>
+        <div class="arena-rank-card-badge">DEFAULT MODE</div>
+      </div>
+
+      <div class="arena-rank-card unplugged" data-ruleset="unplugged">
+        <div class="arena-rank-card-header">
+          <div class="arena-rank-card-icon">\uD83C\uDFB8</div>
+          <div class="arena-rank-card-name">UNPLUGGED</div>
+        </div>
+        <div class="arena-rank-card-desc">
+          Just debate. No boosts, no ELO, no tokens.
+        </div>
+        <div class="arena-rank-card-badge">PURE DEBATE</div>
+      </div>
+
+      <button class="arena-rank-cancel" id="arena-ruleset-cancel">Cancel</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  pushArenaState('rulesetPicker');
+
+  // Wire card clicks
+  overlay.querySelectorAll('.arena-rank-card').forEach((card) => {
+    const cardEl = card as HTMLElement;
+    cardEl.addEventListener('click', () => {
+      selectedRuleset = cardEl.dataset.ruleset as 'amplified' | 'unplugged';
+      closeRulesetPicker(true);
+      showModeSelect();
+    });
+  });
+
+  // Wire close
+  document.getElementById('arena-ruleset-backdrop')?.addEventListener('click', () => closeRulesetPicker());
+  document.getElementById('arena-ruleset-cancel')?.addEventListener('click', () => closeRulesetPicker());
+}
+
+export function closeRulesetPicker(forward?: boolean): void {
+  const overlay = document.getElementById('arena-ruleset-overlay');
   if (overlay) {
     overlay.remove();
     if (forward) {
@@ -1212,6 +1307,7 @@ export function showModeSelect(): void {
       }
       closeModeSelect(true);
       if (mode === 'ai') {
+        selectedRuleset = 'amplified';
         enterQueue(mode, topic);
       } else if (maybeRoutePrivate(mode, topic)) {
         // routed to private lobby sub-picker — nothing more to do
@@ -1403,14 +1499,14 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   const queueEl = document.createElement('div');
   queueEl.className = 'arena-queue arena-fade-in';
   queueEl.innerHTML = `
-    <div class="arena-rank-badge ${selectedRanked ? 'ranked' : 'casual'}">${selectedRanked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
+    <div class="arena-rank-badge ${selectedRuleset === 'unplugged' ? 'unplugged' : selectedRanked ? 'ranked' : 'casual'}">${selectedRuleset === 'unplugged' ? '\uD83C\uDFB8 UNPLUGGED' : selectedRanked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
     <div class="arena-queue-search-ring" id="arena-queue-ring">
       <div class="arena-queue-icon">${modeInfo.icon}</div>
     </div>
     <div class="arena-queue-title">${modeInfo.name}${selectedCategory ? ` · ${QUEUE_CATEGORIES.find(c => c.id === selectedCategory)?.label ?? selectedCategory}` : ''}</div>
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
     <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
-    <div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>
+    ${selectedRuleset !== 'unplugged' ? `<div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>` : ''}
     <div class="arena-queue-pop" id="arena-queue-pop"></div>
     <div id="arena-queue-ai-prompt"></div>
     <button class="arena-queue-cancel" id="arena-queue-cancel">\u2715 CANCEL</button>
@@ -1530,6 +1626,7 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
       p_category: selectedCategory,
       p_topic: topic || null,
       p_ranked: selectedRanked,
+      p_ruleset: selectedRuleset,
     });
     if (error) throw error;
     if ((data as MatchData)?.status === 'matched') {
@@ -1587,6 +1684,7 @@ function onMatchFound(data: MatchData): void {
       opponentId: data.opponent_id ?? null,
       opponentElo: data.opponent_elo ?? 1200,
       ranked: selectedRanked,
+      ruleset: (data.ruleset as 'amplified' | 'unplugged') || selectedRuleset,
       messages: [],
     };
     if (selectedMode === 'ai' || !data.opponent_id) {
@@ -1814,6 +1912,7 @@ async function startAIDebate(topic: string): Promise<void> {
     opponentName: 'AI Sparring Bot',
     opponentElo: 1200,
     ranked: false,
+    ruleset: 'amplified',
     messages: [],
   });
 }
@@ -1840,7 +1939,7 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   const pre = document.createElement('div');
   pre.className = 'arena-pre-debate arena-fade-in';
   pre.innerHTML = `
-    <div class="arena-rank-badge ${debateData.ranked ? 'ranked' : 'casual'}">${debateData.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
+    <div class="arena-rank-badge ${debateData.ruleset === 'unplugged' ? 'unplugged' : debateData.ranked ? 'ranked' : 'casual'}">${debateData.ruleset === 'unplugged' ? '\uD83C\uDFB8 UNPLUGGED' : debateData.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
     <div class="arena-pre-debate-title">\u2694\uFE0F PREPARE FOR BATTLE</div>
     <div class="arena-pre-debate-sub">${escapeHTML(debateData.topic)}</div>
     <div class="arena-vs-bar" style="width:100%;max-width:360px;border-radius:12px;margin-bottom:16px;">
@@ -1954,12 +2053,16 @@ export function enterRoom(debate: CurrentDebate): void {
   const oppName = isModView ? (debate.debaterBName || 'Debater B') : debate.opponentName;
   const oppInitial = (oppName[0] || '?').toUpperCase();
   const isAI = debate.mode === 'ai';
+  const isUnplugged = debate.ruleset === 'unplugged';
+
+  const roomBadgeClass = isUnplugged ? 'unplugged' : debate.ranked ? 'ranked' : 'casual';
+  const roomBadgeText = isUnplugged ? '\uD83C\uDFB8 UNPLUGGED' : debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL';
 
   const room = document.createElement('div');
   room.className = 'arena-room arena-fade-in';
   room.innerHTML = `
     <div class="arena-room-header">
-      <div class="arena-rank-badge ${debate.ranked ? 'ranked' : 'casual'}" style="margin-bottom:6px">${debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
+      <div class="arena-rank-badge ${roomBadgeClass}" style="margin-bottom:6px">${roomBadgeText}</div>
       <div class="arena-room-topic">${escapeHTML(debate.topic)}</div>
       <div class="arena-room-round" id="arena-round-label">ROUND ${debate.round}/${debate.totalRounds}</div>
       ${debate.mode === 'live' ? `<div class="arena-room-timer" id="arena-room-timer">${formatTimer(ROUND_DURATION)}</div>` : ''}
@@ -1973,7 +2076,7 @@ export function enterRoom(debate: CurrentDebate): void {
         <div class="arena-debater-avatar">${myInitial}</div>
         <div class="arena-debater-info">
           <div class="arena-debater-name">${escapeHTML(myName)}</div>
-          <div class="arena-debater-elo">${Number(myElo)} ELO <span style="color:var(--mod-bar-secondary);margin-left:6px;font-size:11px;">\uD83E\uDE99 ${Number(profile?.token_balance) || 0}</span></div>
+          ${isUnplugged ? '' : `<div class="arena-debater-elo">${Number(myElo)} ELO <span style="color:var(--mod-bar-secondary);margin-left:6px;font-size:11px;">\uD83E\uDE99 ${Number(profile?.token_balance) || 0}</span></div>`}
         </div>
       </div>
       <div class="arena-vs-text">VS</div>
@@ -1981,12 +2084,12 @@ export function enterRoom(debate: CurrentDebate): void {
         <div class="arena-debater-avatar ${isAI ? 'ai-avatar' : ''}">${isAI ? '\uD83E\uDD16' : oppInitial}</div>
         <div class="arena-debater-info" style="text-align:right;">
           <div class="arena-debater-name">${escapeHTML(oppName)}</div>
-          <div class="arena-debater-elo">${isModView ? '' : `${Number(debate.opponentElo)} ELO`}</div>
+          ${isUnplugged ? '' : `<div class="arena-debater-elo">${isModView ? '' : `${Number(debate.opponentElo)} ELO`}</div>`}
         </div>
       </div>
     </div>
-    <div id="powerup-loadout-container"></div>
-    <div class="arena-spectator-bar"><span class="eye">\uD83D\uDC41\uFE0F</span> <span id="arena-spectator-count">0</span> watching</div>
+    <div id="powerup-loadout-container"${isUnplugged ? ' style="display:none;"' : ''}></div>
+    ${isUnplugged ? '' : '<div class="arena-spectator-bar"><span class="eye">\uD83D\uDC41\uFE0F</span> <span id="arena-spectator-count">0</span> watching</div>'}
     <div class="arena-messages" id="arena-messages"></div>
     <div class="arena-input-area" id="arena-input-area" ${isModView ? 'style="display:none;"' : ''}></div>
   `;
@@ -2011,8 +2114,8 @@ export function enterRoom(debate: CurrentDebate): void {
     }
   }
 
-  // Session 109: Load power-up loadout
-  if (debate.id && !debate.id.startsWith('placeholder-')) {
+  // Session 109: Load power-up loadout (skip in Unplugged)
+  if (!isUnplugged && debate.id && !debate.id.startsWith('placeholder-')) {
     (async () => {
       try {
         const data = await getMyPowerUps(debate.id);
@@ -2045,8 +2148,8 @@ export function enterRoom(debate: CurrentDebate): void {
   // Session 39: Add reference button for non-AI modes
   addReferenceButton();
 
-  // Session 110: Add power-up activation bar if equipped
-  if (equippedForDebate.length > 0) {
+  // Session 110: Add power-up activation bar if equipped (skip in Unplugged)
+  if (!isUnplugged && equippedForDebate.length > 0) {
     const barHtml = renderActivationBar(equippedForDebate);
     if (barHtml) {
       const messagesEl = room.querySelector('.arena-messages');
@@ -2767,8 +2870,10 @@ export async function endCurrentDebate(): Promise<void> {
       console.warn('[Arena] Finalize error:', e);
     }
 
-    if (debate.mode === 'ai') claimAiSparring(debate.id);
-    else claimDebate(debate.id);
+    if (debate.ruleset !== 'unplugged') {
+      if (debate.mode === 'ai') claimAiSparring(debate.id);
+      else claimDebate(debate.id);
+    }
 
     try {
       const hasMulti = hasMultiplier(equippedForDebate);
@@ -2791,15 +2896,17 @@ export async function endCurrentDebate(): Promise<void> {
 
   const eloSign = eloChangeMe >= 0 ? '+' : '';
   const eloClass = eloChangeMe > 0 ? 'positive' : eloChangeMe < 0 ? 'negative' : 'neutral';
-  const eloHtml = debate.ranked
-    ? `<div class="arena-elo-change ${eloClass}">${eloSign}${eloChangeMe} ELO</div>`
-    : `<div class="arena-elo-change neutral">Casual \u2014 No Rating Change</div>`;
+  const eloHtml = debate.ruleset === 'unplugged'
+    ? '<div class="arena-elo-change neutral">\uD83C\uDFB8 Unplugged \u2014 No Rating Change</div>'
+    : debate.ranked
+      ? `<div class="arena-elo-change ${eloClass}">${eloSign}${eloChangeMe} ELO</div>`
+      : `<div class="arena-elo-change neutral">Casual \u2014 No Rating Change</div>`;
 
   if (screenEl) screenEl.innerHTML = '';
   const post = document.createElement('div');
   post.className = 'arena-post arena-fade-in';
   post.innerHTML = `
-    <div class="arena-rank-badge ${debate.ranked ? 'ranked' : 'casual'}">${debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
+    <div class="arena-rank-badge ${debate.ruleset === 'unplugged' ? 'unplugged' : debate.ranked ? 'ranked' : 'casual'}">${debate.ruleset === 'unplugged' ? '\uD83C\uDFB8 UNPLUGGED' : debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
     <div class="arena-post-verdict">${didWin ? '\uD83C\uDFC6' : '\uD83D\uDC80'}</div>
     <div class="arena-post-title">${didWin ? 'VICTORY' : 'DEFEAT'}</div>
     ${eloHtml}
@@ -3317,6 +3424,7 @@ interface JoinPrivateLobbyResult {
   opponent_name: string;
   opponent_id: string;
   opponent_elo: number;
+  ruleset?: string;
 }
 
 export function showPrivateLobbyPicker(): void {
@@ -3619,6 +3727,7 @@ async function createAndWaitPrivateLobby(
       p_topic: topic || null,
       p_category: selectedCategory,
       p_ranked: selectedRanked,
+      p_ruleset: selectedRuleset,
       p_visibility: visibility,
       p_invited_user_id: invitedUserId || null,
       p_group_id: groupId || null,
@@ -3727,6 +3836,7 @@ function onPrivateLobbyMatched(data: {
     opponentId: data.opponent_id,
     opponentElo: data.opponent_elo,
     ranked: selectedRanked,
+    ruleset: selectedRuleset,
     messages: [],
   };
   showMatchFound(debateData);
@@ -3765,6 +3875,7 @@ async function joinWithCode(code: string): Promise<void> {
       opponentId: result.opponent_id,
       opponentElo: result.opponent_elo,
       ranked: false,
+      ruleset: (result.ruleset as 'amplified' | 'unplugged') || 'amplified',
       messages: [],
     };
     showMatchFound(debateData);
@@ -3791,6 +3902,7 @@ async function joinWithCode(code: string): Promise<void> {
           opponentId: modResult.opponent_id,
           opponentElo: modResult.opponent_elo || 1200,
           ranked: modResult.ranked,
+          ruleset: (modResult.ruleset as 'amplified' | 'unplugged') || 'amplified',
           messages: [],
         };
         showMatchFound(debateData);
@@ -3860,6 +3972,7 @@ async function loadPendingChallenges(): Promise<void> {
             opponentId: el.dataset.oppId || null,
             opponentElo: Number(el.dataset.oppElo) || 1200,
             ranked: false,
+            ruleset: (result.ruleset as 'amplified' | 'unplugged') || 'amplified',
             messages: [],
           };
           showMatchFound(debateData);
@@ -3938,6 +4051,7 @@ interface ModDebateJoinResult {
   opponent_name: string | null;
   opponent_id: string | null;
   opponent_elo: number | null;
+  ruleset?: string;
 }
 
 interface ModDebateCheckResult {
@@ -4388,6 +4502,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       opponentId: result.debater_b_id,
       opponentElo: 1200,
       ranked,
+      ruleset: 'amplified',
       messages: [],
       modView: true,
       debaterAName: result.debater_a_name || 'Debater A',
@@ -4410,6 +4525,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       opponentId,
       opponentElo: 1200,
       ranked,
+      ruleset: 'amplified',
       messages: [],
     };
     showMatchFound(debateData);
