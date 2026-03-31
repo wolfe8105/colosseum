@@ -2870,17 +2870,16 @@ export async function endCurrentDebate(): Promise<void> {
       console.warn('[Arena] Finalize error:', e);
     }
 
-    if (debate.ruleset !== 'unplugged') {
+   if (debate.ruleset !== 'unplugged') {
       if (debate.mode === 'ai') claimAiSparring(debate.id);
       else claimDebate(debate.id);
-    }
 
-    try {
-      const hasMulti = hasMultiplier(equippedForDebate);
-      const stakeResult = await settleStakes(debate.id, winner, hasMulti ? 2 : 1);
-      debate._stakingResult = stakeResult;
-    } catch { /* warned */ }
-  }
+      try {
+        const hasMulti = hasMultiplier(equippedForDebate);
+        const stakeResult = await settleStakes(debate.id, winner, hasMulti ? 2 : 1);
+        debate._stakingResult = stakeResult;
+      } catch { /* warned */ }
+    }
 
   // Clean up power-up state
   if (silenceTimer) { clearInterval(silenceTimer); silenceTimer = null; }
