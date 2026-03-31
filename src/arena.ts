@@ -4060,6 +4060,8 @@ interface ModDebateCheckResult {
   debater_a_name: string;
   debater_b_id: string | null;
   debater_b_name: string;
+  topic: string | null;
+  ruleset: string | null;
 }
 
 function showModQueue(): void {
@@ -4353,6 +4355,14 @@ function showModDebatePicker(): void {
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-body);">Ranked debate</span>
       </label>
 
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Ruleset</div>
+        <select id="mod-debate-ruleset" style="width:100%;padding:12px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;">
+          <option value="amplified">⚡ Amplified</option>
+          <option value="unplugged">🎸 Unplugged</option>
+        </select>
+      </div>
+
       <button class="arena-primary-btn" id="mod-debate-create-btn" style="width:100%;">⚔️ CREATE &amp; GET CODE</button>
     </div>
   `;
@@ -4375,6 +4385,7 @@ async function createModDebate(): Promise<void> {
   const category = (document.getElementById('mod-debate-category') as HTMLSelectElement)?.value || null;
   const topic = (document.getElementById('mod-debate-topic') as HTMLInputElement)?.value.trim() || null;
   const ranked = (document.getElementById('mod-debate-ranked') as HTMLInputElement)?.checked || false;
+  const ruleset = (document.getElementById('mod-debate-ruleset') as HTMLSelectElement)?.value || 'amplified';
 
   try {
     const { data, error } = await safeRpc<{ debate_id: string; join_code: string }>('create_mod_debate', {
@@ -4382,6 +4393,7 @@ async function createModDebate(): Promise<void> {
       p_topic: topic,
       p_category: category || null,
       p_ranked: ranked,
+      p_ruleset: ruleset,
     });
     if (error) throw error;
     const result = data as { debate_id: string; join_code: string };
@@ -4488,12 +4500,14 @@ function stopModDebatePoll(): void {
 function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: DebateMode, ranked: boolean): void {
   const profile = getCurrentProfile();
   const isActualMod = profile?.id !== result.debater_a_id && profile?.id !== result.debater_b_id;
+  const debateRuleset = (result.ruleset as 'amplified' | 'unplugged') || 'amplified';
+  const debateTopic = result.topic || 'Moderated Debate';
 
   if (isActualMod) {
     // Moderator enters room in observer mode
     const debateData: CurrentDebate = {
       id: debateId,
-      topic: 'Moderated Debate',
+      topic: debateTopic,
       role: 'a',
       mode,
       round: 1,
@@ -4502,7 +4516,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       opponentId: result.debater_b_id,
       opponentElo: 1200,
       ranked,
-      ruleset: 'amplified',
+      ruleset: debateRuleset,
       messages: [],
       modView: true,
       debaterAName: result.debater_a_name || 'Debater A',
@@ -4516,7 +4530,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
     const opponentId = role === 'a' ? result.debater_b_id : result.debater_a_id;
     const debateData: CurrentDebate = {
       id: debateId,
-      topic: 'Moderated Debate',
+      topic: debateTopic,
       role,
       mode,
       round: 1,
@@ -4525,7 +4539,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       opponentId,
       opponentElo: 1200,
       ranked,
-      ruleset: 'amplified',
+      ruleset: debateRuleset,
       messages: [],
     };
     showMatchFound(debateData);
@@ -4535,7 +4549,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
 async function cancelModDebate(debateId: string): Promise<void> {
   stopModDebatePoll();
   try {
-    await safeRpc('cancel_private_lobby', { p_debate_id: debateId });
+    await safeRpc('cancel_mod_debate', { p_debate_id: debateId });
   } catch { /* silent */ }
   modDebateId = null;
   showModQueue();
