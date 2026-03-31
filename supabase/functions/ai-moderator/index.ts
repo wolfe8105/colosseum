@@ -1,3 +1,4 @@
+```ts
 // ============================================================
 // THE MODERATOR — AI MODERATOR Edge Function
 // Session 40: A08 hardened — removed deno.land import, CORS allowlist
@@ -7,10 +8,9 @@
 // 2. CORS wildcard → allowlist (A05 fix)
 // 3. Zero external imports — only built-in Deno APIs + fetch
 //
-// Session 207: Added themoderator.app to CORS, 10s Groq timeout
-//
 // Deploy: supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
 // Env var required: GROQ_API_KEY (shared with ai-sparring)
+// Session 208: Auth validation — rejects anonymous callers (audit #32)
 // ============================================================
 
 const ALLOWED_ORIGINS = [
@@ -34,6 +34,41 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // ── Auth validation (Session 208: audit #32) ──
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: 'Missing authorization token' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const sbUrl = Deno.env.get('SUPABASE_URL');
+  const sbAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (sbUrl && sbAnonKey) {
+    try {
+      const authRes = await fetch(`${sbUrl}/auth/v1/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': sbAnonKey,
+        },
+      });
+      if (!authRes.ok) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch {
+      // Auth service unreachable — reject (fail closed for quota protection)
+      return new Response(
+        JSON.stringify({ error: 'Auth service unavailable' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
   }
 
   try {
@@ -167,3 +202,4 @@ Rule on this evidence: ALLOW or DENY?`;
     );
   }
 });
+```
