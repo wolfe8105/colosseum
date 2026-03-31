@@ -1,20 +1,20 @@
 // ============================================================
 // THE MODERATOR — /go AI Debate Responder (Serverless Function)
-// Session 206
+// Session 206 | Session 208: Swapped Groq → Claude API
 //
 // WHAT THIS DOES:
 // 1. Receives topic, side, round, user argument, conversation history
-// 2. Calls Groq (llama-3.3-70b-versatile) server-side
+// 2. Calls Claude (claude-sonnet-4-20250514) server-side
 // 3. Returns AI counter-argument
 //
 // No auth required. No database. Ephemeral debates.
 // ROUTE: /api/go-respond (called by moderator-go.html)
 //
-// ENV VAR REQUIRED: GROQ_API_KEY (set in Vercel dashboard)
+// ENV VAR REQUIRED: ANTHROPIC_API_KEY (set in Vercel dashboard)
 // ============================================================
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 200;
 
 function buildSystemPrompt(topic, side, totalRounds) {
@@ -80,9 +80,9 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const groqKey = process.env.GROQ_API_KEY;
-  if (!groqKey) {
-    console.error('[go-respond] GROQ_API_KEY not set');
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error('[go-respond] ANTHROPIC_API_KEY not set');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
@@ -99,10 +99,11 @@ export default async function handler(req, res) {
         .map(m => `${m.role === 'user' ? 'HUMAN' : 'AI'}: ${m.content}`)
         .join('\n');
 
-      const groqRes = await fetch(GROQ_API_URL, {
+      const claudeRes = await fetch(CLAUDE_API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + groqKey,
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -115,13 +116,13 @@ export default async function handler(req, res) {
         }),
       });
 
-      if (!groqRes.ok) {
-        console.error('[go-respond] Groq score error:', groqRes.status);
+      if (!claudeRes.ok) {
+        console.error('[go-respond] Claude score error:', claudeRes.status);
         return res.status(502).json({ error: 'AI scoring failed' });
       }
 
-      const groqData = await groqRes.json();
-      const raw = groqData?.choices?.[0]?.message?.content?.trim() || '';
+      const claudeData = await claudeRes.json();
+      const raw = claudeData?.content?.[0]?.text?.trim() || '';
 
       try {
         const scores = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -155,32 +156,31 @@ export default async function handler(req, res) {
       };
     }
 
-    const groqRes = await fetch(GROQ_API_URL, {
+    const claudeRes = await fetch(CLAUDE_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + groqKey,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
+        system: buildSystemPrompt(topic, side, totalRounds),
         temperature: 0.85,
         top_p: 0.9,
-        messages: [
-          { role: 'system', content: buildSystemPrompt(topic, side, totalRounds) },
-          ...conversationMessages,
-        ],
+        messages: conversationMessages,
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      console.error('[go-respond] Groq API error:', groqRes.status, errText);
+    if (!claudeRes.ok) {
+      const errText = await claudeRes.text();
+      console.error('[go-respond] Claude API error:', claudeRes.status, errText);
       return res.status(502).json({ error: 'AI response failed' });
     }
 
-    const groqData = await groqRes.json();
-    const response = groqData?.choices?.[0]?.message?.content?.trim();
+    const claudeData = await claudeRes.json();
+    const response = claudeData?.content?.[0]?.text?.trim();
 
     if (!response) {
       return res.status(502).json({ error: 'Empty response from AI' });
