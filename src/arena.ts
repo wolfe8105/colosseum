@@ -24,7 +24,7 @@ import {
   ready,
 } from './auth.ts';
 import {
-  escapeHTML, SUPABASE_URL, SUPABASE_ANON_KEY, isAnyPlaceholder,
+  escapeHTML, SUPABASE_URL, isAnyPlaceholder,
   showToast, friendlyError,
 } from './config.ts';
 import { claimDebate, claimAiSparring } from './tokens.ts';
@@ -2254,6 +2254,18 @@ async function handleAIResponse(debate: CurrentDebate, userText: string): Promis
   advanceRound();
 }
 
+// Session 208: Get user JWT for Edge Function auth (audit #32)
+async function getUserJwt(): Promise<string | null> {
+  try {
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data } = await client.auth.getSession();
+    return data?.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function generateAIDebateResponse(
   topic: string,
   _userArg: string,
@@ -2270,13 +2282,14 @@ async function generateAIDebateResponse(
     if (!supabaseUrl) throw new Error('No supabase URL');
 
     const edgeUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai-sparring';
-    const anonKey = SUPABASE_ANON_KEY;
+    const jwt = await getUserJwt();
+    if (!jwt) throw new Error('Not authenticated');
 
     const res = await fetch(edgeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(anonKey ? { Authorization: 'Bearer ' + anonKey } : {}),
+        'Authorization': 'Bearer ' + jwt,
       },
       body: JSON.stringify({ topic, userArg: _userArg, round, totalRounds, messageHistory }),
     });
@@ -2344,13 +2357,14 @@ async function requestAIScoring(topic: string, messages: DebateMessage[]): Promi
     if (!supabaseUrl) throw new Error('No supabase URL');
 
     const edgeUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai-sparring';
-    const anonKey = SUPABASE_ANON_KEY;
+    const jwt = await getUserJwt();
+    if (!jwt) throw new Error('Not authenticated');
 
     const res = await fetch(edgeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(anonKey ? { Authorization: 'Bearer ' + anonKey } : {}),
+        'Authorization': 'Bearer ' + jwt,
       },
       body: JSON.stringify({ mode: 'score', topic, messageHistory }),
     });
@@ -2479,9 +2493,26 @@ async function initLiveAudio(): Promise<void> {
     if (statusEl) statusEl.textContent = '\uD83D\uDFE2 Connected \u2014 debate is live!';
   });
 
-  onWebRTC('disconnected', () => {
+  onWebRTC('disconnected', (data: unknown) => {
+    const { recovering } = data as { state: string; recovering?: boolean };
     const statusEl = document.getElementById('arena-audio-status');
-    if (statusEl) statusEl.textContent = '\uD83D\uDD34 Connection lost';
+    if (statusEl) {
+      statusEl.textContent = recovering
+        ? '\uD83D\uDFE1 Connection interrupted — reconnecting...'
+        : '\uD83D\uDD34 Connection lost';
+    }
+  });
+
+  // Session 208: ICE restart feedback (audit #14)
+  onWebRTC('reconnecting', (data: unknown) => {
+    const { attempt, max } = data as { attempt: number; max: number };
+    const statusEl = document.getElementById('arena-audio-status');
+    if (statusEl) statusEl.textContent = `\uD83D\uDFE1 Reconnecting (${attempt}/${max})...`;
+  });
+
+  onWebRTC('connectionFailed', () => {
+    const statusEl = document.getElementById('arena-audio-status');
+    if (statusEl) statusEl.textContent = '\uD83D\uDD34 Connection failed \u2014 audio unavailable';
   });
 
   onWebRTC('muteChanged', (data: unknown) => {
@@ -3135,12 +3166,13 @@ async function requestAIModRuling(
       `${m.role === 'user' ? 'Side A' : 'Side B'} (R${m.round}): ${m.text}`
     ).join('\n');
 
-    const anonKey = SUPABASE_ANON_KEY;
+    const jwt = await getUserJwt();
+    if (!jwt) throw new Error('Not authenticated');
     const res = await fetch(edgeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(anonKey ? { Authorization: 'Bearer ' + anonKey } : {}),
+        'Authorization': 'Bearer ' + jwt,
       },
       body: JSON.stringify({
         topic: debate.topic,

@@ -50,7 +50,10 @@ export type WebRTCEventType =
   | 'pauseStart'
   | 'pauseTick'
   | 'turnFrozen'
-  | 'turnUnfrozen';
+  | 'turnUnfrozen'
+  // ICE restart events (Session 208, audit #14)
+  | 'reconnecting'
+  | 'connectionFailed';
 
 /** One step in the deterministic turn sequence */
 export interface TurnStep {
@@ -253,6 +256,11 @@ let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
 let signalingChannel: RealtimeChannel | null = null;
 let activeWaveform: WaveformResult | null = null;
+
+// Session 208: ICE restart state (audit #14)
+const MAX_ICE_RESTART_ATTEMPTS = 3;
+let iceRestartAttempts = 0;
+let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 const DEFAULT_TURN_STATE: TurnState = {
   stepIndex: -1,
@@ -526,13 +534,55 @@ function createPeerConnection(): RTCPeerConnection {
 
     if (state === 'connected') {
       debateState.status = 'live';
+      iceRestartAttempts = 0;
+      if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null; }
       fire('connected', {});
-    } else if (state === 'disconnected' || state === 'failed') {
-      fire('disconnected', { state });
+    } else if (state === 'disconnected') {
+      // Transient — wait 3s before attempting restart (connection may recover)
+      fire('disconnected', { state, recovering: true });
+      if (disconnectTimer) clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(() => {
+        disconnectTimer = null;
+        if (peerConnection?.connectionState === 'disconnected' || peerConnection?.connectionState === 'failed') {
+          attemptIceRestart();
+        }
+      }, 3000);
+    } else if (state === 'failed') {
+      // Permanent failure — restart immediately
+      if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null; }
+      attemptIceRestart();
     }
   };
 
   return peerConnection;
+}
+
+// Session 208: ICE restart on connection failure (audit #14)
+async function attemptIceRestart(): Promise<void> {
+  iceRestartAttempts++;
+
+  if (iceRestartAttempts > MAX_ICE_RESTART_ATTEMPTS) {
+    console.warn(`[WebRTC] ICE restart failed after ${MAX_ICE_RESTART_ATTEMPTS} attempts`);
+    fire('connectionFailed', { attempts: MAX_ICE_RESTART_ATTEMPTS });
+    return;
+  }
+
+  console.log(`[WebRTC] ICE restart attempt ${iceRestartAttempts}/${MAX_ICE_RESTART_ATTEMPTS}`);
+  fire('reconnecting', { attempt: iceRestartAttempts, max: MAX_ICE_RESTART_ATTEMPTS });
+
+  // Only role 'a' (the offerer) initiates ICE restart.
+  // Role 'b' waits — they'll receive the re-offer via signaling
+  // and handleOffer() will renegotiate automatically.
+  if (debateState.role === 'a' && peerConnection) {
+    try {
+      peerConnection.restartIce();
+      const offer = await peerConnection.createOffer({ iceRestart: true });
+      await peerConnection.setLocalDescription(offer);
+      sendSignal('offer', offer);
+    } catch (err) {
+      console.warn('[WebRTC] ICE restart offer error:', err);
+    }
+  }
 }
 
 async function createOffer(): Promise<void> {
@@ -811,6 +861,10 @@ export async function startLive(): Promise<void> {
 export function leaveDebate(): void {
   stopWorkerTimer();
   terminateWorkerTimer();
+
+  // Session 208: Reset ICE restart state (audit #14)
+  iceRestartAttempts = 0;
+  if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null; }
 
   if (peerConnection) {
     peerConnection.close();
