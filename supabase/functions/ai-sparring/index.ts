@@ -9,12 +9,13 @@
 // 3. Zero external imports — only built-in Deno APIs + fetch
 //
 // Deploy: supabase functions deploy ai-sparring
-// Env var required: GROQ_API_KEY
+// Env var required: ANTHROPIC_API_KEY
 // Session 208: Auth validation — rejects anonymous callers (audit #32)
+// Session 208: Swapped Groq → Claude API
 // ============================================================
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 200;
 
 const ALLOWED_ORIGINS = [
@@ -118,10 +119,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const groqKey = Deno.env.get('GROQ_API_KEY');
-    if (!groqKey) {
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'GROQ_API_KEY not configured' }),
+        JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -163,41 +164,40 @@ Deno.serve(async (req: Request) => {
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 10000);
 
-    const groqRes = await fetch(GROQ_API_URL, {
+    const claudeRes = await fetch(CLAUDE_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + groqKey,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
+        system: buildSystemPrompt(topic, totalRounds),
         temperature: 0.85,
         top_p: 0.9,
-        messages: [
-          { role: 'system', content: buildSystemPrompt(topic, totalRounds) },
-          ...conversationMessages,
-        ],
+        messages: conversationMessages,
       }),
     });
     clearTimeout(fetchTimeout);
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      console.error('[ai-sparring] Groq API error:', groqRes.status, errText);
+    if (!claudeRes.ok) {
+      const errText = await claudeRes.text();
+      console.error('[ai-sparring] Claude API error:', claudeRes.status, errText);
       return new Response(
-        JSON.stringify({ error: 'Groq API error', status: groqRes.status }),
+        JSON.stringify({ error: 'Claude API error', status: claudeRes.status }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const groqData = await groqRes.json();
-    const response = groqData?.choices?.[0]?.message?.content?.trim();
+    const claudeData = await claudeRes.json();
+    const response = claudeData?.content?.[0]?.text?.trim();
 
     if (!response) {
       return new Response(
-        JSON.stringify({ error: 'Empty response from Groq' }),
+        JSON.stringify({ error: 'Empty response from Claude' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -209,9 +209,9 @@ Deno.serve(async (req: Request) => {
 
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
-      console.error('[ai-sparring] Groq API timeout (10s)');
+      console.error('[ai-sparring] Claude API timeout (10s)');
       return new Response(
-        JSON.stringify({ error: 'Groq API timeout' }),
+        JSON.stringify({ error: 'Claude API timeout' }),
         { status: 504, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
