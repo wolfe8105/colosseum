@@ -968,7 +968,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const action = isLive ? 'SPECTATE' : 'VIEW';
   const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
-  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? 'moderator-auto-debate.html' : 'moderator-spectate.html'}?id=${encodeURIComponent(d.id)}">
+  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? '/verdict?id=' + encodeURIComponent(d.id) : '/debate/' + encodeURIComponent(d.id)}">
     <div class="arena-card-top">${badge}${rulesetBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">
@@ -2870,7 +2870,7 @@ export async function endCurrentDebate(): Promise<void> {
       console.warn('[Arena] Finalize error:', e);
     }
 
-   if (debate.ruleset !== 'unplugged') {
+    if (debate.ruleset !== 'unplugged') {
       if (debate.mode === 'ai') claimAiSparring(debate.id);
       else claimDebate(debate.id);
 
@@ -2880,6 +2880,7 @@ export async function endCurrentDebate(): Promise<void> {
         debate._stakingResult = stakeResult;
       } catch { /* warned */ }
     }
+  }
 
   // Clean up power-up state
   if (silenceTimer) { clearInterval(silenceTimer); silenceTimer = null; }
