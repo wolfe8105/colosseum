@@ -7,10 +7,14 @@
 // 2. CORS wildcard → allowlist (A05 fix)
 // 3. Zero external imports — only built-in Deno APIs + fetch
 //
-// Deploy: supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
-// Env var required: GROQ_API_KEY (shared with ai-sparring)
+// Deploy: supabase functions deploy ai-moderator
+// Env var required: ANTHROPIC_API_KEY
 // Session 208: Auth validation — rejects anonymous callers (audit #32)
+// Session 220: AI-BUG-2 fix — swapped Groq/Llama → Claude API (matches ai-sparring)
 // ============================================================
+
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
 
 const ALLOWED_ORIGINS = [
   'https://colosseum-six.vercel.app',
@@ -85,9 +89,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const groqKey = Deno.env.get('GROQ_API_KEY');
-    if (!groqKey) {
-      // Fallback: allow with generic reason (LM-087)
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!apiKey) {
+      // Fallback: allow with generic reason (LM-087 — debate can't hang)
       return new Response(
         JSON.stringify({
           ruling: 'allowed',
@@ -134,31 +138,32 @@ Rule on this evidence: ALLOW or DENY?`;
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 10000);
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const claudeRes = await fetch(CLAUDE_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${groqKey}`,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: MODEL,
+        max_tokens: 100,
+        system: systemPrompt,
+        temperature: 0.3,
         messages: [
-          { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        temperature: 0.3,
-        max_tokens: 100,
       }),
     });
     clearTimeout(fetchTimeout);
 
-    if (!groqRes.ok) {
-      throw new Error(`Groq API error: ${groqRes.status}`);
+    if (!claudeRes.ok) {
+      throw new Error(`Claude API error: ${claudeRes.status}`);
     }
 
-    const groqData = await groqRes.json();
-    const rawResponse = groqData?.choices?.[0]?.message?.content?.trim() || '';
+    const claudeData = await claudeRes.json();
+    const rawResponse = claudeData?.content?.[0]?.text?.trim() || '';
 
     let ruling = 'allowed';
     let reason = 'Evidence accepted.';
@@ -191,9 +196,9 @@ Rule on this evidence: ALLOW or DENY?`;
 
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
-      console.error('AI Moderator Groq timeout (10s)');
+      console.error('[ai-moderator] Claude API timeout (10s)');
     } else {
-      console.error('AI Moderator error:', err);
+      console.error('[ai-moderator] Error:', err);
     }
 
     // On any error, default to ALLOW (LM-087: debate can't hang)
