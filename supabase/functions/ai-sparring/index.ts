@@ -83,29 +83,34 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Session 218: ADV-6 fix — fail closed when env vars missing
   const sbUrl = Deno.env.get('SUPABASE_URL');
   const sbAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (sbUrl && sbAnonKey) {
-    try {
-      const authRes = await fetch(`${sbUrl}/auth/v1/user`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': sbAnonKey,
-        },
-      });
-      if (!authRes.ok) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid or expired token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch {
-      // Auth service unreachable — reject (fail closed for quota protection)
+  if (!sbUrl || !sbAnonKey) {
+    return new Response(
+      JSON.stringify({ error: 'Server misconfiguration' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  try {
+    const authRes = await fetch(`${sbUrl}/auth/v1/user`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': sbAnonKey,
+      },
+    });
+    if (!authRes.ok) {
       return new Response(
-        JSON.stringify({ error: 'Auth service unavailable' }),
+        JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+  } catch {
+    // Auth service unreachable — reject (fail closed for quota protection)
+    return new Response(
+      JSON.stringify({ error: 'Auth service unavailable' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
