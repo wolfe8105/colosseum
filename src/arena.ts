@@ -25,7 +25,7 @@ import {
 } from './auth.ts';
 import {
   escapeHTML, SUPABASE_URL, isAnyPlaceholder,
-  showToast, friendlyError,
+  showToast, friendlyError, DEBATE,
 } from './config.ts';
 import { claimDebate, claimAiSparring } from './tokens.ts';
 import { settleStakes, getPool, renderStakingPanel, wireStakingPanel } from './staking.ts';
@@ -110,6 +110,7 @@ export interface MatchData {
   opponent_elo?: number;
   status?: string;
   ruleset?: string;
+  total_rounds?: number;
 }
 
 interface MatchAcceptResponse {
@@ -130,6 +131,7 @@ export interface ArenaFeedItem {
   debater_a_name?: string;
   debater_b_name?: string;
   ruleset?: string;
+  total_rounds?: number;
 }
 
 export interface AutoDebateItem {
@@ -265,6 +267,7 @@ let cssInjected = false;
 let selectedModerator: SelectedModerator | null = null;
 let selectedRanked = false;
 let selectedRuleset: 'amplified' | 'unplugged' = 'amplified';
+let selectedRounds: number = DEBATE.defaultRounds;
 let selectedCategory: string | null = null;
 let privateLobbyPollTimer: ReturnType<typeof setInterval> | null = null;
 let privateLobbyDebateId: string | null = null;
@@ -961,6 +964,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const isAuto = d.source === 'auto_debate';
   const isLive = d.status === 'live';
   const rulesetBadge = d.ruleset === 'unplugged' ? '<span class="arena-card-badge unplugged">\uD83C\uDFB8 UNPLUGGED</span>' : '';
+  const roundsBadge = d.total_rounds && d.total_rounds !== 4 ? `<span class="arena-card-badge">${d.total_rounds}R</span>` : '';
   const badge = isLive ? '<span class="arena-card-badge live">\u25CF LIVE</span>'
     : isAuto ? '<span class="arena-card-badge ai">AI DEBATE</span>'
     : '<span class="arena-card-badge verdict">VERDICT</span>';
@@ -969,7 +973,7 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
   return `<div class="arena-card ${cardClass}" data-link="${isAuto ? '/verdict?id=' + encodeURIComponent(d.id) : '/debate/' + encodeURIComponent(d.id)}">
-    <div class="arena-card-top">${badge}${rulesetBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
+    <div class="arena-card-top">${badge}${rulesetBadge}${roundsBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">
       <span>${escapeHTML(d.debater_a_name || 'Side A')}</span>
@@ -1393,6 +1397,56 @@ async function loadAvailableModerators(overlay: HTMLElement): Promise<void> {
 }
 
 // ============================================================
+// ROUND PICKER (shared across category, private, mod pickers)
+// ============================================================
+
+const ROUND_OPTIONS = [
+  { rounds: 4, label: '4 Rounds', time: '~22 min' },
+  { rounds: 6, label: '6 Rounds', time: '~33 min' },
+  { rounds: 8, label: '8 Rounds', time: '~44 min' },
+  { rounds: 10, label: '10 Rounds', time: '~55 min' },
+];
+
+function roundPickerCSS(): string {
+  return `
+    .arena-round-picker { margin-bottom:12px; }
+    .arena-round-label { font-family:var(--mod-font-ui); font-size:11px; font-weight:600; letter-spacing:2px; color:var(--mod-text-muted); text-transform:uppercase; margin-bottom:8px; }
+    .arena-round-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+    .arena-round-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 4px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-primary); background:var(--mod-bg-card); cursor:pointer; transition:all 0.15s; }
+    .arena-round-btn:active, .arena-round-btn.selected { border-color:var(--mod-accent); background:var(--mod-accent-muted); }
+    .arena-round-count { font-family:var(--mod-font-ui); font-size:14px; font-weight:700; color:var(--mod-text-primary); }
+    .arena-round-time { font-family:var(--mod-font-ui); font-size:10px; color:var(--mod-text-muted); }
+  `;
+}
+
+function roundPickerHTML(): string {
+  return `
+    <div class="arena-round-picker">
+      <div class="arena-round-label">Rounds</div>
+      <div class="arena-round-row">
+        ${ROUND_OPTIONS.map(o => `
+          <button class="arena-round-btn${o.rounds === DEBATE.defaultRounds ? ' selected' : ''}" data-rounds="${o.rounds}">
+            <span class="arena-round-count">${o.rounds}</span>
+            <span class="arena-round-time">${o.time}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function wireRoundPicker(container: HTMLElement): void {
+  selectedRounds = DEBATE.defaultRounds;
+  container.querySelectorAll('.arena-round-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.arena-round-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedRounds = parseInt((btn as HTMLElement).dataset.rounds ?? '4', 10);
+    });
+  });
+}
+
+// ============================================================
 // CATEGORY PICKER
 // ============================================================
 
@@ -1417,6 +1471,7 @@ function showCategoryPicker(mode: string, topic: string): void {
       .arena-cat-any { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-subtle); background:transparent; cursor:pointer; font-family:var(--mod-font-ui); font-size:13px; color:var(--mod-text-muted); letter-spacing:1px; margin-bottom:12px; transition:all 0.15s; }
       .arena-cat-any:active { background:var(--mod-bg-card); }
       .arena-cat-cancel { width:100%; padding:12px; border-radius:var(--mod-radius-pill); border:none; background:transparent; color:var(--mod-text-muted); font-family:var(--mod-font-ui); font-size:14px; cursor:pointer; }
+      ${roundPickerCSS()}
     </style>
     <div class="arena-cat-backdrop" id="arena-cat-backdrop"></div>
     <div class="arena-cat-sheet">
@@ -1432,6 +1487,7 @@ function showCategoryPicker(mode: string, topic: string): void {
         `).join('')}
       </div>
       <button class="arena-cat-any" id="arena-cat-any">⚡ ANY CATEGORY — FASTEST MATCH</button>
+      ${roundPickerHTML()}
       <label id="arena-want-mod-row" style="display:flex;align-items:center;gap:10px;padding:12px 4px;cursor:pointer;user-select:none;">
         <input type="checkbox" id="arena-want-mod-toggle" style="width:18px;height:18px;accent-color:var(--mod-accent-primary);cursor:pointer;">
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-body);">🧑‍⚖️ Request a moderator for this debate</span>
@@ -1441,6 +1497,7 @@ function showCategoryPicker(mode: string, topic: string): void {
   `;
   document.body.appendChild(overlay);
   pushArenaState('categoryPicker');
+  wireRoundPicker(overlay);
 
   // Wire category buttons
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
@@ -1627,6 +1684,7 @@ async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
       p_topic: topic || null,
       p_ranked: selectedRanked,
       p_ruleset: selectedRuleset,
+      p_total_rounds: selectedRounds,
     });
     if (error) throw error;
     if ((data as MatchData)?.status === 'matched') {
@@ -1679,7 +1737,7 @@ function onMatchFound(data: MatchData): void {
       role: data.role ?? 'a',
       mode: selectedMode ?? 'text',
       round: 1,
-      totalRounds: 3,
+      totalRounds: data.total_rounds ?? DEBATE.defaultRounds,
       opponentName: data.opponent_name ?? 'Opponent',
       opponentId: data.opponent_id ?? null,
       opponentElo: data.opponent_elo ?? 1200,
@@ -2641,7 +2699,7 @@ async function initLiveAudio(): Promise<void> {
   onWebRTC('debateEnd', () => { void endCurrentDebate(); });
 
   try {
-    await joinDebate(debate.id, debate.role);
+    await joinDebate(debate.id, debate.role, debate.totalRounds);
   } catch {
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) statusEl.textContent = 'Mic access blocked. Check your browser settings.';
@@ -3414,6 +3472,7 @@ interface CheckPrivateLobbyResult {
   opponent_name: string | null;
   opponent_elo: number | null;
   player_b_ready: boolean | null;
+  total_rounds?: number;
 }
 
 interface JoinPrivateLobbyResult {
@@ -3425,6 +3484,7 @@ interface JoinPrivateLobbyResult {
   opponent_id: string;
   opponent_elo: number;
   ruleset?: string;
+  total_rounds?: number;
 }
 
 export function showPrivateLobbyPicker(): void {
@@ -3449,6 +3509,7 @@ export function showPrivateLobbyPicker(): void {
       .arena-private-card-name { font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:0.5px;color:var(--mod-text-primary); }
       .arena-private-card-desc { font-size:12px;color:var(--mod-text-muted);margin-top:2px; }
       .arena-private-cancel { width:100%;padding:12px;border-radius:var(--mod-radius-pill);border:none;background:transparent;color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-size:14px;cursor:pointer;margin-top:4px; }
+      ${roundPickerCSS()}
     </style>
     <div class="arena-private-backdrop" id="arena-private-backdrop"></div>
     <div class="arena-private-sheet">
@@ -3476,11 +3537,13 @@ export function showPrivateLobbyPicker(): void {
           <div class="arena-private-card-desc">Get a 6-character code — share it anywhere</div>
         </div>
       </div>
+      ${roundPickerHTML()}
       <button class="arena-private-cancel" id="arena-private-cancel">Cancel</button>
     </div>
   `;
   document.body.appendChild(overlay);
   pushArenaState('privatePicker');
+  wireRoundPicker(overlay);
 
   document.getElementById('arena-private-username')?.addEventListener('click', () => {
     overlay.remove();
@@ -3731,6 +3794,7 @@ async function createAndWaitPrivateLobby(
       p_visibility: visibility,
       p_invited_user_id: invitedUserId || null,
       p_group_id: groupId || null,
+      p_total_rounds: selectedRounds,
     });
 
     if (error) throw error;
@@ -3810,6 +3874,7 @@ function startPrivateLobbyPoll(debateId: string, mode: string, topic: string): v
           opponent_name: result.opponent_name || 'Opponent',
           opponent_elo: result.opponent_elo || 1200,
           opponent_id: result.opponent_id,
+          total_rounds: result.total_rounds,
         });
       } else if (result.status === 'cancelled') {
         clearInterval(privateLobbyPollTimer!);
@@ -3824,6 +3889,7 @@ function startPrivateLobbyPoll(debateId: string, mode: string, topic: string): v
 function onPrivateLobbyMatched(data: {
   debate_id: string; topic: string; role?: DebateRole;
   opponent_name: string; opponent_elo: number; opponent_id: string;
+  total_rounds?: number;
 }): void {
   const debateData: CurrentDebate = {
     id: data.debate_id,
@@ -3831,7 +3897,7 @@ function onPrivateLobbyMatched(data: {
     role: data.role ?? 'a',
     mode: selectedMode ?? 'text',
     round: 1,
-    totalRounds: 3,
+    totalRounds: data.total_rounds ?? DEBATE.defaultRounds,
     opponentName: data.opponent_name,
     opponentId: data.opponent_id,
     opponentElo: data.opponent_elo,
@@ -3870,7 +3936,7 @@ async function joinWithCode(code: string): Promise<void> {
       role: 'b',
       mode: result.mode as DebateMode,
       round: 1,
-      totalRounds: 3,
+      totalRounds: result.total_rounds ?? DEBATE.defaultRounds,
       opponentName: result.opponent_name,
       opponentId: result.opponent_id,
       opponentElo: result.opponent_elo,
@@ -3897,7 +3963,7 @@ async function joinWithCode(code: string): Promise<void> {
           role: 'b',
           mode: modResult.mode as DebateMode,
           round: 1,
-          totalRounds: 3,
+          totalRounds: modResult.total_rounds ?? DEBATE.defaultRounds,
           opponentName: modResult.opponent_name || 'Debater A',
           opponentId: modResult.opponent_id,
           opponentElo: modResult.opponent_elo || 1200,
@@ -3967,7 +4033,7 @@ async function loadPendingChallenges(): Promise<void> {
             role: 'b',
             mode: el.dataset.mode as DebateMode,
             round: 1,
-            totalRounds: 3,
+            totalRounds: result.total_rounds ?? DEBATE.defaultRounds,
             opponentName: el.dataset.oppName || 'Challenger',
             opponentId: el.dataset.oppId || null,
             opponentElo: Number(el.dataset.oppElo) || 1200,
@@ -4052,6 +4118,7 @@ interface ModDebateJoinResult {
   opponent_id: string | null;
   opponent_elo: number | null;
   ruleset?: string;
+  total_rounds?: number;
 }
 
 interface ModDebateCheckResult {
@@ -4062,6 +4129,7 @@ interface ModDebateCheckResult {
   debater_b_name: string;
   topic: string | null;
   ruleset: string | null;
+  total_rounds?: number;
 }
 
 function showModQueue(): void {
@@ -4363,10 +4431,14 @@ function showModDebatePicker(): void {
         </select>
       </div>
 
+      <style>${roundPickerCSS()}</style>
+      ${roundPickerHTML()}
+
       <button class="arena-primary-btn" id="mod-debate-create-btn" style="width:100%;">⚔️ CREATE &amp; GET CODE</button>
     </div>
   `;
   screenEl?.appendChild(container);
+  wireRoundPicker(container);
 
   document.getElementById('mod-debate-picker-back')?.addEventListener('click', () => {
     showModQueue();
@@ -4394,6 +4466,7 @@ async function createModDebate(): Promise<void> {
       p_category: category || null,
       p_ranked: ranked,
       p_ruleset: ruleset,
+      p_total_rounds: selectedRounds,
     });
     if (error) throw error;
     const result = data as { debate_id: string; join_code: string };
@@ -4511,7 +4584,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       role: 'a',
       mode,
       round: 1,
-      totalRounds: 3,
+      totalRounds: result.total_rounds ?? DEBATE.defaultRounds,
       opponentName: result.debater_b_name || 'Debater B',
       opponentId: result.debater_b_id,
       opponentElo: 1200,
@@ -4534,7 +4607,7 @@ function onModDebateReady(debateId: string, result: ModDebateCheckResult, mode: 
       role,
       mode,
       round: 1,
-      totalRounds: 3,
+      totalRounds: result.total_rounds ?? DEBATE.defaultRounds,
       opponentName,
       opponentId,
       opponentElo: 1200,

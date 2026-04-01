@@ -125,9 +125,6 @@ const AD_BREAK_DURATION = 60;
 /** Final ad break after last turn, before vote gate */
 const FINAL_AD_DURATION = 30;
 
-/** Total rounds in a moderated debate */
-const TOTAL_ROUNDS = 4;
-
 // Legacy constants kept for backward compat with any code reading them
 const ROUND_DURATION: number = DEBATE.roundDurationSec;
 const BREAK_DURATION: number = DEBATE.breakDurationSec;
@@ -145,10 +142,10 @@ const MAX_ROUNDS: number = DEBATE.defaultRounds;
 // Round 4: B(120s) → pause(10s) → A(120s) → final_ad(30s)
 // ============================================================
 
-function buildTurnSequence(): TurnStep[] {
+function buildTurnSequence(rounds: number): TurnStep[] {
   const steps: TurnStep[] = [];
 
-  for (let round = 1; round <= TOTAL_ROUNDS; round++) {
+  for (let round = 1; round <= rounds; round++) {
     // Odd rounds: a first. Even rounds: b first.
     const first: DebateRole = round % 2 === 1 ? 'a' : 'b';
     const second: DebateRole = first === 'a' ? 'b' : 'a';
@@ -161,7 +158,7 @@ function buildTurnSequence(): TurnStep[] {
     steps.push({ phase: 'speaking', round, side: second, duration: TURN_DURATION });
 
     // Break after round
-    if (round < TOTAL_ROUNDS) {
+    if (round < rounds) {
       steps.push({ phase: 'ad_break', round, side: null, duration: AD_BREAK_DURATION });
     } else {
       steps.push({ phase: 'final_ad', round, side: null, duration: FINAL_AD_DURATION });
@@ -171,7 +168,7 @@ function buildTurnSequence(): TurnStep[] {
   return steps;
 }
 
-const TURN_SEQUENCE: readonly TurnStep[] = buildTurnSequence();
+let turnSequence: TurnStep[] = buildTurnSequence(MAX_ROUNDS);
 
 // ============================================================
 // WEB WORKER TIMER (inline Blob — no external file, no npm dep)
@@ -276,7 +273,7 @@ let debateState: DebateState = {
   role: null,
   status: 'idle',
   round: 0,
-  totalRounds: TOTAL_ROUNDS,
+  totalRounds: MAX_ROUNDS,
   roundTimer: null,
   breakTimer: null,
   timeLeft: 0,
@@ -630,7 +627,7 @@ async function handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void>
 // TURN ENGINE — replaces round management (Session 178)
 //
 // The sequence is deterministic. Both clients compute the same
-// TURN_SEQUENCE array. The engine walks through steps one by one.
+// turnSequence array. The engine walks through steps one by one.
 //
 // Timer authority: the speaking side's timer expiring is the
 // canonical end of a turn. They send 'turn-end'. The other side
@@ -646,7 +643,7 @@ function handleTimerMessage(e: MessageEvent): void {
     debateState.timeLeft = remaining;
     debateState.turn.timeLeft = remaining;
 
-    const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+    const step = turnSequence[debateState.turn.stepIndex];
     if (!step) return;
 
     // Fire appropriate tick event based on phase
@@ -675,9 +672,9 @@ function handleTimerMessage(e: MessageEvent): void {
 
 /** Get the next speaking side after a pause */
 function getNextSpeaker(currentStepIndex: number): DebateRole | null {
-  for (let i = currentStepIndex + 1; i < TURN_SEQUENCE.length; i++) {
-    if (TURN_SEQUENCE[i]!.phase === 'speaking') {
-      return TURN_SEQUENCE[i]!.side;
+  for (let i = currentStepIndex + 1; i < turnSequence.length; i++) {
+    if (turnSequence[i]!.phase === 'speaking') {
+      return turnSequence[i]!.side;
     }
   }
   return null;
@@ -685,12 +682,12 @@ function getNextSpeaker(currentStepIndex: number): DebateRole | null {
 
 /** Begin a specific step in the turn sequence */
 function beginStep(stepIndex: number): void {
-  if (stepIndex >= TURN_SEQUENCE.length) {
+  if (stepIndex >= turnSequence.length) {
     endDebate();
     return;
   }
 
-  const step = TURN_SEQUENCE[stepIndex]!;
+  const step = turnSequence[stepIndex]!;
 
   // Update state
   debateState.turn.stepIndex = stepIndex;
@@ -762,15 +759,15 @@ function beginStep(stepIndex: number): void {
 /** Check if this step is the first speaking turn of a new round */
 function isFirstTurnOfRound(stepIndex: number): boolean {
   if (stepIndex === 0) return true;
-  const current = TURN_SEQUENCE[stepIndex]!;
-  const prev = TURN_SEQUENCE[stepIndex - 1];
+  const current = turnSequence[stepIndex]!;
+  const prev = turnSequence[stepIndex - 1];
   if (!prev) return true;
   return current.phase === 'speaking' && current.round !== prev.round;
 }
 
 /** Called when the timer for the current step expires */
 function onStepExpired(): void {
-  const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+  const step = turnSequence[debateState.turn.stepIndex];
   if (!step) return;
 
   if (step.phase === 'speaking') {
@@ -797,7 +794,7 @@ function advanceStep(): void {
 
 /** Debater presses "Finish Turn" — ends their own turn early */
 export function finishTurn(): void {
-  const step = TURN_SEQUENCE[debateState.turn.stepIndex];
+  const step = turnSequence[debateState.turn.stepIndex];
   if (!step) return;
 
   // Can only finish during a speaking phase that is MY turn
@@ -829,11 +826,13 @@ function endDebate(): void {
 // MAIN API: JOIN / START / LEAVE
 // ============================================================
 
-export async function joinDebate(debateId: string, role: DebateRole): Promise<void> {
+export async function joinDebate(debateId: string, role: DebateRole, totalRounds?: number): Promise<void> {
+  const rounds = totalRounds ?? MAX_ROUNDS;
+  turnSequence = buildTurnSequence(rounds);
   debateState.debateId = debateId;
   debateState.role = role;
   debateState.status = 'connecting';
-  debateState.totalRounds = TOTAL_ROUNDS;
+  debateState.totalRounds = rounds;
   debateState.turn = { ...DEFAULT_TURN_STATE };
 
   if (isPlaceholder()) {
@@ -893,13 +892,14 @@ export function leaveDebate(): void {
     role: null,
     status: 'idle',
     round: 0,
-    totalRounds: TOTAL_ROUNDS,
+    totalRounds: MAX_ROUNDS,
     roundTimer: null,
     breakTimer: null,
     timeLeft: 0,
     isMuted: false,
     turn: { ...DEFAULT_TURN_STATE },
   };
+  turnSequence = buildTurnSequence(MAX_ROUNDS);
 
   fire('left', {});
 }
@@ -972,7 +972,7 @@ export function isConnected(): boolean {
 }
 
 export function getTurnSequence(): readonly TurnStep[] {
-  return TURN_SEQUENCE;
+  return turnSequence;
 }
 
 // ============================================================
