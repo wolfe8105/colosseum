@@ -10,7 +10,7 @@
  */
 
 import { getSupabaseClient, getCurrentUser } from './auth.ts';
-import { ICE_SERVERS as CONFIG_ICE_SERVERS, DEBATE } from './config.ts';
+import { ICE_SERVERS as CONFIG_ICE_SERVERS, SUPABASE_URL, DEBATE } from './config.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Channel type derived from SupabaseClient.channel() */
@@ -111,7 +111,66 @@ interface SignalingMessage {
 // CONSTANTS
 // ============================================================
 
-const ICE_SERVERS: Array<{ urls: string }> = [...CONFIG_ICE_SERVERS];
+const FALLBACK_ICE_SERVERS: RTCIceServer[] = [...CONFIG_ICE_SERVERS];
+let fetchedIceServers: RTCIceServer[] | null = null;
+let turnFetchPromise: Promise<RTCIceServer[] | null> | null = null;
+
+/** Fetch short-lived TURN credentials from Edge Function. Returns null on failure. */
+async function fetchTurnCredentials(): Promise<RTCIceServer[] | null> {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return null;
+
+    const { data } = await supabase.auth.getSession();
+    const jwt = data?.session?.access_token;
+    if (!jwt) return null;
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/turn-credentials`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwt}`,
+      },
+    });
+
+    if (!res.ok) {
+      console.warn(`[WebRTC] TURN credential fetch failed: ${res.status}`);
+      return null;
+    }
+
+    const body = await res.json();
+    if (!body.iceServers || !Array.isArray(body.iceServers)) {
+      console.warn('[WebRTC] TURN response missing iceServers');
+      return null;
+    }
+
+    console.log('[WebRTC] TURN credentials acquired');
+    return body.iceServers as RTCIceServer[];
+  } catch (err) {
+    console.warn('[WebRTC] TURN credential fetch error:', err);
+    return null;
+  }
+}
+
+/** Get ICE servers — uses fetched TURN credentials or falls back to STUN-only. */
+async function getIceServers(): Promise<RTCIceServer[]> {
+  if (fetchedIceServers) return fetchedIceServers;
+
+  // Deduplicate: if a fetch is already in flight, await it
+  if (!turnFetchPromise) {
+    turnFetchPromise = fetchTurnCredentials();
+  }
+
+  const result = await turnFetchPromise;
+  turnFetchPromise = null;
+
+  if (result) {
+    fetchedIceServers = result;
+    return result;
+  }
+
+  return FALLBACK_ICE_SERVERS;
+}
 
 /** Duration of each debater's turn in seconds */
 const TURN_DURATION = 120;
@@ -515,8 +574,8 @@ async function handleSignalingMessage(msg: SignalingMessage): Promise<void> {
 // WEBRTC PEER CONNECTION
 // ============================================================
 
-function createPeerConnection(): RTCPeerConnection {
-  peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+function createPeerConnection(iceServers: RTCIceServer[]): RTCPeerConnection {
+  peerConnection = new RTCPeerConnection({ iceServers });
 
   if (localStream) {
     localStream.getTracks().forEach((track) => {
@@ -594,7 +653,10 @@ async function attemptIceRestart(): Promise<void> {
 
 async function createOffer(): Promise<void> {
   try {
-    if (!peerConnection) createPeerConnection();
+    if (!peerConnection) {
+      const servers = await getIceServers();
+      createPeerConnection(servers);
+    }
     const offer = await peerConnection!.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
     await peerConnection!.setLocalDescription(offer);
     sendSignal('offer', offer);
@@ -605,7 +667,10 @@ async function createOffer(): Promise<void> {
 
 async function handleOffer(offer: RTCSessionDescriptionInit): Promise<void> {
   try {
-    if (!peerConnection) createPeerConnection();
+    if (!peerConnection) {
+      const servers = await getIceServers();
+      createPeerConnection(servers);
+    }
     await peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await peerConnection!.createAnswer();
     await peerConnection!.setLocalDescription(answer);
