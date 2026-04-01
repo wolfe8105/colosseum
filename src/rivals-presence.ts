@@ -216,7 +216,7 @@ async function _buildRivalSet(): Promise<void> {
   }
 }
 
-function _startPresence(): void {
+async function _startPresence(): Promise<void> {
   const supabase = getSupabaseClient();
   const user = getCurrentUser();
   if (!supabase || !user) return;
@@ -226,8 +226,14 @@ function _startPresence(): void {
     presenceChannel = null;
   }
 
+  // ADV-2: Set auth token for Realtime private channel RLS
+  try { await supabase.realtime.setAuth(); } catch { /* session not ready */ }
+
   presenceChannel = supabase.channel('global-online', {
-    config: { presence: { key: user.id } },
+    config: {
+      private: true, // ADV-2: enforce RLS on realtime.messages
+      presence: { key: user.id },
+    },
   });
 
   // When any user joins — check if they're a rival
@@ -251,7 +257,7 @@ function _startPresence(): void {
     }
   });
 
-  presenceChannel.subscribe(async (status: string) => {
+  presenceChannel.subscribe(async (status: string, err?: Error) => {
     if (status === 'SUBSCRIBED') {
       // Track own presence
       const profile = (await import('./auth.ts')).getCurrentProfile();
@@ -260,6 +266,9 @@ function _startPresence(): void {
         username: profile?.username ?? null,
         display_name: profile?.display_name ?? null,
       });
+    } else if (status === 'CHANNEL_ERROR') {
+      // ADV-2: RLS rejected — log and degrade gracefully
+      console.warn('[RivalsPresence] Channel denied:', err?.message ?? 'no permissions');
     }
   });
 }
@@ -276,7 +285,7 @@ export async function init(): Promise<void> {
 
   initialized = true;
   await _buildRivalSet();
-  _startPresence();
+  await _startPresence();
 }
 
 export function destroy(): void {

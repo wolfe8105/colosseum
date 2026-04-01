@@ -406,14 +406,20 @@ function enforceUnmute(): void {
 // SIGNALING VIA SUPABASE REALTIME
 // ============================================================
 
-function setupSignaling(debateId: string): void {
+async function setupSignaling(debateId: string): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
+
+  // ADV-2: Set auth token for Realtime private channel RLS
+  try { await supabase.realtime.setAuth(); } catch { /* session not ready — subscribe will fail gracefully */ }
 
   const channelName = 'debate-' + debateId;
 
   signalingChannel = supabase.channel(channelName, {
-    config: { presence: { key: getCurrentUser()?.id || 'anon' } },
+    config: {
+      private: true, // ADV-2: enforce RLS on realtime.messages
+      presence: { key: getCurrentUser()?.id || 'anon' },
+    },
   });
 
   signalingChannel.on('broadcast', { event: 'signal' }, (payload: Record<string, unknown>) => {
@@ -436,10 +442,14 @@ function setupSignaling(debateId: string): void {
     }
   });
 
-  signalingChannel.subscribe(async (status: string) => {
+  signalingChannel.subscribe(async (status: string, err?: Error) => {
     if (status === 'SUBSCRIBED') {
       await signalingChannel!.track({ role: debateState.role });
       fire('signalingReady', { channel: channelName });
+    } else if (status === 'CHANNEL_ERROR') {
+      // ADV-2: RLS rejected — user is not a debate participant, or AI-local debate
+      console.warn('[WebRTC] Signaling channel denied:', err?.message ?? 'no permissions');
+      fire('error', { message: 'Signaling channel access denied.' });
     }
   });
 }
@@ -845,7 +855,7 @@ export async function joinDebate(debateId: string, role: DebateRole, totalRounds
   await requestMic();
   // Start muted — nobody speaks until startLive()
   enforceMute();
-  setupSignaling(debateId);
+  await setupSignaling(debateId);
   fire('joining', { debateId, role });
 }
 
