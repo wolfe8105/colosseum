@@ -168,8 +168,11 @@ interface RankedCheckResult {
 
 interface UpdateDebateResult {
   ranked?: boolean;
+  winner?: string;
   elo_change_a?: number;
   elo_change_b?: number;
+  vote_count_a?: number;
+  vote_count_b?: number;
 }
 
 interface ReferenceItem {
@@ -2868,9 +2871,10 @@ export async function endCurrentDebate(): Promise<void> {
   }
 
   // Generate scores
-  let scoreA: number;
-  let scoreB: number;
+  let scoreA: number | null = null;
+  let scoreB: number | null = null;
   let aiScores: AIScoreResult | null = null;
+  let winner: string | null = null;
 
   if (debate.mode === 'ai' && debate.messages.length > 0) {
     // Show "judging" state while AI scores
@@ -2898,17 +2902,18 @@ export async function endCurrentDebate(): Promise<void> {
       scoreA = 60 + Math.floor(Math.random() * 30);
       scoreB = 60 + Math.floor(Math.random() * 30);
     }
+    winner = scoreA >= scoreB ? 'a' : 'b';
   } else if (debate.mode === 'ai' || !debate.opponentId) {
     scoreA = 60 + Math.floor(Math.random() * 30);
     scoreB = 60 + Math.floor(Math.random() * 30);
+    winner = scoreA >= scoreB ? 'a' : 'b';
   } else {
-    scoreA = 70;
-    scoreB = 70;
+    // Human PvP — server determines winner from spectator votes
+    scoreA = null;
+    scoreB = null;
+    winner = null;
   }
-  const winner: DebateRole = scoreA >= scoreB ? 'a' : 'b';
-  const didWin = winner === debate.role;
 
-  nudge('final_score', didWin ? '🏆 Victory. The arena remembers.' : '💀 Defeat. Come back stronger.', didWin ? 'success' : 'info');
   let eloChangeMe = 0;
   if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     try {
@@ -2920,9 +2925,16 @@ export async function endCurrentDebate(): Promise<void> {
         p_score_a: scoreA,
         p_score_b: scoreB,
       });
-      if (!error && result && (result as UpdateDebateResult).ranked) {
+      if (!error && result) {
         const r = result as UpdateDebateResult;
-        eloChangeMe = debate.role === 'a' ? (r.elo_change_a || 0) : (r.elo_change_b || 0);
+        // Server returns authoritative winner (especially for human PvP)
+        if (r.winner) winner = r.winner;
+        // For human PvP, use vote counts as display scores
+        if (scoreA == null && r.vote_count_a != null) scoreA = r.vote_count_a;
+        if (scoreB == null && r.vote_count_b != null) scoreB = r.vote_count_b;
+        if (r.ranked) {
+          eloChangeMe = debate.role === 'a' ? (r.elo_change_a || 0) : (r.elo_change_b || 0);
+        }
       }
     } catch (e) {
       console.warn('[Arena] Finalize error:', e);
@@ -2934,11 +2946,21 @@ export async function endCurrentDebate(): Promise<void> {
 
       try {
         const hasMulti = hasMultiplier(equippedForDebate);
-        const stakeResult = await settleStakes(debate.id, winner, hasMulti ? 2 : 1);
+        const stakeResult = await settleStakes(debate.id, winner || 'draw', hasMulti ? 2 : 1);
         debate._stakingResult = stakeResult;
       } catch { /* warned */ }
     }
   }
+
+  // Ensure scores have display values
+  if (scoreA == null) scoreA = 0;
+  if (scoreB == null) scoreB = 0;
+  if (!winner) winner = 'draw';
+
+  const isDraw = winner === 'draw';
+  const didWin = !isDraw && winner === debate.role;
+
+  nudge('final_score', isDraw ? '🤝 Draw. Evenly matched.' : didWin ? '🏆 Victory. The arena remembers.' : '💀 Defeat. Come back stronger.', isDraw ? 'info' : didWin ? 'success' : 'info');
 
   // Clean up power-up state
   if (silenceTimer) { clearInterval(silenceTimer); silenceTimer = null; }
@@ -2965,8 +2987,8 @@ export async function endCurrentDebate(): Promise<void> {
   post.className = 'arena-post arena-fade-in';
   post.innerHTML = `
     <div class="arena-rank-badge ${debate.ruleset === 'unplugged' ? 'unplugged' : debate.ranked ? 'ranked' : 'casual'}">${debate.ruleset === 'unplugged' ? '\uD83C\uDFB8 UNPLUGGED' : debate.ranked ? '\u2694\uFE0F RANKED' : '\uD83C\uDF7A CASUAL'}</div>
-    <div class="arena-post-verdict">${didWin ? '\uD83C\uDFC6' : '\uD83D\uDC80'}</div>
-    <div class="arena-post-title">${didWin ? 'VICTORY' : 'DEFEAT'}</div>
+    <div class="arena-post-verdict">${isDraw ? '\uD83E\uDD1D' : didWin ? '\uD83C\uDFC6' : '\uD83D\uDC80'}</div>
+    <div class="arena-post-title">${isDraw ? 'DRAW' : didWin ? 'VICTORY' : 'DEFEAT'}</div>
     ${eloHtml}
     ${debate._stakingResult && debate._stakingResult.payout != null ? `
     <div class="arena-staking-result">
@@ -2980,12 +3002,12 @@ export async function endCurrentDebate(): Promise<void> {
     <div class="arena-post-score">
       <div class="arena-post-side">
         <div class="arena-post-side-label">${escapeHTML(myName)}</div>
-        <div class="arena-post-side-score ${debate.role === winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreA : scoreB)}</div>
+        <div class="arena-post-side-score ${isDraw ? 'neutral' : debate.role === winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreA : scoreB)}</div>
       </div>
       <div class="arena-post-divider">\u2014</div>
       <div class="arena-post-side">
         <div class="arena-post-side-label${debate.opponentId ? ' arena-clickable-opp' : ''}" ${debate.opponentId ? `data-opp-id="${escapeHTML(debate.opponentId)}"` : ''}>${escapeHTML(debate.opponentName)}</div>
-        <div class="arena-post-side-score ${debate.role !== winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreB : scoreA)}</div>
+        <div class="arena-post-side-score ${isDraw ? 'neutral' : debate.role !== winner ? 'winner' : 'loser'}">${Number(debate.role === 'a' ? scoreB : scoreA)}</div>
       </div>
     </div>
     ${aiScores ? renderAIScorecard(myName, debate.opponentName, debate.role, aiScores) : ''}
@@ -3021,7 +3043,7 @@ export async function endCurrentDebate(): Promise<void> {
     shareResult({
       debateId: debate.id,
       topic: debate.topic,
-      winner: didWin ? myName : debate.opponentName,
+      winner: isDraw ? 'Draw' : didWin ? myName : debate.opponentName,
       spectators: 0,
     });
   });
