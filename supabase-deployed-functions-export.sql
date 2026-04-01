@@ -688,7 +688,7 @@ $function$
 -- check_private_lobby
 -- --------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.check_private_lobby(p_debate_id uuid)
- RETURNS TABLE(status text, opponent_id uuid, opponent_name text, opponent_elo integer, player_b_ready boolean)
+ RETURNS TABLE(status text, opponent_id uuid, opponent_name text, opponent_elo integer, player_b_ready boolean, total_rounds integer)
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
@@ -713,7 +713,8 @@ BEGIN
       NULL::uuid,
       NULL::text,
       NULL::int,
-      v_debate.player_b_ready;
+      v_debate.player_b_ready,
+      COALESCE(v_debate.total_rounds, 4);
   ELSE
     RETURN QUERY
     SELECT
@@ -721,7 +722,8 @@ BEGIN
       v_debate.debater_b,
       COALESCE(p.display_name, p.username, 'Opponent')::text,
       COALESCE(p.elo_rating, 1200)::int,
-      v_debate.player_b_ready
+      v_debate.player_b_ready,
+      COALESCE(v_debate.total_rounds, 4)
     FROM profiles p WHERE p.id = v_debate.debater_b;
   END IF;
 END;
@@ -1631,7 +1633,7 @@ $function$
 -- --------------------------------------------------------
 -- create_private_lobby
 -- --------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid, p_ruleset text DEFAULT 'amplified'::text)
+CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid, p_ruleset text DEFAULT 'amplified'::text, p_total_rounds int DEFAULT 4)
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1642,6 +1644,7 @@ DECLARE
   v_code      text := NULL;
   v_attempts  int  := 0;
   v_candidate text;
+  v_total_rounds int;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -1663,6 +1666,7 @@ BEGIN
       RAISE EXCEPTION 'Not a member of this group';
     END IF;
   END IF;
+  v_total_rounds := CASE WHEN p_total_rounds IN (4, 6, 8, 10) THEN p_total_rounds ELSE 4 END;
   IF p_visibility = 'code' THEN
     LOOP
       v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
@@ -1679,11 +1683,11 @@ BEGIN
   INSERT INTO arena_debates (
     debater_a, mode, topic, category, ranked, ruleset,
     status, visibility, join_code, invited_user_id, lobby_group_id,
-    player_a_ready
+    player_a_ready, total_rounds
   ) VALUES (
     v_user_id, p_mode, p_topic, p_category, p_ranked, p_ruleset,
     'pending', p_visibility, v_code, p_invited_user_id, p_group_id,
-    true
+    true, v_total_rounds
   )
   RETURNING id INTO v_debate_id;
   PERFORM log_event(
@@ -1692,7 +1696,7 @@ BEGIN
     p_debate_id  := v_debate_id,
     p_category   := p_category,
     p_side       := NULL,
-    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode, 'ruleset', p_ruleset)
+    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode, 'ruleset', p_ruleset, 'total_rounds', v_total_rounds)
   );
   RETURN QUERY SELECT v_debate_id, v_code;
 END;
@@ -3552,7 +3556,7 @@ $function$
 -- join_private_lobby
 -- --------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.join_private_lobby(p_debate_id uuid DEFAULT NULL::uuid, p_join_code text DEFAULT NULL::text)
- RETURNS TABLE(debate_id uuid, status text, topic text, mode text, opponent_name text, opponent_id uuid, opponent_elo integer)
+ RETURNS TABLE(debate_id uuid, status text, topic text, mode text, opponent_name text, opponent_id uuid, opponent_elo integer, ruleset text, total_rounds integer)
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
@@ -3632,7 +3636,9 @@ BEGIN
     v_debate.mode,
     v_opponent_name,
     v_debate.debater_a,
-    v_opponent_elo;
+    v_opponent_elo,
+    COALESCE(v_debate.ruleset, 'amplified')::text,
+    COALESCE(v_debate.total_rounds, 4);
 END;
 $function$
 ;
