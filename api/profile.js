@@ -17,6 +17,7 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const BASE_URL = process.env.BASE_URL || 'https://themoderator.app';
 
 // In-memory cache: username → { html, expiresAt }
 // Survives across requests within the same serverless instance.
@@ -85,7 +86,7 @@ function buildProfileHtml(profile) {
   const safeAvatarUrl = emojiAvatar ? null : sanitizeAvatarUrl(p.avatar_url);
 
   // OG tags
-  const ogTitle = `${displayName} — Elo ${elo} | The Colosseum`;
+  const ogTitle = `${displayName} — Elo ${elo} | The Moderator`;
   const ogDesc = bio !== 'No bio yet.'
     ? `${bio.substring(0, 120)} — ${wins}W ${losses}L ${draws}D`
     : `${rank.name} debater — ${wins}W ${losses}L ${draws}D — Level ${level}`;
@@ -109,7 +110,7 @@ function buildProfileHtml(profile) {
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="${ogUrl}">
-<meta property="og:site_name" content="The Colosseum">
+<meta property="og:site_name" content="The Moderator">
 <meta property="profile:username" content="${username}">
 
 <!-- Twitter Card -->
@@ -353,7 +354,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 
   <!-- FOOTER -->
   <div class="profile-footer">
-    <a href="${BASE_URL}">The Colosseum</a> — Where opinions fight.
+    <a href="${BASE_URL}">The Moderator</a> — Where opinions fight.
   </div>
 
 </div>
@@ -370,7 +371,7 @@ function build404Html(username) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1a2d4a">
-<title>User Not Found — The Colosseum</title>
+<title>User Not Found — The Moderator</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -393,7 +394,7 @@ a{
 <body>
   <h1>GLADIATOR NOT FOUND</h1>
   <p>"${safe}" hasn't entered the arena yet.</p>
-  <a href="${BASE_URL}">Enter The Colosseum</a>
+  <a href="${BASE_URL}">Enter The Moderator</a>
 </body>
 </html>`;
 }
