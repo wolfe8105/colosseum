@@ -61,15 +61,15 @@ CREATE POLICY "Users insert own profile" ON public.profiles
 -- ========================
 CREATE TABLE IF NOT EXISTS public.user_settings (
   user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  notif_challenges BOOLEAN DEFAULT true,
-  notif_results BOOLEAN DEFAULT true,
+  notif_challenge BOOLEAN DEFAULT true,
+  notif_debate BOOLEAN DEFAULT true,
   notif_reactions BOOLEAN DEFAULT true,
-  notif_follows BOOLEAN DEFAULT true,
-  privacy_public_profile BOOLEAN DEFAULT true,
-  privacy_debate_history BOOLEAN DEFAULT true,
-  privacy_allow_challenges BOOLEAN DEFAULT true,
-  audio_auto_mute BOOLEAN DEFAULT false,
-  audio_effects BOOLEAN DEFAULT true,
+  notif_follow BOOLEAN DEFAULT true,
+  privacy_public BOOLEAN DEFAULT true,
+  privacy_online BOOLEAN DEFAULT true,
+  privacy_challenges BOOLEAN DEFAULT true,
+  audio_mute BOOLEAN DEFAULT false,
+  audio_sfx BOOLEAN DEFAULT true,
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 

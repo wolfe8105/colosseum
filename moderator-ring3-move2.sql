@@ -899,15 +899,15 @@ $$;
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION update_settings(
-  p_notif_challenges BOOLEAN DEFAULT NULL,
-  p_notif_results BOOLEAN DEFAULT NULL,
+  p_notif_challenge BOOLEAN DEFAULT NULL,
+  p_notif_debate BOOLEAN DEFAULT NULL,
   p_notif_reactions BOOLEAN DEFAULT NULL,
-  p_notif_follows BOOLEAN DEFAULT NULL,
-  p_privacy_public_profile BOOLEAN DEFAULT NULL,
-  p_privacy_debate_history BOOLEAN DEFAULT NULL,
-  p_privacy_allow_challenges BOOLEAN DEFAULT NULL,
-  p_audio_auto_mute BOOLEAN DEFAULT NULL,
-  p_audio_effects BOOLEAN DEFAULT NULL
+  p_notif_follow BOOLEAN DEFAULT NULL,
+  p_privacy_public BOOLEAN DEFAULT NULL,
+  p_privacy_online BOOLEAN DEFAULT NULL,
+  p_privacy_challenges BOOLEAN DEFAULT NULL,
+  p_audio_mute BOOLEAN DEFAULT NULL,
+  p_audio_sfx BOOLEAN DEFAULT NULL
 )
 RETURNS JSON
 LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -923,15 +923,15 @@ BEGIN
   ON CONFLICT (user_id) DO NOTHING;
 
   UPDATE public.user_settings
-  SET notif_challenges = COALESCE(p_notif_challenges, notif_challenges),
-      notif_results = COALESCE(p_notif_results, notif_results),
+  SET notif_challenge = COALESCE(p_notif_challenge, notif_challenge),
+      notif_debate = COALESCE(p_notif_debate, notif_debate),
       notif_reactions = COALESCE(p_notif_reactions, notif_reactions),
-      notif_follows = COALESCE(p_notif_follows, notif_follows),
-      privacy_public_profile = COALESCE(p_privacy_public_profile, privacy_public_profile),
-      privacy_debate_history = COALESCE(p_privacy_debate_history, privacy_debate_history),
-      privacy_allow_challenges = COALESCE(p_privacy_allow_challenges, privacy_allow_challenges),
-      audio_auto_mute = COALESCE(p_audio_auto_mute, audio_auto_mute),
-      audio_effects = COALESCE(p_audio_effects, audio_effects),
+      notif_follow = COALESCE(p_notif_follow, notif_follow),
+      privacy_public = COALESCE(p_privacy_public, privacy_public),
+      privacy_online = COALESCE(p_privacy_online, privacy_online),
+      privacy_challenges = COALESCE(p_privacy_challenges, privacy_challenges),
+      audio_mute = COALESCE(p_audio_mute, audio_mute),
+      audio_sfx = COALESCE(p_audio_sfx, audio_sfx),
       updated_at = now()
   WHERE user_id = v_user_id;
 
