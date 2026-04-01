@@ -646,7 +646,7 @@ DECLARE
   v_user_id UUID := auth.uid();
   v_current JSONB;
   v_merged JSONB;
-  v_total_sections INTEGER := 12;
+ v_total_sections INTEGER := 20;
   v_completed INTEGER;
   v_pct INTEGER;
 BEGIN
