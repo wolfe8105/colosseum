@@ -9,7 +9,7 @@
  * Date.now() drift-free countdown, enforced muting of non-speaking side.
  */
 
-import { getSupabaseClient, getCurrentUser } from './auth.ts';
+import { getSupabaseClient, getCurrentUser, onChange } from './auth.ts';
 import { ICE_SERVERS as CONFIG_ICE_SERVERS, SUPABASE_URL, DEBATE } from './config.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -1097,3 +1097,7 @@ const webrtc = {
 export default webrtc;
 
 window.addEventListener('beforeunload', leaveDebate);
+
+// Session 224: Logout cleanup — stop mic + close peer connection when user logs out.
+// beforeunload is unreliable on mobile Safari; onChange fires reliably on all platforms.
+onChange((user) => { if (!user) leaveDebate(); });
