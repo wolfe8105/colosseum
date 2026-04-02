@@ -324,7 +324,7 @@ function renderList(): string {
     .join('')
     + (hasMore ? `
       <div style="text-align:center;padding:16px;">
-        <button onclick="ModeratorLeaderboard.loadMore()" style="
+        <button data-action="load-more" style="
           padding:10px 28px;border-radius:8px;border:1px solid var(--mod-accent-border);
           background:var(--mod-accent-muted);color:var(--mod-accent);
           font-family:var(--mod-font-ui);font-size:13px;font-weight:700;
@@ -491,6 +491,9 @@ document.addEventListener('click', (e) => {
       break;
     case 'close-elo-explainer':
       document.getElementById('elo-explainer-modal')?.remove();
+      break;
+    case 'load-more':
+      loadMore();
       break;
   }
 });
