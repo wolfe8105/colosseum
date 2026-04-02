@@ -12,9 +12,9 @@
 const CREDENTIAL_TTL = 86400; // 24 hours — covers any debate length
 
 const ALLOWED_ORIGINS = [
-  'https://colosseum-six.vercel.app',
-  'https://thecolosseum.app',
   'https://themoderator.app',
+  'https://the-moderator.vercel.app',
+  'http://localhost:3000',
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
