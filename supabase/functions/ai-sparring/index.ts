@@ -21,9 +21,9 @@ const MAX_TOKENS = 200;
 const SCORE_MAX_TOKENS = 800;
 
 const ALLOWED_ORIGINS = [
-  'https://colosseum-six.vercel.app',
-  'https://thecolosseum.app',
   'https://themoderator.app',
+  'https://the-moderator.vercel.app',
+  'http://localhost:3000',
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
