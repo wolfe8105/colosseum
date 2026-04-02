@@ -34,12 +34,62 @@ export interface EventMetadata extends Record<string, unknown> {
 }
 
 // ============================================================
+// KEY MIGRATION (colo_ → mod_) + OPT-OUT
+// ============================================================
+
+const KEY_MIGRATIONS: [string, string][] = [
+  ['colo_vid', 'mod_vid'],
+  ['colo_src', 'mod_src'],
+  ['colo_uid_seen', 'mod_uid_seen'],
+];
+
+let _migrated = false;
+function migrateKeys(): void {
+  if (_migrated) return;
+  _migrated = true;
+  try {
+    for (const [oldKey, newKey] of KEY_MIGRATIONS) {
+      const val = localStorage.getItem(oldKey);
+      if (val && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, val);
+      }
+      if (val) localStorage.removeItem(oldKey);
+    }
+  } catch {
+    /* swallow — private browsing or localStorage blocked */
+  }
+}
+
+/** Returns true if user has opted out of analytics tracking. */
+export function isOptedOut(): boolean {
+  try {
+    return localStorage.getItem('mod_analytics_opt_out') === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Set analytics opt-out. Pass true to opt out, false to opt back in. */
+export function setAnalyticsOptOut(optOut: boolean): void {
+  try {
+    if (optOut) {
+      localStorage.setItem('mod_analytics_opt_out', '1');
+    } else {
+      localStorage.removeItem('mod_analytics_opt_out');
+    }
+  } catch {
+    /* swallow */
+  }
+}
+
+// ============================================================
 // VISITOR ID
 // ============================================================
 
 export function getVisitorId(): string {
   try {
-    let id = localStorage.getItem('colo_vid');
+    migrateKeys();
+    let id = localStorage.getItem('mod_vid');
     if (!id) {
       id =
         typeof crypto !== 'undefined' && crypto.randomUUID
@@ -48,7 +98,7 @@ export function getVisitorId(): string {
               const r = (Math.random() * 16) | 0;
               return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
             });
-      localStorage.setItem('colo_vid', id);
+      localStorage.setItem('mod_vid', id);
     }
     return id;
   } catch {
@@ -63,7 +113,8 @@ export function getVisitorId(): string {
 
 export function getTrafficSource(): TrafficSource {
   try {
-    const cached = localStorage.getItem('colo_src');
+    migrateKeys();
+    const cached = localStorage.getItem('mod_src');
     if (cached) return JSON.parse(cached) as TrafficSource;
 
     const params = new URLSearchParams(location.search);
@@ -73,7 +124,7 @@ export function getTrafficSource(): TrafficSource {
       utm_medium: params.get('utm_medium') || null,
       utm_campaign: params.get('utm_campaign') || null,
     };
-    localStorage.setItem('colo_src', JSON.stringify(src));
+    localStorage.setItem('mod_src', JSON.stringify(src));
     return src;
   } catch {
     return { referrer: document.referrer || null, utm_source: null, utm_medium: null, utm_campaign: null };
@@ -105,6 +156,8 @@ export function getUserId(): string | null {
 
 export function trackEvent(eventType: string, extra?: Record<string, unknown>): void {
   try {
+    if (isOptedOut()) return;
+
     const vid = getVisitorId();
     const src = getTrafficSource();
     const userId = getUserId();
@@ -155,14 +208,17 @@ export function trackEvent(eventType: string, extra?: Record<string, unknown>): 
 
 export function checkSignup(): void {
   try {
+    if (isOptedOut()) return;
+
+    migrateKeys();
     const userId = getUserId();
-    const wasSeen = localStorage.getItem('colo_uid_seen');
+    const wasSeen = localStorage.getItem('mod_uid_seen');
 
     if (userId && !wasSeen) {
-      localStorage.setItem('colo_uid_seen', userId);
+      localStorage.setItem('mod_uid_seen', userId);
       trackEvent('signup', { new_user: true });
     } else if (userId && wasSeen !== userId) {
-      localStorage.setItem('colo_uid_seen', userId);
+      localStorage.setItem('mod_uid_seen', userId);
       trackEvent('signup', { new_user: true, switched: true });
     }
   } catch {
@@ -181,4 +237,6 @@ export const ModeratorAnalytics = {
   getVisitorId,
   getTrafficSource,
   getUserId,
+  isOptedOut,
+  setAnalyticsOptOut,
 } as const;
