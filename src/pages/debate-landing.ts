@@ -173,8 +173,8 @@ function render(): void {
 
   if (!hasVoted) {
     html += `<div class="vote-row">
-      <button class="vote-btn yes" onclick="castVote('yes')"><span class="vote-label">${escHtml(debate.sideA)}</span><span class="vote-sub">Pick this side</span></button>
-      <button class="vote-btn no" onclick="castVote('no')"><span class="vote-label">${escHtml(debate.sideB)}</span><span class="vote-sub">Pick this side</span></button>
+      <button class="vote-btn yes" data-action="cast-vote" data-side="yes"><span class="vote-label">${escHtml(debate.sideA)}</span><span class="vote-sub">Pick this side</span></button>
+      <button class="vote-btn no" data-action="cast-vote" data-side="no"><span class="vote-label">${escHtml(debate.sideB)}</span><span class="vote-sub">Pick this side</span></button>
     </div>`;
   } else {
     const yV = debate.yesVotes + (!voteCounted && votedSide === 'yes' ? 1 : 0);
@@ -194,10 +194,10 @@ function render(): void {
 
   if (hasVoted) {
     html += `<div class="share-row">
-      <button class="share-btn" onclick="shareDebate('copy')">📋 Copy Link</button>
-      <button class="share-btn" onclick="shareDebate('x')">𝕏 Share</button>
-      <button class="share-btn" onclick="shareDebate('native')">📤 Share</button>
-      <button class="share-btn" onclick="downloadCard()">🖼️ Save Card</button>
+      <button class="share-btn" data-action="share-debate" data-method="copy">📋 Copy Link</button>
+      <button class="share-btn" data-action="share-debate" data-method="x">𝕏 Share</button>
+      <button class="share-btn" data-action="share-debate" data-method="native">📤 Share</button>
+      <button class="share-btn" data-action="download-card">🖼️ Save Card</button>
     </div>`;
   }
 
@@ -221,10 +221,10 @@ function render(): void {
     <div class="cta-headline">⚔️ Want to debate this?</div>
     <div class="cta-sub">Sign up in 10 seconds. Argue your side. Win Elo. Earn glory.</div>
     <div class="cta-oauth-row">
-      <button class="oauth-btn google" onclick="goSignup()">Google</button>
-      <button class="oauth-btn apple" onclick="goSignup()">Apple</button>
+      <button class="oauth-btn google" data-action="go-signup">Google</button>
+      <button class="oauth-btn apple" data-action="go-signup">Apple</button>
     </div>
-    <span class="cta-email-link" onclick="goSignup()">or use email →</span>
+    <span class="cta-email-link" data-action="go-signup">or use email →</span>
   </div>`;
 
   // More Debates
@@ -235,7 +235,7 @@ function render(): void {
       const d = DEBATES[slug];
       if (!d) return;
       const dTotal = d.yesVotes + d.noVotes;
-      html += `<div class="mini-debate" onclick="window.location.href='/debate?topic=${encodeURIComponent(slug)}'">
+      html += `<div class="mini-debate" data-action="go-debate" data-slug="${encodeURIComponent(slug)}"
         <div class="mini-topic">${escHtml(d.topic)}</div>
         <div class="mini-meta"><span class="mini-cat">${escHtml(d.catIcon)} ${escHtml(d.catLabel)}</span><span>${dTotal.toLocaleString()} votes</span></div>
       </div>`;
@@ -348,14 +348,30 @@ function goSignup(): void {
 }
 
 // ============================================================
-// EXPOSE TO ONCLICK HANDLERS (used in dynamic innerHTML)
+// EVENT DELEGATION (replaces inline onclick handlers)
 // ============================================================
 
-const win = window as unknown as Record<string, unknown>;
-win.castVote = castVote;
-win.shareDebate = shareDebate;
-win.downloadCard = downloadCard;
-win.goSignup = goSignup;
+document.addEventListener('click', (e) => {
+  const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!el) return;
+  switch (el.dataset.action) {
+    case 'cast-vote':
+      castVote(el.dataset.side!);
+      break;
+    case 'share-debate':
+      shareDebate(el.dataset.method!);
+      break;
+    case 'download-card':
+      downloadCard();
+      break;
+    case 'go-signup':
+      goSignup();
+      break;
+    case 'go-debate':
+      window.location.href = '/debate?topic=' + el.dataset.slug!;
+      break;
+  }
+});
 
 // ============================================================
 // INIT

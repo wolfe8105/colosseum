@@ -755,8 +755,13 @@ export async function showUserProfile(userId: string): Promise<void> {
     <div style="display:flex;gap:8px;">
       <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:var(--mod-bg-control);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);' : 'background:var(--mod-accent);color:var(--mod-bg-base);'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
       <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:var(--mod-magenta);border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
-      <button style="padding:12px 16px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" onclick="document.getElementById('user-profile-modal')?.remove()">✕</button>
+      <button id="upm-close-btn" style="padding:12px 16px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;">✕</button>
     </div>`;
+
+  // Close button handler
+  document.getElementById('upm-close-btn')?.addEventListener('click', () => {
+    document.getElementById('user-profile-modal')?.remove();
+  });
 
   // Follow button handler
   const followBtn = document.getElementById('upm-follow-btn');
@@ -1002,10 +1007,13 @@ export function requireAuth(actionLabel?: string): boolean {
       <div style="font-size:14px;color:#ccc;margin-bottom:20px;">Sign in to ${safeLabel}</div>
       <a href="moderator-plinko.html?returnTo=${returnTo}" style="display:block;background:var(--mod-accent);color:var(--mod-bg-base);font-family:var(--mod-font-display);font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
       <a href="moderator-login.html?returnTo=${returnTo}" style="display:block;color:var(--mod-accent);font-size:14px;text-decoration:none;">Already have an account? Log in</a>
-      <button onclick="this.closest('#auth-gate-modal').remove()" style="margin-top:14px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;">Maybe later</button>
+      <button id="auth-gate-close-btn" style="margin-top:14px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;">Maybe later</button>
     </div>
   `;
   document.body.appendChild(modal);
+  document.getElementById('auth-gate-close-btn')?.addEventListener('click', () => {
+    document.getElementById('auth-gate-modal')?.remove();
+  });
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
   return false;
 }

@@ -466,24 +466,24 @@ body {
 
   <div class="top-bar">
     <div class="top-bar-title">GROUPS</div>
-    <button class="create-btn" onclick="openCreateModal()">+ CREATE</button>
+    <button class="create-btn" data-action="open-create-modal">+ CREATE</button>
   </div>
 
   <div class="tabs" id="lobby-tabs">
-    <button class="tab-btn active" onclick="switchTab('discover')">Discover</button>
-    <button class="tab-btn" onclick="switchTab('mine')">My Groups</button>
-    <button class="tab-btn" onclick="switchTab('leaderboard')">Rankings</button>
+    <button class="tab-btn active" data-action="switch-tab" data-tab="discover">Discover</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="mine">My Groups</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="leaderboard">Rankings</button>
   </div>
 
   <!-- Discover tab -->
   <div id="tab-discover">
     <div class="category-filter" id="cat-filter">
-      <div class="cat-pill active" onclick="filterCategory(null, this)">All</div>
-      <div class="cat-pill" onclick="filterCategory('politics', this)">🏛️ Politics</div>
-      <div class="cat-pill" onclick="filterCategory('sports', this)">🏆 Sports</div>
-      <div class="cat-pill" onclick="filterCategory('entertainment', this)">🎬 Entertainment</div>
-      <div class="cat-pill" onclick="filterCategory('music', this)">🎵 Music</div>
-      <div class="cat-pill" onclick="filterCategory('couples_court', this)">💔 Couples Court</div>
+      <div class="cat-pill active" data-action="filter-category">All</div>
+      <div class="cat-pill" data-action="filter-category" data-category="politics">🏛️ Politics</div>
+      <div class="cat-pill" data-action="filter-category" data-category="sports">🏆 Sports</div>
+      <div class="cat-pill" data-action="filter-category" data-category="entertainment">🎬 Entertainment</div>
+      <div class="cat-pill" data-action="filter-category" data-category="music">🎵 Music</div>
+      <div class="cat-pill" data-action="filter-category" data-category="couples_court">💔 Couples Court</div>
     </div>
     <div class="content" id="discover-list">
       <div class="loading-state">Loading groups…</div>
@@ -511,7 +511,7 @@ body {
 <div id="view-detail" style="display:none; flex-direction:column; min-height:100dvh;">
 
   <div class="top-bar">
-    <div class="back-btn" onclick="showLobby()">←</div>
+    <div class="back-btn" data-action="show-lobby">←</div>
     <div class="top-bar-title" id="detail-top-name">GROUP</div>
     <div style="width:36px;"></div>
   </div>
@@ -532,15 +532,15 @@ body {
     </div>
   </div>
 
-  <button class="join-btn join" id="join-btn" onclick="toggleMembership()">JOIN GROUP</button>
+  <button class="join-btn join" id="join-btn" data-action="toggle-membership">JOIN GROUP</button>
   <!-- E211: Group hot take posting — WIRED (Session 105)
        E212/E215: Group vs Group (GvG) — WIRED (Session 116) -->
-  <button class="gvg-challenge-btn" id="gvg-challenge-btn" onclick="openGvGModal()">⚔️ CHALLENGE ANOTHER GROUP</button>
+  <button class="gvg-challenge-btn" id="gvg-challenge-btn" data-action="open-gvg-modal">⚔️ CHALLENGE ANOTHER GROUP</button>
 
   <div class="tabs detail-tabs" id="detail-tabs">
-    <button class="tab-btn active" onclick="switchDetailTab('hot-takes')">Hot Takes</button>
-    <button class="tab-btn" onclick="switchDetailTab('challenges')">Challenges</button>
-    <button class="tab-btn" onclick="switchDetailTab('members')">Members</button>
+    <button class="tab-btn active" data-action="switch-detail-tab" data-tab="hot-takes">Hot Takes</button>
+    <button class="tab-btn" data-action="switch-detail-tab" data-tab="challenges">Challenges</button>
+    <button class="tab-btn" data-action="switch-detail-tab" data-tab="members">Members</button>
   </div>
 
   <div class="content">
@@ -559,7 +559,7 @@ body {
 
 
 <!-- ══ CREATE MODAL ════════════════════════════════════════ -->
-<div class="modal-overlay" id="create-modal" onclick="handleModalBackdrop(event)">
+<div class="modal-overlay" id="create-modal" data-action="create-modal-backdrop">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">CREATE GROUP</div>
@@ -589,34 +589,34 @@ body {
     <div class="form-field">
       <label class="form-label">Group Emoji</label>
       <div class="emoji-picker" id="emoji-picker">
-        <div class="emoji-opt selected" data-emoji="⚔️" onclick="selectEmoji(this)">⚔️</div>
-        <div class="emoji-opt" data-emoji="🔥" onclick="selectEmoji(this)">🔥</div>
-        <div class="emoji-opt" data-emoji="🏆" onclick="selectEmoji(this)">🏆</div>
-        <div class="emoji-opt" data-emoji="🎯" onclick="selectEmoji(this)">🎯</div>
-        <div class="emoji-opt" data-emoji="👑" onclick="selectEmoji(this)">👑</div>
-        <div class="emoji-opt" data-emoji="⚡" onclick="selectEmoji(this)">⚡</div>
-        <div class="emoji-opt" data-emoji="🐺" onclick="selectEmoji(this)">🐺</div>
-        <div class="emoji-opt" data-emoji="💀" onclick="selectEmoji(this)">💀</div>
-        <div class="emoji-opt" data-emoji="🦁" onclick="selectEmoji(this)">🦁</div>
-        <div class="emoji-opt" data-emoji="🗡️" onclick="selectEmoji(this)">🗡️</div>
-        <div class="emoji-opt" data-emoji="🧠" onclick="selectEmoji(this)">🧠</div>
-        <div class="emoji-opt" data-emoji="💔" onclick="selectEmoji(this)">💔</div>
+        <div class="emoji-opt selected" data-emoji="⚔️" data-action="select-emoji">⚔️</div>
+        <div class="emoji-opt" data-emoji="🔥" data-action="select-emoji">🔥</div>
+        <div class="emoji-opt" data-emoji="🏆" data-action="select-emoji">🏆</div>
+        <div class="emoji-opt" data-emoji="🎯" data-action="select-emoji">🎯</div>
+        <div class="emoji-opt" data-emoji="👑" data-action="select-emoji">👑</div>
+        <div class="emoji-opt" data-emoji="⚡" data-action="select-emoji">⚡</div>
+        <div class="emoji-opt" data-emoji="🐺" data-action="select-emoji">🐺</div>
+        <div class="emoji-opt" data-emoji="💀" data-action="select-emoji">💀</div>
+        <div class="emoji-opt" data-emoji="🦁" data-action="select-emoji">🦁</div>
+        <div class="emoji-opt" data-emoji="🗡️" data-action="select-emoji">🗡️</div>
+        <div class="emoji-opt" data-emoji="🧠" data-action="select-emoji">🧠</div>
+        <div class="emoji-opt" data-emoji="💔" data-action="select-emoji">💔</div>
       </div>
     </div>
 
-    <button class="submit-btn" id="create-submit-btn" onclick="submitCreateGroup()">CREATE GROUP</button>
+    <button class="submit-btn" id="create-submit-btn" data-action="submit-create-group">CREATE GROUP</button>
   </div>
 </div>
 
 
 <!-- ══ GVG CHALLENGE MODAL ══════════════════════════════════ -->
-<div class="gvg-modal-overlay" id="gvg-modal" onclick="if(event.target===this)closeGvGModal()">
+<div class="gvg-modal-overlay" id="gvg-modal" data-action="gvg-modal-backdrop">
   <div class="gvg-modal-sheet">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-family:var(--mod-font-ui);font-size:20px;font-weight:700;color:var(--mod-text-heading);letter-spacing:2px;">
         ⚔️ GVG CHALLENGE
       </div>
-      <button onclick="closeGvGModal()" style="background:none;border:none;color:var(--mod-text-primary);font-size:20px;cursor:pointer;">✕</button>
+      <button data-action="close-gvg-modal" style="background:none;border:none;color:var(--mod-text-primary);font-size:20px;cursor:pointer;">✕</button>
     </div>
 
     <label style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">OPPONENT GROUP</label>
@@ -644,7 +644,7 @@ body {
       <button class="gvg-format-pill" data-format="5v5">5v5</button>
     </div>
 
-    <button class="submit-btn" id="gvg-submit-btn" onclick="submitGroupChallenge()">SEND CHALLENGE ⚔️</button>
+    <button class="submit-btn" id="gvg-submit-btn" data-action="submit-gvg-challenge">SEND CHALLENGE ⚔️</button>
     <div id="gvg-error" style="color:var(--mod-accent);font-size:13px;text-align:center;margin-top:8px;display:none;"></div>
   </div>
 </div>

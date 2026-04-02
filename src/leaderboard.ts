@@ -197,7 +197,7 @@ export function showEloExplainer(): void {
     ">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div style="font-family:var(--mod-font-display);font-size:18px;color:var(--mod-accent);font-weight:700;letter-spacing:2px;">⚔️ ELO RATING</div>
-        <button onclick="document.getElementById('elo-explainer-modal').remove()" style="
+        <button data-action="close-elo-explainer" style="
           background:none;border:none;color:var(--mod-text-sub);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;
         ">&times;</button>
       </div>
@@ -378,14 +378,14 @@ export function render(): void {
         ${(['elo', 'wins', 'streak'] as const)
           .map(
             (tab) => `
-          <button class="lb-tab ${currentTab === tab ? 'active' : ''}" onclick="ModeratorLeaderboard.setTab('${tab}')" style="
+          <button class="lb-tab ${currentTab === tab ? 'active' : ''}" data-action="set-tab" data-tab="${tab}" style="
             flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
             font-family:var(--mod-font-ui);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
             background:${currentTab === tab ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
             color:${currentTab === tab ? 'var(--mod-accent)' : 'var(--mod-text-sub)'};
           ">${tab === 'elo' ? 'ELO' : tab === 'wins' ? 'WINS' : '🔥 STREAK'}${
               tab === 'elo'
-                ? `<span onclick="event.stopPropagation();ModeratorLeaderboard.showEloExplainer();" style="
+                ? `<span data-action="show-elo-explainer" style="
               display:inline-block;width:16px;height:16px;border-radius:50%;
               background:var(--mod-accent-border);color:var(--mod-accent);
               font-size:10px;line-height:16px;text-align:center;
@@ -469,6 +469,30 @@ export function init(): void {
     observer.observe(screen, { attributes: true, attributeFilter: ['class'] });
   }
 }
+
+// ============================================================
+// EVENT DELEGATION (replaces inline onclick handlers in innerHTML)
+// ============================================================
+
+document.addEventListener('click', (e) => {
+  const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!el) return;
+  switch (el.dataset.action) {
+    case 'set-tab':
+      setTab(el.dataset.tab as LeaderboardTab);
+      break;
+    case 'show-elo-explainer':
+      e.stopPropagation();
+      showEloExplainer();
+      break;
+    case 'set-time':
+      setTime(el.dataset.time as LeaderboardTimeFilter);
+      break;
+    case 'close-elo-explainer':
+      document.getElementById('elo-explainer-modal')?.remove();
+      break;
+  }
+});
 
 // ============================================================
 export const ModeratorLeaderboard = {

@@ -125,7 +125,7 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
         <div style="color:var(--mod-magenta);font-size:12px;font-weight:700;">⚠️ PLACEHOLDER MODE</div>
         <div style="color:var(--mod-text-sub);font-size:11px;margin-top:4px;">Paste your Stripe keys into moderator-config.js</div>
       </div>
-      <button onclick="this.closest('#payment-placeholder-modal').remove()" style="background:var(--mod-bg-card);color:var(--mod-text-heading);border:1px solid var(--mod-border-primary);border-radius:8px;padding:12px 32px;font-weight:700;cursor:pointer;font-size:14px;width:100%;">
+      <button id="payment-placeholder-close" style="background:var(--mod-bg-card);color:var(--mod-text-heading);border:1px solid var(--mod-border-primary);border-radius:8px;padding:12px 32px;font-weight:700;cursor:pointer;font-size:14px;width:100%;">
         GOT IT
       </button>
     </div>
@@ -134,6 +134,9 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
     if (e.target === modal) modal.remove();
   });
   document.body.appendChild(modal);
+  document.getElementById('payment-placeholder-close')?.addEventListener('click', () => {
+    document.getElementById('payment-placeholder-modal')?.remove();
+  });
 }
 
 // ============================================================

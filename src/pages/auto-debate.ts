@@ -206,8 +206,8 @@ function renderDebate(d: AutoDebateData): void {
     <div class="vote-headline">WHO ACTUALLY WON?</div>
     <div class="vote-sub">The AI got it wrong? Prove it. No signup required.</div>
     <div class="vote-row">
-      <button class="vote-btn va" onclick="castVote('a')" id="btn-a"><span class="vote-label">${escHtml(d.side_a_label)}</span></button>
-      <button class="vote-btn vb" onclick="castVote('b')" id="btn-b"><span class="vote-label">${escHtml(d.side_b_label)}</span></button>
+      <button class="vote-btn va" data-action="cast-vote" data-side="a" id="btn-a"><span class="vote-label">${escHtml(d.side_a_label)}</span></button>
+      <button class="vote-btn vb" data-action="cast-vote" data-side="b" id="btn-b"><span class="vote-label">${escHtml(d.side_b_label)}</span></button>
     </div>
     <div class="results-section" id="results">
       <div class="vote-bar-track"><div class="vote-bar-fill a-fill" id="bar-a" style="width:50%">50%</div><div class="vote-bar-fill b-fill" id="bar-b" style="width:50%">50%</div></div>
@@ -225,9 +225,9 @@ function renderDebate(d: AutoDebateData): void {
 
   // Share
   html += `<div class="share-bar fade-up">
-    <button class="share-btn" onclick="shareDebate('copy')">📋 Copy Link</button>
-    <button class="share-btn" onclick="shareDebate('twitter')">𝕏 Share</button>
-    <button class="share-btn" onclick="shareDebate('native')">↗ Share</button>
+    <button class="share-btn" data-action="share-debate" data-method="copy">📋 Copy Link</button>
+    <button class="share-btn" data-action="share-debate" data-method="twitter">𝕏 Share</button>
+    <button class="share-btn" data-action="share-debate" data-method="native">↗ Share</button>
   </div>`;
 
   // More Debates
@@ -368,9 +368,18 @@ function shareDebateImpl(method: string): void {
 }
 
 // ============================================================
-// EXPOSE TO ONCLICK
+// EVENT DELEGATION (replaces inline onclick handlers)
 // ============================================================
 
-const win = window as unknown as Record<string, unknown>;
-win.castVote = castVoteImpl;
-win.shareDebate = shareDebateImpl;
+document.addEventListener('click', (e) => {
+  const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!el) return;
+  switch (el.dataset.action) {
+    case 'cast-vote':
+      castVoteImpl(el.dataset.side!);
+      break;
+    case 'share-debate':
+      shareDebateImpl(el.dataset.method!);
+      break;
+  }
+});
