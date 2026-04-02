@@ -17,7 +17,7 @@ const RESEND_API_KEY   = process.env.RESEND_API_KEY!;
 const SUPABASE_URL     = process.env.SUPABASE_URL!;
 const SUPABASE_KEY     = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const FROM_EMAIL       = 'The Moderator <newsletter@themoderator.app>';
-const APP_URL          = 'https://colosseum-six.vercel.app';
+const APP_URL          = 'https://themoderator.app';
 const SEND_CAP         = 100;   // Resend free tier: 100/day hard limit
 const SEND_DELAY_MS    = 200;   // 5 req/sec rate limit safety
 
