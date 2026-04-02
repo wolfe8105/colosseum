@@ -242,7 +242,7 @@ export function generateCardBuffer(opts: CardOptions): Buffer {
   ctx.fillStyle = 'rgba(160, 168, 184, 0.5)';
   ctx.font = '400 11px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('thecolosseum.app — Cast YOUR vote', W / 2, wmY);
+  ctx.fillText('themoderator.app — Cast YOUR vote', W / 2, wmY);
 
   // --- AI Debate label ---
   ctx.fillStyle = 'rgba(160, 168, 184, 0.35)';
