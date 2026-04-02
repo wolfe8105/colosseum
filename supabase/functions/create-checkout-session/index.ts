@@ -11,7 +11,8 @@
 
 const ALLOWED_ORIGINS = [
   'https://themoderator.app',
-    'https://colosseum-six.vercel.app',
+    'https://the-moderator.vercel.app',
+    'http://localhost:3000',
     ];
 
     function getCorsHeaders(req: Request): Record<string, string> {

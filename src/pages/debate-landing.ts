@@ -162,7 +162,7 @@ function render(): void {
   let html = '';
 
   // Category pill
-  html += `<a href="https://colosseum-six.vercel.app?cat=${encodeURIComponent(debate.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escHtml(debate.catIcon)}</span>${escHtml(debate.catLabel)}</a>`;
+  html += `<a href="https://themoderator.app?cat=${encodeURIComponent(debate.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escHtml(debate.catIcon)}</span>${escHtml(debate.catLabel)}</a>`;
 
   html += `<div class="debate-card">`;
   html += `<div class="debate-topic">${escHtml(debate.topic)}</div>`;
