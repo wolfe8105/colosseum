@@ -468,6 +468,7 @@ export function init(): void {
   const observer = new MutationObserver(() => {
     const screen = document.getElementById('screen-leaderboard');
     if (screen?.classList.contains('active') && screen.children.length === 0) {
+      observer.disconnect();
       render();
       void fetchLeaderboard().then(() => render());
     }
