@@ -398,18 +398,9 @@ export function render(): void {
           .join('')}
       </div>
 
-      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;">
-        ${(['all', 'week', 'month'] as const)
-          .map(
-            (t) => `
-          <button onclick="ModeratorLeaderboard.setTime('${t}')" style="
-            padding:6px 14px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;
-            background:${currentTime === t ? 'rgba(204,41,54,0.15)' : 'var(--mod-bg-subtle)'};
-            color:${currentTime === t ? 'var(--mod-magenta)' : 'var(--mod-text-sub)'};white-space:nowrap;
-          ">${t === 'all' ? 'ALL TIME' : t === 'week' ? 'THIS WEEK' : 'THIS MONTH'}</button>`
-          )
-          .join('')}
-      </div>
+      <!-- Session 222: ECON-BUG-5 — Week/Month tabs removed.
+           get_leaderboard has no time param, profiles table has no per-debate timestamps.
+           Re-add when time-bucketed stats exist in schema. -->
 
       <div id="lb-list">
         ${isLoading ? renderShimmer() : renderList()}
