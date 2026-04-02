@@ -403,6 +403,7 @@ export async function send(): Promise<void> {
     }
   }
 
+  if (pendingRecording?.url) URL.revokeObjectURL(pendingRecording.url);
   pendingRecording = null;
   closeRecorderSheet();
   showToast('🎤 Voice take posted!');
