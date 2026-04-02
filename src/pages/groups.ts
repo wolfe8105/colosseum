@@ -824,7 +824,7 @@ async function searchGroupsForChallenge(query: string) {
             <div style="color:var(--white);font-size:14px;font-weight:700;">${esc2(selectedOpponentGroup.name)}</div>
             <div style="color:var(--white-dim);font-size:11px;">Elo ${selectedOpponentGroup.elo}</div>
           </div>
-          <button onclick="clearGvGOpponent()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
+          <button data-action="clear-gvg-opponent" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
         </div>`;
         sel.style.display = 'block';
         container.innerHTML = '';
@@ -1073,42 +1073,56 @@ if (urlGroup && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
   ready.then(() => openGroup(urlGroup));
 }
 
-// ── WINDOW EXPOSURE ───────────────────────────────────────────────────────────
-// Module-scoped functions are invisible to inline onclick handlers in the HTML.
-// These assignments make them reachable. C4 fix — Session 179.
-declare global {
-  interface Window {
-    switchTab: (tab: string) => void;
-    switchDetailTab: (tab: string) => void;
-    filterCategory: (cat: string | null, el: HTMLElement) => void;
-    openCreateModal: () => void;
-    closeCreateModal: () => void;
-    handleModalBackdrop: (e: Event) => void;
-    selectEmoji: (el: HTMLElement) => void;
-    submitCreateGroup: () => Promise<void>;
-    showLobby: () => void;
-    toggleMembership: () => Promise<void>;
-    openGvGModal: () => void;
-    closeGvGModal: () => void;
-    clearGvGOpponent: () => void;
-    submitGroupChallenge: () => Promise<void>;
-  }
-}
+// ── EVENT DELEGATION (replaces inline onclick handlers in HTML) ───────────────
+document.addEventListener('click', (e) => {
+  const actionEl = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!actionEl) return;
 
-window.switchTab            = switchTab;
-window.switchDetailTab      = switchDetailTab;
-window.filterCategory       = filterCategory;
-window.openCreateModal      = openCreateModal;
-window.closeCreateModal     = closeCreateModal;
-window.handleModalBackdrop  = handleModalBackdrop;
-window.selectEmoji          = selectEmoji;
-window.submitCreateGroup    = submitCreateGroup;
-window.showLobby            = showLobby;
-window.toggleMembership     = toggleMembership;
-window.openGvGModal         = openGvGModal;
-window.closeGvGModal        = closeGvGModal;
-window.clearGvGOpponent     = clearGvGOpponent;
-window.submitGroupChallenge = submitGroupChallenge;
-// Note: member action modal functions (_executePromote, _executeKick, _executeBan,
-// openMemberActionsModal, closeMemberActionsModal) are all wired via event delegation
-// and _injectMemberActionsModal() — no window exposure needed.
+  switch (actionEl.dataset.action) {
+    case 'go-home':
+      window.location.href = 'index.html';
+      break;
+    case 'open-create-modal':
+      openCreateModal();
+      break;
+    case 'switch-tab':
+      switchTab(actionEl.dataset.tab!);
+      break;
+    case 'filter-category':
+      filterCategory(actionEl.dataset.category || null, actionEl);
+      break;
+    case 'show-lobby':
+      showLobby();
+      break;
+    case 'toggle-membership':
+      toggleMembership();
+      break;
+    case 'open-gvg-modal':
+      openGvGModal();
+      break;
+    case 'switch-detail-tab':
+      switchDetailTab(actionEl.dataset.tab!);
+      break;
+    case 'create-modal-backdrop':
+      if (e.target === actionEl) closeCreateModal();
+      break;
+    case 'select-emoji':
+      selectEmoji(actionEl);
+      break;
+    case 'submit-create-group':
+      submitCreateGroup();
+      break;
+    case 'gvg-modal-backdrop':
+      if (e.target === actionEl) closeGvGModal();
+      break;
+    case 'close-gvg-modal':
+      closeGvGModal();
+      break;
+    case 'submit-gvg-challenge':
+      submitGroupChallenge();
+      break;
+    case 'clear-gvg-opponent':
+      clearGvGOpponent();
+      break;
+  }
+});
