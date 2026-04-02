@@ -171,7 +171,7 @@ const APP: AppSettings = {
   name: 'The Moderator',
   tagline: 'Where opinions fight.',
   version: '2.2.0',
-  baseUrl: 'https://colosseum-six.vercel.app',
+  baseUrl: 'https://themoderator.app',
 } as const;
 
 // ============================================================
