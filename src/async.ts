@@ -28,6 +28,7 @@ import {
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
 import { navigateTo } from './navigation.ts';
+import { requireTokens, claimHotTake, claimReaction, claimPrediction } from './tokens.ts';
 import { nudge } from './nudge.ts';
 
 // ============================================================
@@ -111,14 +112,7 @@ export type CategoryFilter =
 // MODULE EXPORTS
 // ============================================================
 
-declare const ModeratorTokens:
-  | {
-      claimHotTake: (id: string) => void;
-      claimReaction: (id: string) => void;
-      claimPrediction: (id: string) => void;
-      requireTokens: (amount: number, label: string) => boolean;
-    }
-  | undefined;
+// Session 222: FEED-BUG-1 — ModeratorTokens replaced by ES import from tokens.ts
 
 declare const ModeratorArena:
   | {
@@ -816,11 +810,7 @@ export async function placePrediction(
   side: string
 ): Promise<void> {
   if (!requireAuth('place predictions')) return;
-  if (
-    typeof ModeratorTokens !== 'undefined' &&
-    !ModeratorTokens.requireTokens(100, 'place predictions')
-  )
-    return;
+  if (!requireTokens(100, 'place predictions')) return;
 
   const pred = predictions.find((p) => p.debate_id === debateId);
   if (!pred) return;
@@ -856,8 +846,7 @@ export async function placePrediction(
         if (predContainer) renderPredictions(predContainer);
         return;
       }
-      if (typeof ModeratorTokens !== 'undefined')
-        ModeratorTokens.claimPrediction(debateId);
+      claimPrediction(debateId);
     } catch (e) {
       console.error('place_prediction exception:', e);
     }
@@ -1075,8 +1064,7 @@ export async function react(takeId: string): Promise<void> {
         loadHotTakes(currentFilter);
         if ((data as ReactResult).reacted) {
           nudge('first_vote', '\uD83D\uDDF3\uFE0F Vote cast. Your voice shapes the verdict.');
-          if (typeof ModeratorTokens !== 'undefined')
-            ModeratorTokens.claimReaction(takeId);
+          claimReaction(takeId);
         }
       }
     } catch {
@@ -1089,11 +1077,7 @@ export async function react(takeId: string): Promise<void> {
 
 export function challenge(takeId: string): void {
   if (!requireAuth('challenge someone to a debate')) return;
-  if (
-    typeof ModeratorTokens !== 'undefined' &&
-    !ModeratorTokens.requireTokens(50, 'challenge someone')
-  )
-    return;
+  if (!requireTokens(50, 'challenge someone')) return;
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
   _showChallengeModal(take);
@@ -1204,11 +1188,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
 
 export async function postTake(): Promise<void> {
   if (!requireAuth('post hot takes')) return;
-  if (
-    typeof ModeratorTokens !== 'undefined' &&
-    !ModeratorTokens.requireTokens(25, 'post hot takes')
-  )
-    return;
+  if (!requireTokens(25, 'post hot takes')) return;
 
   const input = document.getElementById(
     'hot-take-input'
@@ -1253,8 +1233,7 @@ export async function postTake(): Promise<void> {
         showToast('Post failed — try again', 'error');
       } else if (data && (data as CreateHotTakeResult).id) {
         newTake.id = (data as CreateHotTakeResult).id;
-        if (typeof ModeratorTokens !== 'undefined')
-          ModeratorTokens.claimHotTake((data as CreateHotTakeResult).id);
+        claimHotTake((data as CreateHotTakeResult).id);
       }
     } catch {
       hotTakes = snapshot;
