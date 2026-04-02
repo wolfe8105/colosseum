@@ -83,7 +83,13 @@ function validateTier(raw: string | undefined): ValidTier {
 // ============================================================
 
 function loadSettings(): void {
-  const saved: Partial<SettingsData> = JSON.parse(localStorage.getItem('colosseum_settings') || '{}');
+  let saved: Partial<SettingsData>;
+  try {
+    saved = JSON.parse(localStorage.getItem('colosseum_settings') || '{}');
+  } catch {
+    saved = {};
+    localStorage.removeItem('colosseum_settings');
+  }
 
   // Account fields
   const nameEl = getEl<HTMLInputElement>('set-display-name');

@@ -358,8 +358,20 @@ function sanitizeCompleted(raw: unknown): Set<string> {
   return new Set(raw.filter((id: unknown) => typeof id === 'string' && validIds.has(id as string)) as string[]);
 }
 
-const answers: Answers = sanitizeAnswers(JSON.parse(localStorage.getItem('colosseum_profile_depth') || '{}'));
-const completedSections = sanitizeCompleted(JSON.parse(localStorage.getItem('colosseum_depth_complete') || '[]'));
+let answers: Answers;
+try {
+  answers = sanitizeAnswers(JSON.parse(localStorage.getItem('colosseum_profile_depth') || '{}'));
+} catch {
+  answers = {};
+  localStorage.removeItem('colosseum_profile_depth');
+}
+let completedSections: Set<string>;
+try {
+  completedSections = sanitizeCompleted(JSON.parse(localStorage.getItem('colosseum_depth_complete') || '[]'));
+} catch {
+  completedSections = new Set();
+  localStorage.removeItem('colosseum_depth_complete');
+}
 let activeSection: string | null = null;
 
 // Session 117: Tier system state
