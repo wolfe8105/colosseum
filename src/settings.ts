@@ -85,9 +85,16 @@ function validateTier(raw: string | undefined): ValidTier {
 function loadSettings(): void {
   let saved: Partial<SettingsData>;
   try {
-    saved = JSON.parse(localStorage.getItem('colosseum_settings') || '{}');
+    // Migrate old key if present
+    const raw = localStorage.getItem('moderator_settings') || localStorage.getItem('colosseum_settings') || '{}';
+    if (localStorage.getItem('colosseum_settings')) {
+      localStorage.setItem('moderator_settings', raw);
+      localStorage.removeItem('colosseum_settings');
+    }
+    saved = JSON.parse(raw);
   } catch {
     saved = {};
+    localStorage.removeItem('moderator_settings');
     localStorage.removeItem('colosseum_settings');
   }
 
@@ -186,7 +193,7 @@ function saveSettings(): void {
     privacy_challenges: getChecked('set-privacy-challenges'),
   };
 
-  localStorage.setItem('colosseum_settings', JSON.stringify(settings));
+  localStorage.setItem('moderator_settings', JSON.stringify(settings));
 
   // Save to Supabase if auth is live
   if (!isPlaceholder) {
@@ -244,6 +251,7 @@ getEl<HTMLTextAreaElement>('set-bio')?.addEventListener('input', (e: Event) => {
 
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
   await logOut();
+  localStorage.removeItem('moderator_settings');
   localStorage.removeItem('colosseum_settings');
   window.location.href = 'moderator-plinko.html';
 });
