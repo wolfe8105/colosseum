@@ -318,6 +318,11 @@ const MAX_ICE_RESTART_ATTEMPTS = 3;
 let iceRestartAttempts = 0;
 let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Session 222: Setup timeout — RTC-BUG-3
+// If peer connection isn't established within this window, end gracefully.
+const SETUP_TIMEOUT_MS = 30_000;
+let setupTimer: ReturnType<typeof setTimeout> | null = null;
+
 const DEFAULT_TURN_STATE: TurnState = {
   stepIndex: -1,
   phase: 'ended',
@@ -505,6 +510,18 @@ async function setupSignaling(debateId: string): Promise<void> {
     if (status === 'SUBSCRIBED') {
       await signalingChannel!.track({ role: debateState.role });
       fire('signalingReady', { channel: channelName });
+
+      // Session 222: RTC-BUG-3 — setup timeout.
+      // If peer connection isn't 'connected' within 30s, end gracefully.
+      if (setupTimer) clearTimeout(setupTimer);
+      setupTimer = setTimeout(() => {
+        setupTimer = null;
+        if (debateState.status === 'connecting') {
+          console.warn('[WebRTC] Setup timeout — peer connection not established in 30s');
+          fire('connectionFailed', { reason: 'setup-timeout' });
+          endDebate();
+        }
+      }, SETUP_TIMEOUT_MS);
     } else if (status === 'CHANNEL_ERROR') {
       // ADV-2: RLS rejected — user is not a debate participant, or AI-local debate
       console.warn('[WebRTC] Signaling channel denied:', err?.message ?? 'no permissions');
@@ -602,6 +619,8 @@ function createPeerConnection(iceServers: RTCIceServer[]): RTCPeerConnection {
       debateState.status = 'live';
       iceRestartAttempts = 0;
       if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null; }
+      // Session 222: RTC-BUG-3 — clear setup timeout on successful connection
+      if (setupTimer) { clearTimeout(setupTimer); setupTimer = null; }
       fire('connected', {});
     } else if (state === 'disconnected') {
       // Transient — wait 3s before attempting restart (connection may recover)
@@ -939,6 +958,9 @@ export function leaveDebate(): void {
   // Session 208: Reset ICE restart state (audit #14)
   iceRestartAttempts = 0;
   if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null; }
+
+  // Session 222: RTC-BUG-3 — clear setup timeout
+  if (setupTimer) { clearTimeout(setupTimer); setupTimer = null; }
 
   if (peerConnection) {
     peerConnection.close();
