@@ -27,6 +27,19 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: htmlEntries,
+      output: {
+        manualChunks(id) {
+          // Vendor chunk: all node_modules
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+          // Shared chunk: core modules imported by 3+ pages
+          const shared = ['/src/auth.ts', '/src/config.ts', '/src/tokens.ts', '/src/analytics.ts', '/src/nudge.ts', '/src/navigation.ts', '/src/app-config.ts'];
+          if (shared.some(m => id.endsWith(m))) {
+            return 'shared';
+          }
+        },
+      },
     },
   },
   server: {
