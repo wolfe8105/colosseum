@@ -17,9 +17,9 @@ const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
 
 const ALLOWED_ORIGINS = [
-  'https://colosseum-six.vercel.app',
-  'https://thecolosseum.app',
   'https://themoderator.app',
+  'https://the-moderator.vercel.app',
+  'http://localhost:3000',
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
