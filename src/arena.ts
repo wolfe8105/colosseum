@@ -2356,6 +2356,8 @@ function startOpponentPoll(debateId: string, myRole: DebateRole, round: number):
       addSystemMessage('Opponent hasn\'t responded. You can continue waiting or leave the debate.');
       const inp = document.getElementById('arena-text-input') as HTMLTextAreaElement | null;
       if (inp) inp.disabled = false;
+      const rec = document.getElementById('arena-record-btn') as HTMLButtonElement | null;
+      if (rec) rec.disabled = false;
       return;
     }
 
@@ -2371,9 +2373,11 @@ function startOpponentPoll(debateId: string, myRole: DebateRole, round: number):
       const oppSide: DebateRole = myRole === 'a' ? 'b' : 'a';
       addMessage(oppSide, oppMsg.content, round, oppMsg.is_ai ?? false);
 
-      // Re-enable input for next round
+      // Re-enable input for next round (text or voicememo)
       const inp = document.getElementById('arena-text-input') as HTMLTextAreaElement | null;
       if (inp) inp.disabled = false;
+      const rec = document.getElementById('arena-record-btn') as HTMLButtonElement | null;
+      if (rec) rec.disabled = false;
 
       advanceRound();
     } catch { /* retry next tick */ }
@@ -2843,19 +2847,39 @@ function resetVoiceMemoUI(): void {
 async function sendVoiceMemo(): Promise<void> {
   const debate = currentDebate!;
   const side = debate.role;
+  const memoLabel = `\uD83C\uDF99 Voice memo (${formatTimer(vmSeconds)})`;
 
-  addMessage(side, `\uD83C\uDF99 Voice memo (${formatTimer(vmSeconds)})`, debate.round, false);
+  addMessage(side, memoLabel, debate.round, false);
   resetVoiceMemoUI();
   await vmSend();
+
+  // Save to debate_messages so opponent polling finds it
+  if (!isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
+    try {
+      await safeRpc('submit_debate_message', {
+        p_debate_id: debate.id,
+        p_round: debate.round,
+        p_side: side,
+        p_content: memoLabel,
+      });
+    } catch { /* warned */ }
+  }
+
   addSystemMessage('Voice memo sent \u2014 waiting for opponent...');
 
-  // Simulate opponent response for now
+  // Disable record button during wait
+  const recordBtn = document.getElementById('arena-record-btn') as HTMLButtonElement | null;
+  if (recordBtn) recordBtn.disabled = true;
+
   if (isPlaceholder() || debate.id.startsWith('placeholder-')) {
     setTimeout(() => {
       const oppSide: DebateRole = side === 'a' ? 'b' : 'a';
       addMessage(oppSide, '\uD83C\uDF99 Voice memo (0:47)', debate.round, false);
+      if (recordBtn) recordBtn.disabled = false;
       advanceRound();
     }, 3000 + Math.random() * 4000);
+  } else {
+    startOpponentPoll(debate.id, side, debate.round);
   }
 }
 
