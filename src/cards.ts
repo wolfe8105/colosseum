@@ -58,6 +58,14 @@ const COLORS = {
   cardBg: 'rgba(10, 17, 40, 0.85)',
 } as const;
 
+// Preload Antonio for Canvas API — CSS loads it for DOM, but Canvas needs explicit load
+if (typeof document !== 'undefined' && document.fonts) {
+  document.fonts.load('400 16px "Antonio"').catch(() => {});
+  document.fonts.load('700 16px "Antonio"').catch(() => {});
+}
+
+const CANVAS_FONT = "'Antonio', sans-serif";
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -175,12 +183,12 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
   // --- Branding top ---
   const brandY = cardY + 36 * scale;
   ctx.fillStyle = COLORS.goldDim;
-  ctx.font = `400 ${12 * scale}px serif`;
+  ctx.font = `400 ${12 * scale}px ${CANVAS_FONT}`;
   ctx.textAlign = 'center';
   (ctx as unknown as Record<string, string>)['letterSpacing'] = `${4 * scale}px`;
   ctx.fillText('THE', W / 2, brandY);
   ctx.fillStyle = COLORS.gold;
-  ctx.font = `700 ${22 * scale}px serif`;
+  ctx.font = `700 ${22 * scale}px ${CANVAS_FONT}`;
   ctx.fillText('MODERATOR', W / 2, brandY + 24 * scale);
   (ctx as unknown as Record<string, string>)['letterSpacing'] = '0px';
 
@@ -196,7 +204,7 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
   // --- Topic text (wrapped) ---
   const topicY = divY + 32 * scale;
   ctx.fillStyle = COLORS.white;
-  ctx.font = `700 ${Math.min(28 * scale, 34)}px serif`;
+  ctx.font = `700 ${Math.min(28 * scale, 34)}px ${CANVAS_FONT}`;
   ctx.textAlign = 'center';
   const topicLines = wrapText(ctx, opts.topic || 'Debate Topic', cardW - 60 * scale);
   topicLines.forEach((line, i) => {
@@ -229,7 +237,7 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
   ctx.fill();
   ctx.restore();
 
-  ctx.font = `700 ${16 * scale}px sans-serif`;
+  ctx.font = `700 ${16 * scale}px ${CANVAS_FONT}`;
   ctx.textAlign = 'left';
   ctx.fillStyle = COLORS.green;
   ctx.fillText(`${yesPct}%`, barX + 12 * scale, barY + barH / 2 + 6 * scale);
@@ -240,25 +248,25 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
 
   // --- Side labels ---
   const labelY = barY + barH + 24 * scale;
-  ctx.font = `700 ${16 * scale}px serif`;
+  ctx.font = `700 ${16 * scale}px ${CANVAS_FONT}`;
   ctx.textAlign = 'left';
   ctx.fillStyle = COLORS.white;
   ctx.fillText(sideA, barX, labelY);
 
   ctx.textAlign = 'center';
   ctx.fillStyle = COLORS.goldDim;
-  ctx.font = `400 ${12 * scale}px serif`;
+  ctx.font = `400 ${12 * scale}px ${CANVAS_FONT}`;
   ctx.fillText('VS', W / 2, labelY);
 
   ctx.textAlign = 'right';
   ctx.fillStyle = COLORS.white;
-  ctx.font = `700 ${16 * scale}px serif`;
+  ctx.font = `700 ${16 * scale}px ${CANVAS_FONT}`;
   ctx.fillText(sideB, barX + barW, labelY);
 
   // --- Vote count ---
   ctx.textAlign = 'center';
   ctx.fillStyle = COLORS.whiteDim;
-  ctx.font = `400 ${13 * scale}px sans-serif`;
+  ctx.font = `400 ${13 * scale}px ${CANVAS_FONT}`;
   ctx.fillText(`${total.toLocaleString()} votes`, W / 2, labelY + 26 * scale);
 
   // --- Winner badge ---
@@ -279,7 +287,7 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
     ctx.restore();
 
     ctx.fillStyle = COLORS.gold;
-    ctx.font = `700 ${13 * scale}px serif`;
+    ctx.font = `700 ${13 * scale}px ${CANVAS_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText(`👑 ${winner} LEADS`, W / 2, badgeY + badgeH / 2 + 5 * scale);
   }
@@ -287,9 +295,9 @@ export function generateCard(opts: GenerateCardOptions): HTMLCanvasElement {
   // --- Watermark ---
   const wmY = H - 20 * scale;
   ctx.fillStyle = 'rgba(160, 168, 184, 0.5)';
-  ctx.font = `400 ${11 * scale}px sans-serif`;
+  ctx.font = `400 ${11 * scale}px ${CANVAS_FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText('⚔️ Settle YOUR debate → thecolosseum.app', W / 2, wmY);
+  ctx.fillText('⚔️ Settle YOUR debate → themoderator.app', W / 2, wmY);
 
   return canvas;
 }
