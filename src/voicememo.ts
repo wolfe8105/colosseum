@@ -44,6 +44,7 @@ export interface RecorderContext {
 
 const MAX_DURATION_SEC = 120;
 const MIN_DURATION_SEC = 5;
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 // ============================================================
 // STATE
@@ -267,6 +268,12 @@ function stopVisualization(): void {
 // ============================================================
 
 export async function uploadVoiceMemo(blob: Blob, debateId: string | null): Promise<UploadResult> {
+  if (blob.size > MAX_FILE_BYTES) {
+    const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
+    showToast(`⚠️ Recording too large (${sizeMB} MB). Max is 5 MB.`);
+    return { url: URL.createObjectURL(blob), path: 'local-fallback' };
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     const url = URL.createObjectURL(blob);
