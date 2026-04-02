@@ -1,5 +1,6 @@
 # THE MODERATOR — PUNCH LIST
 ### Created: Session 162 (March 23, 2026)
+### Last Updated: Session 228 (April 2, 2026)
 
 > **What this is:** The single source of truth for everything that needs doing.
 > Loads every session via project knowledge. Read this first, pick what's next, go.
@@ -34,7 +35,9 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 
 ---
 
-# SECTION 2: BUGS (things that are broken right now)
+# SECTION 2: BUGS (all closed as of Session 227)
+
+> **Full security recon (Sessions 212-214) identified 29 medium, 14 low, and multiple critical/high bugs across all phases. All were closed in Sessions 215-227. Only dormant payment stack bugs remain (ADV-4, PAY-BUG-1/2/3) — fix before Stripe goes live. SESSION-218-BUG-TRACKER.md removed from project knowledge Session 228.**
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
@@ -268,3 +271,15 @@ This punch list was compiled from:
 | 2026-03-30 | 206 | B-09 closed (spectator feed category filter — added p_category to get_arena_feed RPC). B-10 added and closed (middleware CORS missing themoderator.app). F-49 added and closed (/go guest AI Sparring page + api/go-respond.js serverless function + GROQ_API_KEY in Vercel env vars). F-50 added and closed (5 moderator discovery touchpoints: post-debate nudge, arena lobby banner, home feed card, newsletter spotlight, Plinko signup step). Plinko now 5 steps (mod opt-in before Done). |
 | 2026-03-31 | 209 | Amplified vs Unplugged ruleset system complete. arena_debates.ruleset TEXT column + CHECK constraint. 4 RPCs updated (update_arena_debate, join_debate_queue, create_private_lobby, get_arena_feed). Client: 3-step picker flow, unplugged debate room (no ELO/tokens/power-ups/spectator bar), post-debate token skip, 🎸 UNPLUGGED feed section. AI Sparring forced amplified. CSS: .arena-rank-badge.unplugged. ai-moderator edge function redeployed (auth validation + no localhost CORS). 5 stale Claude Code branches deleted. |
 | 2026-03-31 | 210 | F-48 closed (mod-initiated debate). SQL: debater_a DROP NOT NULL, 4 new RPCs (create_mod_debate, join_mod_debate, check_mod_debate, cancel_mod_debate). FOR NO KEY UPDATE SKIP LOCKED used (not FOR UPDATE — prevents unnecessary FK child table blocking per CYBERTEC research). Client: ruleset picker added to showModDebatePicker, createModDebate passes p_ruleset, onModDebateReady uses result.topic/result.ruleset instead of hardcodes, cancelModDebate calls cancel_mod_debate (was cancel_private_lobby). ModDebateCheckResult interface updated with topic + ruleset fields. F48-MOD-INITIATED-DEBATE.sql committed. 8 F-48 tests passing, 77 total. Bible docs updated. |
+| 2026-03-31 | 212-214 | Full app security recon. Every screen, every RPC, every flow traced. Bug tracker created (SESSION-218-BUG-TRACKER.md). Identified critical/high/medium/low bugs across all phases. |
+| 2026-03-31 | 215 | Foundation fixes. 91 deployed functions exported to repo (supabase-deployed-functions-export.sql). Guard trigger expanded to 7 moderator columns (ADV-1 closed). 4 dangerous RLS write policies dropped (ADV-3, ADV-8, ADV-9 closed). CORS wildcard fixed (ADV-5). Hardcoded anon keys removed from API routes (SHARE-BUG-1). api/profile.js branding fixed (PROF-BUG-6). save_profile_depth section count 12→20 (PROF-BUG-1). 8 bugs closed. |
+| 2026-04-01 | 216-219 | PROF-BUG-2 closed (profile column mismatches). PROF-BUG-3 closed (settings column mismatches). RTC-BUG-2 closed (round count chaos — config.ts as single source of truth). update_arena_debate rewritten S219. |
+| 2026-04-01 | 220 | AI-BUG-1 closed (AI scoring mode). ai-sparring Edge Function rewritten: two modes (debate response + 4-criteria scoring). ai-moderator swapped Groq → Claude/Anthropic. Both Edge Functions now use ANTHROPIC_API_KEY. AI-BUG-2 closed (AI moderator). |
+| 2026-04-01 | 221 | RTC-BUG-1 closed. Cloudflare TURN server set up. turn-credentials Edge Function created. Client fetches TURN creds before PeerConnection, falls back to STUN. ICE restart with 3 attempts added to webrtc.ts. |
+| 2026-04-01 | 222 | RTC-BUG-3 closed (30s setup timeout). FEED-BUG-1 closed (ModeratorTokens window global → ES import). ECON-BUG-5 closed (leaderboard Week/Month tabs removed). ARENA-BUG-1 verified already fixed (opponent polling). |
+| 2026-04-01 | 223 | Group RPC fixes: resolve_group_challenge, join_group hardened, update_group_elo dropped. Private group info leaks discovered (get_group_details, get_group_members). |
+| 2026-04-01 | 224 | 9 medium bugs closed: JSON.parse crash (profile-depth.ts, settings.ts), logout/leaveDebate wired, grant_cosmetic RPC dropped (dead code), private group info leaks fixed, 56 inline onclick handlers removed (7 files, via Claude Code), escapeHTML duplicate removed (spectate.ts), MutationObserver leak fixed (leaderboard.ts), objectURL leak fixed (voicememo.ts). opponentName XSS in powerups.ts discovered already fixed. |
+| 2026-04-01 | 225 | Remaining medium bugs triaged and closed/deferred. All 4 Edge Functions redeployed with correct CORS origins. AUTH-BUG-4 closed (analytics hardcoded key → import from config.ts). |
+| 2026-04-02 | 226 | ECON-BUG-1 closed (9 RPC security fixes: token_balance CHECK constraint, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). GRP-BUG-1 closed (14 group RPCs audited, respond_to_group_challenge restricted to leader/co_leader). turn-credentials CORS fixed. All 4 Edge Functions redeployed. Prediction system type mismatch discovered (not fixed). |
+| 2026-04-02 | 227 | Prediction system fixed end-to-end (place_prediction UUID→TEXT revert, wager picker UI 1-500 tokens, refund-on-update with net charge). supabase-deployed-functions-export.sql fully re-synced (174 RPCs). localStorage key renamed colosseum_settings → moderator_settings with migration code. |
+| 2026-04-02 | 228 | Documentation update session. NT updated through S228. Punch List changelog updated through S227. OT session logs S211-227 appended. SESSION-218-BUG-TRACKER.md removed from project knowledge (all bugs closed or dormant). |

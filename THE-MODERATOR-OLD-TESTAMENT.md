@@ -1,6 +1,6 @@
-# THE COLOSSEUM — OLD TESTAMENT
+# THE MODERATOR — OLD TESTAMENT
 ### The Reference Vault — Read When Relevant
-### Last Updated: Session 117 (March 15, 2026) — Sessions 115-117 build logs added
+### Last Updated: Session 228 (April 2, 2026) — Sessions 211-227 build logs added
 
 > **Read the New Testament every session.** This file contains historical build logs, detailed inventories, revenue models, and reference material. Pull specific sections only when the session's work touches those areas.
 
@@ -22,8 +22,10 @@
 12. Session Build Logs (Sessions 48-68, moved from NT consolidation)
 13. Session Build Logs (Sessions 115-117)
 14. Session Build Logs (Sessions 92-107, moved from NT consolidation Session 117)
+15. Session Build Logs (Sessions 108-210, in NT Session 173 consolidation — see NT for details)
+16. Session Build Logs (Sessions 211-227, added Session 228)
 
-> Note: Sessions 69-91 are embedded in NT reference sections (architecture, design, technical notes), not as standalone build logs. Sessions 108+ are the active NT build logs.
+> Note: Sessions 69-91 are embedded in NT reference sections (architecture, design, technical notes), not as standalone build logs. Sessions 108-210 were consolidated into the NT during Session 173 and subsequent updates. Session 211+ build logs below.
 
 ---
 
@@ -1836,3 +1838,107 @@ Client edits (5 changes to arena.ts): (1) ModDebateCheckResult interface: added 
 TypeScript: zero arena.ts compilation errors. Vitest: 8 F-48 tests passing, 77 total. F48-MOD-INITIATED-DEBATE.sql committed to repo for history.
 
 Not tested: full end-to-end (mod creates → two debaters join → debate plays out → post-debate), unplugged ruleset through mod-created debate, cancel after one debater joined, third person entering a full code.
+
+---
+
+# 16. SESSION BUILD LOGS (Sessions 211-227)
+
+> Added Session 228 (April 2, 2026). Reconstructed from session handoffs.
+
+---
+
+## Sessions 211-214 — March 31, 2026 — FULL APP SECURITY RECON
+
+Complete security recon of every screen, every RPC, every data flow. Produced SESSION-218-BUG-TRACKER.md with all critical/high/medium/low bugs organized by fix phase. Identified 8 phases of work: signaling security, payment stack, scoring pipeline, AI scoring, WebRTC infrastructure, independent fixes, and RPC audit passes.
+
+Key findings: Realtime signaling channels open to any authenticated user (ADV-2). Stripe JWT no signature verification (ADV-4). 91 deployed RPCs not in version control. JSON.parse crashes at module scope. Logout doesn't clean up WebRTC resources. Multiple column mismatches between client, RPCs, and schema.
+
+---
+
+## Session 215 — March 31, 2026 — FOUNDATION FIXES
+
+First fix session post-recon. Three layers deployed:
+
+Layer 1 — Version control: Exported all 91 deployed Supabase functions to supabase-deployed-functions-export.sql (was estimated at 31, actual count 91).
+
+Layer 2 — Security primitives: Guard trigger expanded to protect 7 moderator columns (ADV-1). 4 dangerous RLS write policies dropped (ADV-3, ADV-8, ADV-9). CORS wildcard replaced with themoderator.app (ADV-5).
+
+Layer 3 — Individual fixes: Hardcoded anon keys removed from API routes (SHARE-BUG-1). api/profile.js branding fixed (PROF-BUG-6). save_profile_depth section count 12→20 (PROF-BUG-1).
+
+8 bugs closed: 4 critical, 2 high, 1 medium, 1 low.
+
+---
+
+## Sessions 216-219 — April 1, 2026 — FLOW TRACING + COLUMN FIXES
+
+PROF-BUG-2 closed (profile column mismatches traced end-to-end). PROF-BUG-3 closed (settings column mismatches). RTC-BUG-2 closed (round count chaos — config.ts established as single source of truth, all other files updated to read from it). update_arena_debate rewritten Session 219 with correct column references.
+
+---
+
+## Session 220 — April 1, 2026 — AI PROVIDER SWAP
+
+AI-BUG-1 and AI-BUG-2 both closed. ai-sparring Edge Function rewritten with two modes: default for debate responses, `mode: 'score'` for 4-criteria judging (Logic, Evidence, Delivery, Rebuttal with scorecard). ai-moderator Edge Function swapped from Groq to Claude/Anthropic. Both Edge Functions now use ANTHROPIC_API_KEY. GROQ_API_KEY retained only for bot army on VPS and api/go-respond.js on Vercel.
+
+---
+
+## Session 221 — April 1, 2026 — CLOUDFLARE TURN SERVER
+
+RTC-BUG-1 closed. Cloudflare TURN server set up. turn-credentials Edge Function created — fetches short-lived credentials from Cloudflare Realtime API. Client (webrtc.ts) fetches TURN creds before creating PeerConnection, falls back to STUN-only if fetch fails. ICE restart logic added: 3 attempts with role-aware restart (role 'a' sends re-offer, role 'b' receives via signaling). iceRestartAttempts counter and disconnectTimer added with cleanup in leaveDebate().
+
+---
+
+## Session 222 — April 1, 2026 — TIMEOUT + STALE BUG CLEANUP
+
+RTC-BUG-3 closed (30-second setup timeout — if PeerConnection not established, fires connectionFailed and ends debate gracefully). FEED-BUG-1 discovered already fixed (ModeratorTokens window global replaced with ES module import, all 6 usage sites use direct calls). ECON-BUG-5 discovered already fixed (leaderboard Week/Month tabs removed, only All Time remains). ARENA-BUG-1 verified already fixed (startOpponentPoll polls get_debate_messages every 3s with 120s timeout).
+
+---
+
+## Session 223 — April 1, 2026 — GROUP RPC HARDENING
+
+Group RPC security fixes: resolve_group_challenge hardened, join_group hardened, update_group_elo dropped (dead code, no auth check). Private group info leaks discovered in get_group_details and get_group_members — both returned full data for private groups to unauthenticated users. session-223-group-rpc-fixes.sql deployed.
+
+---
+
+## Session 224 — April 1, 2026 — MEDIUM BUG SWEEP
+
+9 medium bugs closed in foundational order:
+
+1. JSON.parse crash fix — try/catch on all localStorage JSON.parse calls in profile-depth.ts and settings.ts. Falls back to empty defaults, removes corrupted key.
+2. Logout/leaveDebate — webrtc.ts onChange handler added to auth.ts. Mic and RTCPeerConnection now properly cleaned up on logout.
+3. grant_cosmetic RPC dropped — dead code with no auth check.
+4. Private group info leaks fixed — get_group_details and get_group_members now check is_public, require membership for private groups. session-224-private-group-info-leak-fix.sql deployed.
+5. 56 inline onclick handlers removed across 7 files (moderator-groups.html, groups.ts, auto-debate.ts, debate-landing.ts, auth.ts, payments.ts, leaderboard.ts). All replaced with data-action attributes + addEventListener event delegation. Done via Claude Code PR #6. CSP script-src unsafe-inline now removable.
+6. escapeHTML duplicate removed from spectate.ts (local reimplementation deleted, canonical import from config.ts).
+7. MutationObserver leak fixed in leaderboard.ts (observer.disconnect() added inside callback).
+8. objectURL leak fixed in voicememo.ts (URL.revokeObjectURL before nulling in retake and send).
+9. opponentName XSS in powerups.ts discovered already fixed.
+
+---
+
+## Sessions 225-226 — April 2, 2026 — EDGE FUNCTION DEPLOYS + RPC AUDIT
+
+Session 225: Remaining medium bugs triaged. Most closed, some deferred (notifications polling, Stripe CDN, Stripe idempotency, browser test coverage). AUTH-BUG-4 closed (analytics hardcoded localStorage key replaced with import from config.ts). All 4 Edge Functions redeployed with correct CORS origins (themoderator.app, the-moderator.vercel.app, localhost:3000). VPS git root confirmed: /opt/colosseum (NOT /opt/colosseum/bot-army/colosseum-bot-army/).
+
+Session 226: ECON-BUG-1 closed — audited 14 token/staking/economy RPCs. 9 security fixes deployed via session-226-rpc-security-audit-fixes.sql: (1) CHECK (token_balance >= 0) on profiles table, (2) debit_tokens auth.uid() check added (was: any user could drain any user's tokens), (3) finalize_debate participant-or-service_role auth check, (4) claim_daily_tokens FOR UPDATE for race condition, (5) earn_tokens FOR UPDATE + duplicate reference_id check, (6) purchase_cosmetic FOR UPDATE, (7) place_prediction refund-on-update with net charge, (8) vote_arena_debate blocks debaters voting own debate, (9) credit_tokens p_amount <= 0 rejection.
+
+GRP-BUG-1 closed — audited all 14 group RPCs. One fix: respond_to_group_challenge restricted to leader/co_leader. Confirmed update_group_elo dropped from production.
+
+Prediction system type mismatch discovered (client sends TEXT, RPC expects UUID) — deferred to S227.
+
+---
+
+## Session 227 — April 2, 2026 — PREDICTION SYSTEM FIX + CLEANUP
+
+Prediction system type mismatch fixed end-to-end. Root cause: S226 migration changed place_prediction param p_predicted_winner to UUID, but predictions table column is TEXT ('a'/'b'), finalize_debate uses TEXT, and client sends TEXT. Three stacked failures. Fix: dropped UUID-typed function, created TEXT-typed replacement with IN ('a','b') validation. All S226 security fixes preserved.
+
+Client side: wager picker UI added to async.ts. Clicking prediction button opens inline picker with quick-amount buttons (10/25/50/100/250), numeric input, balance display, and confirm/cancel. User chooses wager 1-500 tokens. Matches staking panel visual pattern.
+
+supabase-deployed-functions-export.sql fully re-exported — all 174 live RPCs now match production. Was stale since S219.
+
+localStorage key renamed colosseum_settings → moderator_settings in settings.ts. Migration code reads old key on first load, copies to new key, deletes old. Logout clears both keys.
+
+---
+
+## Session 228 — April 2, 2026 — DOCUMENTATION UPDATE
+
+Full bible doc update session. NT updated through S228 (infrastructure summary rewritten, AI provider corrected, bug status section added, VPS git root note, prediction system notes, function export status). Punch List updated (bug section marked all closed, changelog entries S211-227 appended). OT updated (S211-227 build logs appended). SESSION-218-BUG-TRACKER.md removed from project knowledge — all bugs closed or dormant payment stack.

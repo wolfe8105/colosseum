@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 210 (March 31, 2026)
+### Last Updated: Session 228 (April 2, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -19,7 +19,7 @@
 | Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — every RPC, global, flow, blast radius. Note: file refs use pre-TS names, patterns still valid |
 | B2B strategy, pricing, buyer list, pitch | **THE-MODERATOR-WAR-CHEST.md** |
 | UI features, ad surfaces, gamification, mobile UX | **THE-MODERATOR-PRODUCT-VISION.md** |
-| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-210 |
+| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-227 |
 | Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — 77 design questions answered |
 | QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — stale, update in future session |
 | Screen-by-screen build queue | **PRODUCT-WALKTHROUGH.md** — barely started, continue in future session |
@@ -74,7 +74,7 @@
 - Login: OAuth dominant, email collapsed behind toggle
 - All table writes locked behind server functions — client JS uses `supabase.rpc()` for all mutations
 - Bot-driven growth: fully automated 24/7 bot army, $6-16/mo actual cost
-- Groq free tier for AI: Llama 3.3 70B versatile (`llama-3.1-70b` is decommissioned)
+- Groq free tier for bot army AI only: Llama 3.3 70B versatile (`llama-3.1-70b` is decommissioned). Edge Functions (ai-sparring, ai-moderator) use Claude/Anthropic (Session 220).
 - Leg 3: Auto-Debate Rage-Click Engine — AI generates full debates, scores lopsided, posts rage-bait
 - Controversial scoring IS the marketing — AI deliberately picks the unpopular winner
 - `react_hot_take()` is a toggle function — single RPC for add/remove
@@ -124,7 +124,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 66+ server functions, sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Groq). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live. Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7 (renderModScoring: debater 👍/👎, spectator slider), 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210) — 4 RPCs (create_mod_debate, join_mod_debate, check_mod_debate, cancel_mod_debate), client wired. Live debate feed schema complete (Session 178): debate_feed_events table, mod_dropout_log table, 7 new RPCs. app_config table: economy constants (milestone tokens/freezes, power-up costs) — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209): arena_debates.ruleset column, 4 RPCs updated, client 3-step picker, unplugged debate room conditionals. Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED. TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205): all inline styles in src/*.ts use var(--mod-*) tokens — zero hardcoded hex colors (#d4a843, #cc2936, #a0a8b8, #0a1628, #1a2d4a, #f0f0f0) or legacy fonts (Cinzel, Barlow Condensed) remain outside cards.ts Canvas API. Session 206: `/go` guest AI Sparring page live (moderator-go.html + api/go-respond.js). GROQ_API_KEY added to Vercel env vars. middleware.js CORS fixed (themoderator.app added). get_arena_feed RPC now accepts p_category. 5 moderator discovery touchpoints deployed (F-50): post-debate nudge, arena lobby banner, home feed card, newsletter spotlight, Plinko 5-step signup with mod opt-in.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions (fully exported and in sync as of S227), sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Claude/Anthropic via ai-sparring Edge Function — two modes: debate response + 4-criteria scoring). AI Moderator live (Claude/Anthropic via ai-moderator Edge Function). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live — wager picker (1-500 tokens), refund-on-update with net charge (S227). Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7, 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210). Live debate feed schema complete (Session 178). app_config table: economy constants — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209). Cloudflare TURN server live (Session 221) — turn-credentials Edge Function fetches short-lived creds, client falls back to STUN. WebRTC ICE restart + 30s setup timeout (Sessions 221-222). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED (80 bugs across 18 files, Sessions 1-18 of audit). Full app recon complete (Sessions 212-214). All critical/high/medium/low bugs closed or dormant. RPC security audit complete (Sessions 226): 9 RPC hardening fixes deployed (token_balance CHECK, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). Group RPC audit complete (Session 226). TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205). All inline onclick handlers removed (Session 224) — CSP script-src unsafe-inline removable. Session 206: `/go` guest AI Sparring page live. 5 moderator discovery touchpoints deployed (F-50). supabase-deployed-functions-export.sql fully in sync with production (174 RPCs, re-exported S227).
 
 ## Toolchain
 | Tool | Purpose |
@@ -183,8 +183,8 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 66+ server functions,
 | `moderator-spectate.html` | Spectator view for live debates |
 | `moderator-go.html` | `/go` — Guest AI Sparring. No auth, no DB. Topic input, For/Against, voice/text, 3 rounds, running score, verdict. Session 206. |
 
-## Database: 25+ SQL migrations, 41+ tables, 55+ server functions
-## Supabase Edge Functions: ai-sparring, ai-moderator, stripe-* (templates)
+## Database: 30+ SQL migrations, 43+ tables, 174 server functions (fully exported S227)
+## Supabase Edge Functions: ai-sparring (Claude/Anthropic), ai-moderator (Claude/Anthropic), turn-credentials (Cloudflare TURN), create-checkout-session (Stripe, sandbox)
 ## Vercel Serverless: api/profile.js (public profiles at /u/username), api/challenge.js (F-39 challenge links), api/go-respond.js (guest AI Sparring, calls Groq)
 
 ## VPS Bot Files (TypeScript — source .ts in repo, compiled .js in dist/)
@@ -243,9 +243,16 @@ Previous architecture (preserved for reference):
 > **All feature work, bugs, and tech debt are tracked in THE-MODERATOR-PUNCH-LIST.md. Read that first.**
 
 ## Pat Action Items
+- Legal pages still have @thecolosseum.app emails — blocked on domain email setup
 - Reddit API approval — check email, resubmit if rejected (submitted March 4)
 - ~~Register DMCA agent at copyright.gov ($6)~~ ✅ Session 204. Tracking ID 280U2D1K.
 - ~~Google OAuth re-enable + SMTP fix~~ ✅ Session 204. Both confirmed working.
+
+## Bug Status (as of Session 228)
+- **All critical/high/medium/low bugs: CLOSED** — Sessions 215-227
+- **Dormant payment stack (ADV-4, PAY-BUG-1/2/3):** fix before Stripe goes live, 3-6 months out minimum
+- **SESSION-218-BUG-TRACKER.md:** removed from project knowledge (S228), served its purpose
+- **Remaining deferred items:** notifications polling (no scale issue), Stripe CDN (dormant), Stripe idempotency (dormant), browser test coverage (deferred), legal page emails (blocked on domain email)
 
 ## Monitoring
 - Cloudflare Web Analytics — check for real visits
@@ -260,12 +267,14 @@ Previous architecture (preserved for reference):
 ## Database / Schema
 - **Single canonical debate table: `arena_debates`** — legacy `debates` table eliminated Session 101.
 - **`guard_profile_columns` trigger** protects 4 columns: `level`, `xp`, `streak_freezes`, `questions_answered`. Raises exception on direct UPDATE for non-service roles. SECURITY DEFINER RPCs bypass it. Older docs incorrectly listed 21 columns — it's 4.
-- **Token balance column is `token_balance`** (not `tokens`). See LM-174.
+- **Token balance column is `token_balance`** (not `tokens`). See LM-174. CHECK constraint `token_balance >= 0` added Session 226 (defense-in-depth).
 - **All mutations go through `.rpc()` calls** — never direct INSERT/UPDATE from client.
 - **Supabase dashboard is schema source of truth** — verify column names before assuming.
 - **`token_earn_log` column is `earn_type` not `action`** (LM-179). Milestones stored as 'milestone:key_name' with NULL reference_id.
 - **PostgREST 404s on untyped record returns** (LM-180). RPCs must use RETURNS TABLE(...) not bare record.
 - **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Full audit Session 151 — zero positional calls remain.
+- **`place_prediction` takes TEXT not UUID** for `p_predicted_winner` ('a'/'b'). S226 migration changed it to UUID, S227 reverted to TEXT with IN ('a','b') validation. All S226 security fixes preserved.
+- **`supabase-deployed-functions-export.sql` is fully in sync** with production (174 RPCs, re-exported Session 227). Keep it in sync — re-export after any future RPC changes.
 
 ## Auth
 - **`navigator.locks` orphan bug** — noOpLock mock must load before Supabase CDN. Lives in `src/auth.ts`.
@@ -283,6 +292,7 @@ Previous architecture (preserved for reference):
 - **`wrangler login` fails on headless VPS** — use API token approach.
 
 ## VPS / Bot Army
+- **VPS git root is `/opt/colosseum`** — NOT `/opt/colosseum/bot-army/colosseum-bot-army/`. Deploy commands (Edge Functions, git pull) must run from `/opt/colosseum`.
 - **VPS `.env` edits require `pm2 restart all`** to take effect.
 - **Bot platform wiring requires THREE updates** (LM-149): config object + flags block in bot-config.ts + formatFlags() in bot-engine.ts. Missing any one = silent failure.
 - **VPS file copies**: always use `\cp` (backslash prefix) to bypass `cp -i` alias. Always verify with grep after copy.
@@ -305,8 +315,10 @@ Previous architecture (preserved for reference):
 - **Arena debate queue** — join_debate_queue() uses two-phase match: strict category first, then any-category fallback. queue_count scoped to mode + category (Session 170).
 - **Match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
 - **Token staking + power-up ALL PHASES COMPLETE** (Sessions 108-110/117-118/123-124). Phase 6 (polish/balance) remains.
-- **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned.
-- **AI Sparring upgraded** (Session 204): 6 rounds, beefed-up prompts (4-6 sentences, evidence, fallacy calls), AI scoring mode (4 criteria: Logic/Evidence/Delivery/Rebuttal with scorecard).
+- **Edge Functions use Claude/Anthropic** (Session 220) — `ANTHROPIC_API_KEY` in Supabase env vars. `GROQ_API_KEY` is only used by bot army on VPS and api/go-respond.js on Vercel.
+- **AI Sparring has two modes** — `mode: 'score'` for 4-criteria judging (Logic/Evidence/Delivery/Rebuttal), default for debate responses. Both via Claude.
+- **Prediction system** — wager picker UI (1-500 tokens), refund-on-update with net charge calculation (Session 227). `place_prediction` takes TEXT ('a'/'b') for `p_predicted_winner`.
+- **localStorage key is `moderator_settings`** (renamed from `colosseum_settings`, Session 227). Migration code reads old key on first load, copies to new, deletes old.
 
 ## F-47 Moderator Marketplace (Sessions 173-174)
 - profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index
