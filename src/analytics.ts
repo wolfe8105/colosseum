@@ -86,7 +86,10 @@ export function getTrafficSource(): TrafficSource {
 
 export function getUserId(): string | null {
   try {
-    const key = 'sb-faomczmipsccwbhpivmp-auth-token';
+    // Session 222: AUTH-BUG-4 — derive key from SUPABASE_URL, not hardcoded.
+    // Format: sb-{projectRef}-auth-token
+    const ref = new URL(SUPABASE_URL).hostname.split('.')[0];
+    const key = `sb-${ref}-auth-token`;
     const stored = localStorage.getItem(key);
     if (!stored) return null;
     const parsed = JSON.parse(stored) as { user?: { id?: string } } | null;
