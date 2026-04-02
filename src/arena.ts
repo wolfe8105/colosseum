@@ -214,6 +214,8 @@ const MATCH_ACCEPT_SEC = 12;
 const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 const ROUND_DURATION = 120;
 const AI_TOTAL_ROUNDS = 6;
+const OPPONENT_POLL_MS = 3000;
+const OPPONENT_POLL_TIMEOUT_SEC = 120;
 export const TEXT_MAX_CHARS = 2000;
 
 const AI_TOPICS: readonly string[] = [
@@ -293,6 +295,8 @@ let vmRecording = false;
 let vmTimer: ReturnType<typeof setInterval> | null = null;
 let _queuePollInFlight = false;
 let vmSeconds = 0;
+let opponentPollTimer: ReturnType<typeof setInterval> | null = null;
+let opponentPollElapsed = 0;
 
 // ============================================================
 // HELPERS
@@ -333,6 +337,7 @@ const _onPopState = () => {
     clearInterval(roundTimer!);
     clearInterval(_rulingCountdownTimer!);
     stopReferencePoll();
+    stopOpponentPoll();
     if (currentDebate?.mode === 'live') {
       leaveDebate();
     }
@@ -2335,6 +2340,46 @@ function renderInputControls(mode: DebateMode): void {
 // TEXT / AI MODE
 // ============================================================
 
+function stopOpponentPoll(): void {
+  if (opponentPollTimer) { clearInterval(opponentPollTimer); opponentPollTimer = null; }
+  opponentPollElapsed = 0;
+}
+
+function startOpponentPoll(debateId: string, myRole: DebateRole, round: number): void {
+  stopOpponentPoll();
+
+  opponentPollTimer = setInterval(async () => {
+    opponentPollElapsed += OPPONENT_POLL_MS / 1000;
+
+    if (opponentPollElapsed >= OPPONENT_POLL_TIMEOUT_SEC) {
+      stopOpponentPoll();
+      addSystemMessage('Opponent hasn\'t responded. You can continue waiting or leave the debate.');
+      const inp = document.getElementById('arena-text-input') as HTMLTextAreaElement | null;
+      if (inp) inp.disabled = false;
+      return;
+    }
+
+    try {
+      const { data, error } = await safeRpc<unknown>('get_debate_messages', { p_debate_id: debateId });
+      if (error || !data) return;
+
+      const msgs = (Array.isArray(data) ? data : []) as Array<{ side: string; round: number; content: string; is_ai: boolean }>;
+      const oppMsg = msgs.find(m => m.side !== myRole && m.round === round);
+      if (!oppMsg) return;
+
+      stopOpponentPoll();
+      const oppSide: DebateRole = myRole === 'a' ? 'b' : 'a';
+      addMessage(oppSide, oppMsg.content, round, oppMsg.is_ai ?? false);
+
+      // Re-enable input for next round
+      const inp = document.getElementById('arena-text-input') as HTMLTextAreaElement | null;
+      if (inp) inp.disabled = false;
+
+      advanceRound();
+    } catch { /* retry next tick */ }
+  }, OPPONENT_POLL_MS);
+}
+
 export async function submitTextArgument(): Promise<void> {
   const input = document.getElementById('arena-text-input') as HTMLTextAreaElement | null;
   if (!input || !input.value.trim()) return;
@@ -2365,14 +2410,18 @@ export async function submitTextArgument(): Promise<void> {
   if (debate.mode === 'ai') {
     await handleAIResponse(debate, text);
   } else {
-    // Text async: show waiting for opponent
+    // Human-vs-human: disable input, poll for opponent's message
+    input.disabled = true;
     addSystemMessage('Waiting for opponent\'s response...');
     if (isPlaceholder() || debate.id.startsWith('placeholder-')) {
       setTimeout(() => {
         const oppSide: DebateRole = side === 'a' ? 'b' : 'a';
         addMessage(oppSide, generateSimulatedResponse(debate.round), debate.round, false);
+        input.disabled = false;
         advanceRound();
       }, 2000 + Math.random() * 3000);
+    } else {
+      startOpponentPoll(debate.id, side, debate.round);
     }
   }
 }
@@ -2862,6 +2911,7 @@ export async function endCurrentDebate(): Promise<void> {
   if (roundTimer) clearInterval(roundTimer);
   stopReferencePoll();
   stopModStatusPoll();
+  stopOpponentPoll();
   document.getElementById('mod-request-modal')?.remove();
 
   const debate = currentDebate!;
