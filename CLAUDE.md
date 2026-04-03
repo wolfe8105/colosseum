@@ -20,9 +20,8 @@ Solo founder project. **Vite + TypeScript build pipeline** — all source files 
 **Bot army:** DigitalOcean VPS at `161.35.137.21`, PM2 managed. TypeScript source in repo (`bot-engine.ts`, `bot-config.ts`, etc.). PM2 runs compiled output from `dist/`.
 
 **VPS paths:**
-- Git repo root: `/opt/colosseum` (NOT `/opt/colosseum/bot-army/colosseum-bot-army/`)
-- Bot army source on VPS: `/opt/colosseum/bot-army/colosseum-bot-army/`
-- VPS deploy path: `/opt/colosseum/bot-army/colosseum-bot-army/`
+- Git repo root: `/opt/colosseum` (NOT the bot-army subdirectory)
+- Bot army on VPS: `/opt/colosseum/bot-army/colosseum-bot-army/`
 
 ## CRITICAL Security Rules — Never Violate
 
@@ -96,7 +95,7 @@ Source lives in `src/`. Compiled output goes to `dist/`. Never edit `dist/` dire
 `api/profile.js` — public profile pages at `/u/username`, dynamic OG tags.
 
 ### SQL Migrations
-`migrations/` folder. Applied in order.
+SQL migration files live at repo root (e.g. `moderator-schema-production.sql`, `moderator-analytics-migration.sql`). GitHub repo is NOT source of truth for live schema — always verify against Supabase directly.
 
 ## Key Patterns
 
@@ -124,16 +123,6 @@ TypeScript + Vite. Run `npm install` then `npm run build` to compile. Serve the 
 - Bot platform wiring requires THREE updates: config object + flags block in `bot-config.ts` + `formatFlags()` in `bot-engine.ts`. Missing any one = silent failure.
 - Always use `\cp` on VPS (bypasses `cp -i` alias). Verify with grep after copy.
 - Git repo root on VPS is `/opt/colosseum` (NOT the bot-army subdirectory)
-
-## F-47 Moderator Marketplace Schema (Session 173)
-
-New columns:
-- `profiles.mod_categories TEXT[] DEFAULT '{}'` + GIN index
-- `arena_debates.mod_status TEXT DEFAULT 'none'` CHECK ('none'/'waiting'/'requested'/'claimed')
-- `arena_debates.mod_requested_by UUID NULL`
-- Partial index on `arena_debates(mod_status) WHERE mod_status = 'waiting'`
-
-New RPCs: `browse_mod_queue`, `request_to_moderate` (FOR UPDATE SKIP LOCKED), `respond_to_mod_request`, `get_mod_profile`, `update_mod_categories`, `request_mod_for_debate`, `get_debate_mod_status`. Fixed: `assign_moderator`, `score_moderator`.
 
 ## Design DNA
 
