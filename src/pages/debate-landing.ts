@@ -330,7 +330,7 @@ function shareDebate(method: string): void {
     if (navigator.share) {
       navigator.share({ title: debate.topic, text, url }).catch(() => { /* cancelled */ });
     } else {
-      navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => { /* fallback */ });
+      navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch((e) => console.warn('[Landing] clipboard fallback failed:', e));
     }
   }
 }

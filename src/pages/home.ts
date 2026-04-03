@@ -308,7 +308,7 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
       await ModeratorAsync.fetchStandaloneQuestions?.();
       const predsTab = document.getElementById('overlay-predictions-tab');
       if (predsTab) ModeratorAsync.renderPredictions(predsTab);
-    } catch(e) { /* non-critical */ }
+    } catch(e) { console.warn('[Home] predictions render failed:', e); }
     (ptr.querySelector('.ptr-spinner') as HTMLElement).classList.remove('spinning');
     ptr.style.opacity = '0';
     ptr.style.transform = 'translateY(-100%)';
@@ -477,7 +477,7 @@ async function loadFollowCounts() {
     const counts = await getFollowCounts(user.id);
     document.getElementById('profile-followers').textContent = String(counts.followers || 0);
     document.getElementById('profile-following').textContent = String(counts.following || 0);
-  } catch(e) { /* non-critical */ }
+  } catch(e) { console.warn('[Home] follow counts render failed:', e); }
 }
 
 
@@ -710,7 +710,7 @@ async function appInit(){
       ready,
       new Promise(r => setTimeout(r, 6000))
     ]);
-  } catch(e) { /* auth init rejected */ }
+  } catch(e) { console.warn('[Home] auth init failed:', e); }
 
   const loading=document.getElementById('loading-screen');
   if(loading){loading.classList.add('fade-out');setTimeout(()=>loading.remove(),400);}
@@ -727,7 +727,7 @@ async function appInit(){
   try{
     const urlScreen=new URLSearchParams(window.location.search).get('screen');
     if(urlScreen&&document.getElementById('screen-'+urlScreen)){navigateTo(urlScreen);}
-  }catch(e){}
+  }catch(e){ console.warn('[Home] screen nav failed:', e); }
 
   loadFollowCounts();
 

@@ -217,10 +217,10 @@ interface SpectatorChatMessage {
       if (ogDesc) ogDesc.setAttribute('content', (debate.debater_a_name || 'Side A') + ' vs ' + (debate.debater_b_name || 'Side B') + ' — Watch live and vote.');
 
       // Bump spectator count (fire-and-forget)
-      rpc('bump_spectator_count', { p_debate_id: debateId }).catch(() => {});
+      rpc('bump_spectator_count', { p_debate_id: debateId }).catch((e) => console.warn('[Spectate] bump_spectator_count failed:', e));
 
       // Log view event (non-blocking)
-      rpc('log_event', { p_event_type: 'spectate_view', p_metadata: { debate_id: debateId, topic: debate.topic || null } }).catch(() => {});
+      rpc('log_event', { p_event_type: 'spectate_view', p_metadata: { debate_id: debateId, topic: debate.topic || null } }).catch((e) => console.warn('[Spectate] log_event failed:', e));
 
       // Load messages
       let messages = [];
@@ -751,7 +751,7 @@ interface SpectatorChatMessage {
       navigator.clipboard.writeText(url).then(() => {
         const btn = document.getElementById('share-copy');
         if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
-      }).catch(() => {});
+      }).catch((e) => console.warn('[Spectate] clipboard copy failed:', e));
     });
 
     document.getElementById('share-x')?.addEventListener('click', () => {
@@ -766,7 +766,7 @@ interface SpectatorChatMessage {
       if (navigator.share) {
         navigator.share({ title: d.topic || 'Live Debate', text: text, url: url }).catch(() => {});
       } else {
-        navigator.clipboard.writeText(url).catch(() => {});
+        navigator.clipboard.writeText(url).catch((e) => console.warn('[Spectate] clipboard fallback failed:', e));
       }
     });
   }

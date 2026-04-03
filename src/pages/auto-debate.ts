@@ -353,7 +353,7 @@ function shareDebateImpl(method: string): void {
       // Attempt to update button text
       const btn = document.querySelector('.share-bar .share-btn:first-child') as HTMLElement | null;
       if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
-    }).catch(() => { /* fallback */ });
+    }).catch((e) => console.warn('[AutoDebate] clipboard copy failed:', e));
   } else if (method === 'twitter') {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   } else if (method === 'native') {
@@ -362,7 +362,7 @@ function shareDebateImpl(method: string): void {
     } else if (navigator.share) {
       navigator.share({ title: d.topic, text, url }).catch(() => { /* cancelled */ });
     } else {
-      navigator.clipboard.writeText(url).catch(() => { /* fallback */ });
+      navigator.clipboard.writeText(url).catch((e) => console.warn('[AutoDebate] clipboard fallback failed:', e));
     }
   }
 }
