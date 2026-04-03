@@ -187,7 +187,7 @@ function _showNext(): void {
     if (payload.user_id) {
       import('./auth.ts').then(({ showUserProfile }) => {
         showUserProfile(payload.user_id, payload.username ?? undefined);
-      }).catch(() => {});
+      }).catch((e) => console.warn('[Rivals] showUserProfile import failed:', e));
     }
   });
 }

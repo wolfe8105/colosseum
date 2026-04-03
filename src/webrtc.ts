@@ -980,7 +980,7 @@ export function leaveDebate(): void {
 
   if (activeWaveform) {
     activeWaveform.stop();
-    activeWaveform.audioCtx.close().catch(() => { /* already closed */ });
+    activeWaveform.audioCtx.close().catch((e) => console.warn('[WebRTC] audioCtx close failed:', e));
     activeWaveform = null;
   }
 

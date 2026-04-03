@@ -60,8 +60,8 @@ const COLORS = {
 
 // Preload Antonio for Canvas API — CSS loads it for DOM, but Canvas needs explicit load
 if (typeof document !== 'undefined' && document.fonts) {
-  document.fonts.load('400 16px "Antonio"').catch(() => {});
-  document.fonts.load('700 16px "Antonio"').catch(() => {});
+  document.fonts.load('400 16px "Antonio"').catch((e) => console.warn('[Cards] font load failed:', e));
+  document.fonts.load('700 16px "Antonio"').catch((e) => console.warn('[Cards] font load failed:', e));
 }
 
 const CANVAS_FONT = "'Antonio', sans-serif";

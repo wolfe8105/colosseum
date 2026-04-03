@@ -257,7 +257,7 @@ function startVisualization(stream: MediaStream): void {
 function stopVisualization(): void {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   if (audioContext) {
-    audioContext.close().catch(() => {});
+    audioContext.close().catch((e) => console.warn('[VoiceMemo] audioContext close failed:', e));
     audioContext = null;
   }
   analyser = null;

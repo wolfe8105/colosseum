@@ -194,8 +194,8 @@ export function trackEvent(eventType: string, extra?: Record<string, unknown>): 
         Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
       },
       body: JSON.stringify(body),
-    }).catch(() => {
-      /* swallow */
+    }).catch((e) => {
+      console.warn('[Analytics] event send failed:', e);
     });
   } catch {
     // Never block the page. Never throw. Analytics is optional.

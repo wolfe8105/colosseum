@@ -344,7 +344,7 @@ const _onPopState = () => {
   }
   if (view === 'queue') {
     clearQueueTimers();
-    if (!isPlaceholder()) safeRpc('leave_debate_queue').catch(() => {});
+    if (!isPlaceholder()) safeRpc('leave_debate_queue').catch((e) => console.warn('[Arena] leave_debate_queue failed:', e));
   }
   if (view === 'matchFound') {
     clearMatchAcceptTimers();
@@ -1795,14 +1795,14 @@ function onQueueTimeout(): void {
   }
 
   if (!isPlaceholder()) {
-    safeRpc('leave_debate_queue').catch(() => {});
+    safeRpc('leave_debate_queue').catch((e) => console.warn('[Arena] leave_debate_queue failed:', e));
   }
 }
 
 export function leaveQueue(): void {
   clearQueueTimers();
   if (!isPlaceholder()) {
-    safeRpc('leave_debate_queue').catch(() => {});
+    safeRpc('leave_debate_queue').catch((e) => console.warn('[Arena] leave_debate_queue failed:', e));
   }
   renderLobby();
 }
@@ -1915,7 +1915,7 @@ async function onMatchAccept(): Promise<void> {
 function onMatchDecline(): void {
   clearMatchAcceptTimers();
   if (!isPlaceholder() && matchFoundDebate) {
-    safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: false }).catch(() => {});
+    safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: false }).catch((e) => console.warn('[Arena] respond_to_match decline failed:', e));
   }
   returnToQueueAfterDecline();
 }
@@ -1926,7 +1926,7 @@ function onMatchConfirmed(): void {
   if (statusEl) statusEl.textContent = '\u2705 Both ready \u2014 entering battle!';
   if (matchFoundDebate) {
     if (selectedWantMod && !isPlaceholder()) {
-      safeRpc('request_mod_for_debate', { p_debate_id: matchFoundDebate.id }).catch(() => {});
+      safeRpc('request_mod_for_debate', { p_debate_id: matchFoundDebate.id }).catch((e) => console.warn('[Arena] request_mod_for_debate failed:', e));
     }
     selectedWantMod = false;
     setTimeout(() => { void showPreDebate(matchFoundDebate!); }, 800);
@@ -3333,7 +3333,7 @@ export function showRulingPanel(ref: ReferenceItem): void {
       clearInterval(_rulingCountdownTimer!);
       _rulingCountdownTimer = null;
       overlay.remove();
-      ruleOnReference(ref.id, 'allowed', 'Auto-allowed (moderator timeout)').catch(() => {});
+      ruleOnReference(ref.id, 'allowed', 'Auto-allowed (moderator timeout)').catch((e) => console.warn('[Arena] ruleOnReference auto-allow failed:', e));
     }
   }, 1000);
 
@@ -4007,7 +4007,7 @@ function onPrivateLobbyMatched(data: {
 async function cancelPrivateLobby(): Promise<void> {
   if (privateLobbyPollTimer) { clearInterval(privateLobbyPollTimer); privateLobbyPollTimer = null; }
   if (privateLobbyDebateId && !isPlaceholder()) {
-    safeRpc('cancel_private_lobby', { p_debate_id: privateLobbyDebateId }).catch(() => {});
+    safeRpc('cancel_private_lobby', { p_debate_id: privateLobbyDebateId }).catch((e) => console.warn('[Arena] cancel_private_lobby failed:', e));
   }
   privateLobbyDebateId = null;
   renderLobby();
