@@ -78,6 +78,44 @@ function clearMsg(id: string): void {
   el.textContent = '';
 }
 
+/** Validate password meets Supabase complexity rules. Returns error string or null. */
+function validatePasswordComplexity(password: string): string | null {
+  if (password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[a-z]/.test(password)) return 'Password needs at least one lowercase letter.';
+  if (!/[A-Z]/.test(password)) return 'Password needs at least one uppercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password needs at least one digit.';
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|<>?,./`~]/.test(password)) return 'Password needs at least one symbol (!@#$%^&* etc).';
+  return null;
+}
+
+/** Check password against HIBP Pwned Passwords API using k-anonymity. Returns true if leaked. */
+async function checkHIBP(password: string): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const prefix = hashHex.slice(0, 5);
+    const suffix = hashHex.slice(5);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) return false; // API error — don't block signup
+
+    const text = await response.text();
+    return text.split('\n').some(line => line.split(':')[0].trim() === suffix);
+  } catch {
+    return false; // timeout or network error — don't block signup
+  }
+}
+
 function getAge(month: number, day: number, year: number): number {
   const today = new Date();
   const birth = new Date(year, month - 1, day);
@@ -142,13 +180,29 @@ document.getElementById('email-toggle')?.addEventListener('click', function (thi
 });
 
 // Email continue
-document.getElementById('btn-email-next')?.addEventListener('click', () => {
+document.getElementById('btn-email-next')?.addEventListener('click', async () => {
   clearMsg('step1-msg');
   const email = (document.getElementById('signup-email') as HTMLInputElement | null)?.value.trim() ?? '';
   const password = (document.getElementById('signup-password') as HTMLInputElement | null)?.value ?? '';
 
   if (!email) { showMsg('step1-msg', 'Please enter your email.', 'error'); return; }
-  if (!password || password.length < 8) { showMsg('step1-msg', 'Password must be at least 8 characters.', 'error'); return; }
+
+  // Layer 1: Client-side complexity check (matches Supabase password rules)
+  const complexityError = validatePasswordComplexity(password);
+  if (complexityError) { showMsg('step1-msg', complexityError, 'error'); return; }
+
+  // Layer 2: HIBP leaked password check (k-anonymity, 3s timeout, non-blocking on failure)
+  const btn = document.getElementById('btn-email-next') as HTMLButtonElement | null;
+  if (btn) { btn.disabled = true; btn.textContent = 'CHECKING...'; }
+
+  const isPwned = await checkHIBP(password);
+  if (isPwned) {
+    showMsg('step1-msg', 'This password has appeared in a data breach. Please choose a different one.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'CONTINUE'; }
+    return;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'CONTINUE'; }
 
   signupMethod = 'email';
   signupEmail = email;
@@ -228,7 +282,16 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
       signupEmail = '';
 
       if (!result.success) {
-        showMsg('step3-msg', result.error ?? 'Signup failed.', 'error');
+        const err = result.error ?? 'Signup failed.';
+        // Layer 3: If password-related error slipped past client validation,
+        // show clean message and send user back to step 1 where the password field is
+        if (err.toLowerCase().includes('password')) {
+          showMsg('step1-msg', 'Please choose a stronger password.', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
+          goToStep(1);
+          return;
+        }
+        showMsg('step3-msg', err, 'error');
         if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
         return;
       }
