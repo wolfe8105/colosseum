@@ -208,6 +208,13 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
 
   try {
     if (signupMethod === 'email') {
+      if (!signupEmail || !signupPassword) {
+        showMsg('step3-msg', 'Session expired. Please start over.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
+        setTimeout(() => goToStep(1), 1500);
+        return;
+      }
+
       const result = await signUp({
         email: signupEmail,
         password: signupPassword,
@@ -253,6 +260,11 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
       if (welcome) welcome.textContent = 'Welcome to the arena, ' + displayName + '!';
       nudge('first_signup', '🎉 Welcome to the arena. Your journey starts now.', 'success');
       goToStep(4);
+    } else {
+      showMsg('step3-msg', 'Session expired. Please start over.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
+      setTimeout(() => goToStep(1), 1500);
+      return;
     }
   } catch {
     // SESSION 64: Clear credentials on error path too
