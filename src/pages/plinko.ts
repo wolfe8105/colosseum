@@ -296,9 +296,66 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
         return;
       }
 
-      const welcome = document.getElementById('welcome-text');
-      if (welcome) welcome.textContent = 'Welcome to the arena, ' + displayName + '. Check your email to confirm your account.';
-      goToStep(4);
+      // Email signup: check if Supabase returned a session
+      // If Confirm email is enabled, session is null — user must confirm first
+      if (!result.session) {
+        // No session — skip step 4 (mod opt-in RPC would fail without auth)
+        // Modify step 5 for email confirmation flow
+        const title = document.querySelector('#step-5 .step-title');
+        if (title) title.textContent = 'CHECK YOUR EMAIL';
+
+        const welcome = document.getElementById('welcome-text');
+        const emailForDisplay = (document.getElementById('signup-email') as HTMLInputElement | null)?.value.trim() ?? 'your email';
+        if (welcome) welcome.textContent = 'We sent a confirmation link to ' + emailForDisplay + '. Click the link to activate your account.';
+
+        // Hide ENTER button — user has no session, arena would bounce them
+        const enterBtn = document.getElementById('btn-enter');
+        if (enterBtn) enterBtn.style.display = 'none';
+
+        // Add resend button if not already present
+        if (!document.getElementById('btn-resend-email')) {
+          const step5 = document.getElementById('step-5');
+          if (step5) {
+            const resendBtn = document.createElement('button');
+            resendBtn.type = 'button';
+            resendBtn.className = 'btn-primary';
+            resendBtn.id = 'btn-resend-email';
+            resendBtn.style.marginTop = '12px';
+            resendBtn.textContent = 'RESEND CONFIRMATION EMAIL';
+            resendBtn.addEventListener('click', async () => {
+              const resendEmail = (document.getElementById('signup-email') as HTMLInputElement | null)?.value.trim() ?? '';
+              if (!resendEmail) return;
+              resendBtn.disabled = true;
+              resendBtn.textContent = 'SENDING...';
+              try {
+                const sbClient = getSupabaseClient() as any;
+                if (sbClient) {
+                  const { error: resendError } = await sbClient.auth.resend({
+                    type: 'signup',
+                    email: resendEmail,
+                  });
+                  if (resendError) throw resendError;
+                  resendBtn.textContent = 'EMAIL SENT ✓';
+                  setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = 'RESEND CONFIRMATION EMAIL'; }, 30000);
+                }
+              } catch {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'RESEND CONFIRMATION EMAIL';
+                const w = document.getElementById('welcome-text');
+                if (w) w.textContent = 'Could not resend. Try again in a moment.';
+              }
+            });
+            step5.appendChild(resendBtn);
+          }
+        }
+
+        goToStep(5);
+      } else {
+        // Session exists (email confirmation disabled or auto-confirmed) — normal flow
+        const welcome = document.getElementById('welcome-text');
+        if (welcome) welcome.textContent = 'Welcome to the arena, ' + displayName + '. Check your email to confirm your account.';
+        goToStep(4);
+      }
 
     } else if (signupMethod === 'oauth') {
       // OAuth user returned — update their profile with username/dob
@@ -381,6 +438,13 @@ window.addEventListener('DOMContentLoaded', () => {
         if (hash && (hash.includes('type=signup') || hash.includes('type=email'))) {
           const welcome = document.getElementById('welcome-text');
           if (welcome) welcome.textContent = 'Email confirmed! Welcome to the arena.';
+          // Restore normal step 5 UI (undo email-confirmation modifications)
+          const title = document.querySelector('#step-5 .step-title');
+          if (title) title.textContent = "YOU'RE IN";
+          const enterBtn = document.getElementById('btn-enter');
+          if (enterBtn) enterBtn.style.display = '';
+          const resendBtn = document.getElementById('btn-resend-email');
+          if (resendBtn) resendBtn.style.display = 'none';
           // SESSION 64: Clear hash to remove tokens from URL
           if (window.history?.replaceState) {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -407,6 +471,13 @@ window.addEventListener('DOMContentLoaded', () => {
       if (hasRealSession) {
         const welcome = document.getElementById('welcome-text');
         if (welcome) welcome.textContent = 'Email confirmed! Welcome to the arena.';
+        // Restore normal step 5 UI (undo email-confirmation modifications)
+        const title = document.querySelector('#step-5 .step-title');
+        if (title) title.textContent = "YOU'RE IN";
+        const enterBtn = document.getElementById('btn-enter');
+        if (enterBtn) enterBtn.style.display = '';
+        const resendBtn = document.getElementById('btn-resend-email');
+        if (resendBtn) resendBtn.style.display = 'none';
         goToStep(5);
       }
     }
