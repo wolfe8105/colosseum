@@ -91,17 +91,14 @@ export async function getPool(debateId: string): Promise<PoolData> {
   return result.data ?? emptyPool;
 }
 
-/** Settle stakes after debate completion. Parimutuel payout. */
-export async function settleStakes(debateId: string, winner: string, multiplier?: number): Promise<SettleResult> {
-  const params: Record<string, unknown> = {
+/** Settle stakes after debate completion. Parimutuel payout.
+ *  Session 230: winner and multiplier params removed — SQL reads winner
+ *  from arena_debates.winner (authoritative) and multiplier is hardcoded
+ *  to 1 server-side. Client never determines payout math. */
+export async function settleStakes(debateId: string): Promise<SettleResult> {
+  const result = await safeRpc<SettleResult>('settle_stakes', {
     p_debate_id: debateId,
-    p_winner: winner,
-  };
-  if (multiplier != null && multiplier > 1) {
-    params.p_multiplier = multiplier;
-  }
-
-  const result = await safeRpc<SettleResult>('settle_stakes', params);
+  });
 
   if (result.error) {
     console.error('[Staking] settle error:', result.error);

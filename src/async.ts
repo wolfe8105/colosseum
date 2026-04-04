@@ -28,7 +28,7 @@ import {
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
 import { navigateTo } from './navigation.ts';
-import { requireTokens, claimHotTake, claimReaction, claimPrediction } from './tokens.ts';
+import { claimHotTake, claimReaction, claimPrediction } from './tokens.ts';
 import { nudge } from './nudge.ts';
 
 // ============================================================
@@ -138,6 +138,9 @@ let _pendingChallengeId: string | null = null;
 
 /** FIX #3: Debounce lock for react toggle (LM-015) */
 const reactingIds: Set<string> = new Set();
+// Session 230 (P3-1, P3-2): Double-click guards for postTake and placePrediction
+let _postingInFlight = false;
+const _predictingInFlight: Set<string> = new Set();
 
 /** Track which containers have delegation wired */
 const _wiredContainers: WeakSet<HTMLElement> = new WeakSet();
@@ -901,6 +904,8 @@ export async function placePrediction(
   amount: number
 ): Promise<void> {
   if (!requireAuth('place predictions')) return;
+  if (_predictingInFlight.has(debateId)) return;
+  _predictingInFlight.add(debateId);
 
   const pred = predictions.find((p) => p.debate_id === debateId);
   if (!pred) return;
@@ -946,6 +951,7 @@ export async function placePrediction(
   }
 
   showToast(`🔮 Wagered ${amount} tokens on ${side === 'a' ? pred.p1 : pred.p2}!`, 'success');
+  _predictingInFlight.delete(debateId);
 }
 
 export async function pickStandaloneQuestion(
@@ -1170,7 +1176,7 @@ export async function react(takeId: string): Promise<void> {
 
 export function challenge(takeId: string): void {
   if (!requireAuth('challenge someone to a debate')) return;
-  if (!requireTokens(50, 'challenge someone')) return;
+  // Session 230 (P1-3): requireTokens(50) removed — create_challenge never debited tokens.
   const take = hotTakes.find((t) => t.id === takeId);
   if (!take) return;
   _showChallengeModal(take);
@@ -1281,14 +1287,17 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
 
 export async function postTake(): Promise<void> {
   if (!requireAuth('post hot takes')) return;
-  if (!requireTokens(25, 'post hot takes')) return;
+  // Session 230 (P1-2): requireTokens(25) removed — posting never debited tokens,
+  // it only blocked low-balance users. create_hot_take awards tokens via claimHotTake.
+  if (_postingInFlight) return;
+  _postingInFlight = true;
 
   const input = document.getElementById(
     'hot-take-input'
   ) as HTMLTextAreaElement | null;
-  if (!input) return;
+  if (!input) { _postingInFlight = false; return; }
   const text = input.value.trim();
-  if (!text) return;
+  if (!text) { _postingInFlight = false; return; }
 
   const profile = getCurrentProfile();
   const section = currentFilter === 'all' ? 'trending' : currentFilter;
@@ -1334,6 +1343,7 @@ export async function postTake(): Promise<void> {
       showToast('Post failed — try again', 'error');
     }
   }
+  _postingInFlight = false;
 }
 
 // ============================================================
