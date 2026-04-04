@@ -337,7 +337,7 @@ export async function fetchTakes(section?: string): Promise<void> {
     )
       .from('hot_takes')
       .select(
-        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating, token_balance)'
+        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating)'
       )
       .order('created_at', { ascending: false })
       .limit(30);
@@ -361,7 +361,7 @@ export async function fetchTakes(section?: string): Promise<void> {
           username: (profiles?.['username'] as string) || '',
           user: ((profiles?.['username'] as string) || 'ANON').toUpperCase(),
           elo: (profiles?.['elo_rating'] as number) || 1200,
-          tokens: (profiles?.['token_balance'] as number) || 0,
+          tokens: 0,
           text: t['content'] as string,
           section: t['section'] as string,
           reactions: (t['reaction_count'] as number) || 0,
@@ -663,7 +663,6 @@ function _renderTake(t: HotTake): string {
         </div>
         <div>
           <span ${profileAttr} style="font-weight:700;font-size:13px;color:var(--mod-text-heading);${userClickable ? 'cursor:pointer;' : ''}">${safeUser}</span>
-          <span style="font-size:11px;color:var(--mod-accent);margin-left:6px;">🪙 ${Number(t.tokens || 0)}</span>
         </div>
         <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
       </div>

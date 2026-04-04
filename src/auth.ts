@@ -297,11 +297,7 @@ function _enterPlaceholderMode(): void {
 async function _loadProfile(userId: string): Promise<void> {
   if (!supabaseClient) return;
   try {
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const { data, error } = await supabaseClient.rpc('get_own_profile');
 
     if (error) throw error;
     currentProfile = data as Profile;
