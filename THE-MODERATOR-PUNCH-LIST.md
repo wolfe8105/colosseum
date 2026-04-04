@@ -1,6 +1,6 @@
 # THE MODERATOR — PUNCH LIST
 ### Created: Session 162 (March 23, 2026)
-### Last Updated: Session 228 (April 2, 2026)
+### Last Updated: Session 229 (April 4, 2026)
 
 > **What this is:** The single source of truth for everything that needs doing.
 > Loads every session via project knowledge. Read this first, pick what's next, go.
@@ -74,6 +74,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-46 | Private lobby / invite-only debate | | ✅ Session 173 | ✅ DONE. 3 visibility modes: username challenge, group members only, shareable join code. Client: showPrivateLobbyPicker, showUserSearchPicker, showGroupLobbyPicker, createAndWaitPrivateLobby, startPrivateLobbyPoll, joinWithCode. SQL: create_private_lobby, check_private_lobby, join_private_lobby, cancel_private_lobby, search_users_by_username. Columns on arena_debates: visibility, join_code, invited_user_id, lobby_group_id. No debate_invites table needed. |
 | F-47 | Moderator Marketplace | | ✅ Session 179 | ✅ DONE. SQL Phases 1-3 ✅. Client Steps 1-6 ✅. Step 7 ✅ (renderModScoring: debaters get 👍/👎, spectators get slider 1–50, wired to score_moderator RPC). Step 8 ✅ (8 test cases in tests/f47-moderator-scoring.test.ts, all passing). |
 | F-48 | Mod-initiated debate | | ✅ Session 210 | ✅ DONE. SQL: arena_debates.debater_a DROP NOT NULL. 4 RPCs: create_mod_debate, join_mod_debate (FOR NO KEY UPDATE SKIP LOCKED), check_mod_debate, cancel_mod_debate. Client: CREATE DEBATE button in Mod Queue, showModDebatePicker (mode/category/topic/ranked/ruleset), createModDebate, showModDebateWaitingMod (join code + slot names), showModDebateWaitingDebater, startModDebatePoll (4s), onModDebateReady (mod→observer, debater→matchFound). joinWithCode falls back to join_mod_debate. F48-MOD-INITIATED-DEBATE.sql committed to repo. |
+| F-51 | Live Moderated Debate Feed | | ❌ No code | **THE core product feature.** Replaces Live Audio with fully moderated turn-based debate. Full spec: LIVE-DEBATE-FEED-SPEC.md (repo, 77 design questions answered). Key decisions: 4 rounds × 2min turns, one speaker at a time (other frozen), live inline scoring (two-tap), reference citations (max 5, one-and-done), 60s ad breaks between rounds, spectator sentiment gauge, Deepgram speech-to-text, 3 power-ups (2x/Shield/Reveal), concede after R1, moderator eject/null. Post-debate: vote gate → winner → archive. **Deps: Deepgram integration, Google AdSense integration, new feed events table, turn-taking enforcement over WebRTC.** |
 
 ## 3B. Token Economy / Staking
 
@@ -283,3 +284,4 @@ This punch list was compiled from:
 | 2026-04-02 | 226 | ECON-BUG-1 closed (9 RPC security fixes: token_balance CHECK constraint, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). GRP-BUG-1 closed (14 group RPCs audited, respond_to_group_challenge restricted to leader/co_leader). turn-credentials CORS fixed. All 4 Edge Functions redeployed. Prediction system type mismatch discovered (not fixed). |
 | 2026-04-02 | 227 | Prediction system fixed end-to-end (place_prediction UUID→TEXT revert, wager picker UI 1-500 tokens, refund-on-update with net charge). supabase-deployed-functions-export.sql fully re-synced (174 RPCs). localStorage key renamed colosseum_settings → moderator_settings with migration code. |
 | 2026-04-02 | 228 | Documentation update session. NT updated through S228. Punch List changelog updated through S227. OT session logs S211-227 appended. SESSION-218-BUG-TRACKER.md removed from project knowledge (all bugs closed or dormant). |
+| 2026-04-04 | 229 | Major doc cleanup. Land Mine Map: 66 entries killed (173→107), 4 sections removed, LM-092 corrected, LM-199 added, LM-029/LM-110 updated. 3 docs deleted from repo (PRODUCT-WALKTHROUGH, TECHNICAL-AUDIT, LCARS-Reference-Guide). 4 docs removed from project knowledge (Old Testament, Wiring Manifest, Test Walkthrough, Product Vision — all kept in repo). Product Vision unique content merged into NT Section 8. F-51 added (Live Moderated Debate Feed, references LIVE-DEBATE-FEED-SPEC.md). |

@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 228 (April 2, 2026)
+### Last Updated: Session 229 (April 4, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -15,16 +15,14 @@
 | Topic | Go Here |
 |-------|---------|
 | Open work (bugs, features, housekeeping) | **THE-MODERATOR-PUNCH-LIST.md** |
-| Any SQL / schema / auth / deployment change | **THE-MODERATOR-LAND-MINE-MAP.md** first — 194 entries, 20 sections covering DB triggers, auth, bot army, VPS, Stripe, Supabase quirks |
-| Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — every RPC, global, flow, blast radius. Note: file refs use pre-TS names, patterns still valid |
+| Any SQL / schema / auth / deployment change | **THE-MODERATOR-LAND-MINE-MAP.md** first — 107 entries, 16 sections covering DB triggers, auth, Stripe, Supabase quirks |
 | B2B strategy, pricing, buyer list, pitch | **THE-MODERATOR-WAR-CHEST.md** |
-| UI features, ad surfaces, gamification, mobile UX | **THE-MODERATOR-PRODUCT-VISION.md** |
-| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — sessions 1-227 |
-| Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — 77 design questions answered |
-| QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — stale, update in future session |
-| Screen-by-screen build queue | **PRODUCT-WALKTHROUGH.md** — barely started, continue in future session |
 | Security rules, file conventions, build system | **CLAUDE.md** |
 | Security & identity roadmap (YubiKey, WebAuthn, passkeys) | **THE-MODERATOR-SECURITY-ROADMAP.md** |
+| Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — repo only, not in project knowledge. Pre-TS file refs, patterns still valid |
+| Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — repo only, not in project knowledge. Sessions 1-228 |
+| Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — repo only. 77 design questions answered. Referenced as F-51 in Punch List |
+| QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — repo only. Stale, needs full rewrite |
 
 ---
 
@@ -209,6 +207,11 @@ Privacy Policy live. Terms of Service live. AI content labeling deployed. DMCA a
 - **Casual Is King** — protected lobbies, no sharks in casual waters
 - **Reciprocal Gating** — can't unlock cosmetic until profile section complete
 - **Liquidity Problem** — text async, voice memo, AI sparring solve cold-start
+- **Mute-First Design** — 92% of mobile users view with sound off. Platform must work on mute: gauge, vote percentages, text feed, reactions. Audio is the premium layer, not the required one. Inverse of Clubhouse.
+- **Structural Ads** — no banners (0.05% CTR, 86% blindness). Ads live at natural transition points: round breaks, score reveals, lobby fills. Unskippable because they're part of the game flow, not interruptions. Three tiers: live breaks (premium), replay breaks, highlight pre-rolls.
+- **Thumb Zone** — all interaction elements in bottom third of screen. 75% of mobile users navigate with thumbs. 44px minimum touch targets.
+- **Polite Nudge** — every message is polite first, nudge second. User never feels sold to. Implemented in nudge.ts with suppression rules (once/session, 24h cooldown, 3/session cap).
+- **Psychology Framework** — Cialdini principles (social proof, scarcity/FOMO, unity, reciprocity) + primal triggers (visual dominance, contrast, self-interest). Detailed in War Chest for B2B pitch.
 
 ---
 
@@ -243,10 +246,18 @@ Previous architecture (preserved for reference):
 > **All feature work, bugs, and tech debt are tracked in THE-MODERATOR-PUNCH-LIST.md. Read that first.**
 
 ## Pat Action Items
-- Legal pages still have @thecolosseum.app emails — blocked on domain email setup
+- ~~Legal pages @thecolosseum.app emails~~ ✅ Fixed Session 229 (security hardening sessions). Domain email live, legal pages updated.
 - Reddit API approval — check email, resubmit if rejected (submitted March 4)
 - ~~Register DMCA agent at copyright.gov ($6)~~ ✅ Session 204. Tracking ID 280U2D1K.
 - ~~Google OAuth re-enable + SMTP fix~~ ✅ Session 204. Both confirmed working.
+- Second YubiKey TOTP seeds for Supabase and Vercel (deferred from Session 3)
+- Negative testing — log into each locked service without key to confirm blocked (deferred from Session 3)
+
+**Session 229 Doc Cleanup — Pat GitHub Actions:**
+- Delete from GitHub: `PRODUCT-WALKTHROUGH.md`, `TECHNICAL-AUDIT.md`, `LCARS-Complete-Reference-Guide.md`
+- Upload to GitHub: updated `THE-MODERATOR-LAND-MINE-MAP.md`, `THE-MODERATOR-NEW-TESTAMENT.md`, `THE-MODERATOR-PUNCH-LIST.md`
+- Remove from project knowledge: `THE-MODERATOR-OLD-TESTAMENT.md`, `THE-MODERATOR-WIRING-MANIFEST.md`, `THE-MODERATOR-TEST-WALKTHROUGH.md`, `THE-MODERATOR-PRODUCT-VISION.md`, `LIVE-DEBATE-FEED-SPEC.md`
+- Replace in project knowledge: `THE-MODERATOR-LAND-MINE-MAP.md`, `THE-MODERATOR-NEW-TESTAMENT.md`, `THE-MODERATOR-PUNCH-LIST.md`
 
 ## Bug Status (as of Session 228)
 - **All critical/high/medium/low bugs: CLOSED** — Sessions 215-227

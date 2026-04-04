@@ -1,10 +1,10 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 192 (March 28, 2026) — Filename updates, factual corrections (LM-172, LM-084, LM-022)
+### Last Updated: Session 229 (April 4, 2026) — Major cleanup: 66 entries removed (bot army quarantined, fixed bugs, obsolete patterns, meta-advice). LM-092 corrected, LM-199 added. LM-029/LM-110 updated (Groq→Claude). 16 sections, 107 entries.
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
-> Read this before any SQL change, any schema migration, any auth touch, any bot config change.
+> Read this before any SQL change, any schema migration, any auth touch, any deployment.
 > **This is a living document. Add an entry every time something burns us.**
 
 ---
@@ -18,8 +18,6 @@ BITES YOU WHEN: The exact scenario that blows up
 SYMPTOM: What you'll see when it goes wrong
 FIX: The correct way to handle it
 ```
-
----
 
 # SECTION 1: DATABASE TRIGGERS
 
@@ -67,22 +65,10 @@ FIX: Always add DEFAULT values for any new column on profiles. Never add NOT NUL
 SESSIONS: Established Session 1
 ```
 
+
 ---
 
 # SECTION 2: RLS POLICIES
-
----
-
-## LM-004: profiles table — UPDATE allowed but guard trigger controls it
-```
-DECISION: profiles_update_own policy allows UPDATE WHERE id = auth.uid()
-PROTECTS: Users can update their own safe fields (display_name, bio, avatar_url, username)
-BITES YOU WHEN: Any attempt to UPDATE protected columns from client JS will silently fail
-  even though RLS says UPDATE is allowed. The guard trigger (LM-001) is the real gatekeeper.
-SYMPTOM: No RLS error thrown. Update appears to succeed. Column unchanged.
-FIX: All protected column updates must go through SECURITY DEFINER functions or
-  the disable-trigger pattern (LM-001).
-```
 
 ---
 
@@ -161,6 +147,7 @@ SYMPTOM: Vote count looks right but a console error fires. State inconsistency i
 FIX: Disable vote button immediately on first click (before response). Re-enable only on error.
 SESSIONS: Built Session 24
 ```
+
 
 ---
 
@@ -263,24 +250,6 @@ FIX: During testing, either wait out the window or delete the rate_limits row:
 ---
 
 --
-## LM-144: check_rate_limit() — race condition (FIXED Session D)
-```
-PROBLEM: Two concurrent calls could both read count=N before either wrote N+1.
-  Both incremented to N+1. One tick was lost. Effective rate limit was 2x the intended max.
-ROOT CAUSE: INSERT ... ON CONFLICT DO UPDATE is not atomic across the read+write cycle
-  under READ COMMITTED isolation. Two transactions see the same pre-update value.
-FIX: pg_advisory_xact_lock(hashtext(user_id || '|' || action)) before the upsert.
-  Serializes all concurrent calls for the same user+action pair.
-  Lock auto-releases at transaction end — no manual unlock needed.
-  Zero deadlock risk: each call acquires exactly one lock.
-BITES YOU WHEN: You remove the advisory lock and try to optimize. Don't.
-  The lock adds ~1ms. Rate limit correctness is worth it.
-SESSIONS: Fixed Session D (56)
-```
-
-
----
-
 # SECTION 4: AUTH PATTERNS
 
 ---
@@ -297,23 +266,6 @@ FIX: Every page that needs auth state must:
   await ColosseumAuth.ready; // THEN check currentUser
   Never use setTimeout as a proxy for auth completion.
 SESSIONS: Fixed properly Session 23. Original bug Session 10.
-```
-
----
-
-## LM-021: Double safety net — 3s + 4s timeouts
-```
-DECISION: _checkSession() has 3s timeout. index.html appInit() has 4s Promise.race.
-  Both exist in case Supabase auth hangs (NT 4.34).
-PROTECTS: App always loads even if auth is completely dead
-BITES YOU WHEN: You remove or reduce these timeouts. If Supabase has an outage,
-  the app hangs forever for all users simultaneously.
-  Also: if you add new auth-dependent init code AFTER the timeout fires,
-  that code runs against a null session — handle null gracefully.
-SYMPTOM: Infinite spinner on page load during Supabase outages
-FIX: Never remove these timeouts. Never shorten below 3s/4s. Never add blocking
-  auth-dependent code that runs outside the readyPromise chain.
-SESSIONS: Built Session 26
 ```
 
 ---
@@ -406,6 +358,7 @@ FIX: If you need hard deletes, must call Supabase Admin API (service_role) to de
   from auth.users. Client-side delete only does soft delete.
 ```
 
+
 ---
 
 # SECTION 5: SUPABASE INFRASTRUCTURE
@@ -441,29 +394,21 @@ FIX: Treat Edge Function code with the same scrutiny as DB admin access. Always
 
 ---
 
-## LM-029: GROQ_API_KEY — stored as Supabase secret, not Vercel env
+## LM-029: API keys — Supabase secrets vs Vercel env vars
 ```
-DECISION: GROQ_API_KEY is a Supabase Edge Function secret, not in Vercel env vars
-PROTECTS: Key not exposed via Vercel's env (which is accessible to all Edge deployments)
-BITES YOU WHEN: AI sparring stops working after a Supabase project reset or migration.
-  Key must be re-set via: supabase secrets set GROQ_API_KEY=xxx
-SYMPTOM: ai-sparring Edge Function returns 500 or falls back to canned responses
-FIX: supabase secrets set GROQ_API_KEY=your_key --project-ref faomczmipsccwbhpivmp
-SESSIONS: Set Session 25
-```
-
----
-
-## LM-030: Supabase free tier email limit — 2/hour
-```
-DECISION: Resend SMTP configured to replace Supabase default (NT 7.1.5)
-PROTECTS: Custom email, no 2/hour rate limit
-BITES YOU WHEN: If Resend config breaks or is removed, Supabase reverts to its
-  built-in email (2/hour limit). Signup confirmation emails stop delivering.
-SYMPTOM: Signups appear to work but users never receive confirmation email
-FIX: Verify Resend is configured in Supabase Dashboard → Auth → SMTP Settings.
-  Test with a real email address after any Supabase project config change.
-SESSIONS: Fixed Session 9/10
+DECISION: Edge Functions (ai-sparring, ai-moderator) use ANTHROPIC_API_KEY
+  stored as Supabase secrets (Session 220 — switched from Groq to Claude).
+  GROQ_API_KEY exists in BOTH Supabase secrets (legacy, may be unused) and
+  Vercel env vars (used by api/go-respond.js for /go guest AI sparring).
+PROTECTS: Key separation — Supabase secrets for Edge Functions, Vercel env
+  for serverless functions. Different key stores, different access.
+BITES YOU WHEN: Edge Functions stop working after a Supabase project reset.
+  Keys must be re-set: supabase secrets set ANTHROPIC_API_KEY=xxx
+  Also: /go page stops working if GROQ_API_KEY is missing from Vercel env vars.
+SYMPTOM: Edge Function returns 500. /go page returns errors.
+FIX: supabase secrets set ANTHROPIC_API_KEY=your_key --project-ref faomczmipsccwbhpivmp
+  Vercel env: GROQ_API_KEY for /go page.
+SESSIONS: Set Session 25. Updated Session 220 (Groq→Claude for Edge Functions).
 ```
 
 ---
@@ -482,7 +427,32 @@ FIX: Wrap each SELECT branch in parentheses when using ORDER BY/LIMIT.
 SESSIONS: Burned us Session 24
 ```
 
+
 ---
+
+LESSON (Session 43): When Groq kills a model (llama-3.1-70b-versatile
+  decommissioned), it affects two separate systems:
+  1. Bot army config on VPS (bot-config.js)
+  2. Edge Functions on Supabase (ai-sparring + ai-moderator)
+  Session 42 fixed bot-config but missed Edge Functions. Session 43
+  caught and fixed both.
+BITES YOU WHEN: You update the model in one place but forget the other.
+  Bot army works fine but AI sparring and AI moderation return 400 errors.
+SYMPTOM: Groq API returns 400 "model not found" from Edge Functions.
+  Bot army works because it reads from bot-config.js (already updated).
+FIX: When changing Groq models, update ALL THREE locations:
+  1. /opt/colosseum/bot-config.js (or wherever bot army reads model)
+  2. /opt/colosseum/supabase/functions/ai-sparring/index.ts
+  3. /opt/colosseum/supabase/functions/ai-moderator/index.ts
+  Then redeploy Edge Functions:
+  supabase functions deploy ai-sparring --project-ref faomczmipsccwbhpivmp
+  supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
+SESSION: 43.
+```
+
+
+---
+
 
 # SECTION 6: VERCEL / DEPLOYMENT
 
@@ -562,123 +532,34 @@ SYMPTOM: Webhook deliveries fail. Stripe dashboard shows delivery errors.
 FIX: Add new webhook paths to the isWebhook check in middleware.js.
 ```
 
----
-
-# SECTION 7: BOT ARMY
 
 ---
 
-## LM-038: DRY_RUN=true is the default — nothing posts until set to false
+## LM-144: GitHub push from VPS requires Personal Access Token — PAT expires/disappears
 ```
-DECISION: Bot army boots with DRY_RUN=true in .env.example (NT 4.20)
-PROTECTS: Prevents accidental live posting during setup/testing
-BITES YOU WHEN: You deploy the bot, it runs, logs show activity — but nothing is
-  actually posted anywhere. Looks like a bug. It's the safety catch.
-SYMPTOM: Bot logs show "DRY_RUN: would post to reddit/discord/twitter" but zero
-  actual posts appear on any platform.
-FIX: Set DRY_RUN=false in .env on VPS only after you've verified logs look correct.
-  Never set DRY_RUN=false in local .env.
+LESSON (Session 52): VPS has no SSH key configured for GitHub.
+  Every git push requires entering username + PAT. GitHub does not
+  show PATs again after creation — you must copy it immediately.
+  If you lose it, you must generate a new one.
+BITES YOU WHEN: You need to push from VPS and can't find the token.
+  The push hangs waiting for credentials. No error, just a prompt.
+SYMPTOM: git push asks for Username + Password. Password = PAT, not GitHub password.
+FIX (immediate): Generate new PAT at github.com/settings/tokens/new
+  → Note: VPS → Check repo scope → Generate → COPY IMMEDIATELY.
+FIX (permanent): Set up SSH key on VPS (one-time, never needs token again):
+  ssh-keygen -t ed25519 -C "wolfe8105@gmail.com" -f ~/.ssh/id_ed25519 -N ""
+  cat ~/.ssh/id_ed25519.pub → paste at github.com/settings/ssh/new
+  git remote set-url origin git@github.com:wolfe8105/colosseum.git
+RULE: Store the PAT in a password manager immediately after generating.
+  Or set up SSH keys and never deal with PATs again.
+SESSION: 52.
 ```
+
 
 ---
 
-## LM-039: Bot army uses service_role key — full DB access
-```
-DECISION: Bot army's supabase-client.js connects with SUPABASE_SERVICE_ROLE_KEY
-PROTECTS: Bots need to read/write bot_activity, create auto_debates — requires bypassing RLS
-BITES YOU WHEN: The VPS .env file is compromised. Attacker has full database access.
-SYMPTOM: Data corruption, spam rows, token manipulation
-FIX: Rotate SUPABASE_SERVICE_ROLE_KEY immediately if VPS is compromised.
-  Never commit .env to git. Protect VPS SSH keys.
-```
-
----
-
-## LM-040: Leg 1 Twitter scanning is disabled
-```
-DECISION: leg1-twitter.js exists but Twitter/X API free tier has no read capability (NT 10.2)
-PROTECTS: N/A — this is a limitation
-BITES YOU WHEN: You calculate daily reach estimates including Twitter Leg 1.
-  Twitter Leg 1 = 0 mentions. Reddit is the only Leg 1 source (~120/day, not ~370).
-SYMPTOM: Projected reach overstated if Twitter Leg 1 is counted
-FIX: All reach projections are Reddit-only for Leg 1 until $100/mo Twitter API paid.
-  The bot file exists but leg1_twitter_enabled should be false in bot config.
-SESSIONS: Confirmed Session 28
-```
-
----
-
-## LM-041: Bot army links must point to mirror, NOT Vercel app
-```
-DECISION: All bot army outbound links point to colosseum.pages.dev (mirror), not Vercel (NT 10.7)
-PROTECTS: Mirror has zero JS/auth — bot traffic can't trigger auth bugs or hang.
-  Also reduces Supabase bandwidth (bot-driven volume hits static CDN instead).
-BITES YOU WHEN: After deploying bot army, links still point to colosseum-six.vercel.app
-  because .env COLOSSEUM_URL wasn't updated.
-SYMPTOM: Bot posts with working links but users land on auth-dependent Vercel app.
-  Auth bugs affect the funnel. Supabase gets hammered by every bot-referred visitor.
-FIX: Set COLOSSEUM_URL=https://colosseum.pages.dev in VPS .env before going live.
-SESSIONS: Decision Session 28
-```
-
----
-
-## LM-042: Reddit bot accounts — 1 comment per 10 minutes on new accounts
-```
-DECISION: Reddit rate limits new accounts aggressively (OT 8.4.14)
-PROTECTS: Reddit spam prevention
-BITES YOU WHEN: New bot accounts are created and immediately start posting at full speed.
-  Accounts get shadowbanned silently. All posts go through but no one sees them.
-SYMPTOM: Bot logs show successful posts. Zero traffic from Reddit. No error messages.
-RULE: New accounts must warm up — low frequency first week, build karma, then scale.
-  Shadowbans are silent — you can only detect by checking posts while logged out.
-FIX: Implement posting frequency ramp-up. Check post visibility from incognito regularly.
-```
-
----
-
-## LM-043: Discord bot — respond only, never spam
-```
-DECISION: Leg 1 Discord bot monitors servers for actual arguments, responds contextually
-PROTECTS: Bot survival — Discord bans spam bots aggressively
-BITES YOU WHEN: Bot posts too frequently or in wrong channels or off-topic
-SYMPTOM: Bot account banned. Server ban. IP flagged.
-FIX: Leg 1 Discord must be strictly reactive. Only reply to message threads with
-  argument keywords. Never post unprompted. Respect per-server rate limits.
-```
-
----
 
 # SECTION 8: THREE-ZONE ARCHITECTURE
-
----
-
-## LM-044: Mirror is NOT a shield in front of the app (NT 4.37)
-```
-DECISION: Static mirror controls where bot army volume goes, not where all traffic goes
-PROTECTS: CDN absorbs bot-referred traffic
-BITES YOU WHEN: You assume the Vercel app is unreachable because the mirror exists.
-  Anyone can Google "The Colosseum debate app" and land directly on Vercel.
-  All 12 defense rings must remain at full thickness on the Vercel app.
-SYMPTOM: Security gaps on Vercel because you assumed mirror was the only entry point
-FIX: Never thin the Vercel app's security because the mirror exists.
-  Mirror = traffic steering. Not a proxy. Not a firewall.
-SESSIONS: Decision Session 28
-```
-
----
-
-## LM-045: Mirror deploy skips on Supabase failure (NT 4.38)
-```
-DECISION: If mirror generator queries fail, skip wrangler deploy. Serve last good build.
-PROTECTS: CDN never serves broken/empty HTML
-BITES YOU WHEN: You remove the failure check and deploy anyway when Supabase is down.
-  Cloudflare serves empty pages. All bot army links show blank site.
-SYMPTOM: All bot army links break simultaneously during any Supabase downtime
-FIX: Generator must exit(0) without deploying if any critical query returns empty/error.
-  The CDN will keep serving the last successful deploy.
-SESSIONS: Decision Session 28
-```
 
 ---
 
@@ -708,42 +589,10 @@ FIX: login.html stays forever. Plinko Gate is a parallel file.
 SESSIONS: Decision Session 29
 ```
 
----
-
-## LM-048: Cloudflare Pages project is a human action
-```
-DECISION: The mirror cannot be deployed until a Cloudflare Pages project exists.
-  Build the generator locally first. Deploy when VPS + Cloudflare project are ready.
-PROTECTS: N/A — sequencing constraint
-BITES YOU WHEN: You write the generator assuming it can deploy. VPS doesn't exist yet.
-  Cloudflare project doesn't exist yet. Mirror builds but can't go anywhere.
-SYMPTOM: wrangler pages deploy fails with "project not found"
-FIX: Build the generator now. Set up Cloudflare Pages project (human action) before
-  deploying. Generator must handle "can't deploy, skipping" gracefully.
-SESSIONS: Decision Session 28/29
-```
 
 ---
 
 # SECTION 9: FRONTEND PATTERNS
-
----
-
-## LM-049: window.X global pattern — script load order matters
-```
-DECISION: All modules expose themselves as window.ColosseumAuth, window.ColosseumConfig,
-  window.ColosseumArena, etc. No ES modules, no import/export.
-PROTECTS: Works with CDN-delivered HTML without a build step
-BITES YOU WHEN: A page loads a module before its dependency is loaded.
-  e.g. src/async.ts calls ColosseumAuth.supabase before auth.js has run.
-SYMPTOM: "Cannot read property 'supabase' of undefined" or similar.
-  Works on fast connections (scripts load in time), breaks on slow (race condition).
-FIX: Script tags in HTML must be in dependency order:
-  1. src/config.ts
-  2. src/auth.ts
-  3. all other modules
-  Never reorder script tags. Never lazy-load dependencies.
-```
 
 ---
 
@@ -761,44 +610,6 @@ FIX: When building any new feature, add its flag to src/config.ts AND
 
 ---
 
-## LM-051: Script load order — Supabase CDN → config → auth
-```
-DECISION: Script tags in <head> must be in this order:
-  1. Supabase CDN
-  2. src/config.ts (credentials, flags, escapeHTML, showToast)
-  3. src/auth.ts (contains the noOpLock fix in createClient config)
-PROTECTS: Graceful auth initialization, no orphaned locks
-BITES YOU WHEN: You reorder scripts, add async/defer.
-  - CDN after auth = placeholder mode, no Supabase calls
-  - config after auth = auth can't find credentials
-  - You remove the noOpLock from createClient in auth.ts (see LM-022)
-SYMPTOM: Various — guest mode, placeholder mode, hanging RPCs, or all three.
-FIX: Maintain CDN → config → auth order. Never defer or async any of them.
-  The real locks fix lives INSIDE auth.ts (createClient config).
-SESSIONS: LM-022 explains the full locks history. Updated Session 31.
-  TypeScript migration (Session 142): zero legacy script tags remain.
-  Each HTML page uses single <script type="module"> entry point.
-```
-
----
-
-## LM-052: OG meta tags — required per debate page for bot army previews
-```
-DECISION: Bot army posts links to debate pages. Social platforms unfurl these links.
-  Without OG meta tags (og:title, og:description, og:image), previews are blank.
-PROTECTS: Link preview quality drives click-through rate
-BITES YOU WHEN: Mirror pages (colosseum.pages.dev/debate/ID) don't have per-debate
-  OG tags — every link preview looks identical (or blank).
-SYMPTOM: Bot posts links on Reddit/Discord. Preview card shows nothing or generic site name.
-  CTR tanks. Bot army effectiveness cut in half.
-FIX: Mirror generator must write unique og:title and og:description for every
-  individual debate page. Use the debate topic + AI winner verdict as the tags.
-  This is non-negotiable for the rage-click funnel.
-SESSIONS: Decision Session 28
-```
-
----
-
 ## LM-053: 44px touch targets — minimum for mobile interaction
 ```
 DECISION: All interactive elements minimum 44px (NT 9.6)
@@ -809,6 +620,7 @@ SYMPTOM: User feedback: "hard to tap", "mis-taps", "accidental closes"
 FIX: Always set min-height: 44px; min-width: 44px on tappable elements.
   Test on actual phone, not browser DevTools mobile emulation.
 ```
+
 
 ---
 
@@ -841,33 +653,6 @@ FIX: Test follows with two separate accounts. Handle this error gracefully in UI
 
 ---
 
-## LM-056: hot_takes.section — must match category keys
-```
-DECISION: hot_takes are filtered by section name. Category overlay calls fetchTakes(section).
-PROTECTS: Content appears in correct category feeds
-BITES YOU WHEN: A hot take is posted with section = 'Sports' but overlay queries
-  section = 'sports' (case mismatch). Or bot creates take with wrong section name.
-SYMPTOM: Take exists in DB but never appears in any category feed.
-FIX: Verify section values are lowercase and match exactly what src/config.ts
-  defines for categories. Bot army must use the same keys.
-```
-
----
-
-## LM-057: debate_queue — expire_stale_queue() must run on schedule
-```
-DECISION: expire_stale_queue() RPC clears entries older than 5 minutes (NT 7.5.233)
-PROTECTS: Queue doesn't fill with abandoned entries blocking new matches
-BITES YOU WHEN: expire_stale_queue() is never called. Queue fills with stale entries.
-  New users enter queue but match against abandoned entries = failed match.
-SYMPTOM: Queue appears full but no matches form. Users wait forever.
-FIX: A cron must call expire_stale_queue() regularly. Currently called from
-  client-side queue polling — works as long as someone is in the queue.
-  For production, add server-side cron call (bot army VPS cron job).
-```
-
----
-
 ## LM-058: auto_debate_votes — no auth required, but one vote per IP/session limit?
 ```
 DECISION: Auto-debate votes are ungated (LM-006). No user_id required.
@@ -878,6 +663,7 @@ STATUS: No vote deduplication currently. Acceptable at current scale.
 FIX: At scale, add client-side vote lock (localStorage flag). Never add server-side
   unique constraint — it would break the ungated voting by design.
 ```
+
 
 ---
 
@@ -953,129 +739,10 @@ DO NOT add spokes without removing one. 6 is the number.
 SESSIONS: Research Session 11. Built Session 12.
 ```
 
----
-
-## LM-070: Cinzel + Barlow Condensed — typography is locked
-```
-DECISION: Display = Cinzel (Google Fonts). Body = Barlow Condensed. (NT 9.3)
-PROTECTS: Fox News chyron energy + ESPN stats aesthetic
-BITES YOU WHEN: You add a third font. Aesthetic becomes inconsistent.
-  Also: if Google Fonts CDN is blocked by CSP or unavailable, display falls back
-  to serif — test font loading failure gracefully.
-DO NOT add fonts. Cinzel for titles, Barlow Condensed for everything else.
-```
 
 ---
 
-## LM-071: vercel.json CSP does NOT include Cloudflare CDN or Pages
-```
-DECISION: Current CSP allowlist was built before three-zone architecture (NT 4.35)
-PROTECTS: XSS
-BITES YOU WHEN: Mirror pages on colosseum.pages.dev try to load any resource that
-  isn't covered by Cloudflare's own CSP. Or when Members Zone needs to reference
-  mirror URLs in fetch calls.
-SYMPTOM: Cross-origin resource blocks. Mirror assets fail to load.
-FIX: When building the mirror, verify what external assets it needs and check
-  that they're CDN-local or served from Cloudflare's own infrastructure.
-  Members Zone fetch calls to mirror URLs may need connect-src updates.
-SESSIONS: Architecture Decision Session 28
-```
-
----
-
-# SECTION 13: OPERATIONS
-
----
-
-## LM-072: PM2 manages bot army on VPS — not cron, not systemd
-```
-DECISION: PM2 process manager runs bot army (OT 1.19.5)
-PROTECTS: Auto-restart on crash. Log rotation. Startup on VPS reboot.
-BITES YOU WHEN: VPS reboots and PM2 startup wasn't saved.
-  pm2 start ecosystem.config.js runs bots, but after reboot they're all dead.
-SYMPTOM: VPS is up, bots are silent, no activity in logs
-FIX: After initial setup, run: pm2 startup && pm2 save
-  This registers PM2 with systemd so it survives reboots.
-```
-
----
-
-## LM-073: Bot army needs SUPABASE_SERVICE_ROLE_KEY, not anon key
-```
-DECISION: Bot army connects to Supabase with service_role for RLS bypass
-PROTECTS: Bots can write to bot_activity, create auto_debates, etc.
-BITES YOU WHEN: .env has anon key instead of service_role key.
-  Bot connects but all writes fail with RLS permission errors.
-SYMPTOM: Bot runs, queries succeed (reads), writes fail silently or with RLS errors.
-FIX: Verify .env on VPS has SUPABASE_SERVICE_ROLE_KEY, not SUPABASE_ANON_KEY.
-  These are different keys. Service role key is in Supabase → Project Settings → API.
-```
-
----
-
-## LM-074: wrangler must be authenticated on VPS
-```
-DECISION: Mirror generator deploys via wrangler pages deploy (NT 4.36)
-PROTECTS: Automated Cloudflare Pages deployment
-BITES YOU WHEN: wrangler CLI on VPS is not authenticated to Cloudflare account.
-  Mirror generates but deploy step fails with "authentication required".
-SYMPTOM: Generator runs, HTML is built, wrangler throws auth error, deploy skipped.
-FIX: Run wrangler login on VPS during initial setup. Or use API token:
-  Set CLOUDFLARE_API_TOKEN env var. Wrangler uses it automatically.
-SESSIONS: Architecture Decision Session 28
-```
-
----
-
-## LM-075: Mirror 5-minute cron via PM2 — not a setInterval in Node
-```
-DECISION: Mirror generator is triggered by PM2 cron, not a long-running process
-PROTECTS: Generator is stateless — if it crashes, next cron invocation starts fresh
-BITES YOU WHEN: You write the generator as a daemon with setInterval.
-  Memory leak over 24 hours. Single crash means no more deploys until manual restart.
-FIX: Generator is a single-run Node.js script. PM2 ecosystem.config.js schedules it
-  with cron_restart or as a cron job. Exits 0 on success or failure.
-SESSIONS: Architecture Decision Session 28
-```
-
----
-
-# SECTION 14: DEBUGGING LESSONS (DO NOT REPEAT)
-
----
-
-## LM-076: "Success" doesn't mean it worked
-```
-LESSON: SQL Editor says "Success. 1 row affected." can still mean zero change happened.
-  guard_profile_columns trigger silently reverts protected columns after the UPDATE.
-  The UPDATE technically succeeded (row was touched) but the value didn't change.
-RULE: After any UPDATE on profiles, always immediately SELECT to verify the value changed.
-  Never trust "Success" alone.
-SESSIONS: Burned us Session 29
-```
-
----
-
-## LM-077: Walk the chain before building theories
-```
-LESSON (OT 10.4): Wrong diagnosis proposed DOMContentLoaded wrappers, hardcoded keys.
-  Real bug was .catch() on a query builder, not a Promise.
-RULE: When debugging, verify every link: network request, config, RLS, query, render.
-  Reproduce in browser console step by step. Never propose fixes before finding the break.
-```
-
----
-
-## LM-078: Spinner ≠ loading. Spinner may = infinite hang.
-```
-LESSON: Session 26 — infinite spinner was auth hanging on navigator.locks.
-  Not a race condition. Not a script load order issue. Not a CORS issue.
-  The spinner was the symptom. The lock was the cause.
-  Final resolution: Session 31 — noOpLock in createClient config.
-RULE: When you see an infinite spinner, check DevTools Network tab first.
-  If no Supabase requests are firing, the hang is in JS before the request.
-  If requests are pending forever, suspect navigator.locks or network issue.
-```
+# SECTION 14: AUTH & SCHEMA PATTERNS
 
 ---
 
@@ -1085,16 +752,6 @@ LESSON: 4 SQL files are missing from repo (NT 12.3.7). Repo SQL ≠ live Supabas
 RULE: When in doubt about schema, query Supabase directly:
   SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
   Never assume repo SQL files capture everything that's live.
-```
-
----
-
-## LM-080: The pattern — planning replaces building, building replaces shipping
-```
-LESSON (OT 5.6, NT 3.4): Three projects before this one all died in planning loops.
-RULE: If we spend 2+ sessions designing something we haven't built yet, flag it.
-  If we spend a session "organizing" or "refactoring" without user-facing output, flag it.
-  The measure of a session is: can a real user do something new that they couldn't before?
 ```
 
 ---
@@ -1122,24 +779,6 @@ RULE: onAuthStateChange INITIAL_SESSION replaces getSession(). If session exists
   catches edge case where INITIAL_SESSION never fires.
 SESSION: 31. Old pattern (getSession + timeout) from Session 26 is retired.
 ```
-
----
-
-## LM-083: Problem-solving — search like a conversation, never self-feed
-```
-LESSON (Session 31): Claude spent 45+ minutes in a closed debugging loop — running
-  tests, forming theories from its own output, never consulting external sources.
-  The fix existed in a GitHub issue the entire time.
-RULE: Never theorize in a closed loop. Search the web like a conversation:
-  (1) describe problem → search → try top answer.
-  (2) Failed → search "tried X, didn't work" → try next answers.
-  (3) All failed → search with full history of attempts → answers narrow each round.
-  Each iteration adds context. Never speculate or form theories from own output.
-  Read what others solved and do exactly that. Stop thinking, start asking the world.
-SESSION: 31.
-```
-
----
 
 ---
 
@@ -1171,74 +810,6 @@ SESSION: 32. Timeout corrected Session 163.
 ---
 
 *Land Mine Map v1 — Session 29. Cleaned Session 55: fixed/one-time entries removed, Section 11 (resolved bugs) deleted.*
-
----
-
-# SECTION 17: MIRROR DEPLOYMENT + BLUESKY (Session 42)
-
----
-
-## LM-120: Cloudflare Pages --branch=production required
-```
-DECISION (Session 42): Cloudflare Pages production branch is called
-  "production", not "main". Deploying with --branch=main sends to
-  Preview environment, not production.
-PROTECTS: N/A — this is a Cloudflare Pages convention.
-BITES YOU WHEN: You deploy with --branch=main and wonder why
-  colosseum-f30.pages.dev still shows old content. The new content
-  is at main.colosseum-f30.pages.dev (Preview URL).
-SYMPTOM: Root URL shows old content. Preview URL shows new content.
-FIX: Always use: wrangler pages deploy _mirror_build --project-name=colosseum --branch=production
-  The mirror generator has this hardcoded (Session 42 fix).
-SESSION: 42.
-```
-
----
-
-## LM-123: Bluesky Leg 1 must be opt-in only
-```
-DECISION (Session 42): Bluesky official policy states bots that
-  interact with other users MUST be opt-in. "If your bot interacts
-  with other users, please only interact (like, repost, reply, etc.)
-  if the user has tagged the bot account."
-PROTECTS: Bot account from being banned for spam.
-BITES YOU WHEN: You enable LEG1_BLUESKY_ENABLED=true and the bot
-  starts replying to strangers' posts. Bluesky flags this as spam.
-  Account gets restricted or banned.
-SYMPTOM: Account restricted. Posts invisible to others.
-FIX: Keep LEG1_BLUESKY_ENABLED=false unless the bot only replies
-  to posts that mention @wolfe8105.bsky.social. Leg 2 (posting to
-  own account) is safe. Leg 3 (posting auto-debates) is safe.
-  Only Leg 1 (replying to others) is risky on Bluesky.
-SESSION: 42.
-```
-*Add entries below as new mines are discovered.*
-*Format: copy the template from the top of this file. Include SESSION: tag.*
-*File lives in repo root alongside the testaments.*
-
----
-
-## LM-144: GitHub push from VPS requires Personal Access Token — PAT expires/disappears
-```
-LESSON (Session 52): VPS has no SSH key configured for GitHub.
-  Every git push requires entering username + PAT. GitHub does not
-  show PATs again after creation — you must copy it immediately.
-  If you lose it, you must generate a new one.
-BITES YOU WHEN: You need to push from VPS and can't find the token.
-  The push hangs waiting for credentials. No error, just a prompt.
-SYMPTOM: git push asks for Username + Password. Password = PAT, not GitHub password.
-FIX (immediate): Generate new PAT at github.com/settings/tokens/new
-  → Note: VPS → Check repo scope → Generate → COPY IMMEDIATELY.
-FIX (permanent): Set up SSH key on VPS (one-time, never needs token again):
-  ssh-keygen -t ed25519 -C "wolfe8105@gmail.com" -f ~/.ssh/id_ed25519 -N ""
-  cat ~/.ssh/id_ed25519.pub → paste at github.com/settings/ssh/new
-  git remote set-url origin git@github.com:wolfe8105/colosseum.git
-RULE: Store the PAT in a password manager immediately after generating.
-  Or set up SSH keys and never deal with PATs again.
-SESSION: 52.
-```
-
----
 
 # SECTION 15: LEGAL COMPLIANCE
 
@@ -1389,23 +960,6 @@ SESSION: 36.
 
 ---
 
-## LM-097: Free platform pivot — Plinko Gate must drop payment step
-```
-DECISION (Session 35): Consumer subs and token packs shelved at launch.
-  Free platform model. Revenue is B2B data + ads.
-PROTECTS: Funnel conversion. Every paywall kills a data point worth thousands.
-BITES YOU WHEN: Someone re-adds a payment step to Plinko Gate, re-enables
-  token gates on features, or adds subscription checks to UI flows.
-SYMPTOM: User drop-off at signup. Data volume tanks. B2B value collapses.
-FIX: Plinko Gate is OAuth → Age → Username → Done. No payment step.
-  Token/sub code stays in codebase but is FLIPPED OFF. Feature flags control this.
-  If re-enabling consumer payments in the future, treat it as a new decision
-  requiring NT amendment.
-SESSION: 35. See WAR-CHEST.md Section 1.
-```
-
----
-
 ## LM-098: Stealth B2B — never expose data operation publicly
 ```
 DECISION (Session 35): B2B intelligence operation has no public presence.
@@ -1527,32 +1081,20 @@ SESSION: 33.
 
 ---
 
-## LM-091: Mirror generator queries must match live schema
+## LM-092: Supabase legacy vs new API keys — both formats work
 ```
-LESSON (Session 33): Generator requested a `verdict` column on auto_debates
-  that doesn't exist. Live column is `judge_reasoning`. Generator was built
-  against assumed schema, not verified schema.
-RULE: Before writing any query against Supabase, verify columns exist:
-  SELECT * FROM table LIMIT 1; and check Object.keys(rows[0]).
-  Never assume column names from documentation — query the live database.
-SESSION: 33. See also LM-079 (GitHub repo is not source of truth for schema).
-```
-
----
-
-## LM-092: Supabase legacy vs new API keys — bot army needs JWT format
-```
-DECISION (Session 34): Supabase introduced new key formats (sb_secret_*, sb_publishable_*).
-  Bot army's supabase-client.js and mirror generator use @supabase/supabase-js which
-  expects the legacy JWT format (starts with eyJ...).
-PROTECTS: N/A — this is a compatibility issue.
-BITES YOU WHEN: You copy the new-format secret key into bot army .env.
-  Supabase client silently fails or returns auth errors.
-SYMPTOM: Bot connects but all requests fail. "Invalid API key" or "JWT expired" errors.
-FIX: Go to Supabase → Settings → API → click "Legacy anon, service_role API Keys" tab.
-  Copy the service_role key from THAT tab (starts with eyJ...).
-  The new sb_secret_* keys are NOT compatible with the JS client library.
-SESSION: 34.
+DECISION (Session 34, CORRECTED Session 196+): Supabase introduced new key formats
+  (sb_secret_*, sb_publishable_*). Original entry claimed these were NOT compatible
+  with the JS client library. That was wrong.
+PROTECTS: N/A — this is a compatibility note.
+CORRECTION: Session 3 (security hardening) rotated the VPS .env to the new-style
+  sb_secret_* key and verified it works with a live query against the profiles table.
+  Both legacy (eyJ...) and new-style (sb_secret_*) keys work with @supabase/supabase-js.
+BITES YOU WHEN: You assume one format doesn't work and waste time hunting for the
+  legacy tab when the new key is fine.
+FIX: Use whichever key format Supabase gives you. Both work. VPS currently uses
+  the new-style key.
+SESSION: 34. Corrected: Session 196+ (security hardening sessions).
 ```
 
 ---
@@ -1573,20 +1115,6 @@ SESSION: 34. Account: u/Master-Echo-2366, approval pending.
 
 ---
 
-## LM-094: VPS SSH sessions disconnect — always re-SSH
-```
-LESSON (Session 34): PowerShell SSH sessions to VPS silently disconnect
-  when you switch windows or after inactivity. You'll think you're on the VPS
-  but you're back in local PowerShell.
-SYMPTOM: Commands fail with PowerShell errors (e.g. "The token '&&' is not valid").
-  Or you see PS C:\Users\... prompt instead of root@ubuntu...
-FIX: If you see PS C:\..., you're local. Run: ssh root@161.35.137.21
-  Then cd /opt/colosseum/bot-army/colosseum-bot-army to get back to bot files.
-SESSION: 34.
-```
-
----
-
 ## LM-095: auto_allow_expired_references() — return type change needs DROP first
 ```
 LESSON (Session 34): Live Supabase had a different return type for
@@ -1601,36 +1129,20 @@ SESSION: 34.
 
 ---
 
-## LM-096: PM2 ecosystem.config.js — bot army process management
-```
-DECISION (Session 34): Bot army runs via PM2 on VPS.
-  pm2 start ecosystem.config.js → pm2 startup → pm2 save.
-PROTECTS: Auto-restart on crash. Log rotation. Survives VPS reboot.
-BITES YOU WHEN: You edit .env and forget to restart.
-  PM2 caches the process — env changes don't take effect until restart.
-SYMPTOM: You updated Reddit credentials in .env but bot still says PENDING.
-FIX: After any .env change: pm2 restart all
-  Check status: pm2 status
-  Check logs: pm2 logs
-  If PM2 startup wasn't saved: pm2 startup && pm2 save
-SESSION: 34. VPS IP: 161.35.137.21.
-```
-
----
-
 ## LM-110: ai-moderator Edge Function defaults to ALLOW on any error
 ```
-DECISION (Session 39): If Groq API fails, times out, or returns
+DECISION (Session 39): If the AI provider fails, times out, or returns
   unparseable output, ai-moderator returns ruling: "allowed".
+  Edge Functions use Claude/Anthropic as of Session 220 (was Groq).
 PROTECTS: Debate flow. LM-087 pattern — debate can never hang.
-BITES YOU WHEN: Groq has an outage. ALL evidence auto-passes.
+BITES YOU WHEN: Anthropic has an outage. ALL evidence auto-passes.
   Spam/trolling evidence slips through during downtime.
 SYMPTOM: System messages show "AI Moderator: Evidence AUTO-ALLOWED
   (moderator unavailable)" — all references pass without evaluation.
 FIX: Acceptable trade-off. Debate flowing > perfect moderation.
-  If Groq outages become frequent, add a circuit breaker that
+  If outages become frequent, add a circuit breaker that
   switches to human-only moderation after N consecutive failures.
-SESSION: 39.
+SESSION: 39. Updated: Session 220 (Groq→Claude).
 ```
 
 ---
@@ -1653,32 +1165,10 @@ FIX: Always pass the correct ruledByType:
 SESSION: 39.
 ```
 
+
 ---
 
 # SECTION 16: OWASP AUDIT + DEPLOYMENT (Session 40-41)
-
----
-
-## LM-113: SRI hashes break when supabase-js updates
-```
-DECISION (Session 40): All 6 HTML pages have SRI SHA-384 hashes on the
-  supabase-js CDN import, pinned to @2.98.0.
-PROTECTS: CDN compromise can't inject malicious JS — browser rejects
-  if hash doesn't match.
-BITES YOU WHEN: You upgrade supabase-js to a new version. The hash no
-  longer matches. Browser refuses to load the script. App is completely
-  broken on all 6 pages simultaneously.
-SYMPTOM: Blank page. Console: "Failed to find a valid digest in the
-  'integrity' attribute for resource..."
-FIX: When upgrading supabase-js:
-  1. Update the @version in all 6 script tags
-  2. Regenerate hash: shasum -b -a 384 supabase-js-file | awk '{print $1}' | xxd -r -p | base64
-  3. Update integrity="sha384-..." on all 6 pages
-  4. Test before pushing to main (LM-033 — Vercel auto-deploys)
-  Files: index.html, moderator-login.html, moderator-plinko.html,
-  moderator-profile-depth.html, moderator-settings.html, moderator-auto-debate.html
-SESSION: 40.
-```
 
 ---
 
@@ -1715,33 +1205,6 @@ STATUS: FIXED Session 48. colosseum-stripe-functions.js fully rewritten.
 SESSION: 40 (discovered), 48 (fixed).
 ```
 
----
-
-# SECTION 17 (continued): SESSION 43 FIXES
-
----
-
-## LM-124: Groq model decommission hits BOTH bot config AND Edge Functions
-```
-LESSON (Session 43): When Groq kills a model (llama-3.1-70b-versatile
-  decommissioned), it affects two separate systems:
-  1. Bot army config on VPS (bot-config.js)
-  2. Edge Functions on Supabase (ai-sparring + ai-moderator)
-  Session 42 fixed bot-config but missed Edge Functions. Session 43
-  caught and fixed both.
-BITES YOU WHEN: You update the model in one place but forget the other.
-  Bot army works fine but AI sparring and AI moderation return 400 errors.
-SYMPTOM: Groq API returns 400 "model not found" from Edge Functions.
-  Bot army works because it reads from bot-config.js (already updated).
-FIX: When changing Groq models, update ALL THREE locations:
-  1. /opt/colosseum/bot-config.js (or wherever bot army reads model)
-  2. /opt/colosseum/supabase/functions/ai-sparring/index.ts
-  3. /opt/colosseum/supabase/functions/ai-moderator/index.ts
-  Then redeploy Edge Functions:
-  supabase functions deploy ai-sparring --project-ref faomczmipsccwbhpivmp
-  supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
-SESSION: 43.
-```
 
 ---
 
@@ -1824,45 +1287,10 @@ FIX: Pattern is: push on open, back() on user-close, skip flag
 SESSION: 44.
 ```
 
+
 ---
 
 # SECTION 19: SECURITY AUDIT FINDINGS (Session 45)
-
----
-
-## LM-134: Bot army uses exact-interval cron — detectable bot signal
-```
-DECISION (built Session 34): PM2 cron intervals are fixed. Bots post
-  at exactly :00 every N minutes. No jitter. No human-like delays.
-PROTECTS: Nothing — this is a detection risk.
-BITES YOU WHEN: Platform behavioral analysis flags exact-interval
-  activity. Single datacenter IP (DigitalOcean NYC3) is a known
-  signal. Account gets shadow-banned or suspended.
-SYMPTOM: Bot posts stop appearing in feeds. No error. Silent ban.
-  DRY_RUN=false but zero engagement.
-FIX: Add ±5-10 min jitter to all cron intervals.
-  Add setTimeout(random 2-8s) between actions within a run.
-  Implement account warmup: read/upvote only for 7 days before
-  dropping links. Consider residential proxy if IP flagged.
-RISK: MEDIUM. Will eventually fire if bot volume increases.
-  Not urgent before go-live. Urgent if accounts get banned.
-SESSION: 45 (discovered in security audit).
-```
-
----
-
-## LM-136: Ubuntu 24 uses ssh.service not sshd.service
-```
-DECISION: Standard SSH hardening docs say `systemctl restart sshd`.
-BITES YOU WHEN: Running `systemctl restart sshd` on Ubuntu 24.04
-  returns "Unit sshd.service not found." The sed edit to sshd_config
-  succeeds silently but SSH daemon never reloads the new config.
-SYMPTOM: PasswordAuthentication no is in the file but password auth
-  still works because the old config is still loaded in memory.
-FIX: Use `systemctl restart ssh` (no d) on Ubuntu 24.
-STATUS: Caught and fixed Session 46. PasswordAuthentication no confirmed.
-SESSION: 46.
-```
 
 ---
 
@@ -1886,27 +1314,6 @@ FIX: Write the script to a temp file first using a QUOTED heredoc delimiter:
 RULE: Any multi-line Node.js script on VPS → cat << 'EOF' to file → node file.
   Never node -e "..." for anything beyond trivial one-liners.
 SESSION: 46.
-```
-
----
-
-## LM-139: RLS policies without TO role clause evaluate for ALL roles
-```
-DECISION (built Sessions 14-17): RLS policies created without a TO clause
-  default to {public} — Postgres evaluates them for every role including anon,
-  service_role, and postgres. Wastes cycles on requests that will always return
-  empty (e.g. anon hitting an auth.uid() = user_id policy).
-BITES YOU WHEN: Tables grow. High-traffic tables (hot_takes, debate_queue,
-  notifications) with {public} policies do unnecessary work per anon request.
-SYMPTOM: Supabase Performance Advisor flags "RLS policy not scoped to role."
-  Slow queries on authenticated-only tables under load.
-FIX: Add TO authenticated to all policies that reference auth.uid().
-  Add TO anon, authenticated to public SELECT policies.
-  Session 47 migration (colosseum-session-b-rls.sql) fixed all original policies.
-  3 older {public} policies remain: hot_takes delete, rivals select,
-  async_debates insert/update. Fix when convenient.
-STATUS: Mostly fixed Session 47. 3 residual low-priority entries remain.
-SESSION: 47.
 ```
 
 ---
@@ -1978,52 +1385,6 @@ SESSION: 50 (caught by research gate — first draft was vulnerable).
 
 ---
 
-## LM-143: Bluesky poster imported but postHotTake never called in pipeline
-```
-DECISION (Session 42): leg2-bluesky-poster.js built and imported into bot-engine.js.
-  bot-engine.js was patched to add the require() and formatFlags() lines.
-  But the actual postHotTake() call was never added to the Leg 2 pipeline loop.
-  Only leg2TwitterPoster.postHotTake() was called.
-BITES YOU WHEN: Bluesky is enabled (LEG2_BLUESKY_ENABLED=true), DRY_RUN=false,
-  debates are being created — but nothing ever posts to Bluesky.
-  No error. No log line. Just silence.
-SYMPTOM: pm2 logs show [LEG2][DEBATE] ✅ Debate created but zero [LEG2][BLUESKY] lines.
-  wolfe8105.bsky.social shows 0 posts.
-FIX: In the Leg 2 pipeline loop in bot-engine.js, after the Twitter block, add:
-  if (config.flags.leg2Bluesky) {
-    await leg2BlueskyPoster.postHotTake(debate);
-  }
-  Applied Session 51 via sed -i on VPS.
-  Same pattern needed for Leg 3 postAutoDebate() — not yet applied.
-RULE: When wiring a new poster module, grep bot-engine.js for EVERY pipeline loop
-  and confirm the call appears in ALL of them, not just the require() at the top.
-SESSION: 51.
-```
-
----
-
-## LM-143 UPDATE: False-positive patch guard for Leg 3 Bluesky
-```
-DECISION (Session 54): patch script for Leg 3 postAutoDebate() used two grep guards:
-  1. grep for 'leg3BlueskyPost' — existed on line 91 (flags display block)
-  2. grep for 'postAutoDebate' — existed on line 300 (Reddit function name)
-  Script concluded "already patched" and skipped. Both strings existed independently.
-  Neither was the actual pipeline call. The actual call was never inserted.
-BITES YOU WHEN: Using string-presence guards to detect whether a patch was applied.
-  A string can exist for a completely unrelated reason (display text, variable name,
-  comment, Reddit function with a matching substring).
-SYMPTOM: Script says "already patched", pm2 logs show no [LEG3][BLUESKY] output.
-FIX: Grep for the ACTUAL pipeline call signature, not just any matching string.
-  Target the specific block context, e.g.:
-  grep -A2 'leg3TwitterPost' to confirm the Bluesky call follows it.
-  Applied Session 54 via targeted block replacement.
-RULE: Patch guards must grep for the exact insertion, not fragments of it.
-  When in doubt, read the surrounding context (grep -B5 -A5) before concluding done.
-SESSION: 54.
-```
-
----
-
 ## LM-144: Vercel webhook silently misses GitHub web UI uploads
 ```
 DECISION: Vercel is connected to GitHub repo for auto-deploy on push.
@@ -2041,208 +1402,6 @@ FIX: Make a trivial GitHub commit (edit any file, add a space, rename a file).
 RULE: After any GitHub web UI upload, verify Vercel shows a new deployment
   within 2 minutes. If not, make a dummy commit to re-trigger.
 SESSION: 55.
-```
-
----
-
-## LM-145: `cp` aliased to `cp -i` silently fails to overwrite on VPS
-```
-DECISION (Session 57): Copied updated bot-config.js from /opt/colosseum/ to
-  colosseum-bot-army/ using `cp source dest`. Grep confirmed file was empty
-  afterward — copy silently failed or was intercepted.
-BITES YOU WHEN: Ubuntu VPS has `alias cp='cp -i'` set for root. In interactive
-  SSH sessions, the alias is active. `cp source dest` prompts for confirmation
-  when dest exists, but if running in a context where the prompt isn't visible
-  or answered, the copy silently does nothing.
-SYMPTOM: `cp source dest` returns exit 0, but `grep pattern dest` returns empty.
-  File appears unchanged. No error message.
-FIX: Prefix with backslash to bypass alias: `\cp source dest`
-  This forces the raw /bin/cp binary, no alias, no prompt, always overwrites.
-  ALSO: After any file copy, immediately verify with grep or cat before
-  assuming success. `\cp source dest && grep pattern dest` as a one-liner.
-ALSO: After replacing a Node.js module file, do `pm2 delete` + `pm2 start`
-  (not just `pm2 restart`) to fully clear the module cache. Node caches
-  required modules in memory — restart alone may serve the old version.
-RULE: Never use bare `cp` on VPS for overwrites. Always `\cp`. Always verify.
-SESSION: 57.
-```
-
----
-
-## LM-146: PM2 ecosystem.config.js env block placed outside apps array
-```
-DECISION (Session 58): Added Lemmy env vars to ecosystem.config.js via nano.
-  Vars were pasted outside the apps array, creating a second top-level env: block.
-  PM2 read the inner (correct) env block and ignored the outer one.
-BITES YOU WHEN: Editing ecosystem.config.js manually in nano and pasting at the
-  wrong indentation level. The file has nested structure: module.exports > apps >
-  app object > env. Easy to land outside the app object closing brace.
-SYMPTOM: pm2 env 0 shows the vars correctly, but they don't behave as expected,
-  OR the file has two env: blocks and the wrong one wins.
-FIX: Always replace the entire ecosystem.config.js with a full cat > heredoc.
-  Never edit it in nano. The complete correct file is the only safe approach.
-RULE: ecosystem.config.js is a structured file. Always write it in full.
-  Never partially edit it. Use cat > heredoc to replace the whole thing.
-SESSION: 58.
-```
-
----
-
-## LM-147: Bot army env vars not persisted — no .env file on VPS — **WRONG**
-```
-DECISION (Session 58): INCORRECTLY stated that bot army has no .env file.
-CORRECTION (Session 59): .env file EXISTS at
-  /opt/colosseum/bot-army/colosseum-bot-army/.env
-  It is the PRIMARY source of env vars. require('dotenv').config() in
-  bot-config.js line 7 loads it BEFORE PM2 ecosystem vars take effect.
-  Ecosystem.config.js env vars are SECONDARY — dotenv loads .env first.
-BITES YOU WHEN: You set flags in ecosystem.config.js but not in .env.
-  The .env value wins. Bot ignores your ecosystem change.
-SYMPTOM: pm2 env 0 shows the var correctly, but the bot doesn't use it.
-  Features line doesn't show the platform you enabled.
-FIX: ALWAYS update .env for flag changes. Ecosystem.config.js is backup only.
-  After any .env change: pm2 delete + pm2 start (not restart).
-RULE: .env is source of truth for bot flags. Not ecosystem.config.js.
-SESSION: 59.
-```
-
----
-
-## LM-150: debateLandingPath: null — every bot URL broken since go-live
-```
-DECISION (Session 52): Set debateLandingPath to null in bot-config.js to
-  "prevent accidental use" of debate-landing.html.
-BITES YOU WHEN: supabase-client.js line 92 builds URLs via:
-  `${config.app.baseUrl}${config.app.debateLandingPath}?id=${takeId}`
-  JavaScript: 'string' + null = 'stringnull'.
-  Every Leg 2 hot take URL became https://colosseum-six.vercel.appnull?id=...
-  Every link the bot posted to Bluesky, Discord, everywhere = dead link.
-  This was live from Session 51 (DRY_RUN=false) through Session 59.
-SYMPTOM: pm2 logs show "✅ Debate created: https://colosseum-six.vercel.appnull?id=..."
-  No errors. No warnings. Links look almost right at a glance.
-FIX: Set debateLandingPath to '/moderator-debate-landing.html'.
-  sed -i "s|debateLandingPath: null,|debateLandingPath: '/moderator-debate-landing.html',|"
-RULE: NEVER set a URL path segment to null in a config object.
-  Use empty string '' if you want no path, or remove the property entirely.
-  JavaScript string concatenation with null produces the literal word "null".
-SESSION: 59. Fixed via sed -i on VPS.
-```
-
----
-
-## LM-151: .env vs ecosystem.config.js — dotenv wins the race
-```
-DECISION: bot-config.js line 7: require('dotenv').config()
-  This runs at module load time, BEFORE any PM2 env injection is consumed.
-  PM2 injects ecosystem env vars into process.env before boot, but
-  dotenv's default behavior is to NOT overwrite existing vars.
-  HOWEVER: .env file IS loaded, and for any var NOT already in process.env,
-  dotenv fills it in. For vars that ARE in both places, the PM2 value
-  (from ecosystem.config.js) technically wins since it's set first.
-BITES YOU WHEN: You think only one of the two sources matters.
-  The actual load order: PM2 sets env → dotenv loads .env (skips existing).
-  If a flag is in .env as false and NOT in ecosystem.config.js, it stays false.
-  If a flag is in ecosystem.config.js as true and NOT in .env, it stays true.
-  If a flag is in BOTH, ecosystem.config.js wins (PM2 sets it first).
-SYMPTOM: Confusing behavior where some flags work and others don't,
-  depending on which source has the value.
-FIX: Keep both sources in sync. Or better: put ALL flags in .env only
-  and remove them from ecosystem.config.js to have one source of truth.
-RULE: .env and ecosystem.config.js must agree. When in doubt, update .env.
-SESSION: 59.
-```
-
----
-
-## LM-152: Windows browser caches downloaded files — scp uploads stale version
-```
-DECISION (Session 59): Downloaded bot-engine-v59.js from Claude.
-  scp'd it to VPS. File arrived (100%, right size). But grep found
-  zero matches for "Lemmy" — wrong file content.
-ROOT CAUSE: Windows browser served a cached/stale download when the
-  filename matched a previous download. The new file was likely saved as
-  bot-engine (1).js or similar, and scp grabbed the old bot-engine.js.
-FIX: Always output files with UNIQUE names (e.g. bot-engine-v59-fixed.js).
-  After scp, ALWAYS verify content on VPS with grep before restarting.
-RULE: Never trust that a downloaded file is the latest version.
-  Use unique filenames. Verify after transfer. Delete old downloads first.
-SESSION: 59.
-```
-
----
-
-## LM-153: Recreating VPS-only files — require paths must match actual directory structure
-```
-DECISION (Session 59): Recreated bot-engine.js from conversation context.
-  Used require('./logger') instead of require('./lib/logger').
-  Bot crash-looped 38 times before restore from backup.
-ROOT CAUSE: bot-engine.js lives in colosseum-bot-army/ but logger.js lives
-  in colosseum-bot-army/lib/. When recreating a file from memory or
-  conversation context, require paths are easy to get wrong.
-FIX: Before recreating any VPS-only file, run:
-  grep "require(" /path/to/original.js.bak
-  to capture exact require paths. Match them exactly in the new file.
-RULE: When recreating VPS-only files, ALWAYS verify require paths against
-  the backup or the running file. Never assume paths from memory.
-SESSION: 59.
-```
-
----
-
-## LM-148: Lemmy poster files placed in wrong directory
-```
-DECISION (Session 58): leg2-lemmy-poster.js and leg3-lemmy-poster.js were
-  created in /opt/colosseum/bot-army/ instead of
-  /opt/colosseum/bot-army/colosseum-bot-army/ where bot-engine.js lives.
-  Both files use require('./bot-config') which resolves relative to the file's
-  own location — not the working directory.
-BITES YOU WHEN: New bot army files are created or uploaded to the parent
-  directory instead of the colosseum-bot-army/ subdirectory.
-SYMPTOM: MODULE_NOT_FOUND error for ./bot-config in pm2 error log.
-  Bot crashes on startup but PM2 auto-restarts so it keeps running without
-  the new module.
-FIX: mv /opt/colosseum/bot-army/leg2-lemmy-poster.js /opt/colosseum/bot-army/colosseum-bot-army/
-     mv /opt/colosseum/bot-army/leg3-lemmy-poster.js /opt/colosseum/bot-army/colosseum-bot-army/
-RULE: ALL bot army files belong in /opt/colosseum/bot-army/colosseum-bot-army/
-  That is the working directory. Never drop files in the parent.
-SESSION: 58.
-```
-
----
-
-## LM-149: leg2Bluesky flag missing from bot-config.js flags block
-```
-DECISION (Session 58): Bluesky disappeared from the Features: line after a
-  restart. Root cause: leg2Bluesky and leg3BlueskyPost were never added to
-  the flags block in bot-config.js. They existed in the Bluesky config object
-  but not in config.flags, so formatFlags() in bot-engine.js never saw them.
-BITES YOU WHEN: Adding a new platform poster. The config object and the flags
-  block are separate — adding one does not add the other.
-SYMPTOM: Features line omits the platform. Platform posts silently never happen.
-FIX: In bot-config.js flags block, add:
-  leg2Bluesky: process.env.LEG2_BLUESKY_ENABLED === 'true',
-  leg3BlueskyPost: process.env.LEG3_BLUESKY_POST_ENABLED === 'true',
-  Also add corresponding entries to formatFlags() in bot-engine.js.
-RULE: When adding a new platform, update THREE places:
-  1. Config object (credentials, limits)
-  2. flags block in bot-config.js
-  3. formatFlags() in bot-engine.js
-NOTE (Session 77): This exact pattern recurred with the content-first Bluesky
-  image posting upgrade. LEG2_BLUESKY_ENABLED=true in .env and ecosystem.config.js,
-  but startup banner omits L2-Bluesky and zero posts fire. Same root cause suspected.
-NOTE (Session 91): Hit this AGAIN. Session 90 fixed the flag in the .env but
-  the bot-config.js on GitHub (which was the basis for VPS copy) never had
-  the bluesky flags OR the bluesky config block. Root cause: setup-bluesky.js
-  patched bot-config.js on VPS to add both, but the GitHub version was never
-  updated. When a fresh bot-config.js was uploaded from GitHub, it overwrote
-  the patched version. Three-way fix required:
-  1. Added bluesky: { handle, appPassword, maxPostsPerDay: 12, ... } config block via sed
-  2. Added leg1Bluesky, leg2Bluesky, leg3BlueskyPost to flags block via sed
-  3. Removed leg2Lemmy, leg3LemmyPost from flags block via sed
-  Crash error was: "Cannot read properties of undefined (reading 'maxPostsPerDay')"
-  because leg2-bluesky-poster.js v2 referenced config.bluesky.maxPostsPerDay
-  but config.bluesky didn't exist.
-SESSION: 58, recurred 77, recurred 90/91.
 ```
 
 ---
@@ -2404,186 +1563,10 @@ RELATED: LM-001 (updated Session 77) — trigger now guards level + xp + streak_
 SESSION: 72 (created unprotected), 77 (added to trigger).
 ```
 
----
-
-# SECTION 20: CONTENT-FIRST BOT STRATEGY + LEMMY DEATH (Session 77)
 
 ---
 
-## LM-162: Text+link bot posts are dead — content-first or get buried
-```
-DECISION (Session 77): Old-school bot strategy (text blurb + bare URL) is
-  confirmed ineffective on modern platforms. Bluesky specifically suppresses
-  promotional link-only posts in algorithmic feeds. Same pattern on Reddit,
-  Discord, and most social platforms circa 2025-2026.
-PROTECTS: Bot army effectiveness and account survival.
-BITES YOU WHEN: You revert to text+link posting, add a new platform with
-  the old pattern, or skip image generation to "save time."
-SYMPTOM: Posts get zero engagement. Accounts get suppressed or shadowbanned.
-  Bot army runs, logs show success, zero traffic arrives.
-FIX: All bot posts must be content-first: native image (ESPN-style share
-  card) as the primary content, with link in secondary position (reply,
-  alt text, or card embed). card-generator.js produces PNG share cards
-  server-side using the canvas npm package.
-RULE: Every new platform leg must include image posting from day one.
-  Text-only posting is the fallback, not the default.
-SESSION: 77.
-```
-
----
-
-## LM-163: card-generator.js requires `canvas` npm package on VPS
-```
-DECISION (Session 77): Server-side share card generation uses the `canvas`
-  npm package (node-canvas) to port src/cards.ts to Node.js.
-PROTECTS: Bot army can generate ESPN-style debate result PNGs without a browser.
-BITES YOU WHEN: VPS rebuild or npm clean install forgets to install canvas.
-  canvas has native dependencies (Cairo, Pango) — `npm install canvas` must
-  succeed with no build errors.
-SYMPTOM: card-generator.js throws "Cannot find module 'canvas'" or
-  native compilation errors during install.
-FIX: On Ubuntu 24.04: sudo apt-get install build-essential libcairo2-dev
-  libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-  Then: npm install canvas
-  File location: /opt/colosseum/bot-army/colosseum-bot-army/lib/card-generator.js
-SESSION: 77.
-```
-
----
-
-## LM-164: Lemmy is dead — files deleted, code commented out, .env disabled
-```
-DECISION (Session 77): Lemmy platform fully disabled after community bans
-  and posting failures. Both poster files deleted from VPS.
-  LEG2_LEMMY_ENABLED=false in .env. Lemmy code commented out in bot-engine.js.
-PROTECTS: Clean bot army state — no dead code paths firing errors.
-BITES YOU WHEN: Someone re-enables Lemmy flags without restoring the files.
-  bot-engine.js will try to require deleted modules → crash loop.
-  Also: ecosystem.config.js still has Lemmy env vars (cleanup pending).
-SYMPTOM: PM2 crash loop with MODULE_NOT_FOUND for leg2-lemmy-poster or
-  leg3-lemmy-poster.
-FIX: If re-enabling Lemmy in the future, must recreate the poster files
-  AND uncomment the code in bot-engine.js AND update .env.
-  For now: Lemmy is dead. Focus on Bluesky + Reddit.
-SESSION: 77.
-```
-
----
-
-## LM-165: Mirror debate content is template text, not real AI arguments
-```
-LESSON (Session 77 guest walkthrough): Auto-debate pages on the mirror
-  show template/placeholder text instead of actual AI-generated arguments.
-  Titles truncated with "?". Only 1 total vote across all debates, 3 profiles.
-BITES YOU WHEN: Bot army links drive traffic to mirror debate pages.
-  Users see empty/template debates and bounce immediately.
-  The rage-click funnel requires real, provocative AI arguments to work.
-SYMPTOM: Mirror debate pages show generic text. No compelling content.
-  Zero engagement from bot-referred visitors.
-FIX: Mirror generator must pull actual AI debate arguments from Supabase
-  (auto_debates table — check for side_a_arguments, side_b_arguments columns
-  or equivalent). Verify columns with SELECT * FROM auto_debates LIMIT 1
-  before assuming column names (LM-091).
-SESSION: 77.
-```
----
-
-## LM-166: bot-config.js GitHub version diverges from VPS — VPS is authoritative
-```
-DECISION (Session 42): setup-bluesky.js patches bot-config.js on VPS to add
-  a bluesky: { handle, appPassword, maxPostsPerDay, ... } config block.
-  This patch was never committed back to GitHub.
-BITES YOU WHEN: You upload bot-config.js from GitHub to VPS (via SCP or
-  any other method). The GitHub version is missing the bluesky config block.
-  The Bluesky poster crashes with "Cannot read properties of undefined
-  (reading 'maxPostsPerDay')". Debates still get created in Supabase but
-  never post to Bluesky — silent failure except for one error log line.
-SYMPTOM: `pm2 logs` shows "Leg 2 pipeline failed for headline: Cannot read
-  properties of undefined (reading 'maxPostsPerDay')" after every headline.
-  Features line may or may not show L2-Bluesky depending on whether flags
-  block was also lost.
-FIX: Either:
-  (a) Use sed to patch bot-config.js directly on VPS (preferred), or
-  (b) Sync the VPS version back to GitHub so both match.
-  Never upload GitHub → VPS for bot-config.js without verifying the bluesky
-  block exists.
-RULE: VPS bot-config.js is the authoritative version. GitHub is stale.
-  When making bot-config changes, patch on VPS first, verify, then optionally
-  push to GitHub.
-SESSION: 42 (created divergence), 91 (burned by it).
-```
-
----
-
-## LM-167: SCP from multiple machines delivers stale files
-```
-DECISION: Pat switches between multiple computers at random times.
-  Downloads from Claude land on whichever machine is active.
-BITES YOU WHEN: Pat downloads a file on Machine A, switches to Machine B,
-  runs SCP from Machine B's Downloads folder. Machine B has an older version
-  of the file (or no file at all, and Windows serves a cached/renamed copy).
-  SCP reports 100% success with correct byte count, but the content is wrong.
-SYMPTOM: `grep "Session 91" /path/to/file.js` returns nothing after SCP
-  reported success. File header shows an older session number.
-  Extension of LM-152 (Windows browser cache) but with multi-machine twist.
-FIX: After ANY SCP transfer, verify content on VPS:
-  grep "UNIQUE_STRING" /path/to/file.js
-  If wrong file, prefer sed patches directly on VPS instead of re-downloading.
-RULE: For bot army files, default to sed patches on VPS. Reserve SCP for
-  large new files that don't exist on VPS yet.
-SESSION: 91 (SCP reported success, file was Session 75 not Session 91).
-```
-
----
-
-## LM-168: APP_BASE_URL default in bot-config.js pointed to Vercel not mirror
-```
-DECISION: bot-config.js app.baseUrl defaults to colosseum-six.vercel.app
-  if APP_BASE_URL env var is not set or still has the old value.
-  NT says all bot links should go to colosseum-f30.pages.dev (mirror).
-BITES YOU WHEN: .env has APP_BASE_URL=https://colosseum-six.vercel.app
-  (the original value). Every bot post links to Vercel instead of the
-  static mirror. Mirror gets zero bot traffic.
-SYMPTOM: Bluesky posts contain colosseum-six.vercel.app links instead of
-  colosseum-f30.pages.dev links.
-FIX: Set APP_BASE_URL=https://colosseum-f30.pages.dev in .env.
-  Also update the hardcoded default in bot-config.js to match.
-  Run pm2 restart all after .env change.
-SESSION: 91 (found and fixed).
-```
-
----
-
-## LM-169: Three parallel debate tables — consolidation in progress (Session 101)
-```
-DECISION: The app has three debate table systems that evolved independently:
-  - arena_debates (active, arena/matchmaking/AI sparring)
-  - debates (legacy, original schema, still referenced by 8+ RPCs)
-  - async_debates (hot-take-spawned, separate system — out of scope)
-  The legacy `debates` table has 5 FK dependents: debate_votes, predictions,
-  reports, debate_references, moderator_scores.
-BITES YOU WHEN: Any new feature that touches debate outcomes (staking,
-  replays, reference tracking, tournaments, leaderboard stats) has to know
-  which table to query. Wrong table = silent data mismatch, not a crash.
-  Leaderboard shows 12-3 but profile shows 8-3. Token staking settles
-  against one table while the result lives in the other.
-SYMPTOM: Stats don't match across screens. No error messages — just
-  inconsistent numbers that erode user trust.
-SCHEMA DIFFERENCES:
-  - winner: UUID in debates, TEXT ('a'/'b'/'draw') in arena_debates
-  - votes: votes_a/votes_b in debates, vote_count_a/vote_count_b in arena
-  - status values differ (waiting/matched/completed/canceled vs pending/round_break/complete/cancelled)
-  - format (debates) vs mode (arena_debates) — different enum values
-  - debates has elo_change_a/b, recording_url, transcript — arena doesn't
-  - arena has score_a/score_b — debates doesn't
-CLIENT VIOLATIONS: src/scoring.ts L195 and L215 query `debates`
-  table directly (bypassing castle defense RPC pattern).
-FIX: Session 101 consolidation plan (DEBATE-TABLE-CONSOLIDATION-PLAN.md):
-  Expand arena_debates schema → migrate data → re-point FKs → update all
-  RPCs and client queries → drop legacy table.
-  After Session 101: this entry becomes historical. Single table: arena_debates.
-SESSION: 100 (identified), 101 (fix). RESOLVED Session 101.
-```
+# SECTION 20: SCHEMA / TOKEN / ARENA PATTERNS (Sessions 72-206)
 
 ---
 
@@ -2741,41 +1724,6 @@ SESSION: 109 (introduced), 118 (fixed).
 
 ---
 
-## LM-177: settle_stakes requires stake_pools.winner column
-```
-DECISION (Session 123): settle_stakes RPC writes the winner value to
-  stake_pools.winner for record-keeping. But the column didn't exist.
-BITES YOU WHEN: settle_stakes fires after a debate completes. Without the
-  column, the RPC fails with "column winner does not exist".
-SYMPTOM: Stakes placed successfully, tokens deducted, but settlement fails.
-  Tokens locked in pool forever. Post-debate screen may or may not show
-  staking results depending on error handling.
-FIX: ALTER TABLE stake_pools ADD COLUMN IF NOT EXISTS winner TEXT.
-  Already applied Session 123.
-SESSION: 123 (found and fixed).
-```
-
----
-
-## LM-178: claim_action_tokens — log_event must use named parameters
-```
-DECISION (Session 123): claim_action_tokens called log_event with positional
-  args: log_event(v_user_id, 'token_earn', json_build_object(...)).
-  Actual log_event signature is (p_event_type text, p_user_id uuid, ...,
-  p_metadata jsonb). Positional args were in wrong order with wrong types.
-BITES YOU WHEN: Any token claim action fires. The log_event call fails,
-  which may or may not cascade depending on whether the RPC wraps it in
-  a BEGIN/EXCEPTION block.
-SYMPTOM: Token claim succeeds but event not logged. Analytics views that
-  read from event_log show no token_earn events.
-FIX: Use named parameters: log_event(p_event_type := 'token_earn',
-  p_user_id := v_user_id, p_metadata := jsonb_build_object(...)).
-  Already applied Session 123.
-SESSION: 123 (found and fixed).
-```
-
----
-
 ## LM-179: token_earn_log column is earn_type not action
 ```
 DECISION (Session 124): get_my_milestones and claim_milestone RPCs both
@@ -2813,24 +1761,6 @@ FIX: Use RETURNS TABLE(col1 TYPE, col2 TYPE, ...) instead of RETURNS record.
 RULE: Never use bare `record` return type for RPCs that PostgREST exposes.
   Always use RETURNS TABLE(...) or RETURNS a named composite type.
 SESSION: 124 (found and fixed).
-```
-
----
-
-## LM-181: get_category_counts was last debates table holdout
-```
-DECISION (Session 101): Legacy `debates` table eliminated, all code migrated
-  to `arena_debates`. But get_category_counts still queried `public.debates`
-  with old status values (live, waiting, matched).
-BITES YOU WHEN: get_category_counts is called (home page carousel counts).
-  If debates table still exists, returns stale/wrong counts. If debates
-  table was dropped, returns error.
-SYMPTOM: Category counts show 0 or wrong numbers. Combined with LM-180
-  (record return type), the function was double-broken — 404 before the
-  query even ran.
-FIX: Rewritten to query arena_debates with correct status values (live,
-  pending, lobby, matched). Legacy table elimination now truly complete.
-SESSION: 101 (thought it was done), 124 (last holdout found and fixed).
 ```
 
 ---
@@ -2903,28 +1833,6 @@ SESSION: 121 (found and fixed).
 
 ---
 
-## LM-185: IIFE modules must use ColosseumAuth.safeRpc not bare safeRpc
-```
-DECISION (Session 121): src/staking.ts and src/powerups.ts are
-  IIFEs (Immediately Invoked Function Expressions) that don't expose window
-  globals. They call safeRpc() but safeRpc doesn't exist at window scope —
-  it's a method on ColosseumAuth.
-BITES YOU WHEN: An IIFE module calls bare safeRpc('rpc_name', params).
-  This throws "safeRpc is not defined" at runtime when the function is
-  invoked.
-SYMPTOM: "safeRpc is not defined" error in console when staking or
-  power-up functions fire. Feature silently fails.
-FIX: Always use ColosseumAuth.safeRpc('rpc_name', params) in IIFE
-  modules. The TypeScript migration (Phase 2) eliminates this class of
-  bug permanently — import { safeRpc } from './auth' makes the
-  dependency explicit and compile-time checked.
-NOTE: This is structurally impossible after TypeScript migration Phase 2
-  (Session 126). Only applies to the original .js files.
-SESSION: 121 (documented). TypeScript fix: Session 126.
-```
-
----
-
 ## LM-186: verify_reference rivals column names — challenger_id/target_id not user_id/rival_id
 ```
 DECISION (Session 147): The reference-arsenal-migration.sql from Session 146
@@ -2947,40 +1855,6 @@ PATTERN: Same class of bug as LM-174 (tokens vs token_balance). Schema
   assumptions without verification. Rule: always query information_schema
   before writing any RPC that touches a table.
 SESSION: 146 (introduced), 147 (caught and fixed before execution).
-```
-
----
-
-## LM-188: log_event positional args — CLOSED (Session 151)
-```
-AUDIT COMPLETE. Every log_event call in every public RPC now uses named
-  parameters (p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=,
-  p_side :=, p_metadata :=).
-BROKEN CALLS FOUND: 7 across 6 RPCs (join_debate_queue ×2,
-  toggle_moderator_status, update_arena_debate, claim_debate_tokens,
-  create_group, join_group). These were silently corrupting event_log data
-  or throwing type ambiguity errors.
-FRAGILE CALLS FIXED: 22 across 20 RPCs. Worked by luck of arg order but
-  violated the named-param rule from Session 150.
-RULE STANDS: Every future log_event call MUST use named parameters. No
-  exceptions. This bug class appeared in Sessions 123, 149, 150 before
-  the full sweep in 151.
-SESSION: 123 (first occurrence), 149 (reintroduced), 150 (found again,
-  rule established), 151 (full audit, closed).
-```
-
----
-
-## LM-189: Google OAuth provider disabled in Supabase
-```
-DECISION (Session 150): Signup via Google fails with "Unsupported provider:
-  provider is not enabled." Email confirmation also fails ("Error sending
-  confirmation email"). Only way to create test accounts is directly in
-  Supabase dashboard with Auto Confirm toggled on.
-FIX: Re-enable Google provider in Supabase Auth → Providers → Google.
-  Fix email confirmation in Supabase Auth → Email Templates / SMTP settings.
-  Separate login and signup into distinct, clear paths.
-SESSION: 150 (discovered).
 ```
 
 ---
@@ -3033,27 +1907,6 @@ SYMPTOM: insert_feed_event enforces a new rule (e.g., rate limit), but point_awa
 FIX: Any new logic added to insert_feed_event that should also apply to point_award
   events must be manually added to score_debate_comment. They are permanently coupled.
   Both functions must reference each other in comments. Never remove this note.
-SESSION: 178.
-```
-
-## LM-192: debate_feed_events is append-only — pin_feed_event is the sole UPDATE exception
-```
-DECISION (Session 178): debate_feed_events has USING(false) RLS on UPDATE.
-  pin_feed_event is the only function that mutates existing rows. It toggles
-  metadata.pinned on speech events using SECURITY DEFINER to bypass RLS.
-  The broadcast trigger is AFTER INSERT only — it does NOT fire on this UPDATE.
-  Pin state is moderator-private by design (spec: "Prevents debaters from
-  changing behavior").
-BITES YOU WHEN: You add a feature that needs to UPDATE an existing feed event row
-  (e.g., edit speech content, update a reference status). RLS blocks direct updates.
-  If you write a new SECURITY DEFINER function to do it, you also need to decide
-  whether it should broadcast the change.
-SYMPTOM: UPDATE on debate_feed_events fails silently (RLS USING false). No error
-  thrown to client unless the RLS policy is checked directly.
-FIX: Any new mutation to existing feed events needs: (1) SECURITY DEFINER function,
-  (2) explicit decision on whether to broadcast, (3) careful consideration of
-  B2B archive integrity — mutating archived debate data corrupts the historical record.
-  Default answer: don't mutate. Append a correction event instead.
 SESSION: 178.
 ```
 
@@ -3163,4 +2016,29 @@ ALSO: The mod opt-in step calls toggleModerator(true) from auth.ts. If that
   RPC fails, the user still proceeds to step 5 — it shows an error toast but
   doesn't block signup.
 SESSION: 206.
+```
+
+---
+
+## LM-199: Supabase SMTP password field silently wipes on re-save
+
+```
+WHAT: If you open Supabase Auth → SMTP Settings and click Save without
+  re-entering the SMTP password, the password field silently blanks.
+  Supabase does not warn you. Emails stop delivering with no error in
+  the dashboard — signups just never receive confirmation emails.
+BITES YOU WHEN: You change any SMTP setting (sender name, sender email,
+  rate limits) and hit Save without re-pasting the Resend API key into
+  the password field. Also happened during Session 5 — the spam fix in
+  a prior session likely wiped it.
+SYMPTOM: New signups don't receive confirmation emails. No error in
+  Supabase logs. Resend dashboard shows zero sends. Existing sessions
+  and logged-in users are unaffected, so the app looks fine.
+DIAGNOSIS: Go to Supabase → Auth → SMTP Settings. If the password field
+  is empty, that's the problem.
+FIX: Paste the current Resend API key (labeled "supabase-smtp" in Resend
+  dashboard) into the SMTP password field. Click Save. Send a test signup
+  to verify delivery. Rule: ALWAYS re-paste the API key before saving
+  SMTP settings, even if you didn't touch the password field.
+SESSION: Security hardening sessions (Session 5 bug fix).
 ```
