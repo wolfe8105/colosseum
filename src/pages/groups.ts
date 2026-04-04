@@ -140,7 +140,7 @@ function filterCategory(cat: string | null, el: HTMLElement) {
 async function loadDiscover() {
   document.getElementById('discover-list').innerHTML = '<div class="loading-state">Loading groups…</div>';
   try {
-    const { data, error } = await sb.rpc('discover_groups', { p_limit: 30, p_category: activeCategory });
+    const { data, error } = await safeRpc('discover_groups', { p_limit: 30, p_category: activeCategory });
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     renderGroupList('discover-list', groups || []);
@@ -153,7 +153,7 @@ async function loadDiscover() {
 async function loadMyGroups() {
   document.getElementById('mine-list').innerHTML = '<div class="loading-state">Loading…</div>';
   try {
-    const { data, error } = await sb.rpc('get_my_groups');
+    const { data, error } = await safeRpc('get_my_groups');
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     if (!groups || groups.length === 0) {
@@ -170,7 +170,7 @@ async function loadMyGroups() {
 async function loadLeaderboard() {
   document.getElementById('leaderboard-list').innerHTML = '<div class="loading-state">Loading rankings…</div>';
   try {
-    const { data, error } = await sb.rpc('get_group_leaderboard', { p_limit: 20 });
+    const { data, error } = await safeRpc('get_group_leaderboard', { p_limit: 20 });
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     renderGroupList('leaderboard-list', groups || [], false, true);
@@ -245,7 +245,7 @@ async function openGroup(groupId: string) {
   switchDetailTab('hot-takes');
 
   try {
-    const { data, error } = await sb.rpc('get_group_details', { p_group_id: groupId });
+    const { data, error } = await safeRpc('get_group_details', { p_group_id: groupId });
     if (error) throw error;
     const g = typeof data === 'string' ? JSON.parse(data) : data;
 
@@ -367,7 +367,7 @@ async function postGroupHotTake(groupId: string) {
   const btn = document.getElementById('group-take-post') as HTMLButtonElement | null;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
-    const { error } = await sb.rpc('create_hot_take', { p_content: text, p_section: groupId });
+    const { error } = await safeRpc('create_hot_take', { p_content: text, p_section: groupId });
     if (error) {
       showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
@@ -387,7 +387,7 @@ async function postGroupHotTake(groupId: string) {
 async function loadGroupMembers(groupId: string) {
   const esc = escapeHTML;
   try {
-    const { data, error } = await sb.rpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
+    const { data, error } = await safeRpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
     if (error) throw error;
     const members: GroupMember[] = typeof data === 'string' ? JSON.parse(data) : data;
 
@@ -896,7 +896,7 @@ async function loadGroupChallenges(groupId: string) {
   const container = document.getElementById('detail-challenges');
   if (!container) return;
   try {
-    const { data, error } = await sb.rpc('get_group_challenges', { p_group_id: groupId, p_limit: 10 });
+    const { data, error } = await safeRpc('get_group_challenges', { p_group_id: groupId, p_limit: 10 });
     if (error) throw error;
     const challenges = typeof data === 'string' ? JSON.parse(data) : data;
     if (!challenges || challenges.length === 0) {
@@ -987,7 +987,7 @@ async function toggleMembership() {
   btn.disabled = true;
   try {
     if (isMember) {
-      const { error } = await sb.rpc('leave_group', { p_group_id: currentGroupId });
+      const { error } = await safeRpc('leave_group', { p_group_id: currentGroupId });
       if (error) throw error;
       isMember   = false;
       callerRole = null;
@@ -997,7 +997,7 @@ async function toggleMembership() {
       document.getElementById('detail-members').textContent =
         String(parseInt(document.getElementById('detail-members').textContent) - 1);
     } else {
-      const { error } = await sb.rpc('join_group', { p_group_id: currentGroupId });
+      const { error } = await safeRpc('join_group', { p_group_id: currentGroupId });
       if (error) throw error;
       isMember   = true;
       callerRole = 'member';
@@ -1046,7 +1046,7 @@ async function submitCreateGroup() {
   btn.disabled    = true;
   btn.textContent = 'CREATING…';
   try {
-    const { data, error } = await sb.rpc('create_group', {
+    const { data, error } = await safeRpc('create_group', {
       p_name:         name,
       p_description:  (document.getElementById('group-desc-input') as HTMLInputElement).value.trim() || null,
       p_category:     (document.getElementById('group-category') as HTMLSelectElement).value,
