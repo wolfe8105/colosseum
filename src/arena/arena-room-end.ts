@@ -5,7 +5,7 @@ import { safeRpc, getCurrentUser, getCurrentProfile, declareRival, showUserProfi
 import { escapeHTML, showToast, friendlyError } from '../config.ts';
 import { claimDebate, claimAiSparring } from '../tokens.ts';
 import { settleStakes } from '../staking.ts';
-import { hasMultiplier, removeShieldIndicator } from '../powerups.ts';
+import { removeShieldIndicator } from '../powerups.ts';
 import { leaveDebate } from '../webrtc.ts';
 import { shareResult } from '../share.ts';
 import { nudge } from '../nudge.ts';
@@ -116,8 +116,8 @@ export async function endCurrentDebate(): Promise<void> {
       else claimDebate(debate.id);
 
       try {
-        const hasMulti = hasMultiplier(equippedForDebate);
-        const stakeResult = await settleStakes(debate.id, winner || 'draw', hasMulti ? 2 : 1);
+        // Session 230: winner + multiplier params removed — SQL reads both server-side
+        const stakeResult = await settleStakes(debate.id);
         debate._stakingResult = stakeResult;
       } catch { /* warned */ }
     }
@@ -167,7 +167,6 @@ export async function endCurrentDebate(): Promise<void> {
       <div class="arena-staking-result-amount ${debate._stakingResult.payout > 0 ? 'won' : debate._stakingResult.payout < 0 ? 'lost' : 'none'}">
         ${debate._stakingResult.payout > 0 ? '+' : ''}${debate._stakingResult.payout} tokens
       </div>
-      ${hasMultiplier(equippedForDebate) ? '<div class="arena-staking-result-detail">\u26A1 2x Multiplier applied</div>' : ''}
     </div>` : ''}
     <div class="arena-post-topic">${escapeHTML(debate.topic)}</div>
     <div class="arena-post-score">
