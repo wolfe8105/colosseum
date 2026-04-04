@@ -391,6 +391,10 @@ export function init(): void {
 export async function signUp({ email, password, username, displayName, dob }: SignUpParams): Promise<AuthResult> {
   if (isPlaceholderMode) return { success: true, placeholder: true };
 
+  if (!email || !password) {
+    return { success: false, error: 'Email and password are required. Please start over.' };
+  }
+
   try {
     const redirectTo = APP.baseUrl + '/moderator-login.html';
 
