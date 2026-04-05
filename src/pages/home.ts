@@ -592,15 +592,18 @@ document.getElementById('profile-avatar').addEventListener('click',()=>{
       </div>
     </div>`;
   sheetOverlay.addEventListener('click',(e)=>{if(e.target===sheetOverlay)_closeSheet(sheetOverlay);});
+  let _avatarSaving=false;
   sheetOverlay.querySelector('#avatar-grid').addEventListener('click',async(e)=>{
     const opt=(e.target as HTMLElement).closest('.avatar-option') as HTMLElement|null;
-    if(!opt)return;
+    if(!opt||_avatarSaving)return;
+    _avatarSaving=true;
     const emoji=opt.dataset.emoji;
     sheetOverlay.querySelectorAll('.avatar-option').forEach(o=>o.classList.remove('selected'));
     opt.classList.add('selected');
     opt.style.opacity='0.5';
     const result=await updateProfile({avatar_url:'emoji:'+emoji});
     opt.style.opacity='1';
+    _avatarSaving=false;
     if(result?.success){
       _closeSheet(sheetOverlay);
       showToast('Avatar updated!','success');
@@ -632,13 +635,16 @@ document.getElementById('bio-cancel-btn').addEventListener('click',()=>{
   bioDisplay.style.display='';
 });
 document.getElementById('bio-save-btn').addEventListener('click',async()=>{
+  const saveBtn=document.getElementById('bio-save-btn') as HTMLButtonElement;
+  if(saveBtn?.disabled)return;
+  if(saveBtn){saveBtn.disabled=true;}
   const newBio=bioTextarea.value.trim();
-  const saveBtn=document.getElementById('bio-save-btn');
   saveBtn.textContent='SAVING...';
   saveBtn.style.opacity='0.5';
   const result=await updateProfile({bio:newBio});
   saveBtn.textContent='SAVE';
   saveBtn.style.opacity='1';
+  if(saveBtn){saveBtn.disabled=false;}
   if(result?.success){
     bioEditPanel.style.display='none';
     bioDisplay.style.display='';
