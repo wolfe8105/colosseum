@@ -2,7 +2,7 @@
 // Part of the arena.ts monolith split
 
 import { safeRpc, getSupabaseClient } from '../auth.ts';
-import { escapeHTML, SUPABASE_URL } from '../config.ts';
+import { escapeHTML, SUPABASE_URL, FEATURES } from '../config.ts';
 import { currentDebate } from './arena-state.ts';
 import type { CurrentDebate, DebateMessage, DebateRole, SideScores, AIScoreResult, CriterionScore } from './arena-types.ts';
 import { AI_RESPONSES, AI_TOPICS } from './arena-types.ts';
@@ -10,6 +10,7 @@ import { isPlaceholder, randomFrom } from './arena-core.ts';
 import { addMessage, advanceRound } from './arena-room-live.ts';
 
 export async function handleAIResponse(debate: CurrentDebate, userText: string): Promise<void> {
+  if (!FEATURES.aiSparring) return;
   // Show typing indicator
   const messages = document.getElementById('arena-messages');
   const typing = document.createElement('div');
@@ -68,6 +69,7 @@ export async function generateAIDebateResponse(
   round: number,
   totalRounds: number
 ): Promise<string> {
+  if (!FEATURES.aiSparring) return '';
   const messageHistory = (currentDebate?.messages ?? []).map((m) => ({
     role: m.role,
     content: m.text,

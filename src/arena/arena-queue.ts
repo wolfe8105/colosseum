@@ -2,7 +2,7 @@
 // Part of the arena.ts monolith split
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { friendlyError } from '../config.ts';
+import { friendlyError, FEATURES } from '../config.ts';
 import {
   view, selectedMode, selectedRanked, selectedRuleset, selectedRounds,
   selectedCategory, queuePollTimer, queueElapsedTimer, queueSeconds,
@@ -26,6 +26,8 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
     void startAIDebate(topic);
     return;
   }
+
+  if (!FEATURES.liveDebates) return;
 
   if (screenEl) screenEl.innerHTML = '';
   set_queueSeconds(0);

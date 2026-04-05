@@ -4,7 +4,7 @@
 import {
   safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile,
 } from '../auth.ts';
-import { isAnyPlaceholder } from '../config.ts';
+import { isAnyPlaceholder, FEATURES } from '../config.ts';
 import { leaveDebate } from '../webrtc.ts';
 import { ready } from '../auth.ts';
 import {
@@ -88,6 +88,7 @@ window.addEventListener('popstate', _onPopState);
 // ============================================================
 
 export function init(): void {
+  if (!FEATURES.arena) return;
   injectCSS();
   set_screenEl(document.getElementById('screen-arena'));
   if (!screenEl) {
