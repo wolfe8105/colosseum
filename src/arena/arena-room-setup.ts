@@ -106,6 +106,8 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
 
   // Wire enter button
   document.getElementById('pre-debate-enter-btn')?.addEventListener('click', async () => {
+    const enterBtn = document.getElementById('pre-debate-enter-btn') as HTMLButtonElement | null;
+    if (enterBtn) { if (enterBtn.disabled) return; enterBtn.disabled = true; enterBtn.textContent = 'ENTERING...'; }
     try {
       const finalData = await getMyPowerUps(debateData.id);
       set_equippedForDebate(finalData.equipped || []);

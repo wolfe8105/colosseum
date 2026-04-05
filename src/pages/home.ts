@@ -28,6 +28,7 @@ import '../tokens.ts';
 import { ModeratorAsync } from '../async.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
+import { destroy as destroyArena } from '../arena.ts';
 import { registerNavigate } from '../navigation.ts';
 
 // --- Side-effect imports ---
@@ -321,8 +322,15 @@ overlay.addEventListener('touchend',(e)=>{if(e.changedTouches[0].clientY-overlay
 // NAVIGATION
 // ============================================================
 const VALID_SCREENS=['home','arena','profile','shop','leaderboard','arsenal'];
+let _currentScreen = 'home';
 function navigateTo(screenId: string){
   if(!VALID_SCREENS.includes(screenId))screenId='home';
+
+  // Clean up previous screen's resources
+  if (_currentScreen === 'arena' && screenId !== 'arena') {
+    destroyArena();
+  }
+  _currentScreen = screenId;
 
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));

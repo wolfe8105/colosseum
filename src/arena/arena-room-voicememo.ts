@@ -85,7 +85,14 @@ export function resetVoiceMemoUI(): void {
   sendBtn?.classList.add('arena-hidden');
 }
 
+let _sendingMemo = false;
+
 export async function sendVoiceMemo(): Promise<void> {
+  if (_sendingMemo) return;
+  _sendingMemo = true;
+  const sendBtn = document.getElementById('arena-vm-send') as HTMLButtonElement | null;
+  if (sendBtn) sendBtn.disabled = true;
+  try {
   const debate = currentDebate!;
   const side = debate.role;
   const memoLabel = `\uD83C\uDF99 Voice memo (${formatTimer(vmSeconds)})`;
@@ -122,4 +129,5 @@ export async function sendVoiceMemo(): Promise<void> {
   } else {
     startOpponentPoll(debate.id, side, debate.round);
   }
+  } finally { _sendingMemo = false; }
 }

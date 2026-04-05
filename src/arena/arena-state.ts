@@ -118,3 +118,86 @@ export function set_vmTimer(v: ReturnType<typeof setInterval> | null) { vmTimer 
 export function set_vmSeconds(v: number) { vmSeconds = v; }
 export function set_opponentPollTimer(v: ReturnType<typeof setInterval> | null) { opponentPollTimer = v; }
 export function set_opponentPollElapsed(v: number) { opponentPollElapsed = v; }
+
+// ============================================================
+// RESET — called by destroy() to zero all mutable state
+// ============================================================
+
+export function resetState(): void {
+  // View & mode
+  view = 'lobby';
+  selectedMode = null;
+  // screenEl intentionally NOT reset — it's a DOM ref set once by init()
+  // cssInjected intentionally NOT reset — CSS only needs injection once
+
+  // Queue
+  if (queuePollTimer) clearInterval(queuePollTimer);
+  queuePollTimer = null;
+  if (queueElapsedTimer) clearInterval(queueElapsedTimer);
+  queueElapsedTimer = null;
+  queueSeconds = 0;
+  queueErrorState = false;
+  aiFallbackShown = false;
+  _queuePollInFlight = false;
+
+  // Match accept
+  if (matchAcceptTimer) clearInterval(matchAcceptTimer);
+  matchAcceptTimer = null;
+  if (matchAcceptPollTimer) clearInterval(matchAcceptPollTimer);
+  matchAcceptPollTimer = null;
+  matchAcceptSeconds = 0;
+  matchFoundDebate = null;
+
+  // Current debate & room
+  currentDebate = null;
+  if (roundTimer) clearInterval(roundTimer);
+  roundTimer = null;
+  roundTimeLeft = 0;
+
+  // Config selections
+  selectedModerator = null;
+  selectedRanked = false;
+  selectedRuleset = 'amplified';
+  selectedRounds = DEBATE.defaultRounds;
+  selectedCategory = null;
+  selectedWantMod = false;
+
+  // Private lobby
+  if (privateLobbyPollTimer) clearInterval(privateLobbyPollTimer);
+  privateLobbyPollTimer = null;
+  privateLobbyDebateId = null;
+  _pendingPrivateType = null;
+
+  // Moderator
+  if (modQueuePollTimer) clearInterval(modQueuePollTimer);
+  modQueuePollTimer = null;
+  if (modStatusPollTimer) clearInterval(modStatusPollTimer);
+  modStatusPollTimer = null;
+  modRequestModalShown = false;
+  if (modDebatePollTimer) clearInterval(modDebatePollTimer);
+  modDebatePollTimer = null;
+  modDebateId = null;
+
+  // References & power-ups
+  if (referencePollTimer) clearInterval(referencePollTimer);
+  referencePollTimer = null;
+  pendingReferences = [];
+  activatedPowerUps = new Set();
+  shieldActive = false;
+  equippedForDebate = [];
+  if (silenceTimer) clearInterval(silenceTimer);
+  silenceTimer = null;
+  if (_rulingCountdownTimer) clearInterval(_rulingCountdownTimer);
+  _rulingCountdownTimer = null;
+
+  // Voice memo
+  vmRecording = false;
+  if (vmTimer) clearInterval(vmTimer);
+  vmTimer = null;
+  vmSeconds = 0;
+
+  // Opponent poll
+  if (opponentPollTimer) clearInterval(opponentPollTimer);
+  opponentPollTimer = null;
+  opponentPollElapsed = 0;
+}

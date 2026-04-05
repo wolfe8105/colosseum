@@ -170,8 +170,11 @@ export function showUserSearchPicker(mode: string, topic: string): void {
             </div>
           </div>
         `).join('');
+        let _userPicked = false;
         results.querySelectorAll('.arena-user-row').forEach(row => {
           row.addEventListener('click', () => {
+            if (_userPicked) return;
+            _userPicked = true;
             const uid = (row as HTMLElement).dataset.uid!;
             const uname = (row as HTMLElement).dataset.uname!;
             overlay.remove();
@@ -234,8 +237,11 @@ export async function showGroupLobbyPicker(mode: string, topic: string): Promise
           <div class="arena-group-row-count">${g.member_count} members</div>
         </div>
       `).join('');
+      let _groupPicked = false;
       listEl.querySelectorAll('.arena-group-row').forEach(row => {
         row.addEventListener('click', () => {
+          if (_groupPicked) return;
+          _groupPicked = true;
           const gid = (row as HTMLElement).dataset.gid!;
           overlay.remove();
           void createAndWaitPrivateLobby(mode, topic, 'group', undefined, undefined, gid);

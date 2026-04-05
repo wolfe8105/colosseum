@@ -15,6 +15,7 @@ import {
   set_queueElapsedTimer, set_queuePollTimer,
   set_roundTimer, set_vmTimer, set_referencePollTimer,
   set__rulingCountdownTimer,
+  resetState,
 } from './arena-state.ts';
 import type { ArenaView, CurrentDebate } from './arena-types.ts';
 import { clearQueueTimers } from './arena-queue.ts';
@@ -25,6 +26,7 @@ import { stopModStatusPoll } from './arena-mod-queue.ts';
 import { renderLobby, showPowerUpShop } from './arena-lobby.ts';
 import { joinWithCode } from './arena-private-lobby.ts';
 import { injectCSS } from './arena-css.ts';
+import { cleanupPendingRecording } from '../voicememo.ts';
 
 // ============================================================
 // UTILITY HELPERS
@@ -127,12 +129,19 @@ export function getCurrentDebate(): CurrentDebate | null {
 // ============================================================
 
 export function destroy(): void {
-  if (queueElapsedTimer) { clearInterval(queueElapsedTimer); set_queueElapsedTimer(null); }
-  if (queuePollTimer) { clearInterval(queuePollTimer); set_queuePollTimer(null); }
-  if (roundTimer) { clearInterval(roundTimer); set_roundTimer(null); }
-  if (vmTimer) { clearInterval(vmTimer); set_vmTimer(null); }
-  if (referencePollTimer) { clearInterval(referencePollTimer); set_referencePollTimer(null); }
-  if (_rulingCountdownTimer) { clearInterval(_rulingCountdownTimer); set__rulingCountdownTimer(null); }
+  // Leave live audio debate if active
+  if (currentDebate?.mode === 'live') {
+    leaveDebate();
+  }
+
+  // Clean up any pending voice memo recordings and ObjectURLs
+  cleanupPendingRecording();
+
+  // resetState() clears ALL timers (queue, match, round, vm, reference,
+  // ruling countdown, private lobby, mod queue, mod status, mod debate,
+  // opponent poll, silence) and resets all mutable state variables.
+  resetState();
+
   window.removeEventListener('popstate', _onPopState);
 }
 

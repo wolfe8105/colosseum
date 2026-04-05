@@ -149,13 +149,23 @@ export function showRulingPanel(ref: ReferenceItem): void {
   }, 1000));
 
   // Wire buttons
+  let _rulingBusy = false;
   overlay.querySelector('#mod-ruling-allow')?.addEventListener('click', async () => {
+    if (_rulingBusy) return;
+    _rulingBusy = true;
+    const allowBtn = overlay.querySelector('#mod-ruling-allow') as HTMLButtonElement | null;
+    const denyBtn = overlay.querySelector('#mod-ruling-deny') as HTMLButtonElement | null;
+    if (allowBtn) allowBtn.disabled = true;
+    if (denyBtn) denyBtn.disabled = true;
     clearInterval(_rulingCountdownTimer!);
     set__rulingCountdownTimer(null);
     const reason = (document.getElementById('mod-ruling-reason') as HTMLTextAreaElement | null)?.value?.trim() || '';
     const result = await ruleOnReference(ref.id, 'allowed', reason);
     if (result?.error) {
       addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+      _rulingBusy = false;
+      if (allowBtn) allowBtn.disabled = false;
+      if (denyBtn) denyBtn.disabled = false;
     } else {
       addSystemMessage('\u2705 Evidence ALLOWED by moderator' + (reason ? ': ' + reason : ''));
     }
@@ -163,12 +173,21 @@ export function showRulingPanel(ref: ReferenceItem): void {
   });
 
   overlay.querySelector('#mod-ruling-deny')?.addEventListener('click', async () => {
+    if (_rulingBusy) return;
+    _rulingBusy = true;
+    const allowBtn = overlay.querySelector('#mod-ruling-allow') as HTMLButtonElement | null;
+    const denyBtn = overlay.querySelector('#mod-ruling-deny') as HTMLButtonElement | null;
+    if (allowBtn) allowBtn.disabled = true;
+    if (denyBtn) denyBtn.disabled = true;
     clearInterval(_rulingCountdownTimer!);
     set__rulingCountdownTimer(null);
     const reason = (document.getElementById('mod-ruling-reason') as HTMLTextAreaElement | null)?.value?.trim() || '';
     const result = await ruleOnReference(ref.id, 'denied', reason);
     if (result?.error) {
       addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+      _rulingBusy = false;
+      if (allowBtn) allowBtn.disabled = false;
+      if (denyBtn) denyBtn.disabled = false;
     } else {
       addSystemMessage('\u274C Evidence DENIED by moderator' + (reason ? ': ' + reason : ''));
     }

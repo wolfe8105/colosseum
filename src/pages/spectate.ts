@@ -685,14 +685,19 @@ interface SpectatorChatMessage {
     btnB.addEventListener('click', () => castVote('b', d));
   }
 
+  let _voteCast = false;
   async function castVote(side: string, d: SpectateDebate) {
-    const btnA = document.getElementById('vote-a');
-    const btnB = document.getElementById('vote-b');
+    if (_voteCast) return;
+    _voteCast = true;
+    const btnA = document.getElementById('vote-a') as HTMLButtonElement | null;
+    const btnB = document.getElementById('vote-b') as HTMLButtonElement | null;
 
-    btnA.classList.add('voted');
-    btnB.classList.add('voted');
-    if (side === 'a') btnA.classList.add('selected');
-    if (side === 'b') btnB.classList.add('selected');
+    if (btnA) btnA.disabled = true;
+    if (btnB) btnB.disabled = true;
+    btnA?.classList.add('voted');
+    btnB?.classList.add('voted');
+    if (side === 'a') btnA?.classList.add('selected');
+    if (side === 'b') btnB?.classList.add('selected');
 
     try {
       const { data, error } = await rpc('vote_arena_debate', {

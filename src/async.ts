@@ -907,9 +907,11 @@ export async function placePrediction(
   side: string,
   amount: number
 ): Promise<void> {
+  if (_placingPrediction) return;
   if (!requireAuth('place predictions')) return;
   if (_predictingInFlight.has(debateId)) return;
   _predictingInFlight.add(debateId);
+  try {
 
   const pred = predictions.find((p) => p.debate_id === debateId);
   if (!pred) return;
@@ -965,7 +967,7 @@ export async function placePrediction(
   }
 
   showToast(`🔮 Wagered ${amount} tokens on ${side === 'a' ? pred.p1 : pred.p2}!`, 'success');
-  _predictingInFlight.delete(debateId);
+  } finally { _predictingInFlight.delete(debateId); }
 }
 
 export async function pickStandaloneQuestion(
@@ -1311,6 +1313,7 @@ export async function postTake(): Promise<void> {
   // it only blocked low-balance users. create_hot_take awards tokens via claimHotTake.
   if (_postingInFlight) return;
   _postingInFlight = true;
+  try {
 
   const input = document.getElementById(
     'hot-take-input'
@@ -1363,7 +1366,7 @@ export async function postTake(): Promise<void> {
       showToast('Post failed — try again', 'error');
     }
   }
-  _postingInFlight = false;
+  } finally { _postingInFlight = false; }
 }
 
 // ============================================================

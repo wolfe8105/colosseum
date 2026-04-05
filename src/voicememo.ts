@@ -195,6 +195,16 @@ export function cancelRecording(): void {
   closeRecorderSheet();
 }
 
+/** Clean up any pending recording + fallback ObjectURLs on navigation away. */
+export function cleanupPendingRecording(): void {
+  if (pendingRecording?.url) {
+    URL.revokeObjectURL(pendingRecording.url);
+    pendingRecording = null;
+  }
+  if (isRecordingState) cancelRecording();
+  revokeAllFallbackURLs();
+}
+
 function cleanup(): void {
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
   if (recordingStream) {
@@ -267,16 +277,30 @@ function stopVisualization(): void {
 // UPLOAD / STORAGE
 // ============================================================
 
+// Track fallback ObjectURLs so they can be revoked later
+const _fallbackObjectURLs: string[] = [];
+
+/** Revoke all outstanding fallback ObjectURLs (call on cleanup). */
+export function revokeAllFallbackURLs(): void {
+  while (_fallbackObjectURLs.length) {
+    const u = _fallbackObjectURLs.pop();
+    if (u) URL.revokeObjectURL(u);
+  }
+}
+
 export async function uploadVoiceMemo(blob: Blob, debateId: string | null): Promise<UploadResult> {
   if (blob.size > MAX_FILE_BYTES) {
     const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
     showToast(`⚠️ Recording too large (${sizeMB} MB). Max is 5 MB.`);
-    return { url: URL.createObjectURL(blob), path: 'local-fallback' };
+    const url = URL.createObjectURL(blob);
+    _fallbackObjectURLs.push(url);
+    return { url, path: 'local-fallback' };
   }
 
   const supabase = getSupabase();
   if (!supabase) {
     const url = URL.createObjectURL(blob);
+    _fallbackObjectURLs.push(url);
     console.log('[PLACEHOLDER] Voice memo stored locally:', url);
     return { url, path: 'placeholder/' + Date.now() + '.webm' };
   }
@@ -293,7 +317,9 @@ export async function uploadVoiceMemo(blob: Blob, debateId: string | null): Prom
   if (error) {
     console.error('Upload failed:', error);
     showToast('⚠️ Upload failed. Saved locally.');
-    return { url: URL.createObjectURL(blob), path: 'local-fallback' };
+    const url = URL.createObjectURL(blob);
+    _fallbackObjectURLs.push(url);
+    return { url, path: 'local-fallback' };
   }
 
   const { data: urlData } = supabase.storage.from('debate-audio').getPublicUrl(path);
@@ -405,6 +431,8 @@ export async function send(): Promise<void> {
     });
     if (error) {
       console.error('create_voice_take error:', error);
+      if (pendingRecording?.url) URL.revokeObjectURL(pendingRecording.url);
+      pendingRecording = null;
       showToast('⚠️ Failed to post voice take. Try again.');
       return;
     }
