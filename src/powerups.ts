@@ -10,6 +10,7 @@
 import { safeRpc } from './auth.ts';
 import { escapeHTML } from './config.ts';
 import { getTier, getPowerUpSlots, getNextTier } from './tiers.ts';
+import { getBalance } from './tokens.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -77,7 +78,13 @@ export const CATALOG: Readonly<Record<PowerUpId, PowerUpCatalogEntry>> = {
 // ============================================================
 
 /** Buy a power-up from the shop. Deducts token_balance. */
-export async function buy(powerUpId: string, quantity = 1): Promise<PowerUpResult> {
+export async function buy(powerUpId: string, quantity = 1, cost?: number): Promise<PowerUpResult> {
+  if (cost != null) {
+    const bal = getBalance();
+    if (bal != null && cost > bal) {
+      return { success: false, error: `Insufficient balance (${bal.toLocaleString()} tokens)` };
+    }
+  }
   const result = await safeRpc<PowerUpResult>('buy_power_up', {
     p_power_up_id: powerUpId,
     p_quantity: quantity,

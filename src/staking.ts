@@ -12,6 +12,7 @@
 
 import { safeRpc } from './auth.ts';
 import { getTier, canStake, getNextTier } from './tiers.ts';
+import { getBalance } from './tokens.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -64,6 +65,11 @@ export async function placeStake(debateId: string, side: string, amount: number 
   const parsedAmount = parseInt(String(amount), 10);
   if (isNaN(parsedAmount) || parsedAmount <= 0) {
     return { success: false, error: 'Amount must be a positive number' };
+  }
+
+  const bal = getBalance();
+  if (bal != null && parsedAmount > bal) {
+    return { success: false, error: `Insufficient balance (${bal.toLocaleString()} tokens)` };
   }
 
   const result = await safeRpc<StakeResult>('place_stake', {

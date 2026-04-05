@@ -28,7 +28,7 @@ import {
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
 import { navigateTo } from './navigation.ts';
-import { claimHotTake, claimReaction, claimPrediction } from './tokens.ts';
+import { claimHotTake, claimReaction, claimPrediction, getBalance } from './tokens.ts';
 import { nudge } from './nudge.ts';
 
 // ============================================================
@@ -556,6 +556,11 @@ function _wirePredictionDelegation(container: HTMLElement): void {
       const debateId = btn.dataset['id'] ?? '';
       const pick = btn.dataset['pick'] ?? '';
       if (amount >= 1 && amount <= 500 && debateId && pick) {
+        const bal = getBalance();
+        if (bal != null && amount > bal) {
+          showToast(`Insufficient balance (${bal.toLocaleString()} tokens)`, 'error');
+          return;
+        }
         void placePrediction(debateId, pick, amount);
       }
     } else if (action === 'wager-cancel') {
