@@ -21,6 +21,7 @@ import { clearQueueTimers } from './arena-queue.ts';
 import { clearMatchAcceptTimers } from './arena-match.ts';
 import { stopOpponentPoll } from './arena-room-live.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
+import { stopModStatusPoll } from './arena-mod-queue.ts';
 import { renderLobby, showPowerUpShop } from './arena-lobby.ts';
 import { joinWithCode } from './arena-private-lobby.ts';
 import { injectCSS } from './arena-css.ts';
@@ -65,6 +66,7 @@ export const _onPopState = () => {
     clearInterval(_rulingCountdownTimer!);
     stopReferencePoll();
     stopOpponentPoll();
+    stopModStatusPoll();
     if (currentDebate?.mode === 'live') {
       leaveDebate();
     }
