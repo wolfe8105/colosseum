@@ -947,6 +947,16 @@ export async function placePrediction(
         if (predContainer) renderPredictions(predContainer);
         return;
       }
+      // P1-9: Update balance display with debit from wager
+      const rpcResult = data as Record<string, unknown> | null;
+      if (rpcResult?.new_balance != null) {
+        const profile = getCurrentProfile();
+        if (profile) (profile as Record<string, unknown>).token_balance = rpcResult.new_balance;
+        const nb = Number(rpcResult.new_balance);
+        document.querySelectorAll('[data-token-balance]').forEach(el => { el.textContent = nb.toLocaleString(); });
+        const countEl = document.getElementById('token-count');
+        if (countEl) countEl.textContent = nb.toLocaleString();
+      }
       claimPrediction(debateId);
     } catch (e) {
       console.error('place_prediction exception:', e);
