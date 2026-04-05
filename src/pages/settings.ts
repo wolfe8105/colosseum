@@ -152,6 +152,9 @@ function loadSettings(): void {
 // ============================================================
 
 function saveSettings(): void {
+  const saveBtn = getEl<HTMLButtonElement>('save-btn');
+  if (saveBtn?.disabled) return;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Saving...'; }
   const displayName = getEl<HTMLInputElement>('set-display-name')?.value.trim() ?? '';
   const username = getEl<HTMLInputElement>('set-username')?.value.trim() ?? '';
   const bio = getEl<HTMLTextAreaElement>('set-bio')?.value.trim() ?? '';
@@ -159,14 +162,17 @@ function saveSettings(): void {
   // SESSION 64: Client-side validation (defense in depth)
   if (username && (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username))) {
     toast('❌ Username: 3-20 chars, letters/numbers/underscores only');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
     return;
   }
   if (displayName && displayName.length > 30) {
     toast('❌ Display name: max 30 characters');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
     return;
   }
   if (bio.length > 160) {
     toast('❌ Bio: max 160 characters');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
     return;
   }
 
@@ -214,6 +220,7 @@ function saveSettings(): void {
   }
 
   toast('✅ Settings saved');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
 }
 
 document.getElementById('save-btn')?.addEventListener('click', saveSettings);
@@ -250,11 +257,12 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
 // ============================================================
 
 document.getElementById('reset-pw-btn')?.addEventListener('click', async () => {
+  const btn = getEl<HTMLButtonElement>('reset-pw-btn');
+  if (btn?.disabled) return;
   const user = getCurrentUser() as { email?: string } | null;
   const email = user?.email;
   if (!email) { alert('You must be logged in to reset your password.'); return; }
 
-  const btn = getEl<HTMLButtonElement>('reset-pw-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
 
   const result = await resetPassword(email);
@@ -389,6 +397,8 @@ getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (
 // Wire category chip toggles
 document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip').forEach(chip => {
   chip.addEventListener('click', async () => {
+    if (chip.disabled) return;
+    chip.disabled = true;
     const cat = chip.dataset.cat ?? '';
     const isSelected = chip.classList.toggle('selected');
     const selected = Array.from(
@@ -408,6 +418,7 @@ document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip').forEach(chip => {
         ? 'Accepting all categories'
         : `${selected.length} categor${selected.length === 1 ? 'y' : 'ies'} selected`;
     }
+    chip.disabled = false;
   });
 });
 
