@@ -192,13 +192,13 @@
 
 <nav class="legal-nav">
   <a href="index.html" class="logo">THE <span>MODERATOR</span></a>
-  <a href="javascript:history.back()" class="back-link">← Back</a>
+  <a href="#" class="back-link" id="terms-back-link">← Back</a>
 </nav>
 
 <div class="legal-tabs">
-  <button class="legal-tab active" onclick="showTab('tos')">TERMS OF SERVICE</button>
-  <button class="legal-tab" onclick="showTab('privacy')">PRIVACY POLICY</button>
-  <button class="legal-tab" onclick="showTab('community')">COMMUNITY GUIDELINES</button>
+  <button class="legal-tab active" data-tab="tos">TERMS OF SERVICE</button>
+  <button class="legal-tab" data-tab="privacy">PRIVACY POLICY</button>
+  <button class="legal-tab" data-tab="community">COMMUNITY GUIDELINES</button>
 </div>
 
 <div class="legal-container">
@@ -269,7 +269,7 @@
 
     <div class="legal-section">
       <h2>11. DATA & PRIVACY</h2>
-      <p>Your use of the Platform is also governed by our <a href="#" onclick="showTab('privacy');return false;">Privacy Policy</a>, which describes how we collect, use, and protect your information.</p>
+      <p>Your use of the Platform is also governed by our <a href="#" data-tab="privacy" class="legal-tab-link">Privacy Policy</a>, which describes how we collect, use, and protect your information.</p>
     </div>
 
     <div class="legal-section">
