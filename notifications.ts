@@ -8,7 +8,7 @@
  */
 
 import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from './auth.ts';
-import { escapeHTML } from './config.ts';
+import { escapeHTML, FEATURES } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -81,8 +81,6 @@ let unreadCount = 0;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 let panelOpen = false;
 
-export function getUnreadCount(): number { return unreadCount; }
-
 
 // ============================================================
 // TIME FORMATTING
@@ -137,7 +135,7 @@ function createPanel(): void {
     display:none;flex-direction:column;
   `;
   panel.innerHTML = `
-    <div id="notif-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>
+    <div id="notif-backdrop" style="position:absolute;inset:0;background:var(--mod-bg-overlay);"></div>
     <div id="notif-drawer" style="
       position:relative;z-index:1;background:#132240;
       border-bottom-left-radius:16px;border-bottom-right-radius:16px;
@@ -146,19 +144,19 @@ function createPanel(): void {
       box-shadow:0 8px 32px rgba(0,0,0,0.4);
       padding-top:env(safe-area-inset-top,0px);
     ">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#d4a843;">NOTIFICATIONS</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--mod-border-secondary);">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--mod-accent);">NOTIFICATIONS</div>
         <div style="display:flex;gap:8px;">
-          <button id="notif-mark-all" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#a0a8b8;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;">Mark all read</button>
-          <button id="notif-close" style="background:none;border:none;color:#a0a8b8;font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+          <button id="notif-mark-all" style="background:none;border:1px solid var(--mod-border-primary);color:var(--mod-text-sub);font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;">Mark all read</button>
+          <button id="notif-close" style="background:none;border:none;color:var(--mod-text-sub);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
         </div>
       </div>
       <div id="notif-filters" style="display:flex;gap:6px;padding:8px 16px;overflow-x:auto;flex-shrink:0;">
-        <button class="notif-filter active" data-filter="all" style="background:rgba(212,168,67,0.15);color:#d4a843;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">All</button>
-        <button class="notif-filter" data-filter="challenge" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚔️ Challenges</button>
-        <button class="notif-filter" data-filter="result" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🏆 Results</button>
-        <button class="notif-filter" data-filter="reaction" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🔥 Reactions</button>
-        <button class="notif-filter" data-filter="economy" style="background:rgba(255,255,255,0.05);color:#a0a8b8;border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🪙 Economy</button>
+        <button class="notif-filter active" data-filter="all" style="background:var(--mod-accent-muted);color:var(--mod-accent);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">All</button>
+        <button class="notif-filter" data-filter="challenge" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚔️ Challenges</button>
+        <button class="notif-filter" data-filter="result" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🏆 Results</button>
+        <button class="notif-filter" data-filter="reaction" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🔥 Reactions</button>
+        <button class="notif-filter" data-filter="economy" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🪙 Economy</button>
       </div>
       <div id="notif-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:8px 0;"></div>
     </div>
@@ -174,12 +172,12 @@ function createPanel(): void {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.notif-filter').forEach((b) => {
         b.classList.remove('active');
-        (b as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-        (b as HTMLElement).style.color = '#a0a8b8';
+        (b as HTMLElement).style.background = 'var(--mod-bg-subtle)';
+        (b as HTMLElement).style.color = 'var(--mod-text-sub)';
       });
       btn.classList.add('active');
-      (btn as HTMLElement).style.background = 'rgba(212,168,67,0.15)';
-      (btn as HTMLElement).style.color = '#d4a843';
+      (btn as HTMLElement).style.background = 'var(--mod-accent-muted)';
+      (btn as HTMLElement).style.color = 'var(--mod-accent)';
       renderList((btn as HTMLElement).dataset['filter'] as NotificationFilter ?? 'all');
     });
   });
@@ -207,7 +205,7 @@ function renderList(filter: NotificationFilter = 'all'): void {
 
   if (filtered.length === 0) {
     list.innerHTML = `
-      <div style="text-align:center;padding:40px 16px;color:#a0a8b8;">
+      <div style="text-align:center;padding:40px 16px;color:var(--mod-text-sub);">
         <div style="font-size:32px;margin-bottom:8px;">🔕</div>
         <div style="font-size:14px;">No notifications yet</div>
       </div>`;
@@ -218,19 +216,19 @@ function renderList(filter: NotificationFilter = 'all'): void {
     .map((n) => {
       const typeInfo = TYPES[n.type] ?? TYPES.system;
       const unreadDot = !n.read
-        ? '<div style="width:8px;height:8px;background:#cc2936;border-radius:50%;flex-shrink:0;"></div>'
+        ? '<div style="width:8px;height:8px;background:var(--mod-magenta);border-radius:50%;flex-shrink:0;"></div>'
         : '';
       const displayTime = n.created_at ? timeAgo(n.created_at) : (n.time ?? '');
       return `
       <div class="notif-item" data-id="${escapeHTML(n.id)}" style="
         display:flex;gap:12px;align-items:flex-start;padding:12px 16px;cursor:pointer;
         background:${n.read ? 'transparent' : 'rgba(204,41,54,0.04)'};
-        border-bottom:1px solid rgba(255,255,255,0.03);
+        border-bottom:1px solid var(--mod-border-subtle);
       ">
         <div style="font-size:20px;flex-shrink:0;margin-top:2px;">${typeInfo.icon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;color:#f0f0f0;margin-bottom:2px;">${escapeHTML(n.title)}</div>
-          <div style="font-size:12px;color:#a0a8b8;line-height:1.4;">${escapeHTML(n.body)}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);margin-bottom:2px;">${escapeHTML(n.title)}</div>
+          <div style="font-size:12px;color:var(--mod-text-sub);line-height:1.4;">${escapeHTML(n.body)}</div>
           <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escapeHTML(displayTime)}</div>
         </div>
         ${unreadDot}
@@ -382,6 +380,7 @@ function bindBellButton(): void {
 // ============================================================
 
 export function init(): void {
+  if (!FEATURES.notifications) return;
   createPanel();
   bindBellButton();
 
@@ -408,6 +407,9 @@ const notificationsModule = {
 } as const;
 
 export default notificationsModule;
+
+// Expose on window so auth.ts logOut() can call destroy() without circular import
+(window as any).ColosseumNotifications = notificationsModule;
 
 // ============================================================
 
