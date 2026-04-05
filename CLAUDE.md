@@ -138,5 +138,6 @@ TypeScript + Vite. Run `npm install` then `npm run build` to compile. Serve the 
 - `THE-MODERATOR-NEW-TESTAMENT.md` — condensed project knowledge, key decisions, current state
 - `THE-MODERATOR-OLD-TESTAMENT.md` — all session build logs (1-191)
 - `THE-MODERATOR-LAND-MINE-MAP.md` — 194+ documented pitfalls. **Read before any SQL, schema, auth, or deployment change.**
+- 
 - `THE-MODERATOR-PUNCH-LIST.md` — single source of truth for all open work
 - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play
