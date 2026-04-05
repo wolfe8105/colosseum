@@ -27,6 +27,9 @@ interface SpectateDebate {
   debater_b_elo: number | null;
   debater_b_avatar: string | null;
   moderator_type: string | null;
+  moderator_id: string | null;
+  moderator_name: string | null;
+  ruleset: string | null;
   spectator_count: number | null;
   current_round: number | null;
   total_rounds: number | null;
@@ -35,6 +38,58 @@ interface SpectateDebate {
   score_a: number | null;
   score_b: number | null;
   winner: string | null;
+}
+
+/** Power-up activation event from replay data */
+interface ReplayPowerUp {
+  power_up_id: string;
+  user_id: string;
+  activated_at: string;
+  power_up_name: string;
+  power_up_icon: string;
+  user_name: string;
+  side: string;
+}
+
+/** Reference citation from replay data */
+interface ReplayReference {
+  id: string;
+  submitter_id: string;
+  round: number | null;
+  url: string;
+  description: string;
+  supports_side: string;
+  ruling: string;
+  ruling_reason: string | null;
+  created_at: string;
+  ruled_at: string | null;
+  submitter_name: string;
+  side: string;
+}
+
+/** Moderator score from replay data */
+interface ReplayModScore {
+  scorer_id: string;
+  scorer_role: string;
+  score: number;
+  created_at: string;
+  scorer_name: string;
+}
+
+/** Combined replay enrichment data */
+interface ReplayData {
+  power_ups: ReplayPowerUp[];
+  references: ReplayReference[];
+  mod_scores: ReplayModScore[];
+}
+
+/** Unified timeline entry for rendering */
+interface TimelineEntry {
+  type: 'message' | 'power_up' | 'reference';
+  timestamp: string;
+  round: number | null;
+  side: string | null;
+  data: DebateMessage | ReplayPowerUp | ReplayReference;
 }
 
 /** Single debate message (argument in a round) */
@@ -75,6 +130,7 @@ interface SpectatorChatMessage {
   let debateData: SpectateDebate | null = null;
   let chatMessages: SpectatorChatMessage[] = [];
   let chatOpen = true;
+  let replayData: ReplayData | null = null;
   const isLoggedIn = !!(getCurrentUser() && !getIsPlaceholderMode());
 
   // ---- Back button ----
@@ -249,6 +305,20 @@ interface SpectatorChatMessage {
         chatMessages = [];
       }
 
+      // Load replay enrichment data for completed debates (power-ups, references, mod scores)
+      const isComplete = debate.status === 'complete' || debate.status === 'completed';
+      if (isComplete) {
+        try {
+          const { data: rpData } = await rpc('get_debate_replay_data', { p_debate_id: debateId });
+          if (rpData) {
+            replayData = rpData as ReplayData;
+          }
+        } catch(e) {
+          console.warn('[Spectate] Replay data load failed (non-fatal):', e);
+          replayData = null;
+        }
+      }
+
       renderSpectateView(debate, messages);
 
       // Start polling if debate is active
@@ -302,8 +372,8 @@ interface SpectatorChatMessage {
 
     // Moderator bar
     if (d.moderator_type && d.moderator_type !== 'none') {
-      const modLabel = d.moderator_type === 'ai' ? 'AI Moderator' : 'Human Moderator';
-      html += '<div class="mod-bar fade-up">⚖️ Moderated by ' + escHtml(modLabel) + '</div>';
+      const modLabel = d.moderator_type === 'ai' ? 'AI Moderator' : escHtml(d.moderator_name || 'Human Moderator');
+      html += '<div class="mod-bar fade-up">\u2696\uFE0F Moderated by ' + modLabel + '</div>';
     }
 
     // Info bar: spectators + round
@@ -343,12 +413,12 @@ interface SpectatorChatMessage {
       html += '<div class="live-indicator fade-up"><span class="pulse"></span> Auto-updating every 5s</div>';
     }
 
-    // Message stream
+    // Message stream (enriched with power-ups and references for completed debates)
     html += '<div class="messages fade-up" id="messages">';
     if (messages.length === 0) {
       html += '<div class="msg-empty">No messages yet. The debate is getting started...</div>';
     } else {
-      html += renderMessages(messages, d);
+      html += renderTimeline(messages, d);
     }
     html += '</div>';
 
@@ -390,6 +460,38 @@ interface SpectatorChatMessage {
       html += '<span class="score-name">' + escHtml(d.debater_b_name) + '</span>';
       html += '<span>' + Number(d.score_b) + '</span></div>';
       html += '</div></div>';
+    }
+
+    // Moderator rating (if human-moderated and scores exist)
+    if ((d.status === 'complete' || d.status === 'completed') && d.moderator_type === 'human' && d.moderator_name && replayData && replayData.mod_scores.length > 0) {
+      html += '<div class="mod-rating-section fade-up">';
+      html += '<div class="mod-rating-title">\u2696\uFE0F MODERATOR RATING</div>';
+      html += '<div class="mod-rating-name">' + escHtml(d.moderator_name) + '</div>';
+
+      const debaterScores = replayData.mod_scores.filter(s => s.scorer_role === 'debater');
+      const spectatorScores = replayData.mod_scores.filter(s => s.scorer_role === 'spectator');
+
+      if (debaterScores.length > 0) {
+        html += '<div class="mod-rating-group">';
+        html += '<div class="mod-rating-group-label">Debater Ratings</div>';
+        for (const s of debaterScores) {
+          const verdict = s.score >= 25 ? '\uD83D\uDC4D FAIR' : '\uD83D\uDC4E UNFAIR';
+          html += '<div class="mod-rating-row"><span class="mod-rating-scorer">' + escHtml(s.scorer_name) + '</span><span class="mod-rating-verdict ' + (s.score >= 25 ? 'fair' : 'unfair') + '">' + verdict + '</span></div>';
+        }
+        html += '</div>';
+      }
+
+      if (spectatorScores.length > 0) {
+        const avgScore = Math.round(spectatorScores.reduce((sum, s) => sum + s.score, 0) / spectatorScores.length);
+        html += '<div class="mod-rating-group">';
+        html += '<div class="mod-rating-group-label">Spectator Rating (' + spectatorScores.length + ' vote' + (spectatorScores.length !== 1 ? 's' : '') + ')</div>';
+        html += '<div class="mod-rating-avg">';
+        html += '<div class="mod-rating-bar-track"><div class="mod-rating-bar-fill" style="width:' + (avgScore * 2) + '%"></div></div>';
+        html += '<span class="mod-rating-score">' + avgScore + '/50</span>';
+        html += '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
     }
 
     // Vote section
@@ -435,7 +537,108 @@ interface SpectatorChatMessage {
     }
   }
 
-  // ---- Debate Messages ----
+  // ---- Enriched Timeline (completed debates with power-ups + references) ----
+  function renderTimeline(messages: DebateMessage[], d: SpectateDebate) {
+    // If no replay data, fall back to basic message rendering
+    if (!replayData || (replayData.power_ups.length === 0 && replayData.references.length === 0)) {
+      return renderMessages(messages, d);
+    }
+
+    // Build unified timeline entries
+    const entries: TimelineEntry[] = [];
+
+    for (const m of messages) {
+      entries.push({
+        type: 'message',
+        timestamp: m.created_at || '1970-01-01T00:00:00Z',
+        round: m.round,
+        side: m.side,
+        data: m,
+      });
+    }
+
+    for (const pu of replayData.power_ups) {
+      entries.push({
+        type: 'power_up',
+        timestamp: pu.activated_at,
+        round: null,
+        side: pu.side,
+        data: pu,
+      });
+    }
+
+    for (const ref of replayData.references) {
+      entries.push({
+        type: 'reference',
+        timestamp: ref.created_at,
+        round: ref.round,
+        side: ref.side,
+        data: ref,
+      });
+    }
+
+    // Sort by timestamp
+    entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    let html = '';
+    let lastRound = 0;
+
+    for (const entry of entries) {
+      if (entry.type === 'message') {
+        const m = entry.data as DebateMessage;
+        if (m.round && m.round !== lastRound) {
+          html += '<div class="round-divider">\u2014 Round ' + Number(m.round) + ' \u2014</div>';
+          lastRound = m.round;
+        }
+        const side = m.side || 'a';
+        const isAI = m.is_ai;
+        const name = isAI ? '\uD83E\uDD16 AI'
+          : side === 'a' ? (d.debater_a_name || 'Side A')
+          : (d.debater_b_name || 'Side B');
+        html += '<div class="msg side-' + escHtml(side) + '">';
+        html += '<div class="msg-name">' + escHtml(name) + '</div>';
+        html += '<div class="msg-text">' + escHtml(m.content) + '</div>';
+        html += '<div class="msg-round">Round ' + Number(m.round) + '</div>';
+        html += '</div>';
+        if (m.created_at && (!lastMessageTime || m.created_at > lastMessageTime)) {
+          lastMessageTime = m.created_at;
+        }
+
+      } else if (entry.type === 'power_up') {
+        const pu = entry.data as ReplayPowerUp;
+        const sideClass = pu.side === 'a' ? 'side-a' : 'side-b';
+        html += '<div class="timeline-event power-up-event ' + sideClass + '">';
+        html += '<span class="timeline-icon">' + escHtml(pu.power_up_icon) + '</span>';
+        html += '<span class="timeline-text">' + escHtml(pu.user_name) + ' used <strong>' + escHtml(pu.power_up_name) + '</strong></span>';
+        html += '</div>';
+
+      } else if (entry.type === 'reference') {
+        const ref = entry.data as ReplayReference;
+        const sideClass = ref.side === 'a' ? 'side-a' : 'side-b';
+        const rulingIcon = ref.ruling === 'accepted' ? '\u2705' : ref.ruling === 'rejected' ? '\u274C' : '\u23F3';
+        const rulingText = ref.ruling === 'accepted' ? 'Accepted' : ref.ruling === 'rejected' ? 'Rejected' : 'Pending';
+        html += '<div class="timeline-event reference-event ' + sideClass + '">';
+        html += '<span class="timeline-icon">\uD83D\uDCCE</span>';
+        html += '<span class="timeline-text">' + escHtml(ref.submitter_name) + ' cited a source</span>';
+        if (ref.description) {
+          html += '<div class="ref-desc">' + escHtml(ref.description) + '</div>';
+        }
+        if (ref.url) {
+          html += '<div class="ref-url">' + escHtml(ref.url) + '</div>';
+        }
+        html += '<div class="ref-ruling">' + rulingIcon + ' ' + rulingText;
+        if (ref.ruling_reason) {
+          html += ' \u2014 ' + escHtml(ref.ruling_reason);
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+    }
+
+    return html;
+  }
+
+  // ---- Debate Messages (used by live polling to append new messages) ----
   function renderMessages(messages: DebateMessage[], d: SpectateDebate) {
     let html = '';
     let lastRound = 0;
