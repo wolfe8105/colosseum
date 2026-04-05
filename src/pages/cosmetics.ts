@@ -15,7 +15,7 @@ import {
   getIsPlaceholderMode,
   safeRpc,
 } from '../auth.ts';
-import { showToast } from '../config.ts';
+import { showToast, FEATURES } from '../config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -80,6 +80,7 @@ const DEPTH_LABEL: Record<string, string> = {
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
+  if (!FEATURES.cosmetics) return;
   // Wait for auth to resolve (logged in or guest), 6s safety timeout
   await Promise.race([ready, new Promise<void>(r => setTimeout(r, 6000))]);
 

@@ -10,6 +10,7 @@
 // ES imports (replaces window globals)
 import { ready, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, safeRpc } from '../auth.ts';
 import { checkProfileMilestones } from '../tokens.ts';
+import { FEATURES } from '../config.ts';
 import '../tiers.ts';
 
 // ============================================================
@@ -734,6 +735,7 @@ function showReward(reward: SectionReward): void {
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
+  if (!FEATURES.profileDepth) return;
   const isPlaceholder = getIsPlaceholderMode();
 
   // SESSION 32: Members Zone auth gate
