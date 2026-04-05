@@ -21,7 +21,7 @@ const htmlEntries = {
 
 export default defineConfig({
   root: '.',
-  publicDir: false, // No separate public dir — everything is in root
+  publicDir: 'public', // PWA manifest, service worker, icons — copied to dist/ without hashing
   build: {
     outDir: 'dist',
     emptyOutDir: true,
