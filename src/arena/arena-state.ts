@@ -69,6 +69,10 @@ export let vmSeconds: number = 0;
 export let opponentPollTimer: ReturnType<typeof setInterval> | null = null;
 export let opponentPollElapsed: number = 0;
 
+// Feed room (F-51)
+export let feedTurnTimer: ReturnType<typeof setInterval> | null = null;
+export let feedRealtimeChannel: unknown = null;
+
 // ============================================================
 // SETTERS — needed because ES module let bindings are read-only
 // from importing modules. Each setter mutates the variable in
@@ -118,6 +122,8 @@ export function set_vmTimer(v: ReturnType<typeof setInterval> | null) { vmTimer 
 export function set_vmSeconds(v: number) { vmSeconds = v; }
 export function set_opponentPollTimer(v: ReturnType<typeof setInterval> | null) { opponentPollTimer = v; }
 export function set_opponentPollElapsed(v: number) { opponentPollElapsed = v; }
+export function set_feedTurnTimer(v: ReturnType<typeof setInterval> | null) { feedTurnTimer = v; }
+export function set_feedRealtimeChannel(v: unknown) { feedRealtimeChannel = v; }
 
 // ============================================================
 // RESET — called by destroy() to zero all mutable state
@@ -200,4 +206,9 @@ export function resetState(): void {
   if (opponentPollTimer) clearInterval(opponentPollTimer);
   opponentPollTimer = null;
   opponentPollElapsed = 0;
+
+  // Feed room (F-51)
+  if (feedTurnTimer) clearInterval(feedTurnTimer);
+  feedTurnTimer = null;
+  feedRealtimeChannel = null;
 }

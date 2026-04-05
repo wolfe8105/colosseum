@@ -27,6 +27,7 @@ import { renderLobby, showPowerUpShop } from './arena-lobby.ts';
 import { joinWithCode } from './arena-private-lobby.ts';
 import { injectCSS } from './arena-css.ts';
 import { cleanupPendingRecording } from '../voicememo.ts';
+import { cleanupFeedRoom } from './arena-feed-room.ts';
 
 // ============================================================
 // UTILITY HELPERS
@@ -70,6 +71,7 @@ export const _onPopState = () => {
     stopOpponentPoll();
     stopModStatusPoll();
     if (currentDebate?.mode === 'live') {
+      cleanupFeedRoom();
       leaveDebate();
     }
   }
@@ -129,8 +131,9 @@ export function getCurrentDebate(): CurrentDebate | null {
 // ============================================================
 
 export function destroy(): void {
-  // Leave live audio debate if active
+  // Leave live/feed debate if active
   if (currentDebate?.mode === 'live') {
+    cleanupFeedRoom();
     leaveDebate();
   }
 

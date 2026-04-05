@@ -25,6 +25,7 @@ import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { renderInputControls, startLiveRoundTimer, initLiveAudio, addSystemMessage } from './arena-room-live.ts';
 import { addReferenceButton, assignSelectedMod, startReferencePoll } from './arena-mod-refs.ts';
 import { startModStatusPoll } from './arena-mod-queue.ts';
+import { enterFeedRoom } from './arena-feed-room.ts';
 
 export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   set_view('room');
@@ -139,6 +140,19 @@ async function showPreDebateLoadout(debateData: CurrentDebate, container: HTMLEl
 
 export function enterRoom(debate: CurrentDebate): void {
   set_view('room');
+
+  // F-51: Route live mode to the new feed room
+  if (debate.mode === 'live') {
+    nudge('enter_debate', '\u2696\uFE0F You\'re in. The feed is live.');
+    if (!isPlaceholder() && !debate.id.startsWith('placeholder-')) {
+      safeRpc('update_arena_debate', { p_debate_id: debate.id, p_status: 'live' }).catch((e: unknown) => {
+        console.warn('[Arena] Status update to live failed:', e);
+      });
+    }
+    enterFeedRoom(debate);
+    return;
+  }
+
   pushArenaState('room');
   set_currentDebate(debate);
   if (screenEl) screenEl.innerHTML = '';

@@ -252,11 +252,46 @@ export interface JoinPrivateLobbyResult {
 }
 
 // ============================================================
+// FEED ROOM TYPES (F-51 Phase 1)
+// ============================================================
+
+export type FeedEventType =
+  | 'speech'
+  | 'round_divider'
+  | 'point_award'
+  | 'mod_comment'
+  | 'system';
+
+export interface FeedEvent {
+  id: string;
+  debate_id: string;
+  event_type: FeedEventType;
+  round: number;
+  side: 'a' | 'b' | 'mod' | 'system' | null;
+  content: string;
+  score?: number | null;
+  created_at: string;
+  author_name?: string;
+}
+
+export type FeedTurnPhase =
+  | 'pre_round'       // countdown before first speaker
+  | 'speaker_a'       // debater A's turn
+  | 'pause_ab'        // 10s pause between A→B
+  | 'speaker_b'       // debater B's turn
+  | 'pause_ba'        // 10s pause between B→A (between rounds)
+  | 'finished';       // debate over
+
+export const FEED_TURN_DURATION = 120;  // 2 minutes per turn
+export const FEED_PAUSE_DURATION = 10;  // 10s between turns
+export const FEED_TOTAL_ROUNDS = 4;
+
+// ============================================================
 // CONSTANTS
 // ============================================================
 
 export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
-  live: { id: 'live', icon: '🎙️', name: 'LIVE AUDIO', desc: 'Real-time voice debate. 2 min rounds.', available: 'Opponent needed', color: '#E7442A' },
+  live: { id: 'live', icon: '⚖️', name: 'MODERATED LIVE', desc: 'Turn-based moderated debate. Text feed with scoring.', available: 'Opponent + Moderator needed', color: '#E7442A' },
   voicememo: { id: 'voicememo', icon: '🎤', name: 'VOICE MEMO', desc: 'Record & send. Debate on your schedule.', available: 'Async — anytime', color: '#8890A8' },
   text: { id: 'text', icon: '⌨️', name: 'TEXT BATTLE', desc: 'Written arguments. Think before you speak.', available: 'Async — anytime', color: '#555E78' },
   ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#5DCAA5' },

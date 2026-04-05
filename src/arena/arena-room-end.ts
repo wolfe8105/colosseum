@@ -25,6 +25,7 @@ import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';
 import { renderModScoring } from './arena-mod-scoring.ts';
 import { requestAIScoring, sumSideScore, renderAIScorecard } from './arena-room-ai.ts';
+import { cleanupFeedRoom } from './arena-feed-room.ts';
 
 export async function endCurrentDebate(): Promise<void> {
   set_view('postDebate');
@@ -38,6 +39,9 @@ export async function endCurrentDebate(): Promise<void> {
   const debate = currentDebate!;
 
   if (debate.mode === 'live') {
+    // F-51: Clean up feed room (unsubscribe Realtime, clear turn timer)
+    cleanupFeedRoom();
+    // Legacy live audio cleanup (safe to call even if not connected)
     leaveDebate();
   }
 

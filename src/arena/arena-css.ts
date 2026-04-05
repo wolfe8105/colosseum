@@ -406,6 +406,70 @@ export function injectCSS(): void {
     .arena-rank-card.amplified:hover,
     .arena-rank-card.amplified:active { border-color:var(--mod-accent-border);background:var(--mod-accent-muted); }
     .arena-card-badge.unplugged { background:rgba(194,154,88,0.12);border:1px solid rgba(194,154,88,0.35);color:#c29a58; }
+
+    /* ===== F-51 FEED ROOM ===== */
+
+    .feed-room { display:flex;flex-direction:column;height:100%;min-height:0;padding:0; }
+
+    /* Header: topic + scoreboard + spectators */
+    .feed-header { flex-shrink:0;padding:12px 16px 8px;border-bottom:1px solid var(--mod-border-subtle); }
+    .feed-topic { font-family:var(--mod-font-ui);font-size:13px;font-weight:600;color:var(--mod-text-primary);text-align:center;margin-bottom:10px;line-height:1.35; }
+    .feed-scoreboard { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+    .feed-score-side { display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:1; }
+    .feed-score-name { font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%; }
+    .feed-side-a .feed-score-name { color:#E7442A; }
+    .feed-side-b .feed-score-name { color:#4A90D9; }
+    .feed-score-label { font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--mod-text-muted); }
+    .feed-score-pts { font-family:var(--mod-font-ui);font-size:20px;font-weight:800;color:var(--mod-text-primary); }
+    .feed-timer-block { display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0; }
+    .feed-timer { font-family:var(--mod-font-ui);font-size:24px;font-weight:800;color:var(--mod-text-primary);letter-spacing:2px; }
+    .feed-timer.warning { color:#E7442A;animation:livePulse 0.8s ease-in-out infinite; }
+    .feed-round-label { font-size:9px;font-weight:600;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase; }
+    .feed-turn-label { font-size:11px;font-weight:600;color:var(--mod-bar-secondary);letter-spacing:1px; }
+    .feed-spectator-bar { text-align:center;font-size:11px;color:var(--mod-text-muted);margin-top:6px; }
+    .feed-spectator-bar .eye { font-size:13px; }
+
+    /* Feed stream (center) */
+    .feed-stream { flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px;display:flex;flex-direction:column;gap:6px;min-height:0; }
+    .feed-evt { padding:6px 10px;border-radius:var(--mod-radius-md);font-size:14px;line-height:1.4;word-break:break-word;max-width:92%; }
+    .feed-evt-a { background:rgba(231,68,42,0.08);border-left:3px solid #E7442A;align-self:flex-start; }
+    .feed-evt-b { background:rgba(74,144,217,0.08);border-left:3px solid #4A90D9;align-self:flex-start; }
+    .feed-evt-mod { background:rgba(194,154,88,0.10);border-left:3px solid #c29a58;align-self:flex-start; }
+    .feed-evt-name { font-size:11px;font-weight:700;letter-spacing:1px;display:block;margin-bottom:2px; }
+    .feed-evt-a .feed-evt-name { color:#E7442A; }
+    .feed-evt-b .feed-evt-name { color:#4A90D9; }
+    .feed-evt-mod .feed-evt-name { color:#c29a58; }
+    .feed-evt-text { color:var(--mod-text-primary); }
+    .feed-evt-points { text-align:center;align-self:center;max-width:100%; }
+    .feed-points-badge { display:inline-block;padding:4px 12px;border-radius:var(--mod-radius-pill);background:rgba(194,154,88,0.15);border:1px solid rgba(194,154,88,0.3);color:#c29a58;font-family:var(--mod-font-ui);font-size:12px;font-weight:700;letter-spacing:1px; }
+    .feed-evt-divider { text-align:center;align-self:center;max-width:100%;padding:8px 0; }
+    .feed-divider-text { font-family:var(--mod-font-ui);font-size:10px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase; }
+    .feed-evt-system { text-align:center;align-self:center;font-size:12px;color:var(--mod-text-muted);font-style:italic;padding:4px 8px; }
+    .feed-evt-selected { outline:2px solid var(--mod-bar-secondary);outline-offset:2px;border-radius:var(--mod-radius-md); }
+
+    /* Controls (bottom thumb zone) */
+    .feed-controls { flex-shrink:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--mod-border-subtle);background:var(--mod-bg-base); }
+    .feed-input-row { display:flex;gap:8px;align-items:flex-end; }
+    .feed-text-input { flex:1;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;outline:none;resize:none;min-height:40px; }
+    .feed-text-input::placeholder { color:var(--mod-text-muted); }
+    .feed-text-input:focus { border-color:var(--mod-accent-border); }
+    .feed-text-input:disabled,
+    .feed-input-frozen { opacity:0.4;background:var(--mod-bg-subtle);cursor:not-allowed; }
+    .feed-send-btn { width:44px;height:44px;border-radius:50%;border:none;background:var(--mod-bar-accent);color:var(--mod-text-on-accent);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center; }
+    .feed-send-btn:disabled { opacity:0.35;cursor:not-allowed; }
+    .feed-send-btn:active:not(:disabled) { transform:scale(0.92); }
+    .feed-action-row { display:flex;gap:8px;margin-top:8px; }
+    .feed-action-btn { padding:10px 16px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;min-height:var(--mod-touch-min); }
+    .feed-action-btn:disabled { opacity:0.35;cursor:not-allowed; }
+    .feed-finish-btn { border-color:var(--mod-accent-border);color:var(--mod-accent-text); }
+    .feed-concede-btn { border-color:rgba(231,68,42,0.4);color:#E7442A; }
+
+    /* Moderator score row */
+    .feed-mod-score-row { display:flex;align-items:center;gap:6px;margin-top:8px;padding:8px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md); }
+    .feed-score-prompt { font-size:12px;font-weight:600;color:var(--mod-text-muted);margin-right:4px; }
+    .feed-score-btn { width:36px;height:36px;border-radius:50%;border:1px solid var(--mod-border-accent);background:var(--mod-accent-muted);color:var(--mod-accent-text);font-family:var(--mod-font-ui);font-size:14px;font-weight:700;cursor:pointer; }
+    .feed-score-btn:active { background:var(--mod-bar-accent);color:var(--mod-text-on-accent); }
+    .feed-score-btn-cancel { width:36px;height:36px;border-radius:50%;border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-muted);font-size:16px;cursor:pointer;margin-left:auto; }
   `;
   document.head.appendChild(style);
 }
