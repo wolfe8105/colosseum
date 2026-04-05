@@ -26,6 +26,7 @@ import { renderInputControls, startLiveRoundTimer, initLiveAudio, addSystemMessa
 import { addReferenceButton, assignSelectedMod, startReferencePoll } from './arena-mod-refs.ts';
 import { startModStatusPoll } from './arena-mod-queue.ts';
 import { enterFeedRoom } from './arena-feed-room.ts';
+import { renderLoadoutPicker } from '../reference-arsenal.ts';
 
 export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   set_view('room');
@@ -67,6 +68,7 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
     </div>
     <div id="pre-debate-staking" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-loadout" style="width:100%;max-width:360px;"></div>
+    <div id="pre-debate-refs" style="width:100%;max-width:360px;"></div>
     <button class="arena-pre-debate-enter" id="pre-debate-enter-btn">
       <span class="btn-pulse"></span> ENTER BATTLE
     </button>
@@ -102,6 +104,16 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
       });
     } catch (e) {
       console.warn('[Arena] Power-up loadout error:', e);
+    }
+  }
+
+  // Render reference loadout picker (F-51 Phase 3)
+  const refsEl = document.getElementById('pre-debate-refs');
+  if (refsEl && debateData.mode !== 'ai') {
+    try {
+      await renderLoadoutPicker(refsEl, debateData.id);
+    } catch (e) {
+      console.warn('[Arena] Reference loadout error:', e);
     }
   }
 

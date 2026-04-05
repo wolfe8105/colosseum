@@ -258,7 +258,11 @@ export interface JoinPrivateLobbyResult {
 export type FeedEventType =
   | 'speech'
   | 'round_divider'
-  | 'point_award';
+  | 'point_award'
+  | 'reference_cite'
+  | 'reference_challenge'
+  | 'mod_ruling'
+  | 'power_up';
 
 export interface FeedEvent {
   id: string;
@@ -268,9 +272,40 @@ export interface FeedEvent {
   side: 'a' | 'b' | 'mod' | null;
   content: string;
   score?: number | null;
+  reference_id?: string | null;
   metadata?: Record<string, unknown> | null;
   created_at: string;
   author_name?: string;
+}
+
+/** Reference loaded for a debate via pre-debate loadout picker */
+export interface LoadoutReference {
+  reference_id: string;
+  cited: boolean;
+  cited_at: string | null;
+  claim: string;
+  url: string;
+  domain: string;
+  author: string;
+  source_type: string;
+  current_power: number;
+  power_ceiling: number;
+  rarity: string;
+  verification_points: number;
+  citation_count: number;
+  win_count: number;
+  loss_count: number;
+}
+
+/** Opponent's cited reference tracked in state for challenge dropdown */
+export interface OpponentCitedRef {
+  reference_id: string;
+  claim: string;
+  url: string;
+  domain: string;
+  source_type: string;
+  feed_event_id: string;
+  already_challenged: boolean;
 }
 
 /** Per-value scoring budget limits per round (Session 235) */
@@ -293,6 +328,8 @@ export type FeedTurnPhase =
 export const FEED_TURN_DURATION = 120;  // 2 minutes per turn
 export const FEED_PAUSE_DURATION = 10;  // 10s between turns
 export const FEED_TOTAL_ROUNDS = 4;
+export const FEED_MAX_CHALLENGES = FEED_TOTAL_ROUNDS - 1;  // 3 challenges per debater per debate
+export const FEED_CHALLENGE_RULING_SEC = 60;  // mod has 60s to rule on a challenge
 
 // ============================================================
 // CONSTANTS

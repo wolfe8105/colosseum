@@ -16,18 +16,28 @@ import { safeRpc, getCurrentProfile, getSupabaseClient } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import { nudge } from '../nudge.ts';
 import {
+  getMyDebateLoadout, citeDebateReference, fileReferenceChallenge,
+} from '../reference-arsenal.ts';
+import type { LoadoutRef } from '../reference-arsenal.ts';
+import {
   currentDebate, screenEl, feedTurnTimer, feedRealtimeChannel,
+  loadedRefs, opponentCitedRefs, challengesRemaining,
+  feedPaused, feedPauseTimeLeft, challengeRulingTimer,
   set_currentDebate, set_feedTurnTimer, set_feedRealtimeChannel,
+  set_loadedRefs, set_opponentCitedRefs, set_challengesRemaining,
+  set_feedPaused, set_feedPauseTimeLeft, set_challengeRulingTimer,
 } from './arena-state.ts';
 import type {
   CurrentDebate, DebateRole, FeedEvent, FeedEventType, FeedTurnPhase,
+  OpponentCitedRef,
 } from './arena-types.ts';
 import {
   FEED_TURN_DURATION, FEED_PAUSE_DURATION, FEED_TOTAL_ROUNDS,
-  FEED_SCORE_BUDGET,
+  FEED_SCORE_BUDGET, FEED_MAX_CHALLENGES, FEED_CHALLENGE_RULING_SEC,
 } from './arena-types.ts';
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
+import { challengeReference } from '../reference-arsenal.ts';
 
 // ============================================================
 // MODULE STATE
@@ -109,6 +119,16 @@ export function enterFeedRoom(debate: CurrentDebate): void {
 
   // Subscribe to Realtime for feed events
   subscribeRealtime(debate.id);
+
+  // Phase 3: Fetch reference loadout for this debate
+  if (!isModView) {
+    getMyDebateLoadout(debate.id).then((refs) => {
+      set_loadedRefs(refs as unknown as import('./arena-types.ts').LoadoutReference[]);
+      set_challengesRemaining(FEED_MAX_CHALLENGES);
+      set_opponentCitedRefs([]);
+      updateCiteButtonState();
+    }).catch((e) => console.warn('[Arena] Loadout fetch failed:', e));
+  }
 
   // Render initial controls based on role
   renderControls(debate, isModView);
@@ -246,6 +266,85 @@ function appendFeedEvent(ev: FeedEvent): void {
       el.innerHTML = `<span class="feed-divider-text">\u2014\u2014\u2014 ${escapeHTML(ev.content)} \u2014\u2014\u2014</span>`;
       break;
     }
+    case 'reference_cite': {
+      const sideClass = ev.side === 'a' ? 'feed-evt-a' : 'feed-evt-b';
+      const citeName = ev.author_name || (ev.side === 'a' ? debaterAName : debaterBName);
+      const refMeta = ev.metadata || {};
+      el.className = `feed-evt feed-evt-cite ${sideClass} arena-fade-in`;
+      el.innerHTML = `
+        <span class="feed-evt-name">\uD83D\uDCC4 ${escapeHTML(citeName)}</span>
+        <span class="feed-cite-claim" data-ref-id="${escapeHTML(ev.reference_id || '')}"
+              data-url="${escapeHTML(String(refMeta.url || ''))}"
+              data-domain="${escapeHTML(String(refMeta.domain || ''))}"
+              data-source-type="${escapeHTML(String(refMeta.source_type || ''))}"
+              >"${escapeHTML(ev.content)}"</span>
+        <span class="feed-cite-domain">${escapeHTML(String(refMeta.domain || ''))}</span>
+      `;
+      // Track opponent cited refs for challenge dropdown
+      const debate = currentDebate;
+      if (debate && ev.side && ev.side !== debate.role && ev.reference_id) {
+        const existing = opponentCitedRefs.find((r) => r.reference_id === ev.reference_id);
+        if (!existing) {
+          set_opponentCitedRefs([...opponentCitedRefs, {
+            reference_id: ev.reference_id,
+            claim: ev.content,
+            url: String(refMeta.url || ''),
+            domain: String(refMeta.domain || ''),
+            source_type: String(refMeta.source_type || ''),
+            feed_event_id: String(ev.id),
+            already_challenged: false,
+          }]);
+          updateChallengeButtonState();
+        }
+      }
+      break;
+    }
+    case 'reference_challenge': {
+      el.className = 'feed-evt feed-evt-challenge arena-fade-in';
+      const challengerName = ev.author_name || (ev.side === 'a' ? debaterAName : debaterBName);
+      el.innerHTML = `
+        <span class="feed-challenge-icon">\u2694\uFE0F</span>
+        <span class="feed-challenge-text">${escapeHTML(challengerName)} challenges: "${escapeHTML(ev.content)}"</span>
+      `;
+      // Mark ref as challenged in opponent state
+      if (ev.reference_id) {
+        const updated = opponentCitedRefs.map((r) =>
+          r.reference_id === ev.reference_id ? { ...r, already_challenged: true } : r
+        );
+        set_opponentCitedRefs(updated);
+      }
+      // If this is a new challenge (not backfill), trigger pause for non-mod viewers
+      // Pause is handled by the event receiver — see below
+      break;
+    }
+    case 'mod_ruling': {
+      const ruling = (ev.metadata?.ruling as string) || '';
+      const icon = ruling === 'upheld' ? '\u2705' : ruling === 'rejected' ? '\u274C' : '\u2696\uFE0F';
+      el.className = `feed-evt feed-evt-ruling arena-fade-in`;
+      el.innerHTML = `
+        <span class="feed-ruling-icon">${icon}</span>
+        <span class="feed-ruling-text">${ruling === 'upheld' ? 'UPHELD' : ruling === 'rejected' ? 'REJECTED' : 'RULING'}: ${escapeHTML(ev.content)}</span>
+      `;
+      // Unpause on ruling received
+      if (feedPaused) {
+        unpauseFeed();
+      }
+      break;
+    }
+    case 'power_up': {
+      el.className = 'feed-evt feed-evt-powerup arena-fade-in';
+      const puId = (ev.metadata?.power_up_id as string) || '';
+      const puIcon = puId === 'shield' ? '\uD83D\uDEE1\uFE0F' : puId === 'reveal' ? '\uD83D\uDD0D' : '\u26A1';
+      el.innerHTML = `
+        <span class="feed-powerup-icon">${puIcon}</span>
+        <span class="feed-powerup-text">${escapeHTML(ev.content)}</span>
+      `;
+      // Unpause if Shield blocked a challenge
+      if (puId === 'shield' && feedPaused) {
+        unpauseFeed();
+      }
+      break;
+    }
     default: {
       // Unknown event type — render as system message
       el.className = 'feed-evt feed-evt-system arena-fade-in';
@@ -329,7 +428,7 @@ function renderControls(debate: CurrentDebate, isModView: boolean): void {
     `;
     wireModControls();
   } else {
-    // Debater controls: text input + finish round + concede
+    // Debater controls: text input + finish round + cite/challenge + concede
     controlsEl.innerHTML = `
       <div class="feed-debater-controls">
         <div class="feed-input-row">
@@ -337,9 +436,12 @@ function renderControls(debate: CurrentDebate, isModView: boolean): void {
           <button class="feed-send-btn" id="feed-debater-send-btn" disabled>\u2192</button>
         </div>
         <div class="feed-action-row">
+          <button class="feed-action-btn feed-cite-btn" id="feed-cite-btn" disabled>\uD83D\uDCC4 CITE</button>
+          <button class="feed-action-btn feed-challenge-btn" id="feed-challenge-btn" disabled>\u2694\uFE0F CHALLENGE (${challengesRemaining})</button>
           <button class="feed-action-btn feed-finish-btn" id="feed-finish-turn" disabled>FINISH TURN</button>
           <button class="feed-action-btn feed-concede-btn" id="feed-concede" style="display:none;">CONCEDE</button>
         </div>
+        <div class="feed-ref-dropdown" id="feed-ref-dropdown" style="display:none;"></div>
       </div>
     `;
     wireDebaterControls(debate);
@@ -372,6 +474,20 @@ function wireDebaterControls(debate: CurrentDebate): void {
     if (!confirm('Concede this debate? This counts as a loss.')) return;
     addLocalSystem(`${getCurrentProfile()?.display_name || 'Debater'} has conceded.`);
     setTimeout(() => void endCurrentDebate(), 1500);
+  });
+
+  // Phase 3: Wire cite button
+  const citeBtn = document.getElementById('feed-cite-btn') as HTMLButtonElement | null;
+  citeBtn?.addEventListener('click', () => {
+    if (feedPaused) return;
+    showCiteDropdown(debate);
+  });
+
+  // Phase 3: Wire challenge button
+  const challengeBtn = document.getElementById('feed-challenge-btn') as HTMLButtonElement | null;
+  challengeBtn?.addEventListener('click', () => {
+    if (feedPaused) return;
+    showChallengeDropdown(debate);
   });
 }
 
@@ -644,9 +760,14 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
     // Show concede after round 1
     const concedeBtn = document.getElementById('feed-concede') as HTMLButtonElement | null;
     if (concedeBtn && _round > 1) concedeBtn.style.display = '';
+    // Phase 3: enable cite/challenge during my turn
+    updateCiteButtonState();
+    updateChallengeButtonState();
   }
 
   set_feedTurnTimer(setInterval(() => {
+    // Phase 3: skip tick while paused for challenge ruling
+    if (feedPaused) return;
     _timeLeft--;
     updateTimerDisplay();
 
@@ -793,4 +914,264 @@ export function cleanupFeedRoom(): void {
   _pinnedEventIds.clear();
   _budgetRound = 1;
   for (let pts = 1; pts <= 5; pts++) _scoreUsed[pts] = 0;
+  // Phase 3 cleanup
+  set_loadedRefs([]);
+  set_opponentCitedRefs([]);
+  set_challengesRemaining(FEED_MAX_CHALLENGES);
+  set_feedPaused(false);
+  set_feedPauseTimeLeft(0);
+  if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+  set_challengeRulingTimer(null);
+  document.getElementById('feed-ref-dropdown')?.remove();
+  document.getElementById('feed-challenge-overlay')?.remove();
+}
+
+// ============================================================
+// PHASE 3: CITE / CHALLENGE / PAUSE
+// ============================================================
+
+function updateCiteButtonState(): void {
+  const btn = document.getElementById('feed-cite-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+  const debate = currentDebate;
+  const isMyTurn = debate && !debate.modView && (
+    (_phase === 'speaker_a' && debate.role === 'a') ||
+    (_phase === 'speaker_b' && debate.role === 'b')
+  );
+  const uncited = loadedRefs.filter((r) => !r.cited);
+  btn.disabled = !isMyTurn || uncited.length === 0 || feedPaused;
+  if (uncited.length === 0 && loadedRefs.length > 0) {
+    btn.textContent = '\uD83D\uDCC4 ALL CITED';
+  }
+}
+
+function updateChallengeButtonState(): void {
+  const btn = document.getElementById('feed-challenge-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+  const debate = currentDebate;
+  const isMyTurn = debate && !debate.modView && (
+    (_phase === 'speaker_a' && debate.role === 'a') ||
+    (_phase === 'speaker_b' && debate.role === 'b')
+  );
+  const challengeable = opponentCitedRefs.filter((r) => !r.already_challenged);
+  btn.disabled = !isMyTurn || challengeable.length === 0 || challengesRemaining <= 0 || feedPaused;
+  btn.textContent = `\u2694\uFE0F CHALLENGE (${challengesRemaining})`;
+}
+
+function showCiteDropdown(debate: CurrentDebate): void {
+  hideDropdown();
+  const dropdown = document.getElementById('feed-ref-dropdown');
+  if (!dropdown) return;
+
+  const uncited = loadedRefs.filter((r) => !r.cited);
+  if (uncited.length === 0) { showToast('No references remaining', 'error'); return; }
+
+  let html = '<div class="feed-dropdown-title">\uD83D\uDCC4 Select reference to cite:</div>';
+  for (const ref of uncited) {
+    html += `
+      <div class="feed-dropdown-item" data-ref-id="${escapeHTML(ref.reference_id)}">
+        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim)}"</span>
+        <span class="feed-dropdown-meta">${escapeHTML(ref.domain)} \u00B7 PWR ${Number(ref.current_power)}</span>
+      </div>
+    `;
+  }
+  html += '<div class="feed-dropdown-cancel" id="feed-dropdown-close">\u2715 Cancel</div>';
+  dropdown.innerHTML = html;
+  dropdown.style.display = 'block';
+
+  dropdown.querySelector('#feed-dropdown-close')?.addEventListener('click', hideDropdown);
+  dropdown.querySelectorAll('.feed-dropdown-item').forEach((item) => {
+    item.addEventListener('click', async () => {
+      const refId = (item as HTMLElement).dataset.refId;
+      if (!refId) return;
+      hideDropdown();
+      try {
+        await citeDebateReference(debate.id, refId, _round, debate.role || 'a');
+        // Mark as cited locally so dropdown updates immediately
+        const updated = loadedRefs.map((r) =>
+          r.reference_id === refId ? { ...r, cited: true, cited_at: new Date().toISOString() } : r
+        );
+        set_loadedRefs(updated);
+        updateCiteButtonState();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Cite failed';
+        showToast(msg, 'error');
+      }
+    });
+  });
+}
+
+function showChallengeDropdown(debate: CurrentDebate): void {
+  hideDropdown();
+  const dropdown = document.getElementById('feed-ref-dropdown');
+  if (!dropdown) return;
+
+  const challengeable = opponentCitedRefs.filter((r) => !r.already_challenged);
+  if (challengeable.length === 0) { showToast('No references to challenge', 'error'); return; }
+  if (challengesRemaining <= 0) { showToast('No challenges remaining', 'error'); return; }
+
+  let html = '<div class="feed-dropdown-title">\u2694\uFE0F Select reference to challenge:</div>';
+  for (const ref of challengeable) {
+    html += `
+      <div class="feed-dropdown-item feed-dropdown-challenge" data-ref-id="${escapeHTML(ref.reference_id)}">
+        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim)}"</span>
+        <span class="feed-dropdown-meta">${escapeHTML(ref.domain)}</span>
+      </div>
+    `;
+  }
+  html += '<div class="feed-dropdown-cancel" id="feed-dropdown-close">\u2715 Cancel</div>';
+  dropdown.innerHTML = html;
+  dropdown.style.display = 'block';
+
+  dropdown.querySelector('#feed-dropdown-close')?.addEventListener('click', hideDropdown);
+  dropdown.querySelectorAll('.feed-dropdown-item').forEach((item) => {
+    item.addEventListener('click', async () => {
+      const refId = (item as HTMLElement).dataset.refId;
+      if (!refId) return;
+      hideDropdown();
+      try {
+        const result = await fileReferenceChallenge(debate.id, refId, _round, debate.role || 'a');
+        if (result.blocked) {
+          // Shield absorbed it — no pause needed
+          showToast('\uD83D\uDEE1\uFE0F Shield blocked the challenge!', 'info');
+        } else {
+          // Challenge filed — pause the debate
+          set_challengesRemaining(result.challenges_remaining ?? (challengesRemaining - 1));
+          updateChallengeButtonState();
+          pauseFeed(debate);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Challenge failed';
+        showToast(msg, 'error');
+      }
+    });
+  });
+}
+
+function hideDropdown(): void {
+  const dropdown = document.getElementById('feed-ref-dropdown');
+  if (dropdown) { dropdown.style.display = 'none'; dropdown.innerHTML = ''; }
+}
+
+function pauseFeed(debate: CurrentDebate): void {
+  set_feedPaused(true);
+  set_feedPauseTimeLeft(_timeLeft);
+
+  // Disable all inputs
+  setDebaterInputEnabled(false);
+  const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement | null;
+  if (finishBtn) finishBtn.disabled = true;
+  updateCiteButtonState();
+  updateChallengeButtonState();
+
+  // Show pause overlay
+  updateTurnLabel('\u2694\uFE0F CHALLENGE IN PROGRESS');
+
+  // If moderator, show ruling panel
+  if (debate.modView) {
+    showChallengeRulingPanel(debate);
+  }
+
+  // Start 60s auto-accept countdown
+  let countdown = FEED_CHALLENGE_RULING_SEC;
+  const timerEl = document.getElementById('feed-timer');
+
+  if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+  set_challengeRulingTimer(setInterval(() => {
+    countdown--;
+    if (timerEl) timerEl.textContent = `\u2694\uFE0F ${countdown}s`;
+    if (countdown <= 0) {
+      if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+      set_challengeRulingTimer(null);
+      // Auto-accept: insert mod_ruling via safeRpc directly (need metadata)
+      safeRpc('insert_feed_event', {
+        p_debate_id: debate.id,
+        p_event_type: 'mod_ruling',
+        p_round: _round,
+        p_side: 'mod',
+        p_content: 'Auto-accepted (moderator timeout)',
+        p_metadata: { ruling: 'upheld' },
+      }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
+      unpauseFeed();
+    }
+  }, 1000));
+}
+
+function unpauseFeed(): void {
+  set_feedPaused(false);
+
+  // Clear ruling timer
+  if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+  set_challengeRulingTimer(null);
+
+  // Remove ruling panel if present
+  document.getElementById('feed-challenge-overlay')?.remove();
+
+  // Restore timer display
+  _timeLeft = feedPauseTimeLeft;
+  set_feedPauseTimeLeft(0);
+  updateTimerDisplay();
+
+  // Re-enable controls based on current turn
+  const debate = currentDebate;
+  if (debate && !debate.modView) {
+    const isMyTurn = (
+      (_phase === 'speaker_a' && debate.role === 'a') ||
+      (_phase === 'speaker_b' && debate.role === 'b')
+    );
+    setDebaterInputEnabled(isMyTurn);
+    const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement | null;
+    if (finishBtn) finishBtn.disabled = !isMyTurn;
+    updateCiteButtonState();
+    updateChallengeButtonState();
+  }
+
+  updateTurnLabel(_phase === 'speaker_a' ? 'Side A\'s turn' : _phase === 'speaker_b' ? 'Side B\'s turn' : '');
+}
+
+function showChallengeRulingPanel(debate: CurrentDebate): void {
+  document.getElementById('feed-challenge-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'feed-challenge-overlay';
+  overlay.id = 'feed-challenge-overlay';
+  overlay.innerHTML = `
+    <div class="feed-ruling-panel">
+      <div class="feed-ruling-title">\u2696\uFE0F RULING NEEDED</div>
+      <div class="feed-ruling-sub">A reference has been challenged. Accept or reject.</div>
+      <textarea class="feed-ruling-reason" id="feed-ruling-reason" placeholder="Reason (optional, max 100 words)" maxlength="500" rows="2"></textarea>
+      <div class="feed-ruling-btns">
+        <button class="feed-ruling-accept" id="feed-ruling-accept">\u2705 ACCEPT (Upheld)</button>
+        <button class="feed-ruling-reject" id="feed-ruling-reject">\u274C REJECT</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  let busy = false;
+  const handleRuling = async (ruling: 'upheld' | 'rejected') => {
+    if (busy) return;
+    busy = true;
+    const reason = (document.getElementById('feed-ruling-reason') as HTMLTextAreaElement | null)?.value?.trim() || '';
+    const label = ruling === 'upheld' ? 'UPHELD' : 'REJECTED';
+    try {
+      await safeRpc('insert_feed_event', {
+        p_debate_id: debate.id,
+        p_event_type: 'mod_ruling',
+        p_round: _round,
+        p_side: 'mod',
+        p_content: `${label}${reason ? ': ' + reason : ''}`,
+        p_metadata: { ruling },
+      });
+    } catch (e) {
+      showToast('Ruling failed: ' + (e instanceof Error ? e.message : 'unknown'), 'error');
+      busy = false;
+      return;
+    }
+    overlay.remove();
+    // unpause is triggered by the mod_ruling event received via Realtime
+  };
+
+  overlay.querySelector('#feed-ruling-accept')?.addEventListener('click', () => void handleRuling('upheld'));
+  overlay.querySelector('#feed-ruling-reject')?.addEventListener('click', () => void handleRuling('rejected'));
 }

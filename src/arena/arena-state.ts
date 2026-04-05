@@ -2,7 +2,7 @@
  * Arena State — all mutable state variables
  */
 
-import type { ArenaView, DebateMode, CurrentDebate, SelectedModerator } from './arena-types.ts';
+import type { ArenaView, DebateMode, CurrentDebate, SelectedModerator, LoadoutReference, OpponentCitedRef } from './arena-types.ts';
 import type { EquippedItem } from '../powerups.ts';
 import { DEBATE } from '../config.ts';
 
@@ -73,6 +73,14 @@ export let opponentPollElapsed: number = 0;
 export let feedTurnTimer: ReturnType<typeof setInterval> | null = null;
 export let feedRealtimeChannel: unknown = null;
 
+// Feed room references (F-51 Phase 3)
+export let loadedRefs: LoadoutReference[] = [];
+export let opponentCitedRefs: OpponentCitedRef[] = [];
+export let challengesRemaining: number = 3;  // FEED_TOTAL_ROUNDS - 1
+export let feedPaused: boolean = false;
+export let feedPauseTimeLeft: number = 0;  // remaining turn time when paused
+export let challengeRulingTimer: ReturnType<typeof setInterval> | null = null;
+
 // ============================================================
 // SETTERS — needed because ES module let bindings are read-only
 // from importing modules. Each setter mutates the variable in
@@ -124,6 +132,12 @@ export function set_opponentPollTimer(v: ReturnType<typeof setInterval> | null) 
 export function set_opponentPollElapsed(v: number) { opponentPollElapsed = v; }
 export function set_feedTurnTimer(v: ReturnType<typeof setInterval> | null) { feedTurnTimer = v; }
 export function set_feedRealtimeChannel(v: unknown) { feedRealtimeChannel = v; }
+export function set_loadedRefs(v: LoadoutReference[]) { loadedRefs = v; }
+export function set_opponentCitedRefs(v: OpponentCitedRef[]) { opponentCitedRefs = v; }
+export function set_challengesRemaining(v: number) { challengesRemaining = v; }
+export function set_feedPaused(v: boolean) { feedPaused = v; }
+export function set_feedPauseTimeLeft(v: number) { feedPauseTimeLeft = v; }
+export function set_challengeRulingTimer(v: ReturnType<typeof setInterval> | null) { challengeRulingTimer = v; }
 
 // ============================================================
 // RESET — called by destroy() to zero all mutable state
@@ -211,4 +225,13 @@ export function resetState(): void {
   if (feedTurnTimer) clearInterval(feedTurnTimer);
   feedTurnTimer = null;
   feedRealtimeChannel = null;
+
+  // Feed room references (F-51 Phase 3)
+  loadedRefs = [];
+  opponentCitedRefs = [];
+  challengesRemaining = 3;
+  feedPaused = false;
+  feedPauseTimeLeft = 0;
+  if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+  challengeRulingTimer = null;
 }
