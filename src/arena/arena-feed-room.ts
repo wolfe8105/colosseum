@@ -24,6 +24,7 @@ import type {
 } from './arena-types.ts';
 import {
   FEED_TURN_DURATION, FEED_PAUSE_DURATION, FEED_TOTAL_ROUNDS,
+  FEED_SCORE_BUDGET,
 } from './arena-types.ts';
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
@@ -38,6 +39,13 @@ let _timeLeft = 0;
 let _scoreA = 0;
 let _scoreB = 0;
 const _renderedEventIds = new Set<string>();
+
+// Phase 2: Pin tracking (moderator-only, local state)
+const _pinnedEventIds = new Set<string>();
+
+// Phase 2: Per-value scoring budget tracking per round
+const _scoreUsed: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+let _budgetRound = 1;
 
 // Determine first speaker for a round (spec: odd rounds A first, even rounds B first)
 function firstSpeaker(round: number): 'a' | 'b' {
@@ -186,21 +194,30 @@ function appendFeedEvent(ev: FeedEvent): void {
         // Debater speech
         const sideClass = ev.side === 'a' ? 'feed-evt-a' : 'feed-evt-b';
         const name = ev.author_name || (ev.side === 'a' ? debaterAName : debaterBName);
-        el.className = `feed-evt ${sideClass} arena-fade-in`;
+        const isPinned = !!(ev.metadata?.pinned) || _pinnedEventIds.has(String(ev.id));
+        el.className = `feed-evt ${sideClass}${isPinned ? ' feed-evt-pinned' : ''} arena-fade-in`;
         // Fix 5: Store real DB event ID for moderator scoring
-        if (ev.id && !ev.id.includes('-')) el.dataset.eventId = ev.id;
+        if (ev.id && !String(ev.id).includes('-')) el.dataset.eventId = String(ev.id);
+        // Phase 2: Pin button (mod-only)
+        const pinHtml = debate?.modView
+          ? `<button class="feed-pin-btn${isPinned ? ' pinned' : ''}" data-eid="${escapeHTML(String(ev.id))}" title="Pin">\uD83D\uDCCC</button>`
+          : '';
         el.innerHTML = `
+          ${pinHtml}
           <span class="feed-evt-name">${escapeHTML(name)}</span>
           <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
         `;
+        // Restore pin state from metadata on backfill
+        if (isPinned) _pinnedEventIds.add(String(ev.id));
       }
       break;
     }
     case 'point_award': {
-      el.className = `feed-evt feed-evt-points arena-fade-in`;
-      const side = ev.side === 'a' ? 'A' : 'B';
+      el.className = `feed-evt feed-evt-points feed-fireworks arena-fade-in`;
       const sideName = ev.side === 'a' ? debaterAName : debaterBName;
       el.innerHTML = `<span class="feed-points-badge">+${Number(ev.score)} for ${escapeHTML(sideName)}</span>`;
+      // Remove fireworks class after animation completes
+      el.addEventListener('animationend', () => el.classList.remove('feed-fireworks'), { once: true });
       // Update scoreboard
       if (ev.side === 'a') {
         _scoreA += Number(ev.score) || 0;
@@ -210,6 +227,17 @@ function appendFeedEvent(ev: FeedEvent): void {
         _scoreB += Number(ev.score) || 0;
         const scoreEl = document.getElementById('feed-score-b');
         if (scoreEl) scoreEl.textContent = String(_scoreB);
+      }
+      // Phase 2: Track budget usage
+      const pts = Number(ev.score) || 0;
+      if (pts >= 1 && pts <= 5) {
+        // Reset budget counter if round changed
+        const evRound = ev.round || _round;
+        if (evRound !== _budgetRound) {
+          resetBudget(evRound);
+        }
+        _scoreUsed[pts] = (_scoreUsed[pts] || 0) + 1;
+        updateBudgetDisplay();
       }
       break;
     }
@@ -290,11 +318,11 @@ function renderControls(debate: CurrentDebate, isModView: boolean): void {
         </div>
         <div class="feed-mod-score-row" id="feed-mod-score-row" style="display:none;">
           <span class="feed-score-prompt" id="feed-score-prompt">Score:</span>
-          <button class="feed-score-btn" data-pts="1">1</button>
-          <button class="feed-score-btn" data-pts="2">2</button>
-          <button class="feed-score-btn" data-pts="3">3</button>
-          <button class="feed-score-btn" data-pts="4">4</button>
-          <button class="feed-score-btn" data-pts="5">5</button>
+          <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="1">1</button><span class="feed-score-badge" data-badge="1">${FEED_SCORE_BUDGET[1]}</span></span>
+          <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="2">2</button><span class="feed-score-badge" data-badge="2">${FEED_SCORE_BUDGET[2]}</span></span>
+          <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="3">3</button><span class="feed-score-badge" data-badge="3">${FEED_SCORE_BUDGET[3]}</span></span>
+          <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="4">4</button><span class="feed-score-badge" data-badge="4">${FEED_SCORE_BUDGET[4]}</span></span>
+          <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="5">5</button><span class="feed-score-badge" data-badge="5">${FEED_SCORE_BUDGET[5]}</span></span>
           <button class="feed-score-btn-cancel" id="feed-score-cancel">\u2715</button>
         </div>
       </div>
@@ -363,26 +391,43 @@ function wireModControls(): void {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submitModComment(); }
   });
 
-  // Score buttons: tap a feed message to select it, then tap a score
+  // Delegated click on feed stream: pin button OR comment selection for scoring
   const stream = document.getElementById('feed-stream');
   stream?.addEventListener('click', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.feed-evt-a, .feed-evt-b');
+    const clickTarget = e.target as HTMLElement;
+
+    // Phase 2: Pin button click
+    if (clickTarget.classList.contains('feed-pin-btn')) {
+      e.stopPropagation();
+      void handlePinClick(clickTarget);
+      return;
+    }
+
+    // Comment selection for scoring
+    const target = clickTarget.closest('.feed-evt-a, .feed-evt-b');
     if (!target) return;
-    // Highlight selected
     stream.querySelectorAll('.feed-evt-selected').forEach(el => el.classList.remove('feed-evt-selected'));
     target.classList.add('feed-evt-selected');
-    // Show score row
     const scoreRow = document.getElementById('feed-mod-score-row');
     if (scoreRow) scoreRow.style.display = 'flex';
     const side = target.classList.contains('feed-evt-a') ? 'A' : 'B';
     const prompt = document.getElementById('feed-score-prompt');
     if (prompt) prompt.textContent = `Score Debater ${side}:`;
+    // Refresh which buttons are enabled based on current budget
+    updateBudgetDisplay();
   });
 
-  // Score button clicks — use score_debate_comment RPC (atomically updates scoreboard)
+  // Score button clicks — budget-checked, then score_debate_comment RPC
   document.querySelectorAll('.feed-score-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const pts = Number((btn as HTMLElement).dataset.pts);
+      // Phase 2: Budget check
+      const limit = FEED_SCORE_BUDGET[pts] ?? 0;
+      const used = _scoreUsed[pts] ?? 0;
+      if (used >= limit) {
+        showToast(`No ${pts}-pt scores left this round`, 'error');
+        return;
+      }
       const selected = document.querySelector('.feed-evt-selected') as HTMLElement | null;
       if (!selected) return;
       const eventId = selected.dataset.eventId;
@@ -392,7 +437,8 @@ function wireModControls(): void {
       }
       const debate = currentDebate;
       if (!debate) return;
-      // Call score_debate_comment — it writes the point_award event AND updates score_a/score_b
+      // Disable button immediately to prevent double-tap
+      (btn as HTMLButtonElement).disabled = true;
       void safeRpc('score_debate_comment', {
         p_debate_id: debate.id,
         p_feed_event_id: Number(eventId),
@@ -401,7 +447,10 @@ function wireModControls(): void {
         if (error) {
           console.warn('[FeedRoom] score_debate_comment failed:', error);
           showToast('Scoring failed', 'error');
+          // Re-enable since it failed
+          (btn as HTMLButtonElement).disabled = false;
         }
+        // Budget update happens via appendFeedEvent when the point_award arrives via Realtime
       });
       // Clear selection
       selected.classList.remove('feed-evt-selected');
@@ -477,6 +526,70 @@ async function submitModComment(): Promise<void> {
 }
 
 // ============================================================
+// PHASE 2: PIN, BUDGET, FIREWORKS HELPERS
+// ============================================================
+
+/** Pin/unpin a speech event (moderator-only). No broadcast — local state only. */
+async function handlePinClick(btn: HTMLElement): Promise<void> {
+  const debate = currentDebate;
+  if (!debate) return;
+  const eid = btn.dataset.eid;
+  if (!eid || eid.includes('-')) {
+    showToast('Cannot pin — waiting for confirmation', 'error');
+    return;
+  }
+  btn.style.pointerEvents = 'none'; // prevent double-tap
+  try {
+    const { error } = await safeRpc('pin_feed_event', {
+      p_debate_id: debate.id,
+      p_feed_event_id: Number(eid),
+    });
+    if (error) {
+      console.warn('[FeedRoom] pin_feed_event failed:', error);
+      showToast('Pin failed', 'error');
+      return;
+    }
+    // Toggle local pin state
+    const wasPinned = _pinnedEventIds.has(eid);
+    if (wasPinned) {
+      _pinnedEventIds.delete(eid);
+      btn.classList.remove('pinned');
+      btn.closest('.feed-evt')?.classList.remove('feed-evt-pinned');
+    } else {
+      _pinnedEventIds.add(eid);
+      btn.classList.add('pinned');
+      btn.closest('.feed-evt')?.classList.add('feed-evt-pinned');
+    }
+  } finally {
+    btn.style.pointerEvents = '';
+  }
+}
+
+/** Update budget badge text + disabled state on each score button */
+function updateBudgetDisplay(): void {
+  for (let pts = 1; pts <= 5; pts++) {
+    const limit = FEED_SCORE_BUDGET[pts] ?? 0;
+    const used = _scoreUsed[pts] ?? 0;
+    const remaining = Math.max(0, limit - used);
+    // Update badge
+    const badge = document.querySelector(`.feed-score-badge[data-badge="${pts}"]`);
+    if (badge) badge.textContent = String(remaining);
+    // Disable button if exhausted
+    const btn = document.querySelector(`.feed-score-btn[data-pts="${pts}"]`) as HTMLButtonElement | null;
+    if (btn) btn.disabled = remaining <= 0;
+  }
+}
+
+/** Reset budget counters for a new round */
+function resetBudget(round: number): void {
+  _budgetRound = round;
+  for (let pts = 1; pts <= 5; pts++) {
+    _scoreUsed[pts] = 0;
+  }
+  updateBudgetDisplay();
+}
+
+// ============================================================
 // TURN-TAKING STATE MACHINE
 // ============================================================
 
@@ -504,6 +617,11 @@ function startPreRoundCountdown(debate: CurrentDebate): void {
 function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
   _phase = speaker === 'a' ? 'speaker_a' : 'speaker_b';
   _timeLeft = FEED_TURN_DURATION;
+
+  // Phase 2: Reset scoring budget when round changes
+  if (_budgetRound !== _round) {
+    resetBudget(_round);
+  }
 
   const isMyTurn = debate.role === speaker && !debate.modView;
   const debaterAName = debate.role === 'a'
@@ -671,4 +789,8 @@ export function cleanupFeedRoom(): void {
   _scoreA = 0;
   _scoreB = 0;
   _renderedEventIds.clear();
+  // Phase 2 cleanup
+  _pinnedEventIds.clear();
+  _budgetRound = 1;
+  for (let pts = 1; pts <= 5; pts++) _scoreUsed[pts] = 0;
 }

@@ -268,9 +268,19 @@ export interface FeedEvent {
   side: 'a' | 'b' | 'mod' | null;
   content: string;
   score?: number | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
   author_name?: string;
 }
+
+/** Per-value scoring budget limits per round (Session 235) */
+export const FEED_SCORE_BUDGET: Readonly<Record<number, number>> = {
+  5: 2,
+  4: 3,
+  3: 4,
+  2: 5,
+  1: 6,
+};
 
 export type FeedTurnPhase =
   | 'pre_round'       // countdown before first speaker

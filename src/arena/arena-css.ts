@@ -470,6 +470,31 @@ export function injectCSS(): void {
     .feed-score-btn { width:36px;height:36px;border-radius:50%;border:1px solid var(--mod-border-accent);background:var(--mod-accent-muted);color:var(--mod-accent-text);font-family:var(--mod-font-ui);font-size:14px;font-weight:700;cursor:pointer; }
     .feed-score-btn:active { background:var(--mod-bar-accent);color:var(--mod-text-on-accent); }
     .feed-score-btn-cancel { width:36px;height:36px;border-radius:50%;border:1px solid var(--mod-border-primary);background:none;color:var(--mod-text-muted);font-size:16px;cursor:pointer;margin-left:auto; }
+
+    /* Phase 2: Pin button (mod-only, invisible to others) */
+    .feed-pin-btn { position:absolute;top:4px;right:4px;width:24px;height:24px;border:none;background:none;color:var(--mod-text-muted);font-size:13px;cursor:pointer;opacity:0.4;transition:opacity 0.15s;padding:0;line-height:24px;text-align:center; }
+    .feed-pin-btn:hover { opacity:1; }
+    .feed-pin-btn.pinned { opacity:1;color:#c29a58; }
+    .feed-evt-a, .feed-evt-b { position:relative; }
+    .feed-evt-pinned { box-shadow:inset 0 0 0 1px rgba(194,154,88,0.4); }
+
+    /* Phase 2: Score button budget badges */
+    .feed-score-btn-wrap { position:relative;display:inline-flex; }
+    .feed-score-badge { position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;border-radius:8px;background:var(--mod-bar-accent);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:9px;font-weight:700;line-height:16px;text-align:center;padding:0 3px;pointer-events:none; }
+    .feed-score-btn:disabled { opacity:0.2;cursor:not-allowed; }
+    .feed-score-btn:disabled + .feed-score-badge { background:var(--mod-text-muted); }
+
+    /* Phase 2: Fireworks on point_award */
+    .feed-fireworks { position:relative;overflow:visible; }
+    .feed-fireworks::before,
+    .feed-fireworks::after { content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;animation:feedFirework 0.6s ease-out forwards;pointer-events:none; }
+    .feed-fireworks::before { background:#c29a58;box-shadow:12px -18px 0 #E7442A, -14px -12px 0 #4A90D9, 20px 8px 0 #c29a58, -18px 14px 0 #E7442A; }
+    .feed-fireworks::after { background:#4A90D9;box-shadow:-10px -20px 0 #c29a58, 16px -10px 0 #E7442A, -20px 6px 0 #4A90D9, 14px 16px 0 #c29a58; }
+    @keyframes feedFirework {
+      0% { transform:scale(0);opacity:1; }
+      50% { transform:scale(1.8);opacity:0.8; }
+      100% { transform:scale(2.5);opacity:0; }
+    }
   `;
   document.head.appendChild(style);
 }
