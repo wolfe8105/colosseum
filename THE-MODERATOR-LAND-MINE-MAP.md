@@ -1902,12 +1902,18 @@ BITES YOU WHEN: insert_feed_event gains new logic (rate limiting, content saniti
   changes, new validation). score_debate_comment does NOT inherit those changes
   automatically. They are separate code paths that happen to both write to
   debate_feed_events.
+ALSO BITES YOU (Session 235): Per-value scoring budget enforcement is now hardcoded
+  as a CASE statement INSIDE score_debate_comment (5pts=max 2, 4pts=max 3, 3pts=max 4,
+  2pts=max 5, 1pt=max 6 per round; 20 actions, 50 max points). The
+  scoring_budget_per_round column on arena_debates is UNUSED. If you want to change
+  budget limits, you must CREATE OR REPLACE score_debate_comment with new CASE values.
+  Do not attempt to use the column — it is not read.
 SYMPTOM: insert_feed_event enforces a new rule (e.g., rate limit), but point_award
   events bypass it entirely. Inconsistent behavior between event types.
 FIX: Any new logic added to insert_feed_event that should also apply to point_award
   events must be manually added to score_debate_comment. They are permanently coupled.
   Both functions must reference each other in comments. Never remove this note.
-SESSION: 178.
+SESSION: 178, updated 235.
 ```
 
 ## LM-193: Realtime broadcast private channels require setAuth() before subscribe

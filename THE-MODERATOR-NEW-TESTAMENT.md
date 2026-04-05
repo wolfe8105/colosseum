@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 229 (April 4, 2026)
+### Last Updated: Session 235 (April 5, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -366,7 +366,7 @@ Previous architecture (preserved for reference):
 ## Session 178 — Live Debate Feed + Moderator Scoring + Dropout Penalties
 - `debate_feed_events` table — append-only B2B archive, one row per event (speech, reference_cite, reference_challenge, point_award, mod_ruling, round_divider, sentiment_vote, power_up). Columns: id BIGSERIAL, debate_id, user_id (NULL for system events), event_type, round (0-10), side (a/b/mod), content, score (1-5 for point_award), reference_id, metadata JSONB, created_at. SELECT public. INSERT/UPDATE/DELETE blocked (SECURITY DEFINER only). Trigger: broadcast_feed_event → realtime.broadcast_changes on private channel 'debate:<uuid>'.
 - `mod_dropout_log` table — append-only, one row per moderator dropout. Columns: id BIGSERIAL, moderator_id, debate_id, cooldown_minutes, offense_number, created_at. "Daily reset" = count WHERE created_at >= date_trunc('day', now() UTC). No cron.
-- `arena_debates.scoring_budget_per_round` INT DEFAULT NULL — parked. NULL = unlimited. Enforced by score_debate_comment when non-null.
+- `arena_debates.scoring_budget_per_round` INT DEFAULT NULL — **UNUSED as of Session 235.** Enforcement moved to hardcoded CASE in `score_debate_comment` (per-value limits: 5pts=2, 4pts=3, 3pts=4, 2pts=5, 1pt=6 per round; 20 actions, 50 max points). Column remains but is not read.
 - `insert_feed_event(p_debate_id, p_event_type, p_round, p_side, p_content, p_score, p_reference_id, p_metadata)` — role-validates by event type, double-writes to event_log. Does NOT handle point_award (use score_debate_comment).
 - `get_feed_events(p_debate_id, p_after, p_limit)` — backfill on reconnect or full replay. p_after=NULL = all events. Hard cap 1000.
 - `score_debate_comment(p_debate_id, p_feed_event_id, p_score)` — moderator-only. Atomically increments score_a or score_b on arena_debates, inserts point_award with running totals in metadata. Double-scoring guard via EXISTS check. Writes DIRECTLY to debate_feed_events (not via insert_feed_event). See LM-191.
@@ -376,6 +376,14 @@ Previous architecture (preserved for reference):
 - `get_mod_cooldown_minutes(p_offense_number)` — IMMUTABLE helper. 1→10min, 2→60min, 3+→1440min.
 - **Broadcast private channels require setAuth() + { config: { private: true } }** — see LM-193.
 - **Supabase Dashboard → Realtime → Settings: "Allow public access" must be DISABLED** for private channels to work.
+
+## F-51 Live Moderated Debate Feed — Phase 1 + Phase 2 (Sessions 234-235)
+- **Phase 1 (S234):** Core feed rendering, turn-taking UI, speech event flow. Code complete, untested.
+- **Phase 2 (S235):** Pin fallback (`pin_feed_event` graceful fallback if pinning fails). Fireworks animation on `point_award` feed events. Per-value scoring budget enforcement.
+- Per-value scoring budget: hardcoded CASE in `score_debate_comment` — 5pts=max 2, 4pts=max 3, 3pts=max 4, 2pts=max 5, 1pt=max 6 per round. 20 total actions, 50 max points per round. NOT enforced via `scoring_budget_per_round` column (column unused, see Session 178 section).
+- SQL: `session-235-scoring-budget.sql` run in Supabase.
+- **Moderator token payout (designed, not built):** ~7 tokens target. Split payout — debater half (0-4 tokens) instant, spectator half (0-4 tokens) delayed 48h. Zero spectators = spectator half stays at 0, 48-hour window for late scoring. Separate RPC needed (not part of F-51 phases).
+- Both phases untested — blocked on 3 test accounts.
 
 ---
 
