@@ -38,6 +38,29 @@ interface SpectateDebate {
   score_a: number | null;
   score_b: number | null;
   winner: string | null;
+  ai_scorecard: AIScorecard | null;
+}
+
+/** AI scorecard criterion (Logic/Evidence/Delivery/Rebuttal) */
+interface AICriterion {
+  score: number;
+  reason: string;
+}
+
+/** AI scorecard side scores */
+interface AISideScores {
+  logic: AICriterion;
+  evidence: AICriterion;
+  delivery: AICriterion;
+  rebuttal: AICriterion;
+}
+
+/** AI scorecard persisted in arena_debates.ai_scorecard */
+interface AIScorecard {
+  side_a: AISideScores;
+  side_b: AISideScores;
+  overall_winner: string;
+  verdict: string;
 }
 
 /** Power-up activation event from replay data */
@@ -490,6 +513,43 @@ interface SpectatorChatMessage {
         html += '<span class="mod-rating-score">' + avgScore + '/50</span>';
         html += '</div>';
         html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // AI Scorecard (if persisted — AI sparring debates only)
+    if ((d.status === 'complete' || d.status === 'completed') && d.ai_scorecard) {
+      const sc = d.ai_scorecard;
+      const nameA = escHtml(d.debater_a_name);
+      const nameB = escHtml(d.debater_b_name);
+      const totalA = (sc.side_a.logic.score + sc.side_a.evidence.score + sc.side_a.delivery.score + sc.side_a.rebuttal.score);
+      const totalB = (sc.side_b.logic.score + sc.side_b.evidence.score + sc.side_b.delivery.score + sc.side_b.rebuttal.score);
+
+      html += '<div class="ai-scorecard-section fade-up">';
+      html += '<div class="ai-scorecard-header-row">';
+      html += '<div class="ai-scorecard-side-col"><span class="ai-scorecard-name">' + nameA + '</span><span class="ai-scorecard-total ' + (totalA >= totalB ? 'winner' : 'loser') + '">' + totalA + '</span></div>';
+      html += '<div class="ai-scorecard-vs">VS</div>';
+      html += '<div class="ai-scorecard-side-col"><span class="ai-scorecard-name">' + nameB + '</span><span class="ai-scorecard-total ' + (totalB >= totalA ? 'winner' : 'loser') + '">' + totalB + '</span></div>';
+      html += '</div>';
+
+      const criteria: Array<{ label: string; key: keyof AISideScores }> = [
+        { label: '\uD83E\uDDE0 LOGIC', key: 'logic' },
+        { label: '\uD83D\uDCDA EVIDENCE', key: 'evidence' },
+        { label: '\uD83C\uDFA4 DELIVERY', key: 'delivery' },
+        { label: '\u2694\uFE0F REBUTTAL', key: 'rebuttal' },
+      ];
+      for (const c of criteria) {
+        const a = sc.side_a[c.key];
+        const b = sc.side_b[c.key];
+        html += '<div class="ai-score-criterion">';
+        html += '<div class="ai-score-criterion-header"><span class="ai-score-criterion-label">' + c.label + '</span><span class="ai-score-criterion-nums">' + a.score + ' \u2014 ' + b.score + '</span></div>';
+        html += '<div class="ai-score-bars"><div class="ai-score-bar side-a" style="width:' + (a.score * 10) + '%"></div><div class="ai-score-bar side-b" style="width:' + (b.score * 10) + '%"></div></div>';
+        html += '<div class="ai-score-reason">' + escHtml(a.reason) + '</div>';
+        html += '</div>';
+      }
+
+      if (sc.verdict) {
+        html += '<div class="ai-scorecard-verdict">' + escHtml(sc.verdict) + '</div>';
       }
       html += '</div>';
     }
