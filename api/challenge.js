@@ -251,6 +251,11 @@ function buildExpiredHtml() {
 }
 
 export default async function handler(req, res) {
+  if (!SUPABASE_ANON_KEY) {
+    console.error('challenge.js: SUPABASE_ANON_KEY env var not set');
+    return res.status(500).send('Server configuration error');
+  }
+
   const code = (req.query.code || '').toString().trim().toUpperCase();
 
   if (!code || !/^[A-Z0-9]{4,10}$/.test(code)) {
