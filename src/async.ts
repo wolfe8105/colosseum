@@ -28,7 +28,7 @@ import {
 import type { SafeRpcResult } from './auth.ts';
 import { shareTake } from './share.ts';
 import { navigateTo } from './navigation.ts';
-import { claimHotTake, claimReaction, claimPrediction, getBalance } from './tokens.ts';
+import { claimHotTake, claimReaction, claimPrediction, getBalance, updateBalance } from './tokens.ts';
 import { nudge } from './nudge.ts';
 
 // ============================================================
@@ -958,12 +958,7 @@ export async function placePrediction(
       // P1-9: Update balance display with debit from wager
       const rpcResult = data as Record<string, unknown> | null;
       if (rpcResult?.new_balance != null) {
-        const profile = getCurrentProfile();
-        if (profile) (profile as Record<string, unknown>).token_balance = rpcResult.new_balance;
-        const nb = Number(rpcResult.new_balance);
-        document.querySelectorAll('[data-token-balance]').forEach(el => { el.textContent = nb.toLocaleString(); });
-        const countEl = document.getElementById('token-count');
-        if (countEl) countEl.textContent = nb.toLocaleString();
+        updateBalance(Number(rpcResult.new_balance));
       }
       claimPrediction(debateId);
     } catch (e) {

@@ -71,6 +71,7 @@ let lastKnownBalance: number | null = null;
 const milestoneClaimed = new Set<string>();
 let dailyLoginClaimed = false;
 let _dailyLoginInFlight = false;
+let _bc: BroadcastChannel | null = null;
 
 // ============================================================
 // MILESTONE DEFINITIONS
@@ -201,7 +202,7 @@ function _milestoneToast(icon: string, label: string, tokens: number, freezes: n
 // BALANCE DISPLAY
 // ============================================================
 
-function _updateBalanceDisplay(newBalance: number | null | undefined): void {
+function _updateBalanceDisplay(newBalance: number | null | undefined, broadcast = true): void {
   if (newBalance == null) return;
   lastKnownBalance = newBalance;
   document.querySelectorAll('[data-token-balance]').forEach(el => {
@@ -216,6 +217,16 @@ function _updateBalanceDisplay(newBalance: number | null | undefined): void {
     bar.style.animation = 'tokenFlash 0.6s ease-out';
     setTimeout(() => { bar.style.animation = ''; }, 700);
   }
+  if (broadcast && _bc) {
+    try { _bc.postMessage(newBalance); } catch { /* ignore */ }
+  }
+}
+
+/** Public wrapper — updates display + profile + broadcasts across tabs. */
+export function updateBalance(newBalance: number): void {
+  _updateBalanceDisplay(newBalance);
+  const profile = getCurrentProfile();
+  if (profile) (profile as Record<string, unknown>).token_balance = newBalance;
 }
 
 // ============================================================
@@ -436,11 +447,27 @@ export function getBalance(): number | null {
 }
 
 // ============================================================
+// CROSS-TAB BALANCE SYNC
+// ============================================================
+
+function _initBroadcast(): void {
+  try {
+    _bc = new BroadcastChannel('mod-token-balance');
+    _bc.onmessage = (e: MessageEvent) => {
+      if (typeof e.data === 'number') {
+        _updateBalanceDisplay(e.data, false);
+      }
+    };
+  } catch { /* BroadcastChannel not supported — silent fallback */ }
+}
+
+// ============================================================
 // INIT (matches moderator-tokens.js _init())
 // ============================================================
 
 export function init(): void {
   _injectCSS();
+  _initBroadcast();
   onChange((user, profile) => {
     if (user && profile) {
       if (profile.token_balance != null) {
