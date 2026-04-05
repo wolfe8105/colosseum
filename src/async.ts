@@ -1487,6 +1487,16 @@ document.addEventListener('click', _onDocClick);
 
 export function destroy(): void {
   document.removeEventListener('click', _onDocClick);
+  _hideWagerPicker();
+  hotTakes = [];
+  predictions = [];
+  standaloneQuestions = [];
+  currentFilter = 'all';
+  _pendingChallengeId = null;
+  reactingIds.clear();
+  _postingInFlight = false;
+  _challengeInFlight = false;
+  _predictingInFlight.clear();
 }
 
 // ============================================================
