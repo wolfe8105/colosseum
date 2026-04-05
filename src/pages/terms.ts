@@ -33,5 +33,17 @@ function showTab(tab: LegalTab): void {
 if (window.location.hash === '#privacy') showTab('privacy');
 if (window.location.hash === '#community') showTab('community');
 
-// Expose to onclick handlers in HTML (if any use inline onclick)
-(window as unknown as Record<string, unknown>).showTab = showTab;
+// Delegated click handler for [data-tab] buttons and links (CSP-safe)
+document.addEventListener('click', (e: Event) => {
+  const target = (e.target as HTMLElement).closest('[data-tab]') as HTMLElement | null;
+  if (!target) return;
+  e.preventDefault();
+  const tab = target.dataset.tab as LegalTab | undefined;
+  if (tab && tab in TAB_MAP) showTab(tab);
+});
+
+// Back link (replaces javascript:history.back())
+document.getElementById('terms-back-link')?.addEventListener('click', (e: Event) => {
+  e.preventDefault();
+  history.back();
+});
