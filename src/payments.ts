@@ -101,10 +101,10 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
   let body: string;
 
   if (type === 'subscription' && tierInfo) {
-    title = `${tierInfo.name.toUpperCase()} — $${tierInfo.price}/mo`;
+    title = `${tierInfo.name.toUpperCase()} — COMING SOON`;
     body = `Stripe not connected yet. When live, this button will open Stripe Checkout for the ${tierInfo.name} tier.`;
   } else if (type === 'tokens' && tokenPkg) {
-    title = `${tokenPkg.amount} TOKENS — $${tokenPkg.price}`;
+    title = `${tokenPkg.amount} TOKENS — COMING SOON`;
     body = `Stripe not connected yet. When live, this will purchase ${tokenPkg.amount} tokens via Stripe Checkout.`;
   } else {
     title = 'PAYMENT';
