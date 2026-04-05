@@ -84,7 +84,7 @@
 
 ## G. Plinko — Step 1: OAuth/Email
 1. Google OAuth button
-2. Apple OAuth button
+2. Apple OAuth button (hidden — `display:none` in HTML)
 3. "Use email instead" toggle
 4. Email input
 5. Password input
@@ -110,7 +110,10 @@
 1. ENTER THE MODERATOR button → index.html
 
 ## L. /terms — Terms of Service
-(Static page — no interactive elements beyond browser navigation)
+1. ← Back link
+2. TERMS OF SERVICE tab button
+3. PRIVACY POLICY tab button
+4. COMMUNITY GUIDELINES tab button
 
 ## M. /privacy — Privacy Policy
 (Static page — no interactive elements beyond browser navigation)
@@ -205,11 +208,11 @@
 2. My Arsenal tab
 3. Library tab
 4. Forge new reference button (inside My Arsenal)
-5. Reference URL input (inside forge form)
-6. Reference title input
-7. Reference description textarea
-8. Reference category select
-9. SAVE / SUBMIT button
+5. Forge Step 1 — Claim textarea (120 char max)
+6. Forge Step 2 — Source URL input (domain auto-extracted)
+7. Forge Step 3 — Author input, Year input, Source type buttons
+8. Forge Step 4 — Category buttons
+9. Forge Step 5 — Review card + FORGE IT submit button
 10. Individual reference cards (tap to expand/edit)
 11. Library search/browse (inside Library tab)
 
@@ -300,8 +303,8 @@
 1. ← Back link → home
 2. Cosmetic item tiles (tap to select)
 3. Purchase button (per unpurchased item)
-4. Equip button (per owned item)
-5. Unequip button (per equipped item)
+4. Equip button (per owned item — equipping replaces previous in same category)
+5. (Equipped items show disabled "Equipped" label — no separate unequip action)
 6. Purchase confirm modal — Cancel button
 7. Purchase confirm modal — Purchase button
 8. Info modal — Got it button
