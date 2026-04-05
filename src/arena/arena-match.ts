@@ -124,6 +124,7 @@ export async function onMatchAccept(): Promise<void> {
 
   // Start polling for opponent acceptance
   let pollElapsed = 0;
+  let _pollInFlight = false;
   set_matchAcceptPollTimer(setInterval(async () => {
     pollElapsed += 1.5;
     if (pollElapsed >= MATCH_ACCEPT_POLL_TIMEOUT_SEC) {
@@ -134,6 +135,8 @@ export async function onMatchAccept(): Promise<void> {
       onMatchConfirmed();
       return;
     }
+    if (_pollInFlight) return;
+    _pollInFlight = true;
     try {
       const { data, error } = await safeRpc<MatchAcceptResponse>('check_match_acceptance', { p_debate_id: matchFoundDebate.id });
       if (error || !data) return;
@@ -146,7 +149,7 @@ export async function onMatchAccept(): Promise<void> {
       const opCol = matchFoundDebate.role === 'a' ? resp.player_b_ready : resp.player_a_ready;
       if (opCol === false) { onOpponentDeclined(); return; }
       if (myCol === true && opCol === true) { onMatchConfirmed(); return; }
-    } catch { /* retry next tick */ }
+    } catch { /* retry next tick */ } finally { _pollInFlight = false; }
   }, 1500));
 }
 
