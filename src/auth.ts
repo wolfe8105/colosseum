@@ -9,7 +9,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { escapeHTML, UUID_RE, SUPABASE_URL, SUPABASE_ANON_KEY, placeholderMode, APP } from './config.ts';
+import { escapeHTML, UUID_RE, SUPABASE_URL, SUPABASE_ANON_KEY, placeholderMode, APP, FEATURES } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -765,6 +765,7 @@ export async function showUserProfile(userId: string): Promise<void> {
 
   // Follow button handler
   const followBtn = document.getElementById('upm-follow-btn');
+  if (!FEATURES.followsUI && followBtn) followBtn.style.display = 'none';
   let isFollowing = profile.is_following;
   followBtn?.addEventListener('click', async () => {
     if (!requireAuth('follow users')) return;

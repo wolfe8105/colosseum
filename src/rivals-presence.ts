@@ -9,6 +9,7 @@
  */
 
 import { getSupabaseClient, getMyRivals, getCurrentUser, getIsPlaceholderMode } from './auth.ts';
+import { FEATURES } from './config.ts';
 import type { RivalEntry } from './async.ts';
 import type { RivalEntry } from './async.ts';
 
@@ -278,6 +279,7 @@ async function _startPresence(): Promise<void> {
 // ============================================================
 
 export async function init(): Promise<void> {
+  if (!FEATURES.rivals) return;
   if (getIsPlaceholderMode()) return;
   const user = getCurrentUser();
   if (!user) return;

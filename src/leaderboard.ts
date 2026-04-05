@@ -10,7 +10,7 @@
  * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
-import { escapeHTML } from './config.ts';
+import { escapeHTML, FEATURES } from './config.ts';
 import {
   safeRpc,
   getCurrentUser,
@@ -456,6 +456,7 @@ export async function loadMore(): Promise<void> {
 // ============================================================
 
 export function init(): void {
+  if (!FEATURES.leaderboard) return;
   const observer = new MutationObserver(() => {
     const screen = document.getElementById('screen-leaderboard');
     if (screen?.classList.contains('active') && screen.children.length === 0) {

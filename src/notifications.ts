@@ -8,7 +8,7 @@
  */
 
 import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from './auth.ts';
-import { escapeHTML } from './config.ts';
+import { escapeHTML, FEATURES } from './config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -380,6 +380,7 @@ function bindBellButton(): void {
 // ============================================================
 
 export function init(): void {
+  if (!FEATURES.notifications) return;
   createPanel();
   bindBellButton();
 

@@ -11,7 +11,7 @@
  * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
-import { escapeHTML, showToast } from './config.ts';
+import { escapeHTML, showToast, FEATURES } from './config.ts';
 import {
   safeRpc,
   getCurrentUser,
@@ -307,6 +307,7 @@ function _enterArenaWithTopic(topic: string): void {
 // ============================================================
 
 export function init(): void {
+  if (!FEATURES.asyncDebates) return;
   hotTakes = [...PLACEHOLDER_TAKES.all!];
   predictions = [...PLACEHOLDER_PREDICTIONS];
 }
@@ -316,6 +317,7 @@ export function init(): void {
 // ============================================================
 
 export async function fetchTakes(section?: string): Promise<void> {
+  if (!FEATURES.hotTakes) return;
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return;
   try {
@@ -412,6 +414,7 @@ export async function fetchTakes(section?: string): Promise<void> {
 }
 
 export async function fetchPredictions(): Promise<void> {
+  if (!FEATURES.predictions) return;
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return;
   try {
@@ -715,6 +718,7 @@ function _renderModeratorCard(isGuest = false): string {
 
 export function renderPredictions(container: HTMLElement): void {
   if (!container) return;
+  if (!FEATURES.predictionsUI) return;
 
   if (!_wiredContainers.has(container)) {
     _wirePredictionDelegation(container);
@@ -1285,6 +1289,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
 // ============================================================
 
 export async function postTake(): Promise<void> {
+  if (!FEATURES.hotTakes) return;
   if (!requireAuth('post hot takes')) return;
   // Session 230 (P1-2): requireTokens(25) removed — posting never debited tokens,
   // it only blocked low-balance users. create_hot_take awards tokens via claimHotTake.

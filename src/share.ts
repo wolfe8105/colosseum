@@ -10,7 +10,7 @@
  * Migration: Session 127 (Phase 3), Session 138 (ES imports, zero globalThis reads)
  */
 
-import { APP, showToast } from './config.ts';
+import { APP, showToast, FEATURES } from './config.ts';
 import { getCurrentUser, ready } from './auth.ts';
 import { navigateTo } from './navigation.ts';
 
@@ -142,6 +142,7 @@ export function shareTake(takeId: string, takeText: string): void {
 }
 
 export function showPostDebatePrompt(result: ShareResultParams): void {
+  if (!FEATURES.shareLinks) return;
   const existing = document.getElementById('post-debate-share');
   if (existing) existing.remove();
 
