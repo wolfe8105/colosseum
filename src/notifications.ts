@@ -408,6 +408,9 @@ const notificationsModule = {
 
 export default notificationsModule;
 
+// Expose on window so auth.ts logOut() can call destroy() without circular import
+(window as any).ColosseumNotifications = notificationsModule;
+
 // ============================================================
 
 // ============================================================
