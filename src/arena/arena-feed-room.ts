@@ -37,6 +37,7 @@ let _round = 1;
 let _timeLeft = 0;
 let _scoreA = 0;
 let _scoreB = 0;
+const _renderedEventIds = new Set<string>();
 
 // Determine first speaker for a round (spec: odd rounds A first, even rounds B first)
 function firstSpeaker(round: number): 'a' | 'b' {
@@ -123,7 +124,7 @@ function subscribeRealtime(debateId: string): void {
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'feed_events',
+        table: 'debate_feed_events',
         filter: `debate_id=eq.${debateId}`,
       },
       (payload: { new: FeedEvent }) => {
@@ -151,36 +152,61 @@ function appendFeedEvent(ev: FeedEvent): void {
   const stream = document.getElementById('feed-stream');
   if (!stream) return;
 
+  // Fix 6: Dedup — skip if we already rendered this event
+  const evKey = ev.id || `${ev.event_type}:${ev.side}:${ev.round}:${ev.content}`;
+  if (_renderedEventIds.has(evKey)) return;
+  _renderedEventIds.add(evKey);
+
+  // Fix 7: Look up author name from debate context if not on event
+  const debate = currentDebate;
+  const debaterAName = debate
+    ? (debate.role === 'a'
+        ? (getCurrentProfile()?.display_name || getCurrentProfile()?.username || 'You')
+        : debate.opponentName)
+    : 'Debater A';
+  const debaterBName = debate
+    ? (debate.role === 'b'
+        ? (getCurrentProfile()?.display_name || getCurrentProfile()?.username || 'You')
+        : debate.opponentName)
+    : 'Debater B';
+
   const el = document.createElement('div');
 
   switch (ev.event_type) {
     case 'speech': {
-      const sideClass = ev.side === 'a' ? 'feed-evt-a' : 'feed-evt-b';
-      el.className = `feed-evt ${sideClass} arena-fade-in`;
-      el.innerHTML = `
-        <span class="feed-evt-name">${escapeHTML(ev.author_name || (ev.side === 'a' ? 'Debater A' : 'Debater B'))}</span>
-        <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
-      `;
-      break;
-    }
-    case 'mod_comment': {
-      el.className = 'feed-evt feed-evt-mod arena-fade-in';
-      el.innerHTML = `
-        <span class="feed-evt-name">\u2696\uFE0F ${escapeHTML(ev.author_name || 'Moderator')}</span>
-        <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
-      `;
+      if (ev.side === 'mod') {
+        // Moderator comment
+        el.className = 'feed-evt feed-evt-mod arena-fade-in';
+        const modName = ev.author_name || debate?.moderatorName || 'Moderator';
+        el.innerHTML = `
+          <span class="feed-evt-name">\u2696\uFE0F ${escapeHTML(modName)}</span>
+          <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
+        `;
+      } else {
+        // Debater speech
+        const sideClass = ev.side === 'a' ? 'feed-evt-a' : 'feed-evt-b';
+        const name = ev.author_name || (ev.side === 'a' ? debaterAName : debaterBName);
+        el.className = `feed-evt ${sideClass} arena-fade-in`;
+        // Fix 5: Store real DB event ID for moderator scoring
+        if (ev.id && !ev.id.includes('-')) el.dataset.eventId = ev.id;
+        el.innerHTML = `
+          <span class="feed-evt-name">${escapeHTML(name)}</span>
+          <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
+        `;
+      }
       break;
     }
     case 'point_award': {
       el.className = `feed-evt feed-evt-points arena-fade-in`;
       const side = ev.side === 'a' ? 'A' : 'B';
-      el.innerHTML = `<span class="feed-points-badge">+${Number(ev.score)} for Debater ${side}</span>`;
+      const sideName = ev.side === 'a' ? debaterAName : debaterBName;
+      el.innerHTML = `<span class="feed-points-badge">+${Number(ev.score)} for ${escapeHTML(sideName)}</span>`;
       // Update scoreboard
       if (ev.side === 'a') {
         _scoreA += Number(ev.score) || 0;
         const scoreEl = document.getElementById('feed-score-a');
         if (scoreEl) scoreEl.textContent = String(_scoreA);
-      } else {
+      } else if (ev.side === 'b') {
         _scoreB += Number(ev.score) || 0;
         const scoreEl = document.getElementById('feed-score-b');
         if (scoreEl) scoreEl.textContent = String(_scoreB);
@@ -192,7 +218,8 @@ function appendFeedEvent(ev: FeedEvent): void {
       el.innerHTML = `<span class="feed-divider-text">\u2014\u2014\u2014 ${escapeHTML(ev.content)} \u2014\u2014\u2014</span>`;
       break;
     }
-    case 'system': {
+    default: {
+      // Unknown event type — render as system message
       el.className = 'feed-evt feed-evt-system arena-fade-in';
       el.textContent = ev.content;
       break;
@@ -225,7 +252,7 @@ function addLocalSystem(text: string): void {
 async function writeFeedEvent(
   eventType: FeedEventType,
   content: string,
-  side: 'a' | 'b' | 'mod' | 'system' | null,
+  side: 'a' | 'b' | 'mod' | null,
   score?: number | null,
 ): Promise<void> {
   const debate = currentDebate;
@@ -315,8 +342,7 @@ function wireDebaterControls(debate: CurrentDebate): void {
 
   concedeBtn?.addEventListener('click', () => {
     if (!confirm('Concede this debate? This counts as a loss.')) return;
-    void writeFeedEvent('system', `${getCurrentProfile()?.display_name || 'Debater'} has conceded.`, 'system');
-    addLocalSystem('You conceded. Ending debate...');
+    addLocalSystem(`${getCurrentProfile()?.display_name || 'Debater'} has conceded.`);
     setTimeout(() => void endCurrentDebate(), 1500);
   });
 }
@@ -353,14 +379,30 @@ function wireModControls(): void {
     if (prompt) prompt.textContent = `Score Debater ${side}:`;
   });
 
-  // Score button clicks
+  // Score button clicks — use score_debate_comment RPC (atomically updates scoreboard)
   document.querySelectorAll('.feed-score-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const pts = Number((btn as HTMLElement).dataset.pts);
-      const selected = document.querySelector('.feed-evt-selected');
+      const selected = document.querySelector('.feed-evt-selected') as HTMLElement | null;
       if (!selected) return;
-      const side: 'a' | 'b' = selected.classList.contains('feed-evt-a') ? 'a' : 'b';
-      void writeFeedEvent('point_award', `+${pts} for Debater ${side === 'a' ? 'A' : 'B'}`, side, pts);
+      const eventId = selected.dataset.eventId;
+      if (!eventId) {
+        showToast('Cannot score this message yet — waiting for confirmation', 'error');
+        return;
+      }
+      const debate = currentDebate;
+      if (!debate) return;
+      // Call score_debate_comment — it writes the point_award event AND updates score_a/score_b
+      void safeRpc('score_debate_comment', {
+        p_debate_id: debate.id,
+        p_feed_event_id: Number(eventId),
+        p_score: pts,
+      }).then(({ error }) => {
+        if (error) {
+          console.warn('[FeedRoom] score_debate_comment failed:', error);
+          showToast('Scoring failed', 'error');
+        }
+      });
       // Clear selection
       selected.classList.remove('feed-evt-selected');
       const scoreRow = document.getElementById('feed-mod-score-row');
@@ -423,7 +465,7 @@ async function submitModComment(): Promise<void> {
   appendFeedEvent({
     id: crypto.randomUUID(),
     debate_id: debate.id,
-    event_type: 'mod_comment',
+    event_type: 'speech',
     round: _round,
     side: 'mod',
     content: text,
@@ -431,7 +473,7 @@ async function submitModComment(): Promise<void> {
     author_name: debate.moderatorName || 'Moderator',
   });
 
-  await writeFeedEvent('mod_comment', text, 'mod');
+  await writeFeedEvent('speech', text, 'mod');
 }
 
 // ============================================================
@@ -450,7 +492,7 @@ function startPreRoundCountdown(debate: CurrentDebate): void {
     if (_timeLeft <= 0) {
       clearFeedTimer();
       // Write round divider
-      void writeFeedEvent('round_divider', `Round ${_round}`, 'system');
+      void writeFeedEvent('round_divider', `Round ${_round}`, null);
       addLocalSystem(`--- Round ${_round} ---`);
       // Start first speaker
       const first = firstSpeaker(_round);
@@ -545,7 +587,6 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
   _phase = pausePhase;
   _timeLeft = FEED_PAUSE_DURATION;
 
-  const nextSpeaker = newRound ? firstSpeaker(_round) : secondSpeaker(_round - (newRound ? 0 : 0));
   const debaterAName = debate.role === 'a'
     ? (getCurrentProfile()?.display_name || 'You')
     : debate.opponentName;
@@ -557,7 +598,7 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
   let nextSpeakerSide: 'a' | 'b';
   if (newRound) {
     nextSpeakerSide = firstSpeaker(_round);
-    void writeFeedEvent('round_divider', `Round ${_round}`, 'system');
+    void writeFeedEvent('round_divider', `Round ${_round}`, null);
     addLocalSystem(`--- Round ${_round} ---`);
   } else {
     nextSpeakerSide = secondSpeaker(_round);
@@ -629,4 +670,5 @@ export function cleanupFeedRoom(): void {
   _timeLeft = 0;
   _scoreA = 0;
   _scoreB = 0;
+  _renderedEventIds.clear();
 }

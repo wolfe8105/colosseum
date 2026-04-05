@@ -258,16 +258,14 @@ export interface JoinPrivateLobbyResult {
 export type FeedEventType =
   | 'speech'
   | 'round_divider'
-  | 'point_award'
-  | 'mod_comment'
-  | 'system';
+  | 'point_award';
 
 export interface FeedEvent {
   id: string;
   debate_id: string;
   event_type: FeedEventType;
   round: number;
-  side: 'a' | 'b' | 'mod' | 'system' | null;
+  side: 'a' | 'b' | 'mod' | null;
   content: string;
   score?: number | null;
   created_at: string;
