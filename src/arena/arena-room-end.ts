@@ -111,6 +111,18 @@ export async function endCurrentDebate(): Promise<void> {
       console.warn('[Arena] Finalize error:', e);
     }
 
+    // Session 234: Persist AI scorecard for replay
+    if (aiScores) {
+      try {
+        await safeRpc('save_ai_scorecard', {
+          p_debate_id: debate.id,
+          p_scorecard: aiScores,
+        });
+      } catch (e) {
+        console.warn('[Arena] AI scorecard save failed (non-fatal):', e);
+      }
+    }
+
     if (debate.ruleset !== 'unplugged') {
       if (debate.mode === 'ai') claimAiSparring(debate.id);
       else claimDebate(debate.id);
