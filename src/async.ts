@@ -140,6 +140,7 @@ let _pendingChallengeId: string | null = null;
 const reactingIds: Set<string> = new Set();
 // Session 230 (P3-1, P3-2): Double-click guards for postTake and placePrediction
 let _postingInFlight = false;
+let _challengeInFlight = false;
 const _predictingInFlight: Set<string> = new Set();
 
 /** Track which containers have delegation wired */
@@ -1251,14 +1252,17 @@ function _showChallengeModal(take: HotTake): void {
 
 export async function _submitChallenge(takeId: string | null): Promise<void> {
   if (!takeId) return;
+  if (_challengeInFlight) return;
+  _challengeInFlight = true;
   const take = hotTakes.find((t) => t.id === takeId);
-  if (!take) return;
+  if (!take) { _challengeInFlight = false; return; }
   const textarea = document.getElementById(
     'challenge-response'
   ) as HTMLTextAreaElement | null;
   const text = textarea?.value?.trim();
   if (!text) {
     if (textarea) textarea.style.borderColor = 'var(--mod-magenta)';
+    _challengeInFlight = false;
     return;
   }
 
@@ -1278,6 +1282,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
         take.challenges--;
         loadHotTakes(currentFilter);
         showToast('Challenge failed — try again', 'error');
+        _challengeInFlight = false;
         return;
       }
       showToast('⚔️ Challenge sent! Entering the arena...', 'success');
@@ -1292,6 +1297,7 @@ export async function _submitChallenge(takeId: string | null): Promise<void> {
     showToast('⚔️ Challenge sent! Entering the arena...', 'success');
     _enterArenaWithTopic(take.text);
   }
+  _challengeInFlight = false;
 }
 
 // ============================================================

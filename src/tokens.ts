@@ -70,6 +70,7 @@ export interface TokenSummary {
 let lastKnownBalance: number | null = null;
 const milestoneClaimed = new Set<string>();
 let dailyLoginClaimed = false;
+let _dailyLoginInFlight = false;
 
 // ============================================================
 // MILESTONE DEFINITIONS
@@ -305,31 +306,37 @@ function _checkStreakMilestones(streak: number): void {
 // ============================================================
 
 export async function claimDailyLogin(): Promise<ClaimResult | null> {
-  const result = await _rpc('claim_daily_login');
-  if (!result) return null;
-  if (!result.success) {
-    if (result.error !== 'Already claimed today') {
-      console.warn('[Tokens] Daily login:', result.error);
+  if (_dailyLoginInFlight) return null;
+  _dailyLoginInFlight = true;
+  try {
+    const result = await _rpc('claim_daily_login');
+    if (!result) return null;
+    if (!result.success) {
+      if (result.error !== 'Already claimed today') {
+        console.warn('[Tokens] Daily login:', result.error);
+      }
+      // Daily already claimed — mark and update dot regardless
+      dailyLoginClaimed = true;
+      updateOrangeDot();
+      return null;
     }
-    // Daily already claimed — mark and update dot regardless
     dailyLoginClaimed = true;
     updateOrangeDot();
-    return null;
+    _updateBalanceDisplay(result.new_balance);
+    let label = 'Daily login';
+    if (result.freeze_used) {
+      label = 'Daily login (❄️ freeze saved your streak!)';
+    } else if ((result.streak_bonus ?? 0) > 0) {
+      label = `Daily login + ${result.login_streak ?? 0}-day streak!`;
+    }
+    _tokenToast(result.tokens_earned ?? 0, label);
+    nudge('return_visit', '🔥 Welcome back. The arena missed you.');
+    console.log(`[Tokens] Daily login: +${result.tokens_earned ?? 0} (streak: ${result.login_streak ?? 0}, freeze used: ${result.freeze_used ?? false})`);
+    _checkStreakMilestones(result.login_streak ?? 0);
+    return result;
+  } finally {
+    _dailyLoginInFlight = false;
   }
-  dailyLoginClaimed = true;
-  updateOrangeDot();
-  _updateBalanceDisplay(result.new_balance);
-  let label = 'Daily login';
-  if (result.freeze_used) {
-    label = 'Daily login (❄️ freeze saved your streak!)';
-  } else if ((result.streak_bonus ?? 0) > 0) {
-    label = `Daily login + ${result.login_streak ?? 0}-day streak!`;
-  }
-  _tokenToast(result.tokens_earned ?? 0, label);
-  nudge('return_visit', '🔥 Welcome back. The arena missed you.');
-  console.log(`[Tokens] Daily login: +${result.tokens_earned ?? 0} (streak: ${result.login_streak ?? 0}, freeze used: ${result.freeze_used ?? false})`);
-  _checkStreakMilestones(result.login_streak ?? 0);
-  return result;
 }
 
 export async function claimHotTake(hotTakeId: string): Promise<ClaimResult | null> {
