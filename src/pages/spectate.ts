@@ -78,7 +78,7 @@ interface SpectatorChatMessage {
   const isLoggedIn = !!(getCurrentUser() && !getIsPlaceholderMode());
 
   // ---- Back button ----
-  document.getElementById('back-btn').addEventListener('click', () => {
+  document.getElementById('back-btn')?.addEventListener('click', () => {
     if (document.referrer && document.referrer.includes(location.host)) {
       history.back();
     } else {

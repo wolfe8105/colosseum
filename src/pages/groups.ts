@@ -220,9 +220,9 @@ function renderGroupList(containerId: string, groups: GroupListItem[], showRole 
 
 function renderEmpty(icon: string, title: string, sub: string) {
   return `<div class="empty-state">
-    <div class="empty-icon">${icon}</div>
-    <div class="empty-title">${title}</div>
-    ${sub ? `<div class="empty-sub">${sub}</div>` : ''}
+    <div class="empty-icon">${escapeHTML(icon)}</div>
+    <div class="empty-title">${escapeHTML(title)}</div>
+    ${sub ? `<div class="empty-sub">${escapeHTML(sub)}</div>` : ''}
   </div>`;
 }
 

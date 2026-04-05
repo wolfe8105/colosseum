@@ -15,7 +15,7 @@ import {
   getIsPlaceholderMode,
   safeRpc,
 } from '../auth.ts';
-import { showToast, FEATURES } from '../config.ts';
+import { showToast, FEATURES, escapeHTML } from '../config.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -234,7 +234,7 @@ function renderBadgeCabinet(container: HTMLElement, items: CosmeticItem[]): void
     <div class="cabinet-label">Earned — ${owned.length} / ${items.length}</div>
     <div class="badge-grid">
       ${owned.map(item => `
-        <div class="badge-tile owned" data-id="${item.cosmetic_id}"
+        <div class="badge-tile owned" data-id="${escHtml(item.cosmetic_id)}"
              role="button" tabindex="0" aria-label="${escHtml(item.name)}">
           <div class="badge-icon">${badgeIcon(item)}</div>
           <div class="badge-name">${escHtml(item.name)}</div>
@@ -300,20 +300,20 @@ function renderItemCard(item: CosmeticItem): string {
   } else if (item.equipped) {
     actionBtn = `<button class="btn-item btn-equipped" disabled>Equipped</button>`;
   } else if (item.owned) {
-    actionBtn = `<button class="btn-item btn-equip" data-action="equip" data-id="${item.cosmetic_id}">Equip</button>`;
+    actionBtn = `<button class="btn-item btn-equip" data-action="equip" data-id="${escHtml(item.cosmetic_id)}">Equip</button>`;
   } else if (item.unlock_type === 'token') {
     actionBtn = `
-      <button class="btn-item btn-purchase" data-action="purchase" data-id="${item.cosmetic_id}">
+      <button class="btn-item btn-purchase" data-action="purchase" data-id="${escHtml(item.cosmetic_id)}">
         <span>⚜</span> ${(item.token_cost ?? 0).toLocaleString()}
       </button>`;
   } else if (item.unlock_type === 'depth') {
     actionBtn = `
-      <button class="btn-item btn-depth-locked" data-action="depth-info" data-id="${item.cosmetic_id}">
+      <button class="btn-item btn-depth-locked" data-action="depth-info" data-id="${escHtml(item.cosmetic_id)}">
         🔒 ${depthLabel(item.depth_threshold)} profile
       </button>`;
   } else {
     // unlock_type === 'auto' — free items, equip_cosmetic auto-grants on first equip
-    actionBtn = `<button class="btn-item btn-equip" data-action="equip" data-id="${item.cosmetic_id}">Equip Free</button>`;
+    actionBtn = `<button class="btn-item btn-equip" data-action="equip" data-id="${escHtml(item.cosmetic_id)}">Equip Free</button>`;
   }
 
   const tierBadge = item.tier
