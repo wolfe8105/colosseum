@@ -2,7 +2,7 @@
  * THE MODERATOR — Profile Depth Engine (TypeScript)
  *
  * Extracted from moderator-profile-depth.html inline script.
- * 12 sections, 39+ questions, tier system integration, discount waterfall.
+ * 20 sections, 100 questions, tier system integration, power-up + cosmetic rewards.
  *
  * Migration: Session 128 (Phase 4)
  */
@@ -49,8 +49,9 @@ interface SelectQuestion extends QuestionBase {
 type Question = InputQuestion | ChipsQuestion | SliderQuestion | SelectQuestion;
 
 interface SectionReward {
-  type: 'discount' | 'badge' | 'cosmetic' | 'feature';
+  type: 'powerup';
   text: string;
+  powerUpId: string;
 }
 
 interface Section {
@@ -86,7 +87,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 1: THE BASICS (5 questions) ──
   {
     id: 'basics', icon: '👤', name: 'THE BASICS',
-    reward: { type: 'discount', text: '$1 off subscription' },
+    reward: { type: 'powerup', text: 'Free Reveal power-up', powerUpId: 'reveal' },
     questions: [
       { id: 'b1', label: 'What should people call you?', type: 'input', placeholder: 'Display name' },
       { id: 'b2', label: 'Where are you from?', type: 'input', placeholder: 'City, State' },
@@ -98,7 +99,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 2: POLITICS (5 questions) ──
   {
     id: 'politics', icon: '🏛️', name: 'POLITICS',
-    reward: { type: 'badge', text: 'Unlock "Policy Wonk" badge' },
+    reward: { type: 'powerup', text: 'Free 2x Multiplier power-up', powerUpId: 'multiplier_2x' },
     questions: [
       { id: 'p1', label: 'Where do you lean politically?', type: 'slider', min: 1, max: 10, labels: ['Far Left', 'Far Right'] },
       { id: 'p2', label: 'Top 3 political issues you care about', type: 'chips', multi: true, max: 3, options: ['Economy', 'Immigration', 'Healthcare', 'Climate', 'Education', 'Foreign Policy', 'Gun Rights', 'Social Justice', 'Tax Reform', 'Housing'] },
@@ -110,7 +111,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 3: SPORTS (5 questions) ──
   {
     id: 'sports', icon: '🏟️', name: 'SPORTS',
-    reward: { type: 'cosmetic', text: 'Unlock "Arena Glow" profile effect' },
+    reward: { type: 'powerup', text: 'Free Silence power-up', powerUpId: 'silence' },
     questions: [
       { id: 's1', label: 'Favorite sports (pick up to 3)', type: 'chips', multi: true, max: 3, options: ['NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'MMA/UFC', 'Boxing', 'College FB', 'College BB', 'Tennis', 'Golf', 'F1'] },
       { id: 's2', label: 'Hottest take you believe about sports?', type: 'input', placeholder: 'e.g. MJ > LeBron, no debate' },
@@ -122,7 +123,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 4: ENTERTAINMENT (5 questions) ──
   {
     id: 'entertainment', icon: '🎬', name: 'ENTERTAINMENT',
-    reward: { type: 'badge', text: 'Unlock "Critic" badge' },
+    reward: { type: 'powerup', text: 'Free Shield power-up', powerUpId: 'shield' },
     questions: [
       { id: 'e1', label: 'What do you watch/consume most?', type: 'chips', multi: true, max: 3, options: ['Movies', 'TV Series', 'YouTube', 'Podcasts', 'Anime', 'Reality TV', 'Documentaries', 'Live Sports'] },
       { id: 'e2', label: 'Most overrated movie or show?', type: 'input', placeholder: 'Name it...' },
@@ -134,7 +135,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 5: DEBATE STYLE (5 questions) ──
   {
     id: 'debate_style', icon: '⚔️', name: 'DEBATE STYLE',
-    reward: { type: 'discount', text: '$1.50 off subscription' },
+    reward: { type: 'powerup', text: 'Free Silence power-up', powerUpId: 'silence' },
     questions: [
       { id: 'd1', label: 'How do you argue?', type: 'chips', options: ['Facts & data', 'Emotion & passion', 'Humor & wit', 'Experience & stories'] },
       { id: 'd2', label: 'When you lose an argument, you...', type: 'chips', options: ['Accept it gracefully', 'Double down', 'Change the subject', 'Research more'] },
@@ -146,7 +147,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 6: HOT OPINIONS (5 questions) ──
   {
     id: 'opinions', icon: '🔥', name: 'HOT OPINIONS',
-    reward: { type: 'cosmetic', text: 'Unlock "Flame Border" profile frame' },
+    reward: { type: 'powerup', text: 'Free Reveal power-up', powerUpId: 'reveal' },
     questions: [
       { id: 'o1', label: 'AI will replace most jobs by 2035', type: 'slider', min: 1, max: 10, labels: ['Disagree', 'Agree'] },
       { id: 'o2', label: 'Social media does more harm than good', type: 'slider', min: 1, max: 10, labels: ['Disagree', 'Agree'] },
@@ -158,7 +159,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 7: VALUES (5 questions) ──
   {
     id: 'values', icon: '⚖️', name: 'VALUES',
-    reward: { type: 'discount', text: '$1.50 off subscription' },
+    reward: { type: 'powerup', text: 'Free 2x Multiplier power-up', powerUpId: 'multiplier_2x' },
     questions: [
       { id: 'v1', label: 'Freedom vs Security — where do you land?', type: 'slider', min: 1, max: 10, labels: ['Freedom', 'Security'] },
       { id: 'v2', label: 'Tradition vs Progress', type: 'slider', min: 1, max: 10, labels: ['Tradition', 'Progress'] },
@@ -170,7 +171,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 8: MEDIA DIET (5 questions) ──
   {
     id: 'media', icon: '📱', name: 'MEDIA DIET',
-    reward: { type: 'badge', text: 'Unlock "Informed" badge' },
+    reward: { type: 'powerup', text: 'Free Silence power-up', powerUpId: 'silence' },
     questions: [
       { id: 'm1', label: 'Where do you get your news?', type: 'chips', multi: true, max: 3, options: ['TV News', 'Twitter/X', 'Reddit', 'Podcasts', 'Newspapers', 'YouTube', 'TikTok', 'Word of mouth'] },
       { id: 'm2', label: 'Daily screen time (hours)', type: 'slider', min: 1, max: 12, labels: ['1hr', '12hr'] },
@@ -182,7 +183,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 9: LIFESTYLE (5 questions) ──
   {
     id: 'lifestyle', icon: '🏠', name: 'LIFESTYLE',
-    reward: { type: 'discount', text: '$2 off subscription' },
+    reward: { type: 'powerup', text: 'Free Shield power-up', powerUpId: 'shield' },
     questions: [
       { id: 'l1', label: 'Education level', type: 'select', options: ['High school', 'Some college', 'Associate', 'Bachelor', 'Master', 'Doctorate', 'Trade school', 'Self-taught'] },
       { id: 'l2', label: 'What field do you work in?', type: 'input', placeholder: 'e.g. Tech, Healthcare, Student...' },
@@ -194,7 +195,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 10: COMPETITIVE (5 questions) ──
   {
     id: 'competition', icon: '🏆', name: 'COMPETITIVE',
-    reward: { type: 'cosmetic', text: 'Unlock "Gold Crown" icon' },
+    reward: { type: 'powerup', text: 'Free Shield power-up', powerUpId: 'shield' },
     questions: [
       { id: 'c1', label: 'How competitive are you?', type: 'slider', min: 1, max: 10, labels: ['Chill', 'Win at all costs'] },
       { id: 'c2', label: 'Winning matters more than...', type: 'chips', options: ['Being liked', 'Being right', 'Having fun', 'Nothing — winning IS the point'] },
@@ -206,7 +207,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 11: SOCIAL (5 questions) ──
   {
     id: 'social', icon: '🤝', name: 'SOCIAL',
-    reward: { type: 'feature', text: 'Unlock custom bio' },
+    reward: { type: 'powerup', text: 'Free Reveal power-up', powerUpId: 'reveal' },
     questions: [
       { id: 'x1', label: 'How did you hear about The Moderator?', type: 'chips', options: ['Friend', 'Social media', 'Search', 'Ad', 'Podcast', 'Other'] },
       { id: 'x2', label: 'Would you refer friends?', type: 'chips', options: ['Already did', 'Definitely', 'Maybe', 'Probably not'] },
@@ -218,7 +219,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 12: IDENTITY (5 questions) ──
   {
     id: 'identity', icon: '🎭', name: 'IDENTITY',
-    reward: { type: 'discount', text: '$3 off subscription' },
+    reward: { type: 'powerup', text: 'Free 2x Multiplier power-up', powerUpId: 'multiplier_2x' },
     questions: [
       { id: 'i1', label: 'Describe yourself in 3 words', type: 'input', placeholder: 'e.g. stubborn, funny, relentless' },
       { id: 'i2', label: 'Your debate walkout song would be...', type: 'input', placeholder: 'Name the track' },
@@ -230,7 +231,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 13: MONEY (6 questions) — NEW ──
   {
     id: 'money', icon: '💰', name: 'MONEY',
-    reward: { type: 'badge', text: 'Unlock "High Roller" badge' },
+    reward: { type: 'powerup', text: 'Free Silence power-up', powerUpId: 'silence' },
     questions: [
       { id: 'mn1', label: 'How would you describe your financial situation?', type: 'chips', options: ['Comfortable', 'Getting by', 'Struggling', 'Thriving'] },
       { id: 'mn2', label: 'Saver or spender?', type: 'slider', min: 1, max: 10, labels: ['Extreme saver', 'Extreme spender'] },
@@ -243,7 +244,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 14: HEALTH & WELLNESS (5 questions) — NEW ──
   {
     id: 'health', icon: '💪', name: 'HEALTH & WELLNESS',
-    reward: { type: 'cosmetic', text: 'Unlock "Iron Will" profile effect' },
+    reward: { type: 'powerup', text: 'Free Shield power-up', powerUpId: 'shield' },
     questions: [
       { id: 'hw1', label: 'How would you rate your overall health?', type: 'slider', min: 1, max: 10, labels: ['Poor', 'Excellent'] },
       { id: 'hw2', label: 'How often do you exercise?', type: 'chips', options: ['Daily', 'Few times a week', 'Weekly', 'Rarely', 'Never'] },
@@ -255,7 +256,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 15: TECHNOLOGY (5 questions) — NEW ──
   {
     id: 'technology', icon: '🤖', name: 'TECHNOLOGY',
-    reward: { type: 'badge', text: 'Unlock "Tech Lord" badge' },
+    reward: { type: 'powerup', text: 'Free Reveal power-up', powerUpId: 'reveal' },
     questions: [
       { id: 'tc1', label: 'How do you feel about AI?', type: 'slider', min: 1, max: 10, labels: ['Terrified', 'Excited'] },
       { id: 'tc2', label: 'When it comes to new technology, you\'re a...', type: 'chips', options: ['First adopter', 'Early majority', 'Wait and see', 'Skeptic'] },
@@ -267,7 +268,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 16: FOOD & DRINK (5 questions) — NEW ──
   {
     id: 'food', icon: '🍔', name: 'FOOD & DRINK',
-    reward: { type: 'badge', text: 'Unlock "Foodie" badge' },
+    reward: { type: 'powerup', text: 'Free Reveal power-up', powerUpId: 'reveal' },
     questions: [
       { id: 'fd1', label: 'Cook at home or eat out?', type: 'slider', min: 1, max: 10, labels: ['Always cook', 'Always eat out'] },
       { id: 'fd2', label: 'Do you drink alcohol?', type: 'chips', options: ['Regularly', 'Socially', 'Rarely', 'Never'] },
@@ -279,7 +280,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 17: SHOPPING & BRANDS (5 questions) — NEW ──
   {
     id: 'shopping', icon: '🛍️', name: 'SHOPPING & BRANDS',
-    reward: { type: 'discount', text: '$1 off subscription' },
+    reward: { type: 'powerup', text: 'Free 2x Multiplier power-up', powerUpId: 'multiplier_2x' },
     questions: [
       { id: 'sh1', label: 'When you buy something, you...', type: 'chips', options: ['Research obsessively', 'Ask friends', 'Go with gut', 'Buy the cheapest', 'Buy the brand I know'] },
       { id: 'sh2', label: 'Where do you shop most?', type: 'chips', multi: true, max: 2, options: ['Amazon', 'In-store retail', 'Brand websites', 'TikTok/Instagram shops', 'Thrift/secondhand'] },
@@ -291,7 +292,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 18: TRUST (5 questions) — NEW ──
   {
     id: 'trust', icon: '🔒', name: 'TRUST',
-    reward: { type: 'badge', text: 'Unlock "Truth Seeker" badge' },
+    reward: { type: 'powerup', text: 'Free Silence power-up', powerUpId: 'silence' },
     questions: [
       { id: 'tr1', label: 'How much do you trust the government?', type: 'slider', min: 1, max: 10, labels: ['Not at all', 'Completely'] },
       { id: 'tr2', label: 'How much do you trust big corporations?', type: 'slider', min: 1, max: 10, labels: ['Not at all', 'Completely'] },
@@ -303,7 +304,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 19: WHEELS (5 questions) — NEW ──
   {
     id: 'wheels', icon: '🚗', name: 'WHEELS',
-    reward: { type: 'cosmetic', text: 'Unlock "Road Warrior" badge' },
+    reward: { type: 'powerup', text: 'Free Shield power-up', powerUpId: 'shield' },
     questions: [
       { id: 'wh1', label: 'Do you own a car?', type: 'chips', options: ['Yes — own outright', 'Yes — making payments', "No — don't need one", "No — can't afford one"] },
       { id: 'wh2', label: 'EV, hybrid, or gas?', type: 'chips', options: ['Already drive EV', 'Considering EV', 'Hybrid', 'Gas forever', "Don't care"] },
@@ -315,7 +316,7 @@ const SECTIONS: Section[] = [
   // ── SECTION 20: PERSUASION (4 questions) — NEW ──
   {
     id: 'persuasion', icon: '🧠', name: 'PERSUASION',
-    reward: { type: 'cosmetic', text: 'Unlock "Mind Reader" profile effect' },
+    reward: { type: 'powerup', text: 'Free 2x Multiplier power-up', powerUpId: 'multiplier_2x' },
     questions: [
       { id: 'pr1', label: 'When someone disagrees with you, your first instinct is to...', type: 'chips', options: ['Listen and consider', 'Defend my position', 'Ask why', 'Disengage'] },
       { id: 'pr2', label: 'What kind of evidence do you find most convincing?', type: 'chips', options: ['Statistics and data', 'Expert testimony', 'Personal stories', 'Historical examples'] },
@@ -326,12 +327,15 @@ const SECTIONS: Section[] = [
 ];
 
 // ============================================================
-// DISCOUNT WATERFALL
+// MILESTONE REWARDS (permanent cosmetic items at 25/50/75/100%)
 // ============================================================
 
-const BASE_PRICE = 14.99;
-const MIN_PRICE = 0.49;
-const STEP = (BASE_PRICE - MIN_PRICE) / SECTIONS.length;
+const DEPTH_MILESTONES = [
+  { threshold: 25,  icon: '🏷️', name: 'Deep Diver',      desc: 'Unique title' },
+  { threshold: 50,  icon: '🖼️', name: 'Insight Frame',    desc: 'Profile border' },
+  { threshold: 75,  icon: '✨', name: "Scholar\u2019s Aura", desc: 'Profile background' },
+  { threshold: 100, icon: '🎭', name: 'Grand Reveal',     desc: 'Entrance animation' },
+];
 
 // ============================================================
 // STATE
@@ -443,18 +447,28 @@ function renderTierBannerUI(qa: number): void {
   banner.style.display = 'block';
 }
 
-function calcPrice(): string {
-  return Math.max(MIN_PRICE, BASE_PRICE - (completedSections.size * STEP)).toFixed(2);
-}
+function updateMilestoneBar(): void {
+  const bar = document.getElementById('milestone-bar');
+  if (!bar) return;
+  const totalQ = 100;
+  const answered = serverQuestionsAnswered;
+  const pct = Math.min(100, Math.round((answered / totalQ) * 100));
 
-function updateDiscount(): void {
-  const count = completedSections.size;
-  const priceEl = document.getElementById('discount-price');
-  if (priceEl) priceEl.innerHTML = `$${calcPrice()}<span style="font-size:14px;color:var(--white-dim);">/mo</span>`;
-  const fill = document.getElementById('discount-fill') as HTMLElement | null;
-  if (fill) fill.style.width = ((count / SECTIONS.length) * 100) + '%';
-  const pct = document.getElementById('discount-pct');
-  if (pct) pct.textContent = `${count} of ${SECTIONS.length} sections complete`;
+  bar.innerHTML = `
+    <div class="milestone-label">Profile Rewards</div>
+    <div class="milestone-track">
+      <div class="milestone-fill" style="width:${pct}%"></div>
+      ${DEPTH_MILESTONES.map(m => {
+        const earned = answered >= m.threshold;
+        return `<div class="milestone-pip ${earned ? 'earned' : ''}" style="left:${m.threshold}%"
+                     title="${escHtml(m.name)} — ${escHtml(m.desc)}">
+          <span class="pip-icon">${earned ? '✅' : m.icon}</span>
+          <span class="pip-label">${escHtml(m.name)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="milestone-pct">${answered} of ${totalQ} questions answered — ${pct}%</div>
+  `;
 }
 
 function ringSVG(pct: number): string {
@@ -566,7 +580,7 @@ function openSection(sectionId: string): void {
   panel.innerHTML = `
     <div class="panel-header">
       <div class="panel-title">${escHtml(section.icon)} ${escHtml(section.name)}</div>
-      <div class="panel-reward">🎁 ${escHtml(section.reward.text)}</div>
+      <div class="panel-reward">⚡ ${escHtml(section.reward.text)}</div>
     </div>
     ${section.questions.map(q => renderQuestion(q)).join('')}
     <button class="save-section-btn" id="save-section-btn">SAVE & UNLOCK REWARD</button>
@@ -691,6 +705,16 @@ async function saveSection(section: Section): Promise<void> {
         } else if (incData.data?.ok) {
           serverQuestionsAnswered = incData.data.questions_answered ?? serverQuestionsAnswered;
           renderTierBannerUI(serverQuestionsAnswered);
+          updateMilestoneBar();
+        }
+      }
+
+      // Session 232: Claim free power-up reward for completing section
+      if (allAnswered) {
+        const claimResult = await safeRpc('claim_section_reward', { p_section_id: section.id });
+        const claimData = claimResult as { data?: { success?: boolean; power_up_name?: string } | null; error?: unknown };
+        if (claimData.data?.success) {
+          console.log('Section reward claimed:', claimData.data.power_up_name);
         }
       }
     } catch (e) {
@@ -698,7 +722,7 @@ async function saveSection(section: Section): Promise<void> {
     }
   }
 
-  updateDiscount();
+  updateMilestoneBar();
   renderGrid();
 
   if (allAnswered) {
@@ -715,11 +739,11 @@ async function saveSection(section: Section): Promise<void> {
 // ============================================================
 
 function showReward(reward: SectionReward): void {
-  const icons: Record<string, string> = { discount: '💰', badge: '🛡️', cosmetic: '✨', feature: '🔓' };
+  const puIcons: Record<string, string> = { reveal: '👁️', multiplier_2x: '⚡', silence: '🤫', shield: '🛡️' };
   const iconEl = document.getElementById('reward-icon');
-  if (iconEl) iconEl.textContent = icons[reward.type] ?? '🏆';
+  if (iconEl) iconEl.textContent = puIcons[reward.powerUpId] ?? '⚡';
   const textEl = document.getElementById('reward-text');
-  if (textEl) textEl.textContent = 'SECTION COMPLETE';
+  if (textEl) textEl.textContent = 'POWER-UP EARNED';
   const descEl = document.getElementById('reward-desc');
   if (descEl) descEl.textContent = reward.text;
 
@@ -747,7 +771,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   snapshotAnswered();
   renderGrid();
-  updateDiscount();
+  updateMilestoneBar();
 
   // Session 117: Fetch questions_answered and render tier banner
   if (getCurrentUser() && !isPlaceholder) {
@@ -775,6 +799,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           }
 
           renderTierBannerUI(serverQuestionsAnswered);
+          updateMilestoneBar();
         }
       }
     } catch (e) {
