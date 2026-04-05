@@ -326,7 +326,7 @@ export async function showPowerUpShop(): Promise<void> {
       const cost = Number(buttonEl.dataset.cost);
       buttonEl.disabled = true;
       buttonEl.textContent = '...';
-      const result = await buyPowerUp(id!, 1);
+      const result = await buyPowerUp(id!, 1, cost);
       if (result.success) {
         showToast('Power-up purchased! \uD83C\uDF89');
         showPowerUpShop(); // re-render with updated balance
