@@ -749,6 +749,175 @@ export async function renderLibrary(
 }
 
 // ============================================================
+// F-51 PHASE 3: DEBATE REFERENCE RPCs (Session 236)
+// ============================================================
+
+export interface LoadoutRef {
+  reference_id: string;
+  cited: boolean;
+  cited_at: string | null;
+  claim: string;
+  url: string;
+  domain: string;
+  author: string;
+  source_type: string;
+  current_power: number;
+  power_ceiling: number;
+  rarity: string;
+  verification_points: number;
+  citation_count: number;
+  win_count: number;
+  loss_count: number;
+}
+
+export interface CiteResult2 {
+  success: boolean;
+  event_id: number;
+  claim: string;
+  reference_id: string;
+}
+
+export interface ChallengeResult2 {
+  blocked: boolean;
+  event_id: number;
+  challenges_remaining?: number;
+  message?: string;
+}
+
+/** Save pre-debate reference loadout (max 5) */
+export async function saveDebateLoadout(debateId: string, referenceIds: string[]): Promise<void> {
+  const { error } = await safeRpc<{ success: boolean }>('save_debate_loadout', {
+    p_debate_id: debateId,
+    p_reference_ids: referenceIds,
+  });
+  if (error) throw new Error(error.message || 'Failed to save loadout');
+}
+
+/** Get my loaded references for a debate */
+export async function getMyDebateLoadout(debateId: string): Promise<LoadoutRef[]> {
+  const { data, error } = await safeRpc<LoadoutRef[]>('get_my_debate_loadout', {
+    p_debate_id: debateId,
+  });
+  if (error) throw new Error(error.message || 'Failed to get loadout');
+  return (data || []) as LoadoutRef[];
+}
+
+/** Cite a reference during a live debate (atomic: mark + stats + feed event) */
+export async function citeDebateReference(
+  debateId: string, referenceId: string, round: number, side: string,
+): Promise<CiteResult2> {
+  const { data, error } = await safeRpc<CiteResult2>('cite_debate_reference', {
+    p_debate_id: debateId,
+    p_reference_id: referenceId,
+    p_round: round,
+    p_side: side,
+  });
+  if (error) throw new Error(error.message || 'Failed to cite reference');
+  return data as CiteResult2;
+}
+
+/** File a reference challenge (atomic: limit + Shield check + feed event) */
+export async function fileReferenceChallenge(
+  debateId: string, referenceId: string, round: number, side: string,
+): Promise<ChallengeResult2> {
+  const { data, error } = await safeRpc<ChallengeResult2>('file_reference_challenge', {
+    p_debate_id: debateId,
+    p_reference_id: referenceId,
+    p_round: round,
+    p_side: side,
+  });
+  if (error) throw new Error(error.message || 'Failed to file challenge');
+  return data as ChallengeResult2;
+}
+
+// ============================================================
+// PRE-DEBATE LOADOUT PICKER (F-51 Phase 3)
+// ============================================================
+
+/**
+ * Render the reference loadout picker for pre-debate screen.
+ * Shows user's arsenal as selectable cards, max 5.
+ * Calls save_debate_loadout on each selection change.
+ */
+export async function renderLoadoutPicker(
+  container: HTMLElement,
+  debateId: string,
+): Promise<void> {
+  container.innerHTML = '<p style="color:var(--mod-text-muted);text-align:center;font-size:13px;">Loading arsenal...</p>';
+
+  let arsenal: ArsenalReference[];
+  try {
+    const { data, error } = await safeRpc<ArsenalReference[]>('get_my_arsenal', {});
+    if (error || !data) { arsenal = []; }
+    else { arsenal = data as ArsenalReference[]; }
+  } catch {
+    arsenal = [];
+  }
+
+  if (arsenal.length === 0) {
+    container.innerHTML = `
+      <div class="ref-loadout-empty">
+        <span style="font-size:13px;color:var(--mod-text-muted);">No references forged. Enter battle without weapons.</span>
+      </div>
+    `;
+    return;
+  }
+
+  // Sort by power DESC
+  arsenal.sort((a, b) => b.current_power - a.current_power || Date.parse(b.created_at) - Date.parse(a.created_at));
+
+  const selected = new Set<string>();
+
+  function render(): void {
+    let html = `<div class="ref-loadout-header">
+      <span class="ref-loadout-title">\u2694\uFE0F REFERENCE LOADOUT</span>
+      <span class="ref-loadout-count" id="ref-loadout-count">${selected.size}/5</span>
+    </div>`;
+    html += '<div class="ref-loadout-grid">';
+    for (const ref of arsenal) {
+      const isSelected = selected.has(ref.id);
+      const isDisabled = !isSelected && selected.size >= 5;
+      const srcInfo = SOURCE_TYPES[ref.source_type];
+      const rarityColor = RARITY_COLORS[ref.rarity];
+      html += `
+        <div class="ref-loadout-card${isSelected ? ' selected' : ''}${isDisabled ? ' disabled' : ''}"
+             data-ref-id="${escapeHTML(ref.id)}">
+          <div class="ref-loadout-card-top">
+            <span class="ref-loadout-type" style="border-color:${rarityColor}">${escapeHTML(srcInfo?.label || ref.source_type)}</span>
+            <span class="ref-loadout-power">PWR ${Number(ref.current_power)}/${Number(ref.power_ceiling)}</span>
+          </div>
+          <div class="ref-loadout-claim">${escapeHTML(ref.claim)}</div>
+          <div class="ref-loadout-domain">${escapeHTML(ref.domain)}</div>
+          ${isSelected ? '<div class="ref-loadout-check">\u2705</div>' : ''}
+        </div>
+      `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Wire click handlers
+    container.querySelectorAll('.ref-loadout-card:not(.disabled)').forEach((card) => {
+      card.addEventListener('click', () => {
+        const refId = (card as HTMLElement).dataset.refId;
+        if (!refId) return;
+        if (selected.has(refId)) {
+          selected.delete(refId);
+        } else if (selected.size < 5) {
+          selected.add(refId);
+        }
+        render();
+        // Save loadout (fire-and-forget, non-blocking)
+        saveDebateLoadout(debateId, Array.from(selected)).catch((e) =>
+          console.warn('[Arena] Loadout save failed:', e)
+        );
+      });
+    });
+  }
+
+  render();
+}
+
+// ============================================================
 // WINDOW BRIDGE (for non-module consumers during migration)
 // ============================================================
 
@@ -765,6 +934,11 @@ export async function renderLibrary(
   extractDomain,
   winRate,
   powerFill,
+  saveDebateLoadout,
+  getMyDebateLoadout,
+  citeDebateReference,
+  fileReferenceChallenge,
+  renderLoadoutPicker,
   SOURCE_TYPES,
   CATEGORIES,
   VERIFICATION_THRESHOLDS,
