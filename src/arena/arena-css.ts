@@ -560,6 +560,16 @@ export function injectCSS(): void {
     .feed-ruling-accept,.feed-ruling-reject { flex:1;padding:12px;border:none;border-radius:8px;font-family:var(--mod-font-ui);font-size:14px;font-weight:700;cursor:pointer; }
     .feed-ruling-accept { background:rgba(93,202,165,0.2);color:#5DCAA5; }
     .feed-ruling-reject { background:rgba(231,68,42,0.2);color:#E7442A; }
+
+    .feed-ref-popup { position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center; }
+    .feed-ref-popup-inner { background:var(--mod-bg-card);border:1px solid var(--mod-border-subtle);border-radius:12px;padding:16px;width:90%;max-width:340px;position:relative; }
+    .feed-ref-popup-claim { font-family:var(--mod-font-body);font-size:14px;color:var(--mod-text-primary);font-style:italic;margin-bottom:10px;line-height:1.4; }
+    .feed-ref-popup-meta { display:flex;gap:8px;align-items:center;margin-bottom:10px; }
+    .feed-ref-popup-type { font-size:11px;text-transform:uppercase;font-weight:700;color:var(--mod-gold);background:rgba(212,175,55,0.15);padding:2px 8px;border-radius:4px; }
+    .feed-ref-popup-domain { font-size:12px;color:var(--mod-text-muted); }
+    .feed-ref-popup-link { display:inline-block;font-size:13px;color:var(--mod-gold);text-decoration:none;font-weight:600; }
+    .feed-ref-popup-link:hover { text-decoration:underline; }
+    .feed-ref-popup-close { position:absolute;top:8px;right:10px;background:none;border:none;color:var(--mod-text-muted);font-size:16px;cursor:pointer;padding:4px; }
   `;
   document.head.appendChild(style);
 }

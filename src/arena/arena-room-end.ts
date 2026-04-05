@@ -3,6 +3,7 @@
 
 import { safeRpc, getCurrentUser, getCurrentProfile, declareRival, showUserProfile } from '../auth.ts';
 import { escapeHTML, showToast, friendlyError } from '../config.ts';
+import { citeReference } from '../reference-arsenal.ts';
 import { claimDebate, claimAiSparring } from '../tokens.ts';
 import { settleStakes } from '../staking.ts';
 import { removeShieldIndicator } from '../powerups.ts';
@@ -12,7 +13,7 @@ import { nudge } from '../nudge.ts';
 import {
   view, currentDebate, roundTimer, silenceTimer, shieldActive,
   activatedPowerUps, equippedForDebate, screenEl,
-  selectedRanked,
+  selectedRanked, loadedRefs,
   set_view, set_roundTimer, set_silenceTimer, set_shieldActive,
   set_selectedRanked,
 } from './arena-state.ts';
@@ -37,6 +38,9 @@ export async function endCurrentDebate(): Promise<void> {
   document.getElementById('mod-request-modal')?.remove();
 
   const debate = currentDebate!;
+
+  // Snapshot cited references before cleanup wipes loadedRefs
+  const citedRefs = debate.mode === 'live' ? loadedRefs.filter((r) => r.cited) : [];
 
   if (debate.mode === 'live') {
     // F-51: Clean up feed room (unsubscribe Realtime, clear turn timer)
@@ -113,6 +117,15 @@ export async function endCurrentDebate(): Promise<void> {
       }
     } catch (e) {
       console.warn('[Arena] Finalize error:', e);
+    }
+
+    // F-51 Phase 3: Update arsenal reference win/loss stats
+    if (winner && debate.role && citedRefs.length > 0) {
+      const outcome: 'win' | 'loss' = debate.role === winner ? 'win' : 'loss';
+      for (const ref of citedRefs) {
+        citeReference(ref.reference_id, debate.id, outcome)
+          .catch((e) => console.warn('[Arena] cite_reference outcome failed:', e));
+      }
     }
 
     // Session 234: Persist AI scorecard for replay

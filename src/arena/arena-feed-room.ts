@@ -23,9 +23,11 @@ import {
   currentDebate, screenEl, feedTurnTimer, feedRealtimeChannel,
   loadedRefs, opponentCitedRefs, challengesRemaining,
   feedPaused, feedPauseTimeLeft, challengeRulingTimer,
+  activeChallengeRefId,
   set_currentDebate, set_feedTurnTimer, set_feedRealtimeChannel,
   set_loadedRefs, set_opponentCitedRefs, set_challengesRemaining,
   set_feedPaused, set_feedPauseTimeLeft, set_challengeRulingTimer,
+  set_activeChallengeRefId,
 } from './arena-state.ts';
 import type {
   CurrentDebate, DebateRole, FeedEvent, FeedEventType, FeedTurnPhase,
@@ -313,8 +315,14 @@ function appendFeedEvent(ev: FeedEvent): void {
         );
         set_opponentCitedRefs(updated);
       }
-      // If this is a new challenge (not backfill), trigger pause for non-mod viewers
-      // Pause is handled by the event receiver — see below
+      // If this is a new challenge (not backfill), trigger pause for all clients
+      // Challenger already paused from success handler — feedPaused will be true, skip
+      if (ev.reference_id) {
+        set_activeChallengeRefId(ev.reference_id);
+      }
+      if (!feedPaused && debate) {
+        pauseFeed(debate);
+      }
       break;
     }
     case 'mod_ruling': {
@@ -516,6 +524,14 @@ function wireModControls(): void {
     if (clickTarget.classList.contains('feed-pin-btn')) {
       e.stopPropagation();
       void handlePinClick(clickTarget);
+      return;
+    }
+
+    // Phase 3: Reference cite click — show popup with details
+    const citeEl = clickTarget.closest('.feed-cite-claim') as HTMLElement | null;
+    if (citeEl) {
+      e.stopPropagation();
+      showReferencePopup(citeEl);
       return;
     }
 
@@ -922,6 +938,7 @@ export function cleanupFeedRoom(): void {
   set_feedPauseTimeLeft(0);
   if (challengeRulingTimer) clearInterval(challengeRulingTimer);
   set_challengeRulingTimer(null);
+  set_activeChallengeRefId(null);
   document.getElementById('feed-ref-dropdown')?.remove();
   document.getElementById('feed-challenge-overlay')?.remove();
 }
@@ -1038,6 +1055,7 @@ function showChallengeDropdown(debate: CurrentDebate): void {
           // Challenge filed — pause the debate
           set_challengesRemaining(result.challenges_remaining ?? (challengesRemaining - 1));
           updateChallengeButtonState();
+          set_activeChallengeRefId(refId);
           pauseFeed(debate);
         }
       } catch (e) {
@@ -1051,6 +1069,37 @@ function showChallengeDropdown(debate: CurrentDebate): void {
 function hideDropdown(): void {
   const dropdown = document.getElementById('feed-ref-dropdown');
   if (dropdown) { dropdown.style.display = 'none'; dropdown.innerHTML = ''; }
+}
+
+function showReferencePopup(el: HTMLElement): void {
+  // Remove any existing popup
+  document.getElementById('feed-ref-popup')?.remove();
+
+  const url = el.dataset.url || '';
+  const domain = el.dataset.domain || '';
+  const sourceType = el.dataset.sourceType || '';
+  const claim = el.textContent?.trim() || '';
+
+  const popup = document.createElement('div');
+  popup.className = 'feed-ref-popup';
+  popup.id = 'feed-ref-popup';
+  popup.innerHTML = `
+    <div class="feed-ref-popup-inner">
+      <div class="feed-ref-popup-claim">"${escapeHTML(claim)}"</div>
+      <div class="feed-ref-popup-meta">
+        <span class="feed-ref-popup-type">${escapeHTML(sourceType.replace(/_/g, ' '))}</span>
+        <span class="feed-ref-popup-domain">${escapeHTML(domain)}</span>
+      </div>
+      ${url ? `<a class="feed-ref-popup-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Open source \u2197</a>` : ''}
+      <button class="feed-ref-popup-close" id="feed-ref-popup-close">\u2715</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  document.getElementById('feed-ref-popup-close')?.addEventListener('click', () => popup.remove());
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) popup.remove();
+  });
 }
 
 function pauseFeed(debate: CurrentDebate): void {
@@ -1067,34 +1116,40 @@ function pauseFeed(debate: CurrentDebate): void {
   // Show pause overlay
   updateTurnLabel('\u2694\uFE0F CHALLENGE IN PROGRESS');
 
-  // If moderator, show ruling panel
+  // If moderator, show ruling panel + start auto-accept timer
   if (debate.modView) {
     showChallengeRulingPanel(debate);
+
+    // Start 60s auto-accept countdown (mod client only — prevents duplicate inserts)
+    let countdown = FEED_CHALLENGE_RULING_SEC;
+    const timerEl = document.getElementById('feed-timer');
+
+    if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+    set_challengeRulingTimer(setInterval(() => {
+      countdown--;
+      if (timerEl) timerEl.textContent = `\u2694\uFE0F ${countdown}s`;
+      if (countdown <= 0) {
+        if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+        set_challengeRulingTimer(null);
+        // Auto-accept: insert mod_ruling + update arsenal stats
+        const refId = activeChallengeRefId;
+        safeRpc('insert_feed_event', {
+          p_debate_id: debate.id,
+          p_event_type: 'mod_ruling',
+          p_round: _round,
+          p_side: 'mod',
+          p_content: 'Auto-accepted (moderator timeout)',
+          p_reference_id: refId,
+          p_metadata: { ruling: 'upheld' },
+        }).then(() => {
+          if (refId) {
+            return challengeReference(refId, debate.id, 'upheld');
+          }
+        }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
+        unpauseFeed();
+      }
+    }, 1000));
   }
-
-  // Start 60s auto-accept countdown
-  let countdown = FEED_CHALLENGE_RULING_SEC;
-  const timerEl = document.getElementById('feed-timer');
-
-  if (challengeRulingTimer) clearInterval(challengeRulingTimer);
-  set_challengeRulingTimer(setInterval(() => {
-    countdown--;
-    if (timerEl) timerEl.textContent = `\u2694\uFE0F ${countdown}s`;
-    if (countdown <= 0) {
-      if (challengeRulingTimer) clearInterval(challengeRulingTimer);
-      set_challengeRulingTimer(null);
-      // Auto-accept: insert mod_ruling via safeRpc directly (need metadata)
-      safeRpc('insert_feed_event', {
-        p_debate_id: debate.id,
-        p_event_type: 'mod_ruling',
-        p_round: _round,
-        p_side: 'mod',
-        p_content: 'Auto-accepted (moderator timeout)',
-        p_metadata: { ruling: 'upheld' },
-      }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
-      unpauseFeed();
-    }
-  }, 1000));
 }
 
 function unpauseFeed(): void {
@@ -1103,6 +1158,7 @@ function unpauseFeed(): void {
   // Clear ruling timer
   if (challengeRulingTimer) clearInterval(challengeRulingTimer);
   set_challengeRulingTimer(null);
+  set_activeChallengeRefId(null);
 
   // Remove ruling panel if present
   document.getElementById('feed-challenge-overlay')?.remove();
@@ -1161,8 +1217,14 @@ function showChallengeRulingPanel(debate: CurrentDebate): void {
         p_round: _round,
         p_side: 'mod',
         p_content: `${label}${reason ? ': ' + reason : ''}`,
+        p_reference_id: activeChallengeRefId,
         p_metadata: { ruling },
       });
+      // Update arsenal stats for the challenged reference
+      if (activeChallengeRefId) {
+        challengeReference(activeChallengeRefId, debate.id, ruling)
+          .catch((e) => console.warn('[Arena] challengeReference failed:', e));
+      }
     } catch (e) {
       showToast('Ruling failed: ' + (e instanceof Error ? e.message : 'unknown'), 'error');
       busy = false;

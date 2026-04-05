@@ -80,6 +80,7 @@ export let challengesRemaining: number = 3;  // FEED_TOTAL_ROUNDS - 1
 export let feedPaused: boolean = false;
 export let feedPauseTimeLeft: number = 0;  // remaining turn time when paused
 export let challengeRulingTimer: ReturnType<typeof setInterval> | null = null;
+export let activeChallengeRefId: string | null = null;  // reference_id currently under challenge ruling
 
 // ============================================================
 // SETTERS — needed because ES module let bindings are read-only
@@ -138,6 +139,7 @@ export function set_challengesRemaining(v: number) { challengesRemaining = v; }
 export function set_feedPaused(v: boolean) { feedPaused = v; }
 export function set_feedPauseTimeLeft(v: number) { feedPauseTimeLeft = v; }
 export function set_challengeRulingTimer(v: ReturnType<typeof setInterval> | null) { challengeRulingTimer = v; }
+export function set_activeChallengeRefId(v: string | null) { activeChallengeRefId = v; }
 
 // ============================================================
 // RESET — called by destroy() to zero all mutable state
@@ -234,4 +236,5 @@ export function resetState(): void {
   feedPauseTimeLeft = 0;
   if (challengeRulingTimer) clearInterval(challengeRulingTimer);
   challengeRulingTimer = null;
+  activeChallengeRefId = null;
 }
