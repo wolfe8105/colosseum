@@ -1,6 +1,6 @@
 # THE MODERATOR — PUNCH LIST
 ### Created: Session 162 (March 23, 2026)
-### Last Updated: Session 229 (April 4, 2026)
+### Last Updated: Session 233 (April 5, 2026)
 
 > **What this is:** The single source of truth for everything that needs doing.
 > Loads every session via project knowledge. Read this first, pick what's next, go.
@@ -32,6 +32,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | H-14 | THE-MODERATOR-TEST-WALKTHROUGH.md needs full update | ⏳ | URLs, filenames, arena scenarios (4 modes, F-01, F-02, F-46, F-47), retire bot army scenario section. Dedicated session required. |
 | H-15 | PRODUCT-WALKTHROUGH.md needs continuation | ⏳ | Only one screen documented (Mode Select). Walk every screen in a dedicated session. |
 | H-16 | Groups page is a separate HTML page, not an inline SPA screen | ✅ | Session 205. Bottom tab bar added to moderator-groups.html with Groups active, other tabs link to index.html?screen=X. Back arrow removed from lobby view. Legal footer removed for consistency with main app. Detail view back arrow kept (navigates within page). |
+| H-17 | Replace placeholder PWA icons with real art | ⏳ | Session 233. manifest.json uses generic placeholder icons. Need branded icons at all required sizes (192×192, 512×512 minimum). Blocks F-52 (TWA/Play Store submission). |
 
 ---
 
@@ -66,7 +67,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-02 | Match Found accept/decline screen | | ✅ Research doc §1.6 | ✅ Session 168. 12s countdown, accept/decline buttons, respond_to_match + check_match_acceptance RPCs, player_a_ready/player_b_ready columns. |
 | F-03 | Entrance sequence / battle animations | | 🔶 Concept only | Plays on debate entry. Ties to group identity system. **Dep: needs F-31 (cosmetics defined) + F-21 (intro music).** |
 | F-04 | Instant rematch from post-debate | | ❌ No spec | Button exists in nav map, no design. |
-| F-05 | Debate recording + replay | | ✅ Attack Plan 3.1 | Synced transcript, timestamp comments, analytics overlay. |
+| F-05 | Debate recording + replay | | ✅ Attack Plan 3.1 | 🔶 Session 233: Replay enrichment live (power-ups, references, mod scores displayed in spectate via new `get_debate_replay_data` RPC). Remaining: AI scorecard persistence (needs write in `arena-room-end.ts`), inline point awards (blocked on F-51). |
 | F-06 | Debate analytics overlay | | ✅ Attack Plan 3.1 | Speaking time, argument count, interruption count, score timeline. **Dep: needs F-05 (recording).** |
 | F-07 | Spectator features (pulse, chat, live share) | | ❌ No spec | Conceptual. |
 | F-08 | Tournament system | | ❌ No spec | Brackets, elimination, Swiss. Feature Room Map "New E". |
@@ -144,6 +145,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-40 | Mirror pages with live counts | | 🔶 Partial | Mirror generator runs every 5 min. No live counts yet. |
 | F-41 | Celebrity/influencer challenge events | | ❌ Session 182 | **Way back burner.** Conceptual. |
 | F-49 | `/go` — Guest AI Sparring landing page | | ✅ Session 206 | `themoderator.app/go` — standalone page, no auth, no DB. User types topic, picks For/Against, debates AI via voice or text. 3 rounds, running score after each round, final verdict with 4-criteria scorecard (Logic/Evidence/Delivery/Rebuttal). Signup CTAs throughout. Vercel serverless `api/go-respond.js` calls Groq directly. `GROQ_API_KEY` in Vercel env vars. Permanent Reddit/Discord comment: "You think you're right? Prove it: themoderator.app/go" |
+| F-52 | TWA wrapper + Google Play submission | | ⏳ | Session 233. Wrap PWA in Trusted Web Activity for Play Store listing. **Deps: H-17 (real icons), minors policy decision.** |
 
 ## 3I. B2B / Revenue
 
@@ -202,6 +204,7 @@ Features ordered by what can go first. Check this before picking work.
 - F-26 Follow notifications → needs F-35
 - F-28 Bounty board → needs F-27 (reference library)
 - F-37 Notification preferences → needs F-35
+- F-52 TWA wrapper + Google Play → needs H-17 (real icons) + minors policy decision
 
 **Tier 2 — needs two+ Tier 0/1 items:**
 - F-03 Entrance sequence / battle animations → needs F-31 + F-21
@@ -285,3 +288,4 @@ This punch list was compiled from:
 | 2026-04-02 | 227 | Prediction system fixed end-to-end (place_prediction UUID→TEXT revert, wager picker UI 1-500 tokens, refund-on-update with net charge). supabase-deployed-functions-export.sql fully re-synced (174 RPCs). localStorage key renamed colosseum_settings → moderator_settings with migration code. |
 | 2026-04-02 | 228 | Documentation update session. NT updated through S228. Punch List changelog updated through S227. OT session logs S211-227 appended. SESSION-218-BUG-TRACKER.md removed from project knowledge (all bugs closed or dormant). |
 | 2026-04-04 | 229 | Major doc cleanup. Land Mine Map: 66 entries killed (173→107), 4 sections removed, LM-092 corrected, LM-199 added, LM-029/LM-110 updated. 3 docs deleted from repo (PRODUCT-WALKTHROUGH, TECHNICAL-AUDIT, LCARS-Reference-Guide). 4 docs removed from project knowledge (Old Testament, Wiring Manifest, Test Walkthrough, Product Vision — all kept in repo). Product Vision unique content merged into NT Section 8. F-51 added (Live Moderated Debate Feed, references LIVE-DEBATE-FEED-SPEC.md). |
+| 2026-04-05 | 233 | PWA infrastructure live. F-05 🔶 partial (replay enrichment: 1 new RPC `get_debate_replay_data`, spectate.ts enriched timeline with power-ups/references/mod-scores). H-17 added (placeholder PWA icons). F-52 added (TWA wrapper + Google Play). NT open decision closed (PWA manifest + service worker). |

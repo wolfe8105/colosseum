@@ -344,6 +344,26 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .mod-rating-bar-fill{height:100%;background:linear-gradient(90deg,var(--mod-text-heading),rgba(212,168,67,0.6));border-radius:4px;transition:width 0.3s ease;}
 .mod-rating-score{font-family:var(--mod-font-ui);font-size:14px;font-weight:700;color:var(--mod-text-heading);min-width:40px;text-align:right;}
 
+/* AI SCORECARD (Session 234) */
+.ai-scorecard-section{width:100%;max-width:380px;margin:0 auto 20px;text-align:left;}
+.ai-scorecard-header-row{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px;padding:12px 16px;border-radius:var(--mod-radius-md);background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);}
+.ai-scorecard-side-col{text-align:center;min-width:80px;}
+.ai-scorecard-name{font-size:11px;color:var(--mod-text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.ai-scorecard-total{font-family:var(--mod-font-ui);font-size:28px;font-weight:700;}
+.ai-scorecard-total.winner{color:var(--mod-accent);}
+.ai-scorecard-total.loser{color:var(--mod-text-muted);}
+.ai-scorecard-vs{font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);letter-spacing:2px;}
+.ai-score-criterion{padding:10px 14px;border-radius:var(--mod-radius-md);background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);margin-bottom:12px;}
+.ai-score-criterion-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ai-score-criterion-label{font-size:12px;font-weight:600;color:var(--mod-text-body);letter-spacing:0.5px;}
+.ai-score-criterion-nums{font-family:var(--mod-font-ui);font-size:13px;font-weight:700;color:var(--mod-text-muted);}
+.ai-score-bars{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;}
+.ai-score-bar{height:6px;border-radius:3px;min-width:4px;transition:width 0.8s ease;}
+.ai-score-bar.side-a{background:var(--mod-accent);}
+.ai-score-bar.side-b{background:var(--mod-bar-secondary,rgba(255,255,255,0.2));opacity:0.5;}
+.ai-score-reason{font-size:11px;color:var(--mod-text-muted);line-height:1.4;font-style:italic;}
+.ai-scorecard-verdict{text-align:center;font-size:13px;color:var(--mod-text-body);font-weight:500;padding:10px 16px;border-radius:var(--mod-radius-md);background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);line-height:1.4;}
+
 /* FADE-IN */
 .fade-up{animation:fadeUp 0.4s ease forwards;opacity:0;transform:translateY(12px);}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}

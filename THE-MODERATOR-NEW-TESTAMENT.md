@@ -94,7 +94,7 @@
 - Subscription pricing: $9.99/$19.99/$29.99 tiered model (current schema) or flat $14.99? Not active at launch but needs lock before Stripe goes live.
 - Minors policy: full app with restrictions, or separate gated experience?
 - Stripe production: when to switch from sandbox to live? Before or after first real users?
-- PWA: when to add manifest + service worker? Prerequisite for TWA and Add to Home Screen.
+- ~~PWA: when to add manifest + service worker? Prerequisite for TWA and Add to Home Screen.~~ ✅ Session 233. Manifest + service worker live.
 
 ---
 
