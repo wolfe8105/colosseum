@@ -53,6 +53,7 @@ export interface CurrentDebate {
   debaterBName?: string;
   ruleset?: 'amplified' | 'unplugged';
   spectatorView?: boolean;
+  concededBy?: 'a' | 'b' | null;
 }
 
 export interface SelectedModerator {

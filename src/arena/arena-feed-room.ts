@@ -525,8 +525,23 @@ function wireDebaterControls(debate: CurrentDebate): void {
 
   concedeBtn?.addEventListener('click', () => {
     if (!confirm('Concede this debate? This counts as a loss.')) return;
-    addLocalSystem(`${getCurrentProfile()?.display_name || 'Debater'} has conceded.`);
-    setTimeout(() => void endCurrentDebate(), 1500);
+    const d = currentDebate;
+    if (!d || d.concededBy) return;
+    d.concededBy = d.role;
+    clearFeedTimer();
+    stopTranscription();
+    clearInterimTranscript();
+    if (!d.modView) setDebaterInputEnabled(false);
+    if (feedPaused) {
+      set_feedPaused(false);
+      if (challengeRulingTimer) clearInterval(challengeRulingTimer);
+      set_challengeRulingTimer(null);
+      set_activeChallengeRefId(null);
+      document.getElementById('feed-challenge-overlay')?.remove();
+    }
+    const name = getCurrentProfile()?.display_name || 'Debater';
+    void writeFeedEvent('speech', `${name} has conceded.`, 'mod');
+    startFinalAdBreak(d);
   });
 
   // Phase 3: Wire cite button

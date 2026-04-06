@@ -55,7 +55,12 @@ export async function endCurrentDebate(): Promise<void> {
   let aiScores: AIScoreResult | null = null;
   let winner: string | null = null;
 
-  if (debate.mode === 'ai' && debate.messages.length > 0) {
+  // Phase 5: Concede — always a loss for the conceder
+  if (debate.concededBy) {
+    winner = debate.concededBy === 'a' ? 'b' : 'a';
+    scoreA = null;
+    scoreB = null;
+  } else if (debate.mode === 'ai' && debate.messages.length > 0) {
     // Show "judging" state while AI scores
     if (screenEl) {
       screenEl.innerHTML = '';
