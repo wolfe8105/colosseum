@@ -1,6 +1,6 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 229 (April 4, 2026) — Major cleanup: 66 entries removed (bot army quarantined, fixed bugs, obsolete patterns, meta-advice). LM-092 corrected, LM-199 added. LM-029/LM-110 updated (Groq→Claude). 16 sections, 107 entries.
+### Last Updated: Session 240 (April 6, 2026) — LM-013 updated (preferred_language added to update_profile allow-list). LM-200 added (stamp_debate_language trigger). LM-201 added (spectator entry wiring). 16 sections, 109 entries.
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -65,6 +65,36 @@ FIX: Always add DEFAULT values for any new column on profiles. Never add NOT NUL
 SESSIONS: Established Session 1
 ```
 
+
+---
+
+## LM-200: stamp_debate_language — BEFORE INSERT trigger on arena_debates
+```
+DECISION (Session 240): BEFORE INSERT trigger on arena_debates that auto-stamps
+  the debate creator's profiles.preferred_language onto arena_debates.language.
+  Covers all 10 INSERT sites (create_ai_debate, create_mod_debate ×3,
+  create_private_lobby ×3, join_debate_queue ×3) without modifying any
+  creation RPC body. Language is stamped from the creator's profile at
+  debate creation time.
+PROTECTS: Every debate gets the correct language for Deepgram speech-to-text
+  without requiring each RPC to explicitly pass it.
+BITES YOU WHEN: You add a NEW debate creation RPC (a new INSERT into
+  arena_debates) and assume language must be passed explicitly. It doesn't —
+  the trigger handles it. But the trigger reads from profiles WHERE
+  id = NEW.debater_a. If debater_a is NULL at INSERT time (mod-initiated
+  debates via create_mod_debate), the trigger must handle that case.
+ALSO BITES YOU WHEN: You want to override the language for a specific debate
+  (e.g., a cross-language matchup). The trigger fires BEFORE INSERT and
+  overwrites whatever language value the RPC set. To allow overrides,
+  the trigger would need a "if NEW.language IS NOT NULL, skip" guard.
+SYMPTOM: Debate language is always 'en' even though creator's profile says
+  'es'. Check: is the trigger reading the correct user ID? Is debater_a
+  populated at INSERT time for this creation path?
+FIX: Verify trigger exists: SELECT tgname FROM pg_trigger WHERE
+  tgrelid = 'arena_debates'::regclass AND tgname = 'stamp_debate_language';
+  Check trigger body handles NULL debater_a (mod-initiated path).
+SESSION: 240.
+```
 
 ---
 
@@ -185,13 +215,14 @@ FIX: Always check token_balance from currentProfile before calling any token-spe
 ## LM-013: update_profile() — safe fields only
 ```
 DECISION: update_profile() SECURITY DEFINER function only updates display_name,
-  avatar_url, bio, username
+  avatar_url, bio, username, preferred_language
 PROTECTS: Anything not in that list cannot be updated through this function
-BITES YOU WHEN: You add a new "safe" field to profiles (e.g. timezone, language preference)
+BITES YOU WHEN: You add a new "safe" field to profiles (e.g. timezone)
   and expect update_profile() to handle it — it won't. Field is silently ignored.
 SYMPTOM: No error. Update appears to succeed. New field unchanged.
 FIX: Add the new field to the update_profile() function body AND the allow-list in the function.
   Remember to handle NULL vs empty string properly.
+NOTE: preferred_language added Session 240 with BCP-47 validation in the RPC.
 ```
 
 ---
@@ -619,6 +650,40 @@ BITES YOU WHEN: You add a new button or tap target with height/width below 44px.
 SYMPTOM: User feedback: "hard to tap", "mis-taps", "accidental closes"
 FIX: Always set min-height: 44px; min-width: 44px on tappable elements.
   Test on actual phone, not browser DevTools mobile emulation.
+```
+
+---
+
+## LM-201: Spectator entry — two paths, old spectate page preserved for completed debates
+```
+DECISION (Session 240): Spectator entry has two paths:
+  1. Arena lobby: .card-live click handler intercepts, calls
+     enterFeedRoomAsSpectator() directly — no page navigation.
+     Cards use data-debate-id attribute (not data-link).
+  2. External URLs: /debate/<id> or ?spectate=<debateId> on index.
+     arena-core.ts init() detects ?spectate= param (UUID-validated),
+     calls enterFeedRoomAsSpectator(), cleans URL via replaceState.
+  Old spectate page (moderator-spectate.html / spectate.ts) is preserved
+  for COMPLETED debates only. spectate.ts loadDebate() detects
+  status === 'live' and redirects to /?spectate=<debateId>.
+PROTECTS: Live debates always enter through the feed room (real-time
+  broadcast channel). Completed debates stay on the old replay page.
+BITES YOU WHEN:
+  - You add a new link to a live debate using the old /debate/<id> format
+    and skip the ?spectate= redirect. User lands on spectate page, which
+    immediately redirects — works but wastes a page load.
+  - You change the card class from .card-live to something else without
+    updating the click handler in arena-lobby.ts.
+  - You remove the ?spectate= handler from arena-core.ts init() — all
+    external spectator links break silently (no error, just lands on lobby).
+ALSO BITES YOU WHEN: enterFeedRoomAsSpectator() now expects a language
+  field from the RPC response. If a new spectator entry path skips
+  language, Deepgram defaults to 'en' regardless of debate language.
+SYMPTOM: Clicking a live debate card navigates to a blank page or
+  the old spectate page instead of the live feed room.
+FIX: Live debates → enterFeedRoomAsSpectator(). Completed debates →
+  spectate page. Two entry points: lobby click handler + ?spectate= URL.
+SESSION: 240.
 ```
 
 

@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 235 (April 5, 2026)
+### Last Updated: Session 240 (April 6, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -15,7 +15,7 @@
 | Topic | Go Here |
 |-------|---------|
 | Open work (bugs, features, housekeeping) | **THE-MODERATOR-PUNCH-LIST.md** |
-| Any SQL / schema / auth / deployment change | **THE-MODERATOR-LAND-MINE-MAP.md** first — 107 entries, 16 sections covering DB triggers, auth, Stripe, Supabase quirks |
+| Any SQL / schema / auth / deployment change | **THE-MODERATOR-LAND-MINE-MAP.md** first — 109 entries, 16 sections covering DB triggers, auth, Stripe, Supabase quirks |
 | B2B strategy, pricing, buyer list, pitch | **THE-MODERATOR-WAR-CHEST.md** |
 | Security rules, file conventions, build system | **CLAUDE.md** |
 | Security & identity roadmap (YubiKey, WebAuthn, passkeys) | **THE-MODERATOR-SECURITY-ROADMAP.md** |
@@ -122,7 +122,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions (fully exported and in sync as of S227), sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Claude/Anthropic via ai-sparring Edge Function — two modes: debate response + 4-criteria scoring). AI Moderator live (Claude/Anthropic via ai-moderator Edge Function). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live — wager picker (1-500 tokens), refund-on-update with net charge (S227). Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7, 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210). Live debate feed schema complete (Session 178). app_config table: economy constants — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209). Cloudflare TURN server live (Session 221) — turn-credentials Edge Function fetches short-lived creds, client falls back to STUN. WebRTC ICE restart + 30s setup timeout (Sessions 221-222). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED (80 bugs across 18 files, Sessions 1-18 of audit). Full app recon complete (Sessions 212-214). All critical/high/medium/low bugs closed or dormant. RPC security audit complete (Sessions 226): 9 RPC hardening fixes deployed (token_balance CHECK, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). Group RPC audit complete (Session 226). TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205). All inline onclick handlers removed (Session 224) — CSP script-src unsafe-inline removable. Session 206: `/go` guest AI Sparring page live. 5 moderator discovery touchpoints deployed (F-50). supabase-deployed-functions-export.sql fully in sync with production (174 RPCs, re-exported S227).
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions (fully exported and in sync as of S227), sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Claude/Anthropic via ai-sparring Edge Function — two modes: debate response + 4-criteria scoring). AI Moderator live (Claude/Anthropic via ai-moderator Edge Function). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live — wager picker (1-500 tokens), refund-on-update with net charge (S227). Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7, 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210). Live debate feed schema complete (Session 178). app_config table: economy constants — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209). Cloudflare TURN server live (Session 221) — turn-credentials Edge Function fetches short-lived creds, client falls back to STUN. WebRTC ICE restart + 30s setup timeout (Sessions 221-222). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED (growth strategy discontinued, Session 195) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle. Security audit FULLY CLOSED (80 bugs across 18 files, Sessions 1-18 of audit). Full app recon complete (Sessions 212-214). All critical/high/medium/low bugs closed or dormant. RPC security audit complete (Sessions 226): 9 RPC hardening fixes deployed (token_balance CHECK, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). Group RPC audit complete (Session 226). TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files. Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205). All inline onclick handlers removed (Session 224) — CSP script-src unsafe-inline removable. Session 206: `/go` guest AI Sparring page live. 5 moderator discovery touchpoints deployed (F-50). supabase-deployed-functions-export.sql fully in sync with production (174 RPCs, re-exported S227). Session 240: Language preference pipeline complete (2 columns, 1 BEFORE INSERT trigger, 11 RPCs updated, 6 TS interfaces, settings UI with 24-language dropdown, Deepgram wire). Spectator entry wiring complete (lobby direct + ?spectate= URL param + live redirect from old spectate page). Arena module split into 23 sub-files under src/arena/ with barrel re-export.
 
 ## Toolchain
 | Tool | Purpose |
@@ -140,7 +140,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions 
 |------|---------|
 | `src/app-config.ts` | Economy constants loader: fetches milestone tokens/freezes + power-up costs from `app_config` table. 60-min cache, fallback to hardcoded. (Session 195) |
 | `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
-| `src/auth.ts` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()`, `updateModCategories()` |
+| `src/auth.ts` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()`, `updateModCategories()`, `updateProfile()` (preferred_language, Session 240) |
 | `src/payments.ts` | Stripe Checkout, token purchases |
 | `src/notifications.ts` | Notification center |
 | `src/paywall.ts` | 4 contextual paywall variants, `gate()` helper |
@@ -148,7 +148,7 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions 
 | `src/share.ts` | Web Share API, clipboard, referrals, deep links |
 | `src/leaderboard.ts` | Elo/Wins/Streak tabs, time filters, My Rank |
 | `src/cards.ts` | Canvas share card generator, 4 sizes, ESPN aesthetic |
-| `src/arena.ts` | Arena: lobby, 4 modes, matchmaking, debate room, AI sparring, moderator UX, ranked/casual |
+| `src/arena.ts` → `src/arena/` | Barrel re-export + 23 sub-modules: core (init, popstate, `?spectate=` handler), lobby (card rendering, spectator click intercept), feed-room (live debate, Deepgram language wire), types (all interfaces), queue + match, room lifecycle (setup/live/end/ai/voicememo), config (ranked/ruleset/mode pickers), private lobby + picker (F-46), mod system (debate/queue/refs/scoring, F-47/F-48), deepgram, css, sounds, state. Split from monolith; `arena.ts` barrel kept for import compat. |
 | `src/scoring.ts` | Elo, XP, leveling (SELECT reads only) |
 | `src/tokens.ts` | Token economy: milestones, streak freeze, daily login, gold coin fly-up animation |
 | `src/tiers.ts` | Tier utility: 6 tiers (Unranked to Legend), `getTier()`, `renderTierBadge()`, `renderTierProgress()` |
@@ -163,14 +163,14 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, 174 server functions 
 | `src/rivals-presence.ts` | Rival online alert popup — injected CSS + DOM, slide-in/out animation, challenge/dismiss buttons |
 
 ## Page Modules (src/pages/*.ts)
-`home.ts`, `login.ts`, `plinko.ts`, `settings.ts`, `profile-depth.ts`, `debate-landing.ts`, `auto-debate.ts`, `spectate.ts`, `groups.ts`, `terms.ts`
+`home.ts`, `login.ts`, `plinko.ts`, `settings.ts`, `profile-depth.ts`, `debate-landing.ts`, `auto-debate.ts`, `spectate.ts`, `groups.ts`, `terms.ts`, `cosmetics.ts`
 
 ## HTML Pages
 | File | Purpose |
 |------|---------|
 | `index.html` | Spoke carousel home, category overlays, pull-to-refresh |
 | `moderator-login.html` | OAuth-dominant login, age gate, password reset |
-| `moderator-settings.html` | All settings toggles incl. moderator category chips (F-47 Step 4) |
+| `moderator-settings.html` | All settings toggles incl. moderator category chips (F-47 Step 4), language preference dropdown (24 Deepgram Nova-3 languages, Session 240) |
 | `moderator-profile-depth.html` | 20 sections, 100 Qs, saves to DB via safeRpc |
 | `moderator-terms.html` | Terms of Service |
 | `moderator-privacy.html` | Privacy Policy |
@@ -285,6 +285,7 @@ Previous architecture (preserved for reference):
 - **PostgREST 404s on untyped record returns** (LM-180). RPCs must use RETURNS TABLE(...) not bare record.
 - **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Full audit Session 151 — zero positional calls remain.
 - **`place_prediction` takes TEXT not UUID** for `p_predicted_winner` ('a'/'b'). S226 migration changed it to UUID, S227 reverted to TEXT with IN ('a','b') validation. All S226 security fixes preserved.
+- **Language preference pipeline (Session 240):** `profiles.preferred_language TEXT DEFAULT 'en'` + `arena_debates.language TEXT DEFAULT 'en'`. `stamp_debate_language` BEFORE INSERT trigger on arena_debates auto-stamps creator's language from profiles. `update_profile` RPC accepts `p_preferred_language` with BCP-47 validation. 6 read-path RPCs return `language`. Deepgram uses `debate.language ?? 'en'` in arena-feed-room.ts. See LM-200.
 - **`supabase-deployed-functions-export.sql` is fully in sync** with production (174 RPCs, re-exported Session 227). Keep it in sync — re-export after any future RPC changes.
 
 ## Auth
@@ -330,6 +331,8 @@ Previous architecture (preserved for reference):
 - **AI Sparring has two modes** — `mode: 'score'` for 4-criteria judging (Logic/Evidence/Delivery/Rebuttal), default for debate responses. Both via Claude.
 - **Prediction system** — wager picker UI (1-500 tokens), refund-on-update with net charge calculation (Session 227). `place_prediction` takes TEXT ('a'/'b') for `p_predicted_winner`.
 - **localStorage key is `moderator_settings`** (renamed from `colosseum_settings`, Session 227). Migration code reads old key on first load, copies to new, deletes old.
+- **Spectator entry — two paths (Session 240):** Lobby `.card-live` click → `enterFeedRoomAsSpectator()` direct (no page nav). External URLs → `?spectate=<debateId>` on index.html, handled in `arena-core.ts init()`. Old spectate page preserved for completed debates only — live debates redirect to arena. See LM-201.
+- **Arena module split into 23 sub-files** under `src/arena/`. `src/arena.ts` is a barrel re-export file. All existing imports continue to work.
 
 ## F-47 Moderator Marketplace (Sessions 173-174)
 - profiles.mod_categories TEXT[] DEFAULT '{}' + GIN index
