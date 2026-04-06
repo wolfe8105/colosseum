@@ -134,6 +134,7 @@ export interface ProfileUpdate {
   avatar_url?: string | null;
   bio?: string | null;
   username?: string | null;
+  preferred_language?: string | null;
 }
 
 /** Auth state change listener */
@@ -503,10 +504,11 @@ export async function updateProfile(updates: ProfileUpdate): Promise<AuthResult>
       p_avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : null,
       p_bio: updates.bio !== undefined ? updates.bio : null,
       p_username: updates.username !== undefined ? updates.username : null,
+      p_preferred_language: updates.preferred_language !== undefined ? updates.preferred_language : null,
     });
     if (error) throw error;
 
-    const safeFields: (keyof ProfileUpdate)[] = ['display_name', 'avatar_url', 'bio', 'username'];
+    const safeFields: (keyof ProfileUpdate)[] = ['display_name', 'avatar_url', 'bio', 'username', 'preferred_language'];
     safeFields.forEach(f => {
       if (updates[f] !== undefined && currentProfile) {
         (currentProfile as Record<string, unknown>)[f] = updates[f];
