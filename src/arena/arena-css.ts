@@ -329,7 +329,7 @@ export function injectCSS(): void {
     .mod-ruling-timer { font-size:11px;color:var(--mod-text-muted);text-align:center;margin-bottom:8px; }
 
     /* SESSION 110: Pre-debate screen */
-    .arena-pre-debate { display:flex;flex-direction:column;align-items:center;padding:20px 16px;padding-bottom:80px; }
+    .arena-pre-debate { display:flex;flex-direction:column;align-items:center;padding:20px 16px;padding-bottom:80px;flex-shrink:0; }
     .arena-pre-debate-title { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;text-align:center; }
     .arena-pre-debate-sub { font-size:13px;color:var(--mod-text-body);text-align:center;margin-bottom:16px; }
     .arena-pre-debate-enter { display:inline-flex;align-items:center;gap:8px;padding:14px 40px;border-radius:var(--mod-radius-pill);border:none;background:var(--mod-bar-accent);background-image:var(--mod-gloss);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:16px; }
