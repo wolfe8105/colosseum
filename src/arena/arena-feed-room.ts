@@ -40,6 +40,9 @@ import {
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { challengeReference } from '../reference-arsenal.ts';
+import { startTranscription, stopTranscription, cleanupDeepgram } from './arena-deepgram.ts';
+import type { DeepgramStatus } from './arena-deepgram.ts';
+import { getLocalStream } from '../webrtc.ts';
 
 // ============================================================
 // MODULE STATE
@@ -779,6 +782,20 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
     // Phase 3: enable cite/challenge during my turn
     updateCiteButtonState();
     updateChallengeButtonState();
+
+    // Phase 4: Start Deepgram transcription if it's my turn and mic is available
+    if (isMyTurn) {
+      const localStream = getLocalStream();
+      if (localStream) {
+        void startTranscription(
+          localStream,
+          'en', // TODO: wire debate creator's profile language
+          (text: string) => void handleDeepgramTranscript(text, debate),
+          (text: string) => showInterimTranscript(text),
+          (status: DeepgramStatus) => updateDeepgramStatus(status),
+        );
+      }
+    }
   }
 
   set_feedTurnTimer(setInterval(() => {
@@ -814,6 +831,10 @@ function finishCurrentTurn(): void {
 function onTurnEnd(speaker: 'a' | 'b', debate: CurrentDebate): void {
   // Disable debater input
   if (!debate.modView) setDebaterInputEnabled(false);
+
+  // Phase 4: Stop Deepgram transcription + clear interim display
+  stopTranscription();
+  clearInterimTranscript();
 
   const first = firstSpeaker(_round);
   const second = secondSpeaker(_round);
@@ -920,6 +941,8 @@ function setDebaterInputEnabled(enabled: boolean): void {
 export function cleanupFeedRoom(): void {
   clearFeedTimer();
   unsubscribeRealtime();
+  // Phase 4: Deepgram cleanup
+  cleanupDeepgram();
   _phase = 'pre_round';
   _round = 1;
   _timeLeft = 0;
@@ -1236,4 +1259,89 @@ function showChallengeRulingPanel(debate: CurrentDebate): void {
 
   overlay.querySelector('#feed-ruling-accept')?.addEventListener('click', () => void handleRuling('upheld'));
   overlay.querySelector('#feed-ruling-reject')?.addEventListener('click', () => void handleRuling('rejected'));
+}
+
+// ============================================================
+// PHASE 4: DEEPGRAM SPEECH-TO-TEXT HELPERS
+// ============================================================
+
+/** Post a final Deepgram transcript as a speech event (same path as typed text). */
+async function handleDeepgramTranscript(text: string, debate: CurrentDebate): Promise<void> {
+  if (!text || !debate || !debate.role) return;
+
+  const profile = getCurrentProfile();
+  const authorName = profile?.display_name || profile?.username || 'You';
+
+  // Optimistic local render (identical to typed text path)
+  appendFeedEvent({
+    id: crypto.randomUUID(),
+    debate_id: debate.id,
+    event_type: 'speech',
+    round: _round,
+    side: debate.role,
+    content: text,
+    created_at: new Date().toISOString(),
+    author_name: authorName,
+  });
+
+  // Clear interim since final just landed
+  clearInterimTranscript();
+
+  // Persist via RPC (Realtime will broadcast to others)
+  await writeFeedEvent('speech', text, debate.role);
+}
+
+/** Show interim (partial) transcript in a transient indicator below the feed. */
+function showInterimTranscript(text: string): void {
+  let el = document.getElementById('feed-interim-transcript');
+  if (!el) {
+    const stream = document.getElementById('feed-stream');
+    if (!stream) return;
+    el = document.createElement('div');
+    el.id = 'feed-interim-transcript';
+    el.className = 'feed-interim-transcript';
+    stream.parentElement?.insertBefore(el, stream.nextSibling);
+  }
+  el.textContent = text;
+  el.style.display = text ? '' : 'none';
+}
+
+/** Remove the interim transcript indicator. */
+function clearInterimTranscript(): void {
+  const el = document.getElementById('feed-interim-transcript');
+  if (el) {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+/** Update the Deepgram connection status indicator. */
+function updateDeepgramStatus(status: DeepgramStatus): void {
+  let el = document.getElementById('feed-deepgram-status');
+
+  if (status === 'live' || status === 'stopped') {
+    // Hide indicator when healthy or stopped
+    if (el) el.style.display = 'none';
+    return;
+  }
+
+  if (!el) {
+    const turnLabel = document.getElementById('feed-turn-label');
+    if (!turnLabel) return;
+    el = document.createElement('div');
+    el.id = 'feed-deepgram-status';
+    el.className = 'feed-deepgram-status';
+    turnLabel.parentElement?.insertBefore(el, turnLabel.nextSibling);
+  }
+
+  if (status === 'connecting') {
+    el.textContent = '\uD83D\uDD04 Connecting transcription...';
+    el.style.display = '';
+  } else if (status === 'paused') {
+    el.textContent = '\u26A0\uFE0F Live transcription paused';
+    el.style.display = '';
+  } else if (status === 'error') {
+    el.textContent = '\u26A0\uFE0F Transcription unavailable — text input active';
+    el.style.display = '';
+  }
 }

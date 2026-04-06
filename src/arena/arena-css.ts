@@ -570,6 +570,10 @@ export function injectCSS(): void {
     .feed-ref-popup-link { display:inline-block;font-size:13px;color:var(--mod-gold);text-decoration:none;font-weight:600; }
     .feed-ref-popup-link:hover { text-decoration:underline; }
     .feed-ref-popup-close { position:absolute;top:8px;right:10px;background:none;border:none;color:var(--mod-text-muted);font-size:16px;cursor:pointer;padding:4px; }
+
+    /* SESSION 238: Phase 4 — Deepgram STT indicators */
+    .feed-interim-transcript { padding:4px 12px;font-size:12px;color:var(--mod-text-muted);font-style:italic;min-height:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+    .feed-deepgram-status { text-align:center;font-size:11px;padding:4px 0;color:var(--mod-text-muted);letter-spacing:1px; }
   `;
   document.head.appendChild(style);
 }
