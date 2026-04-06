@@ -1,5 +1,5 @@
 # THE MODERATOR — UI INTERACTION MAP
-### Every screen. Every tappable element. Session 230.
+### Every screen. Every tappable element. Session 240.
 
 ---
 
@@ -167,8 +167,9 @@
 5. 🧑‍⚖️ BECOME A MODERATOR button (visible if is_moderator=false)
 6. Join code text input (6 chars, uppercase)
 7. GO button (join by code)
-8. Spectator feed cards — VIEW / WATCH LIVE button
+8. Live debate cards (.card-live) — tap card → enterFeedRoomAsSpectator() direct (no page nav, uses data-debate-id). Completed/auto cards still use data-link.
 9. Challenge CTA (if rival online)
+10. URL entry: ?spectate=<debateId> on index.html — arena-core.ts init() detects, UUID-validates, calls enterFeedRoomAsSpectator(), cleans URL
 
 ## P. Profile (index.html — screen-profile)
 1. Avatar (tap to change — opens Avatar Selection Sheet)
@@ -238,25 +239,26 @@
 6. Reaction notifications toggle
 7. Sound effects toggle
 8. Mute all audio toggle
-9. Dark mode toggle (immediate effect)
-10. Moderator enabled toggle (instant save via RPC)
-11. Moderator available toggle (instant save via RPC)
-12. Moderator category chips — Politics
-13. Moderator category chips — Sports
-14. Moderator category chips — Entertainment
-15. Moderator category chips — Couples
-16. Moderator category chips — Trending
-17. Moderator category chips — Music
-18. Public profile toggle
-19. Show online status toggle
-20. Allow challenges toggle
-21. 💾 SAVE CHANGES button
-22. ← BACK TO APP button
-23. 🚪 LOG OUT button
-24. 🔑 RESET PASSWORD button
-25. 🗑️ DELETE ACCOUNT button → opens Delete Modal
-26. Privacy Policy footer link
-27. Terms of Service footer link
+9. Language preference dropdown (24 Deepgram Nova-3 languages, id=set-language, saves preferred_language via update_profile RPC)
+10. Dark mode toggle (immediate effect)
+11. Moderator enabled toggle (instant save via RPC)
+12. Moderator available toggle (instant save via RPC)
+13. Moderator category chips — Politics
+14. Moderator category chips — Sports
+15. Moderator category chips — Entertainment
+16. Moderator category chips — Couples
+17. Moderator category chips — Trending
+18. Moderator category chips — Music
+19. Public profile toggle
+20. Show online status toggle
+21. Allow challenges toggle
+22. 💾 SAVE CHANGES button
+23. ← BACK TO APP button
+24. 🚪 LOG OUT button
+25. 🔑 RESET PASSWORD button
+26. 🗑️ DELETE ACCOUNT button → opens Delete Modal
+27. Privacy Policy footer link
+28. Terms of Service footer link
 
 ## V. /groups — Lobby View
 1. + CREATE button → opens Create Group Modal
@@ -284,7 +286,7 @@
 10. Challenge cards — DECLINE button (per challenge)
 11. Member rows — role actions (Promote/Demote/Kick — visible based on caller role)
 
-## X. /spectate — Spectator View
+## X. /spectate — Spectator View (completed debates only — live debates redirect to /?spectate=<debateId> which enters feed room via arena-core.ts)
 1. ← Back button
 2. Logo link → home
 3. JOIN link → Plinko (hidden if logged in)
