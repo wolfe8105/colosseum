@@ -44,6 +44,7 @@ import { challengeReference } from '../reference-arsenal.ts';
 import { startTranscription, stopTranscription, cleanupDeepgram } from './arena-deepgram.ts';
 import type { DeepgramStatus } from './arena-deepgram.ts';
 import { getLocalStream } from '../webrtc.ts';
+import { playSound, vibrate } from './arena-sounds.ts';
 
 // ============================================================
 // MODULE STATE
@@ -538,6 +539,8 @@ function appendFeedEvent(ev: FeedEvent): void {
       el.innerHTML = `<span class="feed-points-badge">+${Number(ev.score)} for ${escapeHTML(sideName)}</span>`;
       // Remove fireworks class after animation completes
       el.addEventListener('animationend', () => el.classList.remove('feed-fireworks'), { once: true });
+      playSound('pointsAwarded');
+      vibrate(80);
       // Update scoreboard
       if (ev.side === 'a') {
         _scoreA += Number(ev.score) || 0;
@@ -580,6 +583,8 @@ function appendFeedEvent(ev: FeedEvent): void {
               >"${escapeHTML(ev.content)}"</span>
         <span class="feed-cite-domain">${escapeHTML(String(refMeta.domain || ''))}</span>
       `;
+      playSound('referenceDrop');
+      vibrate(60);
       // Track opponent cited refs for challenge dropdown
       const debate = currentDebate;
       if (debate && ev.side && ev.side !== debate.role && ev.reference_id) {
@@ -606,6 +611,7 @@ function appendFeedEvent(ev: FeedEvent): void {
         <span class="feed-challenge-icon">\u2694\uFE0F</span>
         <span class="feed-challenge-text">${escapeHTML(challengerName)} challenges: "${escapeHTML(ev.content)}"</span>
       `;
+      playSound('challenge');
       // Mark ref as challenged in opponent state
       if (ev.reference_id) {
         const updated = opponentCitedRefs.map((r) =>
@@ -1121,6 +1127,7 @@ function startPreRoundCountdown(debate: CurrentDebate): void {
     updateTimerDisplay();
     if (_timeLeft <= 0) {
       clearFeedTimer();
+      playSound('roundStart');
       // Write round divider
       void writeFeedEvent('round_divider', `Round ${_round}`, null);
       addLocalSystem(`--- Round ${_round} ---`);
@@ -1134,6 +1141,7 @@ function startPreRoundCountdown(debate: CurrentDebate): void {
 function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
   _phase = speaker === 'a' ? 'speaker_a' : 'speaker_b';
   _timeLeft = FEED_TURN_DURATION;
+  playSound('turnSwitch');
 
   // Phase 2: Reset scoring budget when round changes
   if (_budgetRound !== _round) {
@@ -1189,6 +1197,7 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
     // Warning at 15s
     const timerEl = document.getElementById('feed-timer');
     if (timerEl) timerEl.classList.toggle('warning', _timeLeft <= 15);
+    if (_timeLeft === 15) playSound('timerWarning');
 
     if (_timeLeft <= 0) {
       clearFeedTimer();
@@ -1251,6 +1260,7 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
   let nextSpeakerSide: 'a' | 'b';
   if (newRound) {
     nextSpeakerSide = firstSpeaker(_round);
+    playSound('roundStart');
     void writeFeedEvent('round_divider', `Round ${_round}`, null);
     addLocalSystem(`--- Round ${_round} ---`);
   } else {
@@ -1345,6 +1355,7 @@ function startFinalAdBreak(debate: CurrentDebate): void {
         showVoteGate(debate);
       } else {
         _phase = 'finished';
+        playSound('debateEnd');
         addLocalSystem('Debate complete!');
         nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
         setTimeout(() => void endCurrentDebate(), 2000);
@@ -1454,6 +1465,7 @@ function showVoteGate(debate: CurrentDebate): void {
 
     overlay.remove();
     _phase = 'finished';
+    playSound('debateEnd');
     addLocalSystem('Debate complete!');
     nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
     setTimeout(() => void endCurrentDebate(), 2000);
