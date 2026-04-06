@@ -647,6 +647,43 @@ export function injectCSS(): void {
     .feed-vote-gate-sub { font-size:14px;color:var(--mod-text-muted);margin-bottom:24px; }
     .feed-vote-gate-row { display:flex;gap:16px;justify-content:center;margin-bottom:16px; }
     .feed-vote-gate-timer { font-size:13px;color:var(--mod-text-muted); }
+
+    /* Phase 5 — Disconnect banner */
+    .feed-disconnect-banner {
+      background:#b71c1c;color:#fff;text-align:center;padding:10px 16px;
+      font-size:14px;font-weight:600;letter-spacing:0.5px;
+      animation:feedDisconnectPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes feedDisconnectPulse {
+      0%,100%{opacity:1} 50%{opacity:0.7}
+    }
+
+    /* Phase 5 — Disconnect feed event */
+    .feed-evt-disconnect {
+      background:rgba(183,28,28,0.15);border-left:3px solid #b71c1c;
+      padding:8px 12px;margin:4px 0;border-radius:4px;
+      color:#ef9a9a;font-size:13px;
+    }
+    .feed-disconnect-icon { margin-right:6px; }
+
+    /* Phase 5 — Mod action buttons (eject/null) */
+    .feed-mod-action-row {
+      display:flex;gap:8px;margin-top:8px;justify-content:flex-end;
+    }
+    .feed-mod-action-btn {
+      background:transparent;border:1px solid rgba(183,28,28,0.5);color:#ef9a9a;
+      font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;
+      text-transform:uppercase;letter-spacing:0.5px;
+      transition:background 0.2s,border-color 0.2s;
+    }
+    .feed-mod-action-btn:hover { background:rgba(183,28,28,0.2);border-color:#b71c1c; }
+    .feed-mod-action-btn:active { background:rgba(183,28,28,0.35); }
+
+    /* Phase 5 — Nulled post-debate screen */
+    .arena-null-reason {
+      font-size:14px;color:var(--mod-text-muted);margin-top:8px;
+      text-align:center;font-style:italic;
+    }
   `;
   document.head.appendChild(style);
 }

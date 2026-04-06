@@ -71,6 +71,14 @@ let _hasVotedFinal = false;
 let _pendingSentimentA = 0;
 let _pendingSentimentB = 0;
 
+// Phase 5: Broadcast heartbeat for disconnect detection
+const HEARTBEAT_INTERVAL_MS = 10_000;  // send every 10s
+const HEARTBEAT_STALE_MS = 30_000;     // 30s = disconnected
+let _heartbeatSendTimer: ReturnType<typeof setInterval> | null = null;
+let _heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
+const _lastSeen: Record<string, number> = {};  // role → timestamp
+let _disconnectHandled = false;  // prevent double-action
+
 // Determine first speaker for a round (spec: odd rounds A first, even rounds B first)
 function firstSpeaker(round: number): 'a' | 'b' {
   return round % 2 === 1 ? 'a' : 'b';
@@ -159,6 +167,10 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   // Render initial controls based on role
   renderControls(debate, isModView);
 
+  // Phase 5: Send goodbye on page unload for instant disconnect detection
+  window.addEventListener('beforeunload', sendGoodbye);
+  window.addEventListener('pagehide', sendGoodbye);
+
   // Start the pre-round countdown, then auto-transition to first speaker
   startPreRoundCountdown(debate);
 }
@@ -185,9 +197,28 @@ function subscribeRealtime(debateId: string): void {
         appendFeedEvent(payload.new);
       },
     )
+    .on(
+      'broadcast',
+      { event: 'heartbeat' },
+      (payload: { payload?: { role?: string; ts?: number } }) => {
+        const role = payload?.payload?.role;
+        if (role) _lastSeen[role] = Date.now();
+      },
+    )
+    .on(
+      'broadcast',
+      { event: 'goodbye' },
+      (payload: { payload?: { role?: string } }) => {
+        const role = payload?.payload?.role;
+        if (role) handleParticipantGone(role);
+      },
+    )
     .subscribe();
 
   set_feedRealtimeChannel(channel);
+
+  // Start heartbeat send + staleness checker
+  startHeartbeat();
 }
 
 export function unsubscribeRealtime(): void {
@@ -196,6 +227,249 @@ export function unsubscribeRealtime(): void {
     (client as any).removeChannel(feedRealtimeChannel);
     set_feedRealtimeChannel(null);
   }
+}
+
+// ============================================================
+// PHASE 5: BROADCAST HEARTBEAT + DISCONNECT DETECTION
+// ============================================================
+
+function startHeartbeat(): void {
+  const debate = currentDebate;
+  if (!debate || isPlaceholder()) return;
+
+  // Determine our role label for broadcasts
+  const myRole = debate.modView ? 'mod' : debate.spectatorView ? 'spec' : debate.role;
+
+  // Seed lastSeen for all expected participants so we don't false-trigger
+  const now = Date.now();
+  if (!debate.spectatorView) {
+    _lastSeen['a'] = now;
+    _lastSeen['b'] = now;
+    if (debate.moderatorId && debate.moderatorType === 'human') _lastSeen['mod'] = now;
+  }
+  _disconnectHandled = false;
+
+  // Send heartbeat every 10s
+  const sendBeat = () => {
+    if (!feedRealtimeChannel) return;
+    feedRealtimeChannel.send({
+      type: 'broadcast',
+      event: 'heartbeat',
+      payload: { role: myRole, ts: Date.now() },
+    });
+  };
+  // Send first beat immediately
+  sendBeat();
+  _heartbeatSendTimer = setInterval(sendBeat, HEARTBEAT_INTERVAL_MS);
+
+  // Check staleness every 5s (debaters and mod only — spectators watch but don't act)
+  if (!debate.spectatorView) {
+    _heartbeatCheckTimer = setInterval(() => checkStaleness(), 5000);
+  }
+}
+
+function stopHeartbeat(): void {
+  if (_heartbeatSendTimer) { clearInterval(_heartbeatSendTimer); _heartbeatSendTimer = null; }
+  if (_heartbeatCheckTimer) { clearInterval(_heartbeatCheckTimer); _heartbeatCheckTimer = null; }
+  delete _lastSeen['a'];
+  delete _lastSeen['b'];
+  delete _lastSeen['mod'];
+}
+
+/** Send goodbye on page unload for instant detection */
+function sendGoodbye(): void {
+  const debate = currentDebate;
+  if (!debate || !feedRealtimeChannel) return;
+  const myRole = debate.modView ? 'mod' : debate.spectatorView ? 'spec' : debate.role;
+  // fire-and-forget — page is closing
+  feedRealtimeChannel.send({
+    type: 'broadcast',
+    event: 'goodbye',
+    payload: { role: myRole },
+  });
+}
+
+function checkStaleness(): void {
+  if (_disconnectHandled) return;
+  if (_phase === 'finished' || _phase === 'vote_gate') return;
+  const debate = currentDebate;
+  if (!debate) return;
+  // Don't check if debate already ended
+  if (debate.concededBy || debate._nulled) return;
+
+  const now = Date.now();
+
+  // Check debater disconnect (only the OTHER debater acts)
+  if (!debate.modView) {
+    const opponentRole = debate.role === 'a' ? 'b' : 'a';
+    const opponentTs = _lastSeen[opponentRole];
+    if (opponentTs && (now - opponentTs) > HEARTBEAT_STALE_MS) {
+      handleParticipantGone(opponentRole);
+      return;
+    }
+  }
+
+  // Check mod disconnect (either debater can act)
+  if (!debate.modView && debate.moderatorId && debate.moderatorType === 'human') {
+    const modTs = _lastSeen['mod'];
+    if (modTs && (now - modTs) > HEARTBEAT_STALE_MS) {
+      handleParticipantGone('mod');
+      return;
+    }
+  }
+}
+
+function handleParticipantGone(role: string): void {
+  if (_disconnectHandled) return;
+  _disconnectHandled = true;
+  const debate = currentDebate;
+  if (!debate) return;
+  // Skip if already ending
+  if (debate.concededBy || debate._nulled || _phase === 'finished') return;
+
+  // Stop everything
+  clearFeedTimer();
+  stopTranscription();
+  clearInterimTranscript();
+  stopHeartbeat();
+  if (!debate.modView && !debate.spectatorView) setDebaterInputEnabled(false);
+
+  if (role === 'mod') {
+    // Moderator disconnected — null the debate via record_mod_dropout
+    handleModDisconnect(debate);
+  } else if (role === 'a' || role === 'b') {
+    if (debate.modView) {
+      // Mod sees debater disconnect — show banner but don't call RPC (debaters handle it)
+      handleDebaterDisconnectAsViewer(debate, role as 'a' | 'b');
+    } else if (debate.spectatorView) {
+      // Spectator sees it — show banner, auto-route to lobby
+      handleDebaterDisconnectAsViewer(debate, role as 'a' | 'b');
+    } else {
+      // Other debater handles it — call RPC
+      handleDebaterDisconnect(debate, role as 'a' | 'b');
+    }
+  }
+}
+
+async function handleDebaterDisconnect(debate: CurrentDebate, disconnectedSide: 'a' | 'b'): Promise<void> {
+  const disconnectorName = disconnectedSide === 'a'
+    ? (debate.role === 'a' ? (getCurrentProfile()?.display_name || 'You') : debate.opponentName)
+    : (debate.role === 'b' ? (getCurrentProfile()?.display_name || 'You') : debate.opponentName);
+
+  // Write feed event
+  void writeFeedEvent('disconnect', `${disconnectorName} disconnected.`, 'mod');
+  addLocalSystem(`${disconnectorName} disconnected.`);
+
+  // Determine outcome: was the disconnector winning?
+  const disconnectorScore = disconnectedSide === 'a' ? _scoreA : _scoreB;
+  const opponentScore = disconnectedSide === 'a' ? _scoreB : _scoreA;
+
+  if (disconnectorScore > opponentScore) {
+    // Disconnector was winning → null
+    debate._nulled = true;
+    debate._nullReason = `${disconnectorName} disconnected while ahead — debate nulled`;
+    await safeRpc('update_arena_debate', {
+      p_debate_id: debate.id,
+      p_status: 'cancelled',
+      p_current_round: _round,
+    }).catch((e) => console.warn('[FeedRoom] cancel debate failed:', e));
+  } else {
+    // Disconnector was losing or tied → loss for disconnector, win for opponent
+    const winnerSide = disconnectedSide === 'a' ? 'b' : 'a';
+    await safeRpc('update_arena_debate', {
+      p_debate_id: debate.id,
+      p_status: 'complete',
+      p_current_round: _round,
+      p_winner: winnerSide,
+      p_score_a: _scoreA,
+      p_score_b: _scoreB,
+    }).catch((e) => console.warn('[FeedRoom] finalize debate failed:', e));
+    // endCurrentDebate will call update_arena_debate again but double-finalize guard catches it
+  }
+
+  // Go to end screen
+  setTimeout(() => void endCurrentDebate(), 1500);
+}
+
+function handleDebaterDisconnectAsViewer(debate: CurrentDebate, disconnectedSide: 'a' | 'b'): void {
+  const disconnectorName = disconnectedSide === 'a'
+    ? (debate.debaterAName || 'Side A')
+    : (debate.debaterBName || 'Side B');
+  addLocalSystem(`${disconnectorName} disconnected.`);
+  showDisconnectBanner(`${disconnectorName} disconnected — debate ending`);
+
+  if (debate.spectatorView) {
+    // Auto-route spectator to lobby after 5s
+    setTimeout(() => {
+      document.getElementById('feed-disconnect-banner')?.remove();
+      cleanupFeedRoom();
+      import('./arena-lobby.ts').then(m => m.renderLobby());
+    }, 5000);
+  }
+  // Mod viewer: just wait — endCurrentDebate will be triggered by the remaining debater's RPC
+}
+
+async function handleModDisconnect(debate: CurrentDebate): Promise<void> {
+  const modName = debate.moderatorName || 'Moderator';
+  void writeFeedEvent('disconnect', `${modName} disconnected.`, 'mod');
+  addLocalSystem(`${modName} disconnected — debate nulled.`);
+  showDisconnectBanner('Moderator disconnected — debate nulled');
+
+  debate._nulled = true;
+  debate._nullReason = 'Moderator disconnected — debate nulled';
+
+  // Call record_mod_dropout — nulls debate + applies penalty
+  await safeRpc('record_mod_dropout', {
+    p_debate_id: debate.id,
+  }).catch((e) => console.warn('[FeedRoom] record_mod_dropout failed:', e));
+
+  setTimeout(() => void endCurrentDebate(), 1500);
+}
+
+/** Mod action: eject a debater or null the debate */
+async function modNullDebate(reason: 'eject_a' | 'eject_b' | 'null'): Promise<void> {
+  if (_disconnectHandled) return;
+  _disconnectHandled = true;
+  const debate = currentDebate;
+  if (!debate) return;
+
+  clearFeedTimer();
+  stopTranscription();
+  clearInterimTranscript();
+  stopHeartbeat();
+
+  let msg: string;
+  if (reason === 'null') {
+    msg = 'Moderator nulled the debate.';
+  } else {
+    const ejectedName = reason === 'eject_a'
+      ? (debate.debaterAName || 'Side A')
+      : (debate.debaterBName || 'Side B');
+    msg = `${ejectedName} ejected by moderator.`;
+  }
+
+  void writeFeedEvent('disconnect', msg, 'mod');
+  addLocalSystem(msg);
+
+  debate._nulled = true;
+  debate._nullReason = msg;
+
+  await safeRpc('mod_null_debate', {
+    p_debate_id: debate.id,
+    p_reason: reason,
+  }).catch((e) => console.warn('[FeedRoom] mod_null_debate failed:', e));
+
+  setTimeout(() => void endCurrentDebate(), 1500);
+}
+
+function showDisconnectBanner(message: string): void {
+  document.getElementById('feed-disconnect-banner')?.remove();
+  const banner = document.createElement('div');
+  banner.id = 'feed-disconnect-banner';
+  banner.className = 'feed-disconnect-banner';
+  banner.textContent = message;
+  const room = document.querySelector('.feed-room');
+  if (room) room.prepend(banner);
 }
 
 // ============================================================
@@ -389,6 +663,11 @@ function appendFeedEvent(ev: FeedEvent): void {
       if (ev.side === 'b') _pendingSentimentB++;
       return; // Exit early — do NOT append to DOM
     }
+    case 'disconnect': {
+      el.className = 'feed-evt feed-evt-disconnect arena-fade-in';
+      el.innerHTML = `<span class="feed-disconnect-icon">\u26A0\uFE0F</span> <span class="feed-disconnect-text">${escapeHTML(ev.content)}</span>`;
+      break;
+    }
   }
 
   stream.appendChild(el);
@@ -461,6 +740,11 @@ function renderControls(debate: CurrentDebate, isModView: boolean): void {
           <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="4">4</button><span class="feed-score-badge" data-badge="4">${FEED_SCORE_BUDGET[4]}</span></span>
           <span class="feed-score-btn-wrap"><button class="feed-score-btn" data-pts="5">5</button><span class="feed-score-badge" data-badge="5">${FEED_SCORE_BUDGET[5]}</span></span>
           <button class="feed-score-btn-cancel" id="feed-score-cancel">\u2715</button>
+        </div>
+        <div class="feed-mod-action-row">
+          <button class="feed-mod-action-btn feed-mod-eject-a" id="feed-mod-eject-a">EJECT ${escapeHTML(debate.debaterAName || 'A')}</button>
+          <button class="feed-mod-action-btn feed-mod-eject-b" id="feed-mod-eject-b">EJECT ${escapeHTML(debate.debaterBName || 'B')}</button>
+          <button class="feed-mod-action-btn feed-mod-null" id="feed-mod-null">NULL DEBATE</button>
         </div>
       </div>
     `;
@@ -682,6 +966,20 @@ function wireModControls(): void {
     document.querySelector('.feed-evt-selected')?.classList.remove('feed-evt-selected');
     const scoreRow = document.getElementById('feed-mod-score-row');
     if (scoreRow) scoreRow.style.display = 'none';
+  });
+
+  // Phase 5: Mod eject/null buttons
+  document.getElementById('feed-mod-eject-a')?.addEventListener('click', () => {
+    if (!confirm('Eject Debater A? This will null the debate.')) return;
+    void modNullDebate('eject_a');
+  });
+  document.getElementById('feed-mod-eject-b')?.addEventListener('click', () => {
+    if (!confirm('Eject Debater B? This will null the debate.')) return;
+    void modNullDebate('eject_b');
+  });
+  document.getElementById('feed-mod-null')?.addEventListener('click', () => {
+    if (!confirm('Null this debate? No consequences for anyone.')) return;
+    void modNullDebate('null');
   });
 }
 
@@ -1280,6 +1578,12 @@ export function cleanupFeedRoom(): void {
   _pendingSentimentB = 0;
   _votedRounds.clear();
   _hasVotedFinal = false;
+  // Phase 5: Heartbeat + disconnect cleanup
+  stopHeartbeat();
+  _disconnectHandled = false;
+  document.getElementById('feed-disconnect-banner')?.remove();
+  window.removeEventListener('beforeunload', sendGoodbye);
+  window.removeEventListener('pagehide', sendGoodbye);
 }
 
 // ============================================================

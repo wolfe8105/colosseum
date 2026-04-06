@@ -54,6 +54,8 @@ export interface CurrentDebate {
   ruleset?: 'amplified' | 'unplugged';
   spectatorView?: boolean;
   concededBy?: 'a' | 'b' | null;
+  _nulled?: boolean;
+  _nullReason?: string;
 }
 
 export interface SelectedModerator {
@@ -265,7 +267,8 @@ export type FeedEventType =
   | 'reference_challenge'
   | 'mod_ruling'
   | 'power_up'
-  | 'sentiment_vote';
+  | 'sentiment_vote'
+  | 'disconnect';
 
 export interface FeedEvent {
   id: string;
