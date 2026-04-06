@@ -44,6 +44,7 @@ export function onMatchFound(data: MatchData): void {
       opponentElo: data.opponent_elo ?? 1200,
       ranked: selectedRanked,
       ruleset: (data.ruleset as 'amplified' | 'unplugged') || selectedRuleset,
+      language: data.language ?? 'en',
       messages: [],
     };
     if (selectedMode === 'ai' || !data.opponent_id) {

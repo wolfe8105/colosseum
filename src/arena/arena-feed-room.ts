@@ -1179,7 +1179,7 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
       if (localStream) {
         void startTranscription(
           localStream,
-          'en', // TODO: wire debate creator's profile language
+          debate.language ?? 'en', // Session 240: wired to debate creator's profile language
           (text: string) => void handleDeepgramTranscript(text, debate),
           (text: string) => showInterimTranscript(text),
           (status: DeepgramStatus) => updateDeepgramStatus(status),

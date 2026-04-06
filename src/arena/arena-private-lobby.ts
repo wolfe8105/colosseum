@@ -155,6 +155,7 @@ export function startPrivateLobbyPoll(debateId: string, mode: string, topic: str
           opponent_elo: result.opponent_elo || 1200,
           opponent_id: result.opponent_id,
           total_rounds: result.total_rounds,
+          language: result.language,
         });
       } else if (result.status === 'cancelled') {
         clearInterval(privateLobbyPollTimer!);
@@ -169,7 +170,7 @@ export function startPrivateLobbyPoll(debateId: string, mode: string, topic: str
 export function onPrivateLobbyMatched(data: {
   debate_id: string; topic: string; role?: DebateRole;
   opponent_name: string; opponent_elo: number; opponent_id: string;
-  total_rounds?: number;
+  total_rounds?: number; language?: string;
 }): void {
   const debateData: CurrentDebate = {
     id: data.debate_id,
@@ -183,6 +184,7 @@ export function onPrivateLobbyMatched(data: {
     opponentElo: data.opponent_elo,
     ranked: selectedRanked,
     ruleset: selectedRuleset,
+    language: data.language ?? 'en',
     messages: [],
   };
   showMatchFound(debateData);
@@ -222,6 +224,7 @@ export async function joinWithCode(code: string): Promise<void> {
       opponentElo: result.opponent_elo,
       ranked: false,
       ruleset: (result.ruleset as 'amplified' | 'unplugged') || 'amplified',
+      language: result.language ?? 'en',
       messages: [],
     };
     showMatchFound(debateData);
@@ -249,6 +252,7 @@ export async function joinWithCode(code: string): Promise<void> {
           opponentElo: modResult.opponent_elo || 1200,
           ranked: modResult.ranked,
           ruleset: (modResult.ruleset as 'amplified' | 'unplugged') || 'amplified',
+          language: modResult.language ?? 'en',
           messages: [],
         };
         showMatchFound(debateData);
@@ -319,6 +323,7 @@ export async function loadPendingChallenges(): Promise<void> {
             opponentElo: Number(el.dataset.oppElo) || 1200,
             ranked: false,
             ruleset: (result.ruleset as 'amplified' | 'unplugged') || 'amplified',
+            language: result.language ?? 'en',
             messages: [],
           };
           showMatchFound(debateData);

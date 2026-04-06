@@ -56,6 +56,7 @@ export interface CurrentDebate {
   concededBy?: 'a' | 'b' | null;
   _nulled?: boolean;
   _nullReason?: string;
+  language?: string;
 }
 
 export interface SelectedModerator {
@@ -74,6 +75,7 @@ export interface MatchData {
   status?: string;
   ruleset?: string;
   total_rounds?: number;
+  language?: string;
 }
 
 export interface MatchAcceptResponse {
@@ -192,6 +194,7 @@ export interface ModDebateJoinResult {
   opponent_elo: number | null;
   ruleset?: string;
   total_rounds?: number;
+  language?: string;
 }
 
 export interface ModDebateCheckResult {
@@ -203,6 +206,7 @@ export interface ModDebateCheckResult {
   topic: string | null;
   ruleset: string | null;
   total_rounds?: number;
+  language?: string;
 }
 
 export interface QueueCategory {
@@ -241,6 +245,7 @@ export interface CheckPrivateLobbyResult {
   opponent_elo: number | null;
   player_b_ready: boolean | null;
   total_rounds?: number;
+  language?: string;
 }
 
 export interface JoinPrivateLobbyResult {
@@ -253,6 +258,7 @@ export interface JoinPrivateLobbyResult {
   opponent_elo: number;
   ruleset?: string;
   total_rounds?: number;
+  language?: string;
 }
 
 // ============================================================
