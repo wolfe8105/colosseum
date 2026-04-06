@@ -147,7 +147,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   subscribeRealtime(debate.id);
 
   // Phase 3: Fetch reference loadout for this debate
-  if (!isModView) {
+  if (!isModView && !isSpectator) {
     getMyDebateLoadout(debate.id).then((refs) => {
       set_loadedRefs(refs as unknown as import('./arena-types.ts').LoadoutReference[]);
       set_challengesRemaining(FEED_MAX_CHALLENGES);
