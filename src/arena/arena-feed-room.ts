@@ -45,48 +45,22 @@ import { startTranscription, stopTranscription, cleanupDeepgram } from './arena-
 import type { DeepgramStatus } from './arena-deepgram.ts';
 import { getLocalStream } from '../webrtc.ts';
 import { playSound, vibrate } from './arena-sounds.ts';
+import {
+  phase, round, timeLeft, scoreA, scoreB,
+  renderedEventIds, pinnedEventIds,
+  scoreUsed, budgetRound,
+  sentimentA, sentimentB, votedRounds, hasVotedFinal,
+  pendingSentimentA, pendingSentimentB,
+  HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS,
+  heartbeatSendTimer, heartbeatCheckTimer, lastSeen, disconnectHandled,
+  set_phase, set_round, set_timeLeft, set_scoreA, set_scoreB,
+  set_budgetRound,
+  set_sentimentA, set_sentimentB, set_hasVotedFinal,
+  set_pendingSentimentA, set_pendingSentimentB,
+  set_heartbeatSendTimer, set_heartbeatCheckTimer, set_disconnectHandled,
+  firstSpeaker, secondSpeaker, resetFeedRoomState,
+} from './arena-feed-state.ts';
 
-// ============================================================
-// MODULE STATE
-// ============================================================
-
-let _phase: FeedTurnPhase = 'pre_round';
-let _round = 1;
-let _timeLeft = 0;
-let _scoreA = 0;
-let _scoreB = 0;
-const _renderedEventIds = new Set<string>();
-
-// Phase 2: Pin tracking (moderator-only, local state)
-const _pinnedEventIds = new Set<string>();
-
-// Phase 2: Per-value scoring budget tracking per round
-const _scoreUsed: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-let _budgetRound = 1;
-
-// Phase 5: Spectator sentiment tracking
-let _sentimentA = 0;
-let _sentimentB = 0;
-const _votedRounds = new Set<number>();
-let _hasVotedFinal = false;
-let _pendingSentimentA = 0;
-let _pendingSentimentB = 0;
-
-// Phase 5: Broadcast heartbeat for disconnect detection
-const HEARTBEAT_INTERVAL_MS = 10_000;  // send every 10s
-const HEARTBEAT_STALE_MS = 30_000;     // 30s = disconnected
-let _heartbeatSendTimer: ReturnType<typeof setInterval> | null = null;
-let _heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
-const _lastSeen: Record<string, number> = {};  // role → timestamp
-let _disconnectHandled = false;  // prevent double-action
-
-// Determine first speaker for a round (spec: odd rounds A first, even rounds B first)
-function firstSpeaker(round: number): 'a' | 'b' {
-  return round % 2 === 1 ? 'a' : 'b';
-}
-function secondSpeaker(round: number): 'a' | 'b' {
-  return round % 2 === 1 ? 'b' : 'a';
-}
 
 // ============================================================
 // PUBLIC — enter feed room
@@ -97,11 +71,11 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   pushArenaState('room');
   if (screenEl) screenEl.innerHTML = '';
 
-  _phase = 'pre_round';
-  _round = 1;
-  _timeLeft = 3; // 3s pre-round countdown
-  _scoreA = 0;
-  _scoreB = 0;
+  set_phase('pre_round');
+  set_round(1);
+  set_timeLeft(3); // 3s pre-round countdown
+  set_scoreA(0);
+  set_scoreB(0);
 
   const profile = getCurrentProfile();
   const isModView = debate.modView === true;
@@ -131,7 +105,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
           <span class="feed-score-pts" id="feed-score-a">0</span>
         </div>
         <div class="feed-timer-block">
-          <div class="feed-timer" id="feed-timer">${formatTimer(_timeLeft)}</div>
+          <div class="feed-timer" id="feed-timer">${formatTimer(timeLeft)}</div>
           <div class="feed-round-label" id="feed-round-label">ROUND 1/${FEED_TOTAL_ROUNDS}</div>
           <div class="feed-turn-label" id="feed-turn-label">Starting...</div>
         </div>
@@ -203,7 +177,7 @@ function subscribeRealtime(debateId: string): void {
       { event: 'heartbeat' },
       (payload: { payload?: { role?: string; ts?: number } }) => {
         const role = payload?.payload?.role;
-        if (role) _lastSeen[role] = Date.now();
+        if (role) lastSeen[role] = Date.now();
       },
     )
     .on(
@@ -244,11 +218,11 @@ function startHeartbeat(): void {
   // Seed lastSeen for all expected participants so we don't false-trigger
   const now = Date.now();
   if (!debate.spectatorView) {
-    _lastSeen['a'] = now;
-    _lastSeen['b'] = now;
-    if (debate.moderatorId && debate.moderatorType === 'human') _lastSeen['mod'] = now;
+    lastSeen['a'] = now;
+    lastSeen['b'] = now;
+    if (debate.moderatorId && debate.moderatorType === 'human') lastSeen['mod'] = now;
   }
-  _disconnectHandled = false;
+  set_disconnectHandled(false);
 
   // Send heartbeat every 10s
   const sendBeat = () => {
@@ -261,20 +235,20 @@ function startHeartbeat(): void {
   };
   // Send first beat immediately
   sendBeat();
-  _heartbeatSendTimer = setInterval(sendBeat, HEARTBEAT_INTERVAL_MS);
+  set_heartbeatSendTimer(setInterval(sendBeat, HEARTBEAT_INTERVAL_MS));
 
   // Check staleness every 5s (debaters and mod only — spectators watch but don't act)
   if (!debate.spectatorView) {
-    _heartbeatCheckTimer = setInterval(() => checkStaleness(), 5000);
+    set_heartbeatCheckTimer(setInterval(() => checkStaleness(), 5000));
   }
 }
 
 function stopHeartbeat(): void {
-  if (_heartbeatSendTimer) { clearInterval(_heartbeatSendTimer); _heartbeatSendTimer = null; }
-  if (_heartbeatCheckTimer) { clearInterval(_heartbeatCheckTimer); _heartbeatCheckTimer = null; }
-  delete _lastSeen['a'];
-  delete _lastSeen['b'];
-  delete _lastSeen['mod'];
+  if (heartbeatSendTimer) { clearInterval(heartbeatSendTimer); set_heartbeatSendTimer(null); }
+  if (heartbeatCheckTimer) { clearInterval(heartbeatCheckTimer); set_heartbeatCheckTimer(null); }
+  delete lastSeen['a'];
+  delete lastSeen['b'];
+  delete lastSeen['mod'];
 }
 
 /** Send goodbye on page unload for instant detection */
@@ -291,8 +265,8 @@ function sendGoodbye(): void {
 }
 
 function checkStaleness(): void {
-  if (_disconnectHandled) return;
-  if (_phase === 'finished' || _phase === 'vote_gate') return;
+  if (disconnectHandled) return;
+  if (phase === 'finished' || phase === 'vote_gate') return;
   const debate = currentDebate;
   if (!debate) return;
   // Don't check if debate already ended
@@ -303,7 +277,7 @@ function checkStaleness(): void {
   // Check debater disconnect (only the OTHER debater acts)
   if (!debate.modView) {
     const opponentRole = debate.role === 'a' ? 'b' : 'a';
-    const opponentTs = _lastSeen[opponentRole];
+    const opponentTs = lastSeen[opponentRole];
     if (opponentTs && (now - opponentTs) > HEARTBEAT_STALE_MS) {
       handleParticipantGone(opponentRole);
       return;
@@ -312,7 +286,7 @@ function checkStaleness(): void {
 
   // Check mod disconnect (either debater can act)
   if (!debate.modView && debate.moderatorId && debate.moderatorType === 'human') {
-    const modTs = _lastSeen['mod'];
+    const modTs = lastSeen['mod'];
     if (modTs && (now - modTs) > HEARTBEAT_STALE_MS) {
       handleParticipantGone('mod');
       return;
@@ -321,12 +295,12 @@ function checkStaleness(): void {
 }
 
 function handleParticipantGone(role: string): void {
-  if (_disconnectHandled) return;
-  _disconnectHandled = true;
+  if (disconnectHandled) return;
+  set_disconnectHandled(true);
   const debate = currentDebate;
   if (!debate) return;
   // Skip if already ending
-  if (debate.concededBy || debate._nulled || _phase === 'finished') return;
+  if (debate.concededBy || debate._nulled || phase === 'finished') return;
 
   // Stop everything
   clearFeedTimer();
@@ -362,8 +336,8 @@ async function handleDebaterDisconnect(debate: CurrentDebate, disconnectedSide: 
   addLocalSystem(`${disconnectorName} disconnected.`);
 
   // Determine outcome: was the disconnector winning?
-  const disconnectorScore = disconnectedSide === 'a' ? _scoreA : _scoreB;
-  const opponentScore = disconnectedSide === 'a' ? _scoreB : _scoreA;
+  const disconnectorScore = disconnectedSide === 'a' ? scoreA : scoreB;
+  const opponentScore = disconnectedSide === 'a' ? scoreB : scoreA;
 
   if (disconnectorScore > opponentScore) {
     // Disconnector was winning → null
@@ -372,7 +346,7 @@ async function handleDebaterDisconnect(debate: CurrentDebate, disconnectedSide: 
     await safeRpc('update_arena_debate', {
       p_debate_id: debate.id,
       p_status: 'cancelled',
-      p_current_round: _round,
+      p_current_round: round,
     }).catch((e) => console.warn('[FeedRoom] cancel debate failed:', e));
   } else {
     // Disconnector was losing or tied → loss for disconnector, win for opponent
@@ -380,10 +354,10 @@ async function handleDebaterDisconnect(debate: CurrentDebate, disconnectedSide: 
     await safeRpc('update_arena_debate', {
       p_debate_id: debate.id,
       p_status: 'complete',
-      p_current_round: _round,
+      p_current_round: round,
       p_winner: winnerSide,
-      p_score_a: _scoreA,
-      p_score_b: _scoreB,
+      p_score_a: scoreA,
+      p_score_b: scoreB,
     }).catch((e) => console.warn('[FeedRoom] finalize debate failed:', e));
     // endCurrentDebate will call update_arena_debate again but double-finalize guard catches it
   }
@@ -429,8 +403,8 @@ async function handleModDisconnect(debate: CurrentDebate): Promise<void> {
 
 /** Mod action: eject a debater or null the debate */
 async function modNullDebate(reason: 'eject_a' | 'eject_b' | 'null'): Promise<void> {
-  if (_disconnectHandled) return;
-  _disconnectHandled = true;
+  if (disconnectHandled) return;
+  set_disconnectHandled(true);
   const debate = currentDebate;
   if (!debate) return;
 
@@ -483,8 +457,8 @@ function appendFeedEvent(ev: FeedEvent): void {
 
   // Fix 6: Dedup — skip if we already rendered this event
   const evKey = ev.id || `${ev.event_type}:${ev.side}:${ev.round}:${ev.content}`;
-  if (_renderedEventIds.has(evKey)) return;
-  _renderedEventIds.add(evKey);
+  if (renderedEventIds.has(evKey)) return;
+  renderedEventIds.add(evKey);
 
   // Fix 7: Look up author name from debate context if not on event
   const debate = currentDebate;
@@ -515,7 +489,7 @@ function appendFeedEvent(ev: FeedEvent): void {
         // Debater speech
         const sideClass = ev.side === 'a' ? 'feed-evt-a' : 'feed-evt-b';
         const name = ev.author_name || (ev.side === 'a' ? debaterAName : debaterBName);
-        const isPinned = !!(ev.metadata?.pinned) || _pinnedEventIds.has(String(ev.id));
+        const isPinned = !!(ev.metadata?.pinned) || pinnedEventIds.has(String(ev.id));
         el.className = `feed-evt ${sideClass}${isPinned ? ' feed-evt-pinned' : ''} arena-fade-in`;
         // Fix 5: Store real DB event ID for moderator scoring
         if (ev.id && !String(ev.id).includes('-')) el.dataset.eventId = String(ev.id);
@@ -529,7 +503,7 @@ function appendFeedEvent(ev: FeedEvent): void {
           <span class="feed-evt-text">${escapeHTML(ev.content)}</span>
         `;
         // Restore pin state from metadata on backfill
-        if (isPinned) _pinnedEventIds.add(String(ev.id));
+        if (isPinned) pinnedEventIds.add(String(ev.id));
       }
       break;
     }
@@ -543,23 +517,23 @@ function appendFeedEvent(ev: FeedEvent): void {
       vibrate(80);
       // Update scoreboard
       if (ev.side === 'a') {
-        _scoreA += Number(ev.score) || 0;
+        set_scoreA(scoreA + (Number(ev.score) || 0));
         const scoreEl = document.getElementById('feed-score-a');
-        if (scoreEl) scoreEl.textContent = String(_scoreA);
+        if (scoreEl) scoreEl.textContent = String(scoreA);
       } else if (ev.side === 'b') {
-        _scoreB += Number(ev.score) || 0;
+        set_scoreB(scoreB + (Number(ev.score) || 0));
         const scoreEl = document.getElementById('feed-score-b');
-        if (scoreEl) scoreEl.textContent = String(_scoreB);
+        if (scoreEl) scoreEl.textContent = String(scoreB);
       }
       // Phase 2: Track budget usage
       const pts = Number(ev.score) || 0;
       if (pts >= 1 && pts <= 5) {
         // Reset budget counter if round changed
-        const evRound = ev.round || _round;
-        if (evRound !== _budgetRound) {
+        const evRound = ev.round || round;
+        if (evRound !== budgetRound) {
           resetBudget(evRound);
         }
-        _scoreUsed[pts] = (_scoreUsed[pts] || 0) + 1;
+        scoreUsed[pts] = (scoreUsed[pts] || 0) + 1;
         updateBudgetDisplay();
       }
       break;
@@ -665,8 +639,8 @@ function appendFeedEvent(ev: FeedEvent): void {
     }
     case 'sentiment_vote': {
       // Silent — track counts but don't render in feed
-      if (ev.side === 'a') _pendingSentimentA++;
-      if (ev.side === 'b') _pendingSentimentB++;
+      if (ev.side === 'a') set_pendingSentimentA(pendingSentimentA + 1);
+      if (ev.side === 'b') set_pendingSentimentB(pendingSentimentB + 1);
       return; // Exit early — do NOT append to DOM
     }
     case 'disconnect': {
@@ -712,7 +686,7 @@ async function writeFeedEvent(
     await safeRpc('insert_feed_event', {
       p_debate_id: debate.id,
       p_event_type: eventType,
-      p_round: _round,
+      p_round: round,
       p_side: side,
       p_content: content,
       p_score: score ?? null,
@@ -856,7 +830,7 @@ function wireSpectatorVoteButtons(debate: CurrentDebate): void {
   const handleVote = async (side: 'a' | 'b') => {
     if (btnA) btnA.disabled = true;
     if (btnB) btnB.disabled = true;
-    _votedRounds.add(_round);
+    votedRounds.add(round);
     const statusEl = document.getElementById('feed-vote-status');
     if (statusEl) statusEl.textContent = 'Vote cast \u2713';
 
@@ -864,7 +838,7 @@ function wireSpectatorVoteButtons(debate: CurrentDebate): void {
       await safeRpc('cast_sentiment_vote', {
         p_debate_id: debate.id,
         p_side: side,
-        p_round: _round,
+        p_round: round,
       });
     } catch (e) {
       console.warn('[FeedRoom] cast_sentiment_vote failed:', e);
@@ -932,7 +906,7 @@ function wireModControls(): void {
       const pts = Number((btn as HTMLElement).dataset.pts);
       // Phase 2: Budget check
       const limit = FEED_SCORE_BUDGET[pts] ?? 0;
-      const used = _scoreUsed[pts] ?? 0;
+      const used = scoreUsed[pts] ?? 0;
       if (used >= limit) {
         showToast(`No ${pts}-pt scores left this round`, 'error');
         return;
@@ -1010,7 +984,7 @@ async function submitDebaterMessage(): Promise<void> {
     id: crypto.randomUUID(),
     debate_id: debate.id,
     event_type: 'speech',
-    round: _round,
+    round: round,
     side: debate.role,
     content: text,
     created_at: new Date().toISOString(),
@@ -1038,7 +1012,7 @@ async function submitModComment(): Promise<void> {
     id: crypto.randomUUID(),
     debate_id: debate.id,
     event_type: 'speech',
-    round: _round,
+    round: round,
     side: 'mod',
     content: text,
     created_at: new Date().toISOString(),
@@ -1073,13 +1047,13 @@ async function handlePinClick(btn: HTMLElement): Promise<void> {
       return;
     }
     // Toggle local pin state
-    const wasPinned = _pinnedEventIds.has(eid);
+    const wasPinned = pinnedEventIds.has(eid);
     if (wasPinned) {
-      _pinnedEventIds.delete(eid);
+      pinnedEventIds.delete(eid);
       btn.classList.remove('pinned');
       btn.closest('.feed-evt')?.classList.remove('feed-evt-pinned');
     } else {
-      _pinnedEventIds.add(eid);
+      pinnedEventIds.add(eid);
       btn.classList.add('pinned');
       btn.closest('.feed-evt')?.classList.add('feed-evt-pinned');
     }
@@ -1092,7 +1066,7 @@ async function handlePinClick(btn: HTMLElement): Promise<void> {
 function updateBudgetDisplay(): void {
   for (let pts = 1; pts <= 5; pts++) {
     const limit = FEED_SCORE_BUDGET[pts] ?? 0;
-    const used = _scoreUsed[pts] ?? 0;
+    const used = scoreUsed[pts] ?? 0;
     const remaining = Math.max(0, limit - used);
     // Update badge
     const badge = document.querySelector(`.feed-score-badge[data-badge="${pts}"]`);
@@ -1105,9 +1079,9 @@ function updateBudgetDisplay(): void {
 
 /** Reset budget counters for a new round */
 function resetBudget(round: number): void {
-  _budgetRound = round;
+  set_budgetRound(round);
   for (let pts = 1; pts <= 5; pts++) {
-    _scoreUsed[pts] = 0;
+    scoreUsed[pts] = 0;
   }
   updateBudgetDisplay();
 }
@@ -1117,35 +1091,35 @@ function resetBudget(round: number): void {
 // ============================================================
 
 function startPreRoundCountdown(debate: CurrentDebate): void {
-  _phase = 'pre_round';
-  _timeLeft = 3;
+  set_phase('pre_round');
+  set_timeLeft(3);
   updateTimerDisplay();
   updateTurnLabel('Starting...');
 
   set_feedTurnTimer(setInterval(() => {
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
-    if (_timeLeft <= 0) {
+    if (timeLeft <= 0) {
       clearFeedTimer();
       playSound('roundStart');
       // Write round divider
-      void writeFeedEvent('round_divider', `Round ${_round}`, null);
-      addLocalSystem(`--- Round ${_round} ---`);
+      void writeFeedEvent('round_divider', `Round ${round}`, null);
+      addLocalSystem(`--- Round ${round} ---`);
       // Start first speaker
-      const first = firstSpeaker(_round);
+      const first = firstSpeaker(round);
       startSpeakerTurn(first, debate);
     }
   }, 1000));
 }
 
 function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
-  _phase = speaker === 'a' ? 'speaker_a' : 'speaker_b';
-  _timeLeft = FEED_TURN_DURATION;
+  set_phase(speaker === 'a' ? 'speaker_a' : 'speaker_b');
+  set_timeLeft(FEED_TURN_DURATION);
   playSound('turnSwitch');
 
   // Phase 2: Reset scoring budget when round changes
-  if (_budgetRound !== _round) {
-    resetBudget(_round);
+  if (budgetRound !== round) {
+    resetBudget(round);
   }
 
   const isMyTurn = debate.role === speaker && !debate.modView;
@@ -1168,7 +1142,7 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
     if (finishBtn) finishBtn.disabled = !isMyTurn;
     // Show concede after round 1
     const concedeBtn = document.getElementById('feed-concede') as HTMLButtonElement | null;
-    if (concedeBtn && _round > 1) concedeBtn.style.display = '';
+    if (concedeBtn && round > 1) concedeBtn.style.display = '';
     // Phase 3: enable cite/challenge during my turn
     updateCiteButtonState();
     updateChallengeButtonState();
@@ -1191,15 +1165,15 @@ function startSpeakerTurn(speaker: 'a' | 'b', debate: CurrentDebate): void {
   set_feedTurnTimer(setInterval(() => {
     // Phase 3: skip tick while paused for challenge ruling
     if (feedPaused) return;
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
 
     // Warning at 15s
     const timerEl = document.getElementById('feed-timer');
-    if (timerEl) timerEl.classList.toggle('warning', _timeLeft <= 15);
-    if (_timeLeft === 15) playSound('timerWarning');
+    if (timerEl) timerEl.classList.toggle('warning', timeLeft <= 15);
+    if (timeLeft === 15) playSound('timerWarning');
 
-    if (_timeLeft <= 0) {
+    if (timeLeft <= 0) {
       clearFeedTimer();
       onTurnEnd(speaker, debate);
     }
@@ -1210,7 +1184,7 @@ function finishCurrentTurn(): void {
   const debate = currentDebate;
   if (!debate) return;
 
-  const speaker = _phase === 'speaker_a' ? 'a' : _phase === 'speaker_b' ? 'b' : null;
+  const speaker = phase === 'speaker_a' ? 'a' : phase === 'speaker_b' ? 'b' : null;
   if (!speaker) return;
   if (debate.role !== speaker || debate.modView) return; // only active speaker can finish
 
@@ -1227,15 +1201,15 @@ function onTurnEnd(speaker: 'a' | 'b', debate: CurrentDebate): void {
   stopTranscription();
   clearInterimTranscript();
 
-  const first = firstSpeaker(_round);
-  const second = secondSpeaker(_round);
+  const first = firstSpeaker(round);
+  const second = secondSpeaker(round);
 
   if (speaker === first) {
     // First speaker done → 10s pause → second speaker
     startPause(speaker === 'a' ? 'pause_ab' : 'pause_ba', debate);
   } else {
     // Second speaker done → round is over → ad break
-    if (_round >= FEED_TOTAL_ROUNDS) {
+    if (round >= FEED_TOTAL_ROUNDS) {
       // Phase 5: Final ad break before vote gate
       startFinalAdBreak(debate);
     } else {
@@ -1246,8 +1220,8 @@ function onTurnEnd(speaker: 'a' | 'b', debate: CurrentDebate): void {
 }
 
 function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound = false): void {
-  _phase = pausePhase;
-  _timeLeft = FEED_PAUSE_DURATION;
+  set_phase(pausePhase);
+  set_timeLeft(FEED_PAUSE_DURATION);
 
   const debaterAName = debate.role === 'a'
     ? (getCurrentProfile()?.display_name || 'You')
@@ -1259,12 +1233,12 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
   // Figure out who speaks next
   let nextSpeakerSide: 'a' | 'b';
   if (newRound) {
-    nextSpeakerSide = firstSpeaker(_round);
+    nextSpeakerSide = firstSpeaker(round);
     playSound('roundStart');
-    void writeFeedEvent('round_divider', `Round ${_round}`, null);
-    addLocalSystem(`--- Round ${_round} ---`);
+    void writeFeedEvent('round_divider', `Round ${round}`, null);
+    addLocalSystem(`--- Round ${round} ---`);
   } else {
-    nextSpeakerSide = secondSpeaker(_round);
+    nextSpeakerSide = secondSpeaker(round);
   }
   const nextName = nextSpeakerSide === 'a' ? debaterAName : debaterBName;
 
@@ -1272,11 +1246,11 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
   updateTimerDisplay();
 
   set_feedTurnTimer(setInterval(() => {
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
-    updateTurnLabel(`${nextName}'s turn in ${_timeLeft}s`);
+    updateTurnLabel(`${nextName}'s turn in ${timeLeft}s`);
 
-    if (_timeLeft <= 0) {
+    if (timeLeft <= 0) {
       clearFeedTimer();
       startSpeakerTurn(nextSpeakerSide, debate);
     }
@@ -1288,8 +1262,8 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
 // ============================================================
 
 function startAdBreak(debate: CurrentDebate): void {
-  _phase = 'ad_break';
-  _timeLeft = FEED_AD_BREAK_DURATION;
+  set_phase('ad_break');
+  set_timeLeft(FEED_AD_BREAK_DURATION);
 
   if (!debate.modView) setDebaterInputEnabled(false);
 
@@ -1299,23 +1273,23 @@ function startAdBreak(debate: CurrentDebate): void {
   const overlay = showAdOverlay(FEED_AD_BREAK_DURATION);
 
   // Enable spectator voting during ad break
-  if (debate.spectatorView && !_votedRounds.has(_round)) {
+  if (debate.spectatorView && !votedRounds.has(round)) {
     setSpectatorVotingEnabled(true);
   }
 
   set_feedTurnTimer(setInterval(() => {
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
     const countdownEl = overlay?.querySelector('.feed-ad-countdown');
-    if (countdownEl) countdownEl.textContent = `Next round in ${_timeLeft}s`;
+    if (countdownEl) countdownEl.textContent = `Next round in ${timeLeft}s`;
 
-    if (_timeLeft <= 0) {
+    if (timeLeft <= 0) {
       clearFeedTimer();
       overlay?.remove();
       setSpectatorVotingEnabled(false);
       applySentimentUpdate();
       // Advance to next round (round_divider written by startPreRoundCountdown)
-      _round++;
+      set_round(round + 1);
       updateRoundLabel();
       startPreRoundCountdown(debate);
     }
@@ -1323,8 +1297,8 @@ function startAdBreak(debate: CurrentDebate): void {
 }
 
 function startFinalAdBreak(debate: CurrentDebate): void {
-  _phase = 'final_ad_break';
-  _timeLeft = FEED_FINAL_AD_BREAK_DURATION;
+  set_phase('final_ad_break');
+  set_timeLeft(FEED_FINAL_AD_BREAK_DURATION);
 
   if (!debate.modView) setDebaterInputEnabled(false);
 
@@ -1334,27 +1308,27 @@ function startFinalAdBreak(debate: CurrentDebate): void {
   const overlay = showAdOverlay(FEED_FINAL_AD_BREAK_DURATION);
 
   // Enable spectator voting during final ad break
-  if (debate.spectatorView && !_votedRounds.has(_round)) {
+  if (debate.spectatorView && !votedRounds.has(round)) {
     setSpectatorVotingEnabled(true);
   }
 
   set_feedTurnTimer(setInterval(() => {
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
     const countdownEl = overlay?.querySelector('.feed-ad-countdown');
-    if (countdownEl) countdownEl.textContent = `Results in ${_timeLeft}s`;
+    if (countdownEl) countdownEl.textContent = `Results in ${timeLeft}s`;
 
-    if (_timeLeft <= 0) {
+    if (timeLeft <= 0) {
       clearFeedTimer();
       overlay?.remove();
       setSpectatorVotingEnabled(false);
       applySentimentUpdate();
 
       // Vote gate for spectators, straight to finish for debaters/mod
-      if (debate.spectatorView && !_hasVotedFinal) {
+      if (debate.spectatorView && !hasVotedFinal) {
         showVoteGate(debate);
       } else {
-        _phase = 'finished';
+        set_phase('finished');
         playSound('debateEnd');
         addLocalSystem('Debate complete!');
         nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
@@ -1401,20 +1375,20 @@ function setSpectatorVotingEnabled(enabled: boolean): void {
   if (btnA) btnA.disabled = !enabled;
   if (btnB) btnB.disabled = !enabled;
   if (statusEl && enabled) statusEl.textContent = 'Cast your vote!';
-  if (statusEl && !enabled && !_votedRounds.has(_round)) statusEl.textContent = 'Voting opens during breaks';
+  if (statusEl && !enabled && !votedRounds.has(round)) statusEl.textContent = 'Voting opens during breaks';
 }
 
 function applySentimentUpdate(): void {
-  _sentimentA += _pendingSentimentA;
-  _sentimentB += _pendingSentimentB;
-  _pendingSentimentA = 0;
-  _pendingSentimentB = 0;
+  set_sentimentA(sentimentA + pendingSentimentA);
+  set_sentimentB(sentimentB + pendingSentimentB);
+  set_pendingSentimentA(0);
+  set_pendingSentimentB(0);
   updateSentimentGauge();
 }
 
 function updateSentimentGauge(): void {
-  const total = _sentimentA + _sentimentB;
-  const pctA = total > 0 ? Math.round((_sentimentA / total) * 100) : 50;
+  const total = sentimentA + sentimentB;
+  const pctA = total > 0 ? Math.round((sentimentA / total) * 100) : 50;
   const pctB = total > 0 ? 100 - pctA : 50;
   const fillA = document.getElementById('feed-sentiment-a');
   const fillB = document.getElementById('feed-sentiment-b');
@@ -1423,8 +1397,8 @@ function updateSentimentGauge(): void {
 }
 
 function showVoteGate(debate: CurrentDebate): void {
-  _phase = 'vote_gate';
-  _timeLeft = FEED_VOTE_GATE_DURATION;
+  set_phase('vote_gate');
+  set_timeLeft(FEED_VOTE_GATE_DURATION);
   updateTurnLabel('VOTE TO SEE RESULTS');
   updateTimerDisplay();
 
@@ -1441,7 +1415,7 @@ function showVoteGate(debate: CurrentDebate): void {
         <button class="feed-vote-btn feed-vote-a" id="feed-gate-a">${escapeHTML(debate.debaterAName || 'Side A')}</button>
         <button class="feed-vote-btn feed-vote-b" id="feed-gate-b">${escapeHTML(debate.debaterBName || 'Side B')}</button>
       </div>
-      <div class="feed-vote-gate-timer" id="feed-gate-timer">Results in ${_timeLeft}s</div>
+      <div class="feed-vote-gate-timer" id="feed-gate-timer">Results in ${timeLeft}s</div>
     </div>
   `;
 
@@ -1452,7 +1426,7 @@ function showVoteGate(debate: CurrentDebate): void {
   const resolveGate = async (side?: 'a' | 'b') => {
     if (resolved) return;
     resolved = true;
-    _hasVotedFinal = true;
+    set_hasVotedFinal(true);
     clearFeedTimer();
 
     if (side) {
@@ -1464,7 +1438,7 @@ function showVoteGate(debate: CurrentDebate): void {
     }
 
     overlay.remove();
-    _phase = 'finished';
+    set_phase('finished');
     playSound('debateEnd');
     addLocalSystem('Debate complete!');
     nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
@@ -1475,11 +1449,11 @@ function showVoteGate(debate: CurrentDebate): void {
   overlay.querySelector('#feed-gate-b')?.addEventListener('click', () => void resolveGate('b'));
 
   set_feedTurnTimer(setInterval(() => {
-    _timeLeft--;
+    set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
     const timerEl = document.getElementById('feed-gate-timer');
-    if (timerEl) timerEl.textContent = `Results in ${_timeLeft}s`;
-    if (_timeLeft <= 0) {
+    if (timerEl) timerEl.textContent = `Results in ${timeLeft}s`;
+    if (timeLeft <= 0) {
       void resolveGate();
     }
   }, 1000));
@@ -1525,7 +1499,7 @@ function clearFeedTimer(): void {
 
 function updateTimerDisplay(): void {
   const timerEl = document.getElementById('feed-timer');
-  if (timerEl) timerEl.textContent = formatTimer(Math.max(0, _timeLeft));
+  if (timerEl) timerEl.textContent = formatTimer(Math.max(0, timeLeft));
 }
 
 function updateTurnLabel(text: string): void {
@@ -1535,7 +1509,7 @@ function updateTurnLabel(text: string): void {
 
 function updateRoundLabel(): void {
   const el = document.getElementById('feed-round-label');
-  if (el) el.textContent = `ROUND ${_round}/${FEED_TOTAL_ROUNDS}`;
+  if (el) el.textContent = `ROUND ${round}/${FEED_TOTAL_ROUNDS}`;
 }
 
 function setDebaterInputEnabled(enabled: boolean): void {
@@ -1561,16 +1535,7 @@ export function cleanupFeedRoom(): void {
   unsubscribeRealtime();
   // Phase 4: Deepgram cleanup
   cleanupDeepgram();
-  _phase = 'pre_round';
-  _round = 1;
-  _timeLeft = 0;
-  _scoreA = 0;
-  _scoreB = 0;
-  _renderedEventIds.clear();
-  // Phase 2 cleanup
-  _pinnedEventIds.clear();
-  _budgetRound = 1;
-  for (let pts = 1; pts <= 5; pts++) _scoreUsed[pts] = 0;
+  resetFeedRoomState();
   // Phase 3 cleanup
   set_loadedRefs([]);
   set_opponentCitedRefs([]);
@@ -1585,15 +1550,8 @@ export function cleanupFeedRoom(): void {
   // Phase 5: Ad break + spectator voting cleanup
   document.getElementById('feed-ad-overlay')?.remove();
   document.getElementById('feed-vote-gate')?.remove();
-  _sentimentA = 0;
-  _sentimentB = 0;
-  _pendingSentimentA = 0;
-  _pendingSentimentB = 0;
-  _votedRounds.clear();
-  _hasVotedFinal = false;
   // Phase 5: Heartbeat + disconnect cleanup
   stopHeartbeat();
-  _disconnectHandled = false;
   document.getElementById('feed-disconnect-banner')?.remove();
   window.removeEventListener('beforeunload', sendGoodbye);
   window.removeEventListener('pagehide', sendGoodbye);
@@ -1608,8 +1566,8 @@ function updateCiteButtonState(): void {
   if (!btn) return;
   const debate = currentDebate;
   const isMyTurn = debate && !debate.modView && (
-    (_phase === 'speaker_a' && debate.role === 'a') ||
-    (_phase === 'speaker_b' && debate.role === 'b')
+    (phase === 'speaker_a' && debate.role === 'a') ||
+    (phase === 'speaker_b' && debate.role === 'b')
   );
   const uncited = loadedRefs.filter((r) => !r.cited);
   btn.disabled = !isMyTurn || uncited.length === 0 || feedPaused;
@@ -1623,8 +1581,8 @@ function updateChallengeButtonState(): void {
   if (!btn) return;
   const debate = currentDebate;
   const isMyTurn = debate && !debate.modView && (
-    (_phase === 'speaker_a' && debate.role === 'a') ||
-    (_phase === 'speaker_b' && debate.role === 'b')
+    (phase === 'speaker_a' && debate.role === 'a') ||
+    (phase === 'speaker_b' && debate.role === 'b')
   );
   const challengeable = opponentCitedRefs.filter((r) => !r.already_challenged);
   btn.disabled = !isMyTurn || challengeable.length === 0 || challengesRemaining <= 0 || feedPaused;
@@ -1659,7 +1617,7 @@ function showCiteDropdown(debate: CurrentDebate): void {
       if (!refId) return;
       hideDropdown();
       try {
-        await citeDebateReference(debate.id, refId, _round, debate.role || 'a');
+        await citeDebateReference(debate.id, refId, round, debate.role || 'a');
         // Mark as cited locally so dropdown updates immediately
         const updated = loadedRefs.map((r) =>
           r.reference_id === refId ? { ...r, cited: true, cited_at: new Date().toISOString() } : r
@@ -1703,7 +1661,7 @@ function showChallengeDropdown(debate: CurrentDebate): void {
       if (!refId) return;
       hideDropdown();
       try {
-        const result = await fileReferenceChallenge(debate.id, refId, _round, debate.role || 'a');
+        const result = await fileReferenceChallenge(debate.id, refId, round, debate.role || 'a');
         if (result.blocked) {
           // Shield absorbed it — no pause needed
           showToast('\uD83D\uDEE1\uFE0F Shield blocked the challenge!', 'info');
@@ -1760,7 +1718,7 @@ function showReferencePopup(el: HTMLElement): void {
 
 function pauseFeed(debate: CurrentDebate): void {
   set_feedPaused(true);
-  set_feedPauseTimeLeft(_timeLeft);
+  set_feedPauseTimeLeft(timeLeft);
 
   // Disable all inputs
   setDebaterInputEnabled(false);
@@ -1792,7 +1750,7 @@ function pauseFeed(debate: CurrentDebate): void {
         safeRpc('insert_feed_event', {
           p_debate_id: debate.id,
           p_event_type: 'mod_ruling',
-          p_round: _round,
+          p_round: round,
           p_side: 'mod',
           p_content: 'Auto-accepted (moderator timeout)',
           p_reference_id: refId,
@@ -1820,7 +1778,7 @@ function unpauseFeed(): void {
   document.getElementById('feed-challenge-overlay')?.remove();
 
   // Restore timer display
-  _timeLeft = feedPauseTimeLeft;
+  set_timeLeft(feedPauseTimeLeft);
   set_feedPauseTimeLeft(0);
   updateTimerDisplay();
 
@@ -1828,8 +1786,8 @@ function unpauseFeed(): void {
   const debate = currentDebate;
   if (debate && !debate.modView) {
     const isMyTurn = (
-      (_phase === 'speaker_a' && debate.role === 'a') ||
-      (_phase === 'speaker_b' && debate.role === 'b')
+      (phase === 'speaker_a' && debate.role === 'a') ||
+      (phase === 'speaker_b' && debate.role === 'b')
     );
     setDebaterInputEnabled(isMyTurn);
     const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement | null;
@@ -1838,7 +1796,7 @@ function unpauseFeed(): void {
     updateChallengeButtonState();
   }
 
-  updateTurnLabel(_phase === 'speaker_a' ? 'Side A\'s turn' : _phase === 'speaker_b' ? 'Side B\'s turn' : '');
+  updateTurnLabel(phase === 'speaker_a' ? 'Side A\'s turn' : phase === 'speaker_b' ? 'Side B\'s turn' : '');
 }
 
 function showChallengeRulingPanel(debate: CurrentDebate): void {
@@ -1870,7 +1828,7 @@ function showChallengeRulingPanel(debate: CurrentDebate): void {
       await safeRpc('insert_feed_event', {
         p_debate_id: debate.id,
         p_event_type: 'mod_ruling',
-        p_round: _round,
+        p_round: round,
         p_side: 'mod',
         p_content: `${label}${reason ? ': ' + reason : ''}`,
         p_reference_id: activeChallengeRefId,
@@ -1910,7 +1868,7 @@ async function handleDeepgramTranscript(text: string, debate: CurrentDebate): Pr
     id: crypto.randomUUID(),
     debate_id: debate.id,
     event_type: 'speech',
-    round: _round,
+    round: round,
     side: debate.role,
     content: text,
     created_at: new Date().toISOString(),
