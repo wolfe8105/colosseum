@@ -25,6 +25,7 @@ interface SettingsData {
   bio: string;
   email: string;
   subscription_tier?: string;
+  preferred_language: string;
   notif_challenge: boolean;
   notif_debate: boolean;
   notif_follow: boolean;
@@ -124,6 +125,10 @@ function loadSettings(): void {
   setChecked('set-privacy-online', saved.privacy_online !== false);
   setChecked('set-privacy-challenges', saved.privacy_challenges !== false);
 
+  // Language dropdown
+  const langSelect = getEl<HTMLSelectElement>('set-language');
+  if (langSelect) langSelect.value = saved.preferred_language ?? 'en';
+
   // Dark mode toggle — reads from data-theme attribute (set by head script from localStorage)
   setChecked('set-dark-mode', document.documentElement.getAttribute('data-theme') !== 'light');
 
@@ -143,6 +148,11 @@ function loadSettings(): void {
     if (badge) {
       badge.textContent = TIER_LABELS[profileTier];
       badge.className = 'tier-badge ' + (profileTier !== 'free' ? profileTier : '');
+    }
+
+    // Language from profile overrides localStorage
+    if (langSelect && typeof p.preferred_language === 'string') {
+      langSelect.value = p.preferred_language;
     }
   }
 }
@@ -181,6 +191,7 @@ function saveSettings(): void {
     username,
     bio,
     email: getEl('set-email-display')?.textContent ?? '',
+    preferred_language: getEl<HTMLSelectElement>('set-language')?.value ?? 'en',
     notif_challenge: getChecked('set-notif-challenge'),
     notif_debate: getChecked('set-notif-debate'),
     notif_follow: getChecked('set-notif-follow'),
@@ -200,6 +211,7 @@ function saveSettings(): void {
       display_name: settings.display_name,
       username: settings.username,
       bio: settings.bio,
+      preferred_language: settings.preferred_language,
     }).catch((err: unknown) => { console.warn('[Settings] updateProfile failed:', err); });
 
     // SESSION 52/64: Save toggles via RPC (not direct upsert)
