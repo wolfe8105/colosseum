@@ -36,6 +36,7 @@ import type {
 import {
   FEED_TURN_DURATION, FEED_PAUSE_DURATION, FEED_TOTAL_ROUNDS,
   FEED_SCORE_BUDGET, FEED_MAX_CHALLENGES, FEED_CHALLENGE_RULING_SEC,
+  FEED_AD_BREAK_DURATION, FEED_FINAL_AD_BREAK_DURATION, FEED_VOTE_GATE_DURATION,
 } from './arena-types.ts';
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
@@ -62,6 +63,14 @@ const _pinnedEventIds = new Set<string>();
 const _scoreUsed: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 let _budgetRound = 1;
 
+// Phase 5: Spectator sentiment tracking
+let _sentimentA = 0;
+let _sentimentB = 0;
+const _votedRounds = new Set<number>();
+let _hasVotedFinal = false;
+let _pendingSentimentA = 0;
+let _pendingSentimentB = 0;
+
 // Determine first speaker for a round (spec: odd rounds A first, even rounds B first)
 function firstSpeaker(round: number): 'a' | 'b' {
   return round % 2 === 1 ? 'a' : 'b';
@@ -87,11 +96,19 @@ export function enterFeedRoom(debate: CurrentDebate): void {
 
   const profile = getCurrentProfile();
   const isModView = debate.modView === true;
-  const myName = isModView
-    ? (debate.moderatorName || 'Moderator')
-    : (profile?.display_name || profile?.username || 'You');
-  const debaterAName = debate.role === 'a' ? myName : debate.opponentName;
-  const debaterBName = debate.role === 'b' ? myName : debate.opponentName;
+  const isSpectator = debate.spectatorView === true;
+  let debaterAName: string;
+  let debaterBName: string;
+  if (isSpectator) {
+    debaterAName = debate.debaterAName || 'Side A';
+    debaterBName = debate.debaterBName || 'Side B';
+  } else {
+    const myName = isModView
+      ? (debate.moderatorName || 'Moderator')
+      : (profile?.display_name || profile?.username || 'You');
+    debaterAName = debate.role === 'a' ? myName : debate.opponentName;
+    debaterBName = debate.role === 'b' ? myName : debate.opponentName;
+  }
 
   const room = document.createElement('div');
   room.className = 'feed-room arena-fade-in';
@@ -116,6 +133,10 @@ export function enterFeedRoom(debate: CurrentDebate): void {
         </div>
       </div>
       <div class="feed-spectator-bar"><span class="eye">\uD83D\uDC41\uFE0F</span> <span id="feed-spectator-count">0</span> watching</div>
+      <div class="feed-sentiment-gauge" id="feed-sentiment-gauge">
+        <div class="feed-sentiment-fill-a" id="feed-sentiment-a" style="width:50%"></div>
+        <div class="feed-sentiment-fill-b" id="feed-sentiment-b" style="width:50%"></div>
+      </div>
     </div>
     <div class="feed-stream" id="feed-stream"></div>
     <div class="feed-controls" id="feed-controls"></div>
@@ -362,6 +383,12 @@ function appendFeedEvent(ev: FeedEvent): void {
       el.textContent = ev.content;
       break;
     }
+    case 'sentiment_vote': {
+      // Silent — track counts but don't render in feed
+      if (ev.side === 'a') _pendingSentimentA++;
+      if (ev.side === 'b') _pendingSentimentB++;
+      return; // Exit early — do NOT append to DOM
+    }
   }
 
   stream.appendChild(el);
@@ -438,6 +465,21 @@ function renderControls(debate: CurrentDebate, isModView: boolean): void {
       </div>
     `;
     wireModControls();
+  } else if (debate.spectatorView) {
+    // Spectator controls: vote buttons only
+    const aName = debate.debaterAName || 'Side A';
+    const bName = debate.debaterBName || 'Side B';
+    controlsEl.innerHTML = `
+      <div class="feed-spectator-controls">
+        <div class="feed-vote-label">WHO'S WINNING?</div>
+        <div class="feed-vote-row">
+          <button class="feed-vote-btn feed-vote-a" id="feed-vote-a" disabled>${escapeHTML(aName)}</button>
+          <button class="feed-vote-btn feed-vote-b" id="feed-vote-b" disabled>${escapeHTML(bName)}</button>
+        </div>
+        <div class="feed-vote-status" id="feed-vote-status">Voting opens during breaks</div>
+      </div>
+    `;
+    wireSpectatorVoteButtons(debate);
   } else {
     // Debater controls: text input + finish round + cite/challenge + concede
     controlsEl.innerHTML = `
@@ -500,6 +542,33 @@ function wireDebaterControls(debate: CurrentDebate): void {
     if (feedPaused) return;
     showChallengeDropdown(debate);
   });
+}
+
+function wireSpectatorVoteButtons(debate: CurrentDebate): void {
+  const btnA = document.getElementById('feed-vote-a') as HTMLButtonElement | null;
+  const btnB = document.getElementById('feed-vote-b') as HTMLButtonElement | null;
+
+  const handleVote = async (side: 'a' | 'b') => {
+    if (btnA) btnA.disabled = true;
+    if (btnB) btnB.disabled = true;
+    _votedRounds.add(_round);
+    const statusEl = document.getElementById('feed-vote-status');
+    if (statusEl) statusEl.textContent = 'Vote cast \u2713';
+
+    try {
+      await safeRpc('cast_sentiment_vote', {
+        p_debate_id: debate.id,
+        p_side: side,
+        p_round: _round,
+      });
+    } catch (e) {
+      console.warn('[FeedRoom] cast_sentiment_vote failed:', e);
+      showToast('Vote failed', 'error');
+    }
+  };
+
+  btnA?.addEventListener('click', () => void handleVote('a'));
+  btnB?.addEventListener('click', () => void handleVote('b'));
 }
 
 function wireModControls(): void {
@@ -843,18 +912,13 @@ function onTurnEnd(speaker: 'a' | 'b', debate: CurrentDebate): void {
     // First speaker done → 10s pause → second speaker
     startPause(speaker === 'a' ? 'pause_ab' : 'pause_ba', debate);
   } else {
-    // Second speaker done → round is over
+    // Second speaker done → round is over → ad break
     if (_round >= FEED_TOTAL_ROUNDS) {
-      // Debate finished
-      _phase = 'finished';
-      addLocalSystem('Debate complete!');
-      nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
-      setTimeout(() => void endCurrentDebate(), 2000);
+      // Phase 5: Final ad break before vote gate
+      startFinalAdBreak(debate);
     } else {
-      // Next round
-      _round++;
-      updateRoundLabel();
-      startPause(speaker === 'a' ? 'pause_ab' : 'pause_ba', debate, true);
+      // Phase 5: Ad break between rounds
+      startAdBreak(debate);
     }
   }
 }
@@ -894,6 +958,234 @@ function startPause(pausePhase: FeedTurnPhase, debate: CurrentDebate, newRound =
       startSpeakerTurn(nextSpeakerSide, debate);
     }
   }, 1000));
+}
+
+// ============================================================
+// PHASE 5: AD BREAKS + SPECTATOR VOTING
+// ============================================================
+
+function startAdBreak(debate: CurrentDebate): void {
+  _phase = 'ad_break';
+  _timeLeft = FEED_AD_BREAK_DURATION;
+
+  if (!debate.modView) setDebaterInputEnabled(false);
+
+  updateTurnLabel('COMMERCIAL BREAK');
+  updateTimerDisplay();
+
+  const overlay = showAdOverlay(FEED_AD_BREAK_DURATION);
+
+  // Enable spectator voting during ad break
+  if (debate.spectatorView && !_votedRounds.has(_round)) {
+    setSpectatorVotingEnabled(true);
+  }
+
+  set_feedTurnTimer(setInterval(() => {
+    _timeLeft--;
+    updateTimerDisplay();
+    const countdownEl = overlay?.querySelector('.feed-ad-countdown');
+    if (countdownEl) countdownEl.textContent = `Next round in ${_timeLeft}s`;
+
+    if (_timeLeft <= 0) {
+      clearFeedTimer();
+      overlay?.remove();
+      setSpectatorVotingEnabled(false);
+      applySentimentUpdate();
+      // Advance to next round (round_divider written by startPreRoundCountdown)
+      _round++;
+      updateRoundLabel();
+      startPreRoundCountdown(debate);
+    }
+  }, 1000));
+}
+
+function startFinalAdBreak(debate: CurrentDebate): void {
+  _phase = 'final_ad_break';
+  _timeLeft = FEED_FINAL_AD_BREAK_DURATION;
+
+  if (!debate.modView) setDebaterInputEnabled(false);
+
+  updateTurnLabel('FINAL BREAK');
+  updateTimerDisplay();
+
+  const overlay = showAdOverlay(FEED_FINAL_AD_BREAK_DURATION);
+
+  // Enable spectator voting during final ad break
+  if (debate.spectatorView && !_votedRounds.has(_round)) {
+    setSpectatorVotingEnabled(true);
+  }
+
+  set_feedTurnTimer(setInterval(() => {
+    _timeLeft--;
+    updateTimerDisplay();
+    const countdownEl = overlay?.querySelector('.feed-ad-countdown');
+    if (countdownEl) countdownEl.textContent = `Results in ${_timeLeft}s`;
+
+    if (_timeLeft <= 0) {
+      clearFeedTimer();
+      overlay?.remove();
+      setSpectatorVotingEnabled(false);
+      applySentimentUpdate();
+
+      // Vote gate for spectators, straight to finish for debaters/mod
+      if (debate.spectatorView && !_hasVotedFinal) {
+        showVoteGate(debate);
+      } else {
+        _phase = 'finished';
+        addLocalSystem('Debate complete!');
+        nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
+        setTimeout(() => void endCurrentDebate(), 2000);
+      }
+    }
+  }, 1000));
+}
+
+/**
+ * Show ad overlay covering the feed. Mod clients skip this.
+ * Returns the overlay element (or null for mod) so the caller can remove it.
+ */
+function showAdOverlay(durationSec: number): HTMLElement | null {
+  const debate = currentDebate;
+  if (debate?.modView) return null;
+
+  document.getElementById('feed-ad-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'feed-ad-overlay';
+  overlay.className = 'feed-ad-overlay';
+  overlay.innerHTML = `
+    <div class="feed-ad-inner">
+      <div class="feed-ad-label">COMMERCIAL BREAK</div>
+      <div class="feed-ad-countdown">Resuming in ${durationSec}s</div>
+      <div class="feed-ad-slot" id="feed-ad-slot">
+        <!-- AdSense placeholder — wired when Google Ads integration is built -->
+        <div class="feed-ad-placeholder">AD</div>
+      </div>
+    </div>
+  `;
+
+  const feedRoom = document.querySelector('.feed-room');
+  if (feedRoom) feedRoom.appendChild(overlay);
+
+  return overlay;
+}
+
+function setSpectatorVotingEnabled(enabled: boolean): void {
+  const btnA = document.getElementById('feed-vote-a') as HTMLButtonElement | null;
+  const btnB = document.getElementById('feed-vote-b') as HTMLButtonElement | null;
+  const statusEl = document.getElementById('feed-vote-status');
+  if (btnA) btnA.disabled = !enabled;
+  if (btnB) btnB.disabled = !enabled;
+  if (statusEl && enabled) statusEl.textContent = 'Cast your vote!';
+  if (statusEl && !enabled && !_votedRounds.has(_round)) statusEl.textContent = 'Voting opens during breaks';
+}
+
+function applySentimentUpdate(): void {
+  _sentimentA += _pendingSentimentA;
+  _sentimentB += _pendingSentimentB;
+  _pendingSentimentA = 0;
+  _pendingSentimentB = 0;
+  updateSentimentGauge();
+}
+
+function updateSentimentGauge(): void {
+  const total = _sentimentA + _sentimentB;
+  const pctA = total > 0 ? Math.round((_sentimentA / total) * 100) : 50;
+  const pctB = total > 0 ? 100 - pctA : 50;
+  const fillA = document.getElementById('feed-sentiment-a');
+  const fillB = document.getElementById('feed-sentiment-b');
+  if (fillA) fillA.style.width = pctA + '%';
+  if (fillB) fillB.style.width = pctB + '%';
+}
+
+function showVoteGate(debate: CurrentDebate): void {
+  _phase = 'vote_gate';
+  _timeLeft = FEED_VOTE_GATE_DURATION;
+  updateTurnLabel('VOTE TO SEE RESULTS');
+  updateTimerDisplay();
+
+  document.getElementById('feed-ad-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'feed-vote-gate';
+  overlay.className = 'feed-vote-gate';
+  overlay.innerHTML = `
+    <div class="feed-vote-gate-inner">
+      <div class="feed-vote-gate-title">CAST YOUR FINAL VOTE</div>
+      <div class="feed-vote-gate-sub">Vote to see the final score and sentiment</div>
+      <div class="feed-vote-gate-row">
+        <button class="feed-vote-btn feed-vote-a" id="feed-gate-a">${escapeHTML(debate.debaterAName || 'Side A')}</button>
+        <button class="feed-vote-btn feed-vote-b" id="feed-gate-b">${escapeHTML(debate.debaterBName || 'Side B')}</button>
+      </div>
+      <div class="feed-vote-gate-timer" id="feed-gate-timer">Results in ${_timeLeft}s</div>
+    </div>
+  `;
+
+  const feedRoom = document.querySelector('.feed-room');
+  if (feedRoom) feedRoom.appendChild(overlay);
+
+  let resolved = false;
+  const resolveGate = async (side?: 'a' | 'b') => {
+    if (resolved) return;
+    resolved = true;
+    _hasVotedFinal = true;
+    clearFeedTimer();
+
+    if (side) {
+      try {
+        await safeRpc('vote_arena_debate', { p_debate_id: debate.id, p_vote: side });
+      } catch (e) {
+        console.warn('[FeedRoom] vote_arena_debate failed:', e);
+      }
+    }
+
+    overlay.remove();
+    _phase = 'finished';
+    addLocalSystem('Debate complete!');
+    nudge('feed_debate_end', '\u2696\uFE0F The debate has concluded.');
+    setTimeout(() => void endCurrentDebate(), 2000);
+  };
+
+  overlay.querySelector('#feed-gate-a')?.addEventListener('click', () => void resolveGate('a'));
+  overlay.querySelector('#feed-gate-b')?.addEventListener('click', () => void resolveGate('b'));
+
+  set_feedTurnTimer(setInterval(() => {
+    _timeLeft--;
+    updateTimerDisplay();
+    const timerEl = document.getElementById('feed-gate-timer');
+    if (timerEl) timerEl.textContent = `Results in ${_timeLeft}s`;
+    if (_timeLeft <= 0) {
+      void resolveGate();
+    }
+  }, 1000));
+}
+
+export async function enterFeedRoomAsSpectator(debateId: string): Promise<void> {
+  const { data, error } = await safeRpc('get_arena_debate_spectator', { p_debate_id: debateId });
+  if (error || !data) {
+    showToast('Could not load debate', 'error');
+    return;
+  }
+
+  const d = data as Record<string, unknown>;
+  const debate: CurrentDebate = {
+    id: debateId,
+    topic: String(d.topic || ''),
+    role: 'a' as const, // Placeholder — spectators don't have a real role
+    mode: 'live' as any,
+    round: Number(d.current_round) || 1,
+    totalRounds: Number(d.total_rounds) || 4,
+    opponentName: '',
+    opponentElo: 0,
+    ranked: false,
+    messages: [],
+    moderatorName: d.moderator_name ? String(d.moderator_name) : null,
+    debaterAName: String(d.debater_a_name || 'Side A'),
+    debaterBName: String(d.debater_b_name || 'Side B'),
+    spectatorView: true,
+  };
+
+  enterFeedRoom(debate);
 }
 
 // ============================================================
@@ -964,6 +1256,15 @@ export function cleanupFeedRoom(): void {
   set_activeChallengeRefId(null);
   document.getElementById('feed-ref-dropdown')?.remove();
   document.getElementById('feed-challenge-overlay')?.remove();
+  // Phase 5: Ad break + spectator voting cleanup
+  document.getElementById('feed-ad-overlay')?.remove();
+  document.getElementById('feed-vote-gate')?.remove();
+  _sentimentA = 0;
+  _sentimentB = 0;
+  _pendingSentimentA = 0;
+  _pendingSentimentB = 0;
+  _votedRounds.clear();
+  _hasVotedFinal = false;
 }
 
 // ============================================================

@@ -52,6 +52,7 @@ export interface CurrentDebate {
   debaterAName?: string;
   debaterBName?: string;
   ruleset?: 'amplified' | 'unplugged';
+  spectatorView?: boolean;
 }
 
 export interface SelectedModerator {
@@ -262,7 +263,8 @@ export type FeedEventType =
   | 'reference_cite'
   | 'reference_challenge'
   | 'mod_ruling'
-  | 'power_up';
+  | 'power_up'
+  | 'sentiment_vote';
 
 export interface FeedEvent {
   id: string;
@@ -323,6 +325,9 @@ export type FeedTurnPhase =
   | 'pause_ab'        // 10s pause between A→B
   | 'speaker_b'       // debater B's turn
   | 'pause_ba'        // 10s pause between B→A (between rounds)
+  | 'ad_break'        // 60s ad break between rounds (Phase 5)
+  | 'final_ad_break'  // 30s ad break after last round (Phase 5)
+  | 'vote_gate'       // spectators vote to see results (Phase 5)
   | 'finished';       // debate over
 
 export const FEED_TURN_DURATION = 120;  // 2 minutes per turn
@@ -330,6 +335,9 @@ export const FEED_PAUSE_DURATION = 10;  // 10s between turns
 export const FEED_TOTAL_ROUNDS = 4;
 export const FEED_MAX_CHALLENGES = FEED_TOTAL_ROUNDS - 1;  // 3 challenges per debater per debate
 export const FEED_CHALLENGE_RULING_SEC = 60;  // mod has 60s to rule on a challenge
+export const FEED_AD_BREAK_DURATION = 60;       // 60s ad break between rounds
+export const FEED_FINAL_AD_BREAK_DURATION = 30; // 30s final ad break before vote gate
+export const FEED_VOTE_GATE_DURATION = 30;      // 30s vote gate countdown
 
 // ============================================================
 // CONSTANTS

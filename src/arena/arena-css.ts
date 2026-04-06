@@ -409,7 +409,7 @@ export function injectCSS(): void {
 
     /* ===== F-51 FEED ROOM ===== */
 
-    .feed-room { display:flex;flex-direction:column;height:100%;min-height:0;padding:0; }
+    .feed-room { display:flex;flex-direction:column;height:100%;min-height:0;padding:0;position:relative; }
 
     /* Header: topic + scoreboard + spectators */
     .feed-header { flex-shrink:0;padding:12px 16px 8px;border-bottom:1px solid var(--mod-border-subtle); }
@@ -574,6 +574,79 @@ export function injectCSS(): void {
     /* SESSION 238: Phase 4 — Deepgram STT indicators */
     .feed-interim-transcript { padding:4px 12px;font-size:12px;color:var(--mod-text-muted);font-style:italic;min-height:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
     .feed-deepgram-status { text-align:center;font-size:11px;padding:4px 0;color:var(--mod-text-muted);letter-spacing:1px; }
+
+    /* Phase 5 — Ad break overlay */
+    .feed-ad-overlay {
+      position:absolute;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,0.92);
+      display:flex;align-items:center;justify-content:center;
+      z-index:50;
+      animation:feedAdFadeIn 0.3s ease;
+    }
+    @keyframes feedAdFadeIn { from{opacity:0} to{opacity:1} }
+    .feed-ad-inner { text-align:center;width:100%;max-width:400px;padding:24px 16px; }
+    .feed-ad-label {
+      font-family:var(--mod-font-display);font-size:18px;letter-spacing:4px;
+      color:var(--mod-accent-cyan);margin-bottom:8px;
+    }
+    .feed-ad-countdown { font-size:14px;color:var(--mod-text-muted);margin-bottom:24px; }
+    .feed-ad-slot { min-height:250px;display:flex;align-items:center;justify-content:center; }
+    .feed-ad-placeholder {
+      width:300px;height:250px;
+      border:1px dashed rgba(255,255,255,0.15);border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      color:rgba(255,255,255,0.2);font-size:24px;letter-spacing:6px;
+      font-family:var(--mod-font-display);
+    }
+
+    /* Phase 5 — Sentiment gauge */
+    .feed-sentiment-gauge {
+      display:flex;height:6px;border-radius:3px;overflow:hidden;
+      margin:4px 12px 0;background:rgba(255,255,255,0.05);
+    }
+    .feed-sentiment-fill-a {
+      background:var(--mod-accent-cyan);transition:width 0.6s ease;height:100%;
+    }
+    .feed-sentiment-fill-b {
+      background:var(--mod-accent-magenta);transition:width 0.6s ease;height:100%;
+    }
+
+    /* Phase 5 — Spectator vote controls */
+    .feed-spectator-controls { padding:12px 16px;text-align:center; }
+    .feed-vote-label {
+      font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;
+      color:var(--mod-text-muted);margin-bottom:8px;
+    }
+    .feed-vote-row { display:flex;gap:12px;justify-content:center; }
+    .feed-vote-btn {
+      flex:1;max-width:160px;padding:14px 16px;border-radius:8px;
+      font-family:var(--mod-font-display);font-size:14px;letter-spacing:1px;
+      border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);
+      color:#fff;cursor:pointer;min-height:44px;
+      transition:opacity 0.2s, border-color 0.2s;
+    }
+    .feed-vote-btn:disabled { opacity:0.4;cursor:default; }
+    .feed-vote-btn.feed-vote-a:not(:disabled):hover { border-color:var(--mod-accent-cyan); }
+    .feed-vote-btn.feed-vote-b:not(:disabled):hover { border-color:var(--mod-accent-magenta); }
+    .feed-vote-status {
+      font-size:12px;color:var(--mod-text-muted);margin-top:8px;letter-spacing:1px;
+    }
+
+    /* Phase 5 — Vote gate overlay */
+    .feed-vote-gate {
+      position:absolute;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,0.95);
+      display:flex;align-items:center;justify-content:center;
+      z-index:60;animation:feedAdFadeIn 0.3s ease;
+    }
+    .feed-vote-gate-inner { text-align:center;width:100%;max-width:400px;padding:24px 16px; }
+    .feed-vote-gate-title {
+      font-family:var(--mod-font-display);font-size:20px;letter-spacing:4px;
+      color:var(--mod-accent-orange);margin-bottom:8px;
+    }
+    .feed-vote-gate-sub { font-size:14px;color:var(--mod-text-muted);margin-bottom:24px; }
+    .feed-vote-gate-row { display:flex;gap:16px;justify-content:center;margin-bottom:16px; }
+    .feed-vote-gate-timer { font-size:13px;color:var(--mod-text-muted); }
   `;
   document.head.appendChild(style);
 }
