@@ -22,6 +22,7 @@ import { showPrivateLobbyPicker } from './arena-private-picker.ts';
 import { showModQueue } from './arena-mod-queue.ts';
 import { joinWithCode, loadPendingChallenges } from './arena-private-lobby.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
+import { enterFeedRoomAsSpectator } from './arena-feed-room.ts';
 
 // ============================================================
 // LOBBY
@@ -159,6 +160,12 @@ export function renderLobby(): void {
   // Event delegation for arena card links
   lobby.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
+    // Live debate cards → enter feed room as spectator (no page navigation)
+    const liveCard = target.closest('.arena-card.card-live[data-debate-id]') as HTMLElement | null;
+    if (liveCard) {
+      void enterFeedRoomAsSpectator(liveCard.dataset.debateId!);
+      return;
+    }
     const card = target.closest('.arena-card[data-link]') as HTMLElement | null;
     if (card) window.location.href = card.dataset.link!;
   });
@@ -237,7 +244,11 @@ function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
   const action = isLive ? 'SPECTATE' : 'VIEW';
   const cardClass = isLive ? 'card-live' : isAuto ? 'card-ai' : '';
 
-  return `<div class="arena-card ${cardClass}" data-link="${isAuto ? '/verdict?id=' + encodeURIComponent(d.id) : '/debate/' + encodeURIComponent(d.id)}">
+  const cardAttr = isLive
+    ? `data-debate-id="${encodeURIComponent(d.id)}"`
+    : `data-link="${isAuto ? '/verdict?id=' + encodeURIComponent(d.id) : '/debate/' + encodeURIComponent(d.id)}"`;
+
+  return `<div class="arena-card ${cardClass}" ${cardAttr}>
     <div class="arena-card-top">${badge}${rulesetBadge}${roundsBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
     <div class="arena-card-vs">

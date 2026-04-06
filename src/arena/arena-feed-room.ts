@@ -1507,6 +1507,7 @@ export async function enterFeedRoomAsSpectator(debateId: string): Promise<void> 
     moderatorName: d.moderator_name ? String(d.moderator_name) : null,
     debaterAName: String(d.debater_a_name || 'Side A'),
     debaterBName: String(d.debater_b_name || 'Side B'),
+    language: typeof d.language === 'string' ? d.language : 'en',
     spectatorView: true,
   };
 

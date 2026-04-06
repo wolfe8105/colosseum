@@ -27,7 +27,7 @@ import { renderLobby, showPowerUpShop } from './arena-lobby.ts';
 import { joinWithCode } from './arena-private-lobby.ts';
 import { injectCSS } from './arena-css.ts';
 import { cleanupPendingRecording } from '../voicememo.ts';
-import { cleanupFeedRoom } from './arena-feed-room.ts';
+import { cleanupFeedRoom, enterFeedRoomAsSpectator } from './arena-feed-room.ts';
 
 // ============================================================
 // UTILITY HELPERS
@@ -111,6 +111,12 @@ export function init(): void {
   if (challengeCode) {
     window.history.replaceState({}, '', window.location.pathname);
     void joinWithCode(challengeCode.toUpperCase());
+  }
+  // Session 240: Auto-spectate via ?spectate=<debateId>
+  const spectateId = new URLSearchParams(window.location.search).get('spectate');
+  if (spectateId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spectateId)) {
+    window.history.replaceState({}, '', window.location.pathname);
+    void enterFeedRoomAsSpectator(spectateId);
   }
 }
 
