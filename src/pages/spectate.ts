@@ -287,6 +287,12 @@ interface SpectatorChatMessage {
 
       debateData = debate;
 
+      // Session 240: Live feed-room debates → redirect to arena spectator view
+      if (debate.status === 'live') {
+        window.location.href = '/?spectate=' + encodeURIComponent(debateId!);
+        return;
+      }
+
       // Update page title + OG (in-page only — mirror handles static OG)
       const topicText = debate.topic || 'Debate';
       document.title = topicText + ' — The Moderator';
