@@ -44,7 +44,7 @@ export function subscribeRealtime(debateId: string): void {
   if (!client || isPlaceholder()) return;
 
   const channel = (client as any)
-    .channel(`feed:${debateId}`)
+    .channel(`feed:${debateId}`, { config: { private: true } })
     .on(
       'postgres_changes',
       {
@@ -94,6 +94,10 @@ export function unsubscribeRealtime(): void {
 // ============================================================
 
 export function startHeartbeat(): void {
+  // TIMING-05 fix: clear any existing heartbeat first to prevent timer stacking
+  // if startHeartbeat is called twice (e.g., feed room re-entered without cleanup).
+  stopHeartbeat();
+
   const debate = currentDebate;
   if (!debate || isPlaceholder()) return;
 

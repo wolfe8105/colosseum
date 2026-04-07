@@ -1237,6 +1237,10 @@ export function setDebaterInputEnabled(enabled: boolean): void {
 // ============================================================
 
 export function cleanupFeedRoom(): void {
+  // TIMING-12 fix: notify opponent immediately on any exit path (back button,
+  // tab navigation, debate end, etc.) before the channel is torn down. Without
+  // this, opponent waits 30s for the heartbeat-stale check.
+  sendGoodbye();
   clearFeedTimer();
   unsubscribeRealtime();
   // Phase 4: Deepgram cleanup
