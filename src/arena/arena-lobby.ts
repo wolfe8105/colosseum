@@ -49,7 +49,6 @@ export function renderLobby(): void {
   history.replaceState({ arenaView: 'lobby' }, '');
   if (screenEl) {
     screenEl.innerHTML = '';
-    screenEl.style.position = 'relative';
   }
 
   const profile = getCurrentProfile();

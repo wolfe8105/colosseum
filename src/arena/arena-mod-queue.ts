@@ -16,7 +16,6 @@ export function showModQueue(): void {
   history.pushState({ arenaView: 'modQueue' }, '');
   if (screenEl) {
     screenEl.innerHTML = '';
-    screenEl.style.position = 'relative';
   }
 
   const profile = getCurrentProfile();
