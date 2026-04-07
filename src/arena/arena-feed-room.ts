@@ -451,7 +451,7 @@ function showDisconnectBanner(message: string): void {
 // FEED RENDERING
 // ============================================================
 
-function appendFeedEvent(ev: FeedEvent): void {
+export function appendFeedEvent(ev: FeedEvent): void {
   const stream = document.getElementById('feed-stream');
   if (!stream) return;
 
@@ -659,7 +659,7 @@ function appendFeedEvent(ev: FeedEvent): void {
 }
 
 /** Add a local-only system message (not persisted) */
-function addLocalSystem(text: string): void {
+export function addLocalSystem(text: string): void {
   const stream = document.getElementById('feed-stream');
   if (!stream) return;
   const el = document.createElement('div');
@@ -673,7 +673,7 @@ function addLocalSystem(text: string): void {
 // WRITE FEED EVENT VIA RPC
 // ============================================================
 
-async function writeFeedEvent(
+export async function writeFeedEvent(
   eventType: FeedEventType,
   content: string,
   side: 'a' | 'b' | 'mod' | null,
@@ -1492,7 +1492,7 @@ export async function enterFeedRoomAsSpectator(debateId: string): Promise<void> 
 // UI HELPERS
 // ============================================================
 
-function clearFeedTimer(): void {
+export function clearFeedTimer(): void {
   if (feedTurnTimer) clearInterval(feedTurnTimer);
   set_feedTurnTimer(null);
 }
@@ -1512,7 +1512,7 @@ function updateRoundLabel(): void {
   if (el) el.textContent = `ROUND ${round}/${FEED_TOTAL_ROUNDS}`;
 }
 
-function setDebaterInputEnabled(enabled: boolean): void {
+export function setDebaterInputEnabled(enabled: boolean): void {
   const input = document.getElementById('feed-debater-input') as HTMLTextAreaElement | null;
   const sendBtn = document.getElementById('feed-debater-send-btn') as HTMLButtonElement | null;
   const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement | null;
@@ -1898,7 +1898,7 @@ function showInterimTranscript(text: string): void {
 }
 
 /** Remove the interim transcript indicator. */
-function clearInterimTranscript(): void {
+export function clearInterimTranscript(): void {
   const el = document.getElementById('feed-interim-transcript');
   if (el) {
     el.textContent = '';
