@@ -1,0 +1,274 @@
+# THE MODERATOR — FEATURE SPECS PENDING
+
+Working spec document for unspec'd punch list items. One paragraph per feature. Walked and approved one at a time with Pat. Writing order follows original 13-item punch list order, with newly-spawned items appended at the end.
+
+---
+
+## F-04 Instant Rematch
+
+REMATCH button below final score on post-debate results screen, either debater can initiate, sends prompt to opponent + original moderator simultaneously, both have 30s to accept or auto-decline, opponent decline = no rematch, moderator decline/timeout = rematch goes to mod queue pool for category, rematch identical to original (same topic/sides/format/timer/ranked/stats weight), no cap on rematches between same pair.
+
+**Status addendum:** Button location exists at `src/arena/arena-room-end.ts:253` but click handler at line 271 just calls `enterQueue(debate.mode, debate.topic)` — only 1 of 10 spec points actually built.
+
+---
+
+## F-05 Debate Recording + Replay
+
+Replay enrichment for the archive pipeline. Two distinct pieces, both landing on the existing `arena_debates` row and feeding the `get_debate_replay_data` / `get_arena_debate_spectator` read paths. **(1) Final AI scorecard persistence.** When a debate ends with an AI moderator, the client writes the final 4-criteria scorecard (Logic / Evidence / Delivery / Rebuttal, per debater) to `arena_debates.ai_scorecard` via the already-deployed `save_ai_scorecard` RPC (see `session-234-ai-scorecard-persistence.sql`). SQL is already live: JSONB column exists, RPC is idempotent and participant-gated, `get_arena_debate_spectator` already returns it. **Remaining work is entirely client-side** — wire the write in `src/arena/arena-room-end.ts` immediately after AI scoring completes, once per debate. Only the final scorecard is persisted (not per-round, not running). AI scorecards coexist with human-moderator scores — the archive header shows whoever actually moderated (if AI, it says "AI"). Scorecard is visible to everyone in the replay. Debates that ended before this wires land keep `ai_scorecard = NULL` and the replay renders a blank scorecard section — no backfill. **(2) Inline point awards in the live feed dialogue.** Every mod-awarded point appears inline on the comment line it scores, single-line format, persisted to the archive. Format: `[username]: comment text. +N pts` when no modifier is active, `[username]: comment text. +N × M = T pts` when an in-debate modifier is active (see F-57 for the modifier system). The `×` and `=` characters are literal; the modifier is hidden entirely when it equals 1.0 (no `× 1.0` clutter). Modifier stacks present as a single combined multiplier — `+2 × 1.875 = 3.75 pts`, not `+2 × 1.25 × 1.5 = 3.75 pts` — to keep the line readable. Negative stacked results floor at zero (a comment cannot contribute negative points to the scoreboard). The awarding flow stays F-51's two-tap pattern (tap comment → tap 1-5) — modifiers apply automatically on top of the mod's base score from whatever power-ups or socketed reference modifiers are currently active on the awarded debater. Mod never picks a modifier manually. Scoreboard running totals reflect the **modified** number (base × modifier, then summed). The feed archive table stores three columns per point-award event: `base_score` (what the mod tapped), `in_debate_modifier` (the combined multiplier applied inline, default 1.0), and `final_contribution` (base × modifier, floor zero). This gives B2B buyers full visibility into the scoring chain. The "tiny fireworks" animation from F-51 §4.2 is dropped in the new inline model (reserve for post-debate winner celebration only). **Post-match "after effects" line.** End-of-debate modifiers (F-57 category) do NOT render inline during the debate — they apply at the final score screen as a separate "after effects" breakdown, lifted from the S182/S183 design: `Raw score: 47 → Point surge +2 → Opponent siphon -1 → Final: 48`. Both in-debate and end-of-debate modifiers can compound in the same debate — the math handles it naturally (`final = (sum of inline-modified comments) × (1 + sum of end-of-debate multipliers) + sum of end-of-debate flats`). **Build dependency note:** this F-05 spec unblocks when F-51 gains the modifier math in its scoring section (landed in this session's F-51 edit). F-57 is the source of truth for which modifiers exist, how they stack, and how they're acquired.
+
+---
+
+## F-07 Spectator Features
+
+Pulse/sentiment gauge is locked and shipped via F-51 Phase 5 (cast_sentiment_vote RPC, cyan/magenta gauge, ad-break voting, 30s end-of-debate vote gate) with tipping tier gates (Observer 1 debate → Fan 5 → Analyst 15 → Insider 50, min 5min watched, tips burn tokens, correct predictions refund 50% per F-09). Two additions: (1) In-debate spectator chat — a single separate channel per debate, distinct from the two debater channels, open to all spectators with no tier gating, rate limit high enough to be invisible in normal use but defensive against spam/flood, report-only moderation routing flagged messages to reports@themoderator.app, hidden from debaters entirely, ephemeral and erased at debate end. Design goal: get spectators arguing with each other so they spin up their own debates. (2) Pre-debate share link — when a debate is created, the creation screen surfaces a shareable spectator link with a copy-icon button so the creator can paste it anywhere ("hey I'm debating mom at 7pm, come watch"). This is distinct from the debater/moderator invite link generated in the same flow. The share link is only copyable from the creation screen; once the debate starts that screen is gone and the link can no longer be copied from there. Recipients landing on the link go to the live spectate view if the debate is live, or the mirror/replay page if it has ended. Reuses the `?spectate=<debateId>` URL pattern wired in S240.
+
+---
+
+## F-08 Tournament
+
+New Room E hosts brackets, seasonal events, qualification rounds, celebrity events, and spectator betting. Two tournament types: singles (player vs player) and groups (group vs group). **Format:** single-elimination at launch. Round-robin added second once single-elim is stable (cheapest second add, good for small groups). Double-elim and Swiss deferred until demand justifies. **Seeding:** ELO-based. Gives Elo real stakes beyond ranked ladder. **Bracket size:** dynamic fill — no fixed 8/16/32/64 requirement, especially critical for groups where teams will never have matching player counts. Max bracket size 64 at launch; group tournaments may lift this later. **Prize distribution:** singles tournaments use top-3 split; group-vs-group tournaments use ladder payout (top N positions). **Timing:** configurable per tournament — creator chooses single-sitting (all rounds same day) or scheduled across days. **Drop-out / no-show:** auto-forfeit after 10 minutes. No Elo or token penalty. In group tournaments a no-show counts as nothing (does not damage the group's standing beyond the lost match). **Tournament-only power-ups:** 3x multiplier, Double Silence, Golden Ref Slot. **User-created tournaments:** anyone meeting the gate can create. Tournament creation requires the F-33 Verified Gladiator badge (60% profile depth). This is the launch gate, not a future upgrade. Min entry fee 10 tokens, max entry fee 1000 tokens at launch (raised later as trust grows). Max bracket size 64. **Escrow:** entry fees go into platform escrow at join, never to the creator. Creators cannot rug-pull. Platform releases prize pool to winners after tournament concludes, retains 10% platform cut, refunds unfilled bracket slots automatically. **Moderator compensation:** hybrid model. 5% of prize pool is carved out as a moderator pool, split evenly per match moderated across all mods used in the tournament. Winners take 85% (per the prize distribution rules above), platform takes 10%, mods take 5%. On top of the token pay, tournament-exclusive cosmetics unlock at moderation milestones (Tournament Moderator badge, exclusive borders, tournament-only titles), piggybacking on the F-31 auto-unlock trigger system already shipped. Spectator betting and celebrity events carry forward from the original Room E concept.
+
+---
+
+## F-10 Power-Up Shop
+
+Token-spend storefront for the 60-effect Modifier & Power-Up system. See F-57 for the canonical effect list, pricing table, socketing rules, and rarity mapping. This F-10 paragraph spec's the storefront UI only — the catalog, purchase flow, and inventory — and defers every gameplay rule to F-57. **Shop location:** new tab in The Armory (F-27) alongside My Arsenal and Forge, labeled "Shop" (gladiator vocabulary — consider renaming to "Quartermaster" at build time). **Catalog layout:** two top-level filters, "Modifiers" and "Power-Ups," which toggle between the permanent-socketed set and the one-shot consumable set. Each set exposes the same 60-effect list (30 end-of-debate + 30 in-debate) — the filter just swaps the product type and the price column. Chip-row sub-filters (matching F-27's Sharpen pattern): category (Token / Point / Reference / Elo+XP / Crowd / Survival / In-Debate), rarity tier (Common / Uncommon / Rare / Legendary / Mythic), affordability (show-only-what-I-can-buy). **Card format:** effect name, one-line description, category, rarity tier badge, tier gate label ("Requires Rare+ reference"), token cost, and a "Buy" button. Tapping a card opens a bottom sheet with full description, socket compatibility (which rarity tier and higher can hold this modifier), and a confirm-purchase button. **Purchase flow:** tap Buy → confirm bottom sheet → debit tokens via `buy_powerup` or `buy_modifier` RPC (new, TBD in next ref-system session) → on success, item added to inventory (power-ups to a new `user_powerups` table, modifiers to a new `user_modifiers` table staging area where they wait to be socketed into a forged reference). **Modifier socketing flow:** from The Arsenal tab, tap a forged reference, tap an empty socket, pick a modifier from the user's unsocketed modifier inventory, confirm (with a warning: "Socketing is permanent. This modifier cannot be removed from this reference.") — socket filled, modifier consumed from inventory. Socketing is a separate RPC (`socket_modifier`) that writes to a new `reference_sockets` table. **Power-up equip flow:** pre-debate loadout screen (F-51 §5.1 today picks references; extends to also pick power-ups). User picks up to 3 power-ups per debate per F-57 cap. Power-ups consume on debate start and cannot be refunded even if the debate nulls. **Drops (from the F-27/F-55 reference reward loop):** winning a debate has a small chance to drop a power-up; rarer chance to drop a modifier. Drop rates and trigger conditions are TBD and will be walked in a dedicated economy session once live token earn rates exist. Drops land in the user's inventory the same way purchases do. **Pricing at launch:** lifted verbatim from the S182 design table (see F-57 for the full list). Pricing is subject to re-balancing once live data exists — treat as starting values, not permanent. **Token spend RPCs needed (not yet built):** `buy_modifier(effect_id, tier)`, `buy_powerup(effect_id, tier)`, `socket_modifier(reference_id, socket_index, modifier_id)`, `equip_powerup_for_debate(debate_id, powerup_id)`. All four need race-condition-safe token debits with `FOR UPDATE` locks on `profiles.token_balance` and atomic consumption of the purchased item. **F-10 supersedes the old `TOKEN-STAKING-POWERUP-PLAN.docx`** (deleted from the repo Session 191) which listed only 4 power-ups (2x Multiplier, Shield, Reveal, Silence). That list is scrapped. The new canonical list is F-57.
+
+---
+
+## F-11 Marketplace
+
+**DELETED S182/S183.** No spec. Not building.
+
+---
+
+## F-30 Reference Marketplace
+
+**DELETED S182/S183.** No spec. Not building. Reference economy is handled via forging, seconding, and the escalating per-round cite cost — see F-55.
+
+---
+
+## F-31 Cosmetics Store
+
+**SHIPPED.** Pointer only. Backend: `cosmetic_items`, `user_cosmetics` tables; `get_cosmetic_catalog()`, `purchase_cosmetic()`, `equip_cosmetic()` RPCs. UI: `moderator-cosmetics.html`, `src/pages/cosmetics.ts`. The F-31 auto-unlock trigger system is referenced by F-08 tournament-exclusive cosmetics (Tournament Moderator badge, exclusive borders, tournament-only titles unlocked at moderation milestones) and by F-55 graduated-forger badges. No further spec work needed.
+
+---
+
+## F-45 Desktop Arena Layout
+
+Shipped in Session 196 and verified intact after the S201-203 cyberpunk shell redesign. At viewport widths ≥1024px, `#desktop-panel` in `index.html` renders as a left-hand sidebar via `lcars-shell.css` flex layout, populated live by `home.ts` `updateUIFromProfile()`. Sidebar contents: avatar, ELO, wins, losses, win streak, token balance, profile depth bar, and nav links. Renders on Feed, Arena, Ranks, and Profile tabs. Currently does not render on the Groups tab — Groups is a work in progress and will be reconciled with the desktop panel as part of that work, not as part of F-45. Hidden on mobile widths. No further desktop redesign planned; the S196 sidebar fits the new shell.
+
+---
+
+## F-03 Entrance Sequences / Battle Animations
+
+**Pointer only.** Full spec lives in the groups research doc (chat `63951588-66c3-4c68-af1d-145f4e98efa6`) plus Session 166 additions. Covers debater entrance sequences and in-debate battle animation system. F-22 collapses into this — same animation system, group-scaled.
+
+---
+
+## F-22 GvG Battle Animations
+
+**Collapsed into F-03.** See F-03 pointer above. Same animation system, scaled from 1v1 to group-vs-group.
+
+---
+
+## F-27 Reference Library Browse — "The Armory"
+
+Mobile-first design. Library is renamed **The Armory** throughout the UI, with full gladiator vocabulary: Filters → **Sharpen**, Add to Loadout → **Equip**, Verify → **Second**, Challenge stays, cites → **strikes**, verifications → **seconds**, search placeholder "Hunt a blade...". Page is a three-tab structure at the top: **The Armory** (public library of all references), **My Arsenal** (user's forged + equipped refs), **Forge** (contribution flow for creating new references). **Sticky header** under tabs contains a search bar plus a "Sharpen" filter button with an active-filter-count badge. **Chip-row filters** replace the desktop-style dropdown stack — horizontal-scrolling row of single-tap toggleable chips for category, rarity tier (Common/Uncommon/Rare/Legendary/Mythic), source type (Primary/Academic/News/Book/Other), verified vs unverified, clean vs disputed, graduated vs ungraduated, forged-by-me, in-my-loadout. Multiple chips can be active simultaneously (AND logic). **Default view** is a "Hot in the Arena this week" horizontal-scroll trending shelf (top 5 most-struck references from the last 7 days) sitting above a single-column card stack of YouTube-tile-style reference cards. **Sort options** (in the Sharpen drawer): rarity high→low (default), strikes count, newest, oldest, seconds count, alphabetical. **Rarity visual language** on cards: Mythic = full purple border + tinted background (the only tier with a full treatment), Legendary / Rare / Uncommon = colored left edge only, Common = plain card with no accent. Each card shows reference name, forger credit, category, rarity badge, graduated/disputed badges where applicable, and a stat footer with power X/cap, seconds count, strikes count. **Tap any card opens a bottom sheet** (not a centered modal) with a grab handle at top, full source details table (source type, title, author, date, locator, seconds, strikes), the `claim_text` as an italic callout block, and action buttons pinned to the bottom in thumb reach: Equip / Second / Challenge / Close. **Search queries** against reference name, `claim_text`, `source_title`, `source_author`, and forger username — full-text match, case-insensitive. **Desktop** (≥1024px) reflows the same page to a multi-column card grid; no separate desktop layout, just CSS grid autofill. **Empty states** get in-world copy: zero search results → "The Armory has no blades matching that grip. Forge one?" with a Forge button.
+
+---
+
+## F-28 Bounty Board
+
+Leaderboard/profile hybrid for putting tokens on an opponent's head. **Posting gate (graduated profile depth):** 25% depth unlocks 1 open bounty slot, 35% unlocks 2, 45% unlocks 3, 55% unlocks 4, 65% unlocks 5, 75% unlocks 6 (hard cap, stops there). **Target selection:** poster can only bounty users on their own rivals list — no general-population targeting. Rivals list uses the existing F-25 mechanism (no new relationship type). Rival-add flow: profile page has a rivals section with a username search bar; click adds them; target receives a notification. Not automatic or mutual — one-sided add is enough to enable bountying (no reciprocation required). If the poster removes the target from rivals while a bounty is open, the bounty auto-cancels with zero refund. **Bounty amount:** no cap. Poster picks any amount they can afford. **Duration / cost:** flat linear 1 token per day of open time. Minimum 1 day / 1 token. Maximum 365 days / 365 tokens (hard ceiling). The duration fee is on top of the bounty amount itself — it's not carved out of the prize, it's an additional cost. **Cancellation:** poster can cancel an open bounty and gets back 85% of what they spent (duration fee + bounty amount). 15% is a processing-fee burn. Natural expiration without claimant: zero refund — everything burns. This is intentional to throttle speculative posting. **Approval flow:** none. Bounties post instantly. **Target awareness:** passive only. Target sees their bounties in a new profile page section (see below). No push notification, no toast, no email alert. Target cannot block a specific user from posting bounties on them and cannot opt out of being bountyable entirely. Live with it. **Profile Bounties section (new UI on profile page):** two lists — "Bounties On Me" (incoming, hunters are gunning for this user) and "Bounties I've Posted" (outgoing). Each row shows bounty amount, poster/target username, days remaining, and status. Outgoing list also shows a cancel button with a 15% fee warning on tap. **Bounty indicator dot:** gold dot rendered next to the username everywhere the username appears — leaderboards, feeds, arena lobby, spectate, profile, scorecards, mod queue, chat, comments, dialogue bubbles. Universal meaning: "has an active bounty on them." Only shows if the user has at least one open bounty against them. One dot regardless of how many incoming bounties — no stacking. No dot for outgoing bounties (posters don't advertise that they're hunting). **Claim flow (pre-debate dropdown):** in the ranked pre-debate screen, a new dropdown is always visible. It lists all open bounties against the current opponent. If the opponent has no bounties, the dropdown is empty but still rendered. Hunter selects ONE bounty from the dropdown (one per debate max, even if the target has multiple open). Selecting charges a 5% attempt fee calculated off the selected bounty's face value. Fee is burned regardless of outcome, even on a hunter win. This is the throttle — each attempt costs something. Selection is LOCKED once paid. No backing out, no re-selection, no refund. Because selection only happens in pre-debate (after matchmaking assigns the hunter to the target), there's no race condition — only one hunter is in pre-debate against the target at any given moment. **Debate eligibility:** ranked debates only. Casual, AI Sparring, voice memo, etc. — not eligible. Private-lobby invite debates DO count if they route through the ranked pool (which per F-46 they do — invites reserve a slot in the corresponding ranked pool). New UI addition: debate cards sitting in the pool with a reserved invite show a "reserved for [username]" indicator so other queue members know why that card isn't pairable. **Moderator visibility:** moderator is BLIND to the bounty. Mod neutrality preserved. **Payout:** bounty only pays out if (a) the hunter claimed it in pre-debate AND (b) the hunter wins the debate. Hunter win: hunter receives bounty face value minus a 5% platform cut. Poster's escrow is fully consumed. Hunter loss: hunter forfeits the 5% attempt fee (already burned). Bounty stays open until natural expiration or a future successful claim — one-shot per debate, not one-shot per bounty. Platform cut: 5% of bounty face value on successful payouts. Results screen shows a new row in the token breakdown: "Bounty claimed: +X tokens" (or "Bounty failed: -Y attempt fee"). Visible to everyone — debaters, moderator, spectators. **Matchmaking:** bounties do NOT create matchmaking priority. Hunter waits in the normal ranked queue; if they happen to draw the bountied target, the dropdown lights up. If the target is mid-debate, hunter waits their normal turn. **No restrictions:** no opt-out, no block, no mode exceptions beyond ranked-only, no stacking multiple bounties per debate, no matchmaking favoritism.
+
+---
+
+## F-33 Verified Gladiator Badge
+
+Profile-depth-gated identity badge that also serves as the F-08 tournament creation gate. **Earn path:** 60% profile depth. Nothing else — no voice intro required, no debate count, no manual approval, no payment. **Tournament-creation gate:** possession of this badge is the hard gate for creating tournaments under F-08. This is the launch gate, not a post-launch upgrade. **Retroactive:** users currently above 60% depth at feature launch auto-receive the badge. **Revocation:** never. Once earned, permanent. Depth drops (from new questionnaire questions, profile reset, etc.) do not revoke the badge. **Badge display:** renders next to the username everywhere the username appears, same universal-placement rule as the F-28 bounty dot — leaderboards, feeds, arena lobby, spectate, profile, scorecards, mod queue, chat, comments. Must be legible at 16px in-line with text. Visual direction: military medal style (final artwork chosen at build time). **Voice/video intro (separate optional feature that sits alongside the badge):** NOT required to earn the badge. Separate profile feature. Users do NOT record inside the app — they upload pre-made clips from their own device. Upload constraints: 5 seconds maximum, 5MB maximum file size, audio formats MP3/M4A/OGG, video format MP4 at up to 1080p. Stored in Supabase Storage. Client-side validation on upload (length, size, format) plus server-side re-validation before commit. Playback autoplay-muted by default on profile page with a tap-to-unmute control. Copyright posture: don't mention it, play it dangerously. No ToS language, no DMCA agent surface, no fingerprint gate, no safe-harbor posture at launch. The risk is known and accepted.
+
+---
+
+## F-40 Mirror Pages with Live Counts
+
+**SCRATCHED Session 245.** Mirror system deprecated. Rationale: SEO cannibalization risk (second indexable property competing with the main app + /u/ profiles + /go for the same keywords), /go owns the cold-traffic funnel, bot army was quarantined in S195 and no traffic has been pointed at the mirror in months. Disaster-recovery framing does not justify carrying a whole separate deployment. Mirror generator (`/opt/colosseum/colosseum-mirror-generator.js` on VPS) and Cloudflare Pages deployment (`colosseum-f30.pages.dev`) to be sunset. See Land Mine Map for the mirror deprecation entry and the Bible cleanup flag.
+
+---
+
+## F-53 Profile Debate Archive
+
+New section on the main profile page presenting the user's past debates as a spreadsheet-style table (Excel freeze-frame feel) with one row per debate. Columns: user-set name/description, opponent, date, topic, win/loss, final score, category. Every column is filterable. Each row links to the existing debate archive page — same filename/link used by the canonical archive system, no separate URL. The user-supplied name and description live only on the profile row for the user's own reference and labeling; they do not modify the archive itself. Users can add or remove any of their own debate archives from this profile list at will (manual curation — losses can be hidden, highlights can be featured). The list is public to anyone viewing the profile. Archive pages themselves are public and viewable by anyone with the link, no login required, and contain the full transcript (with inline reference links already embedded), final score, sentiment gauge history, and spectator count. Archives and profile list entries are kept forever — no expiration. Naming/description can be edited any time from the profile page.
+
+---
+
+## F-54 Private Profile Toggle
+
+Account setting allowing a user to flip their entire profile to private. When private: the profile page is not viewable by other users, the F-53 debate archive list is hidden, and the user does not appear in public-facing surfaces (leaderboards, feeds, search) where applicable. Individual debate archive links remain publicly accessible if shared directly (the archive system is link-public per F-53), but they will not be discoverable through the user's profile. Default is public.
+
+---
+
+## F-55 Reference System Overhaul
+
+Consolidates and corrects the two-table reference architecture (`arsenal_references` + `debate_references`) that Pat flagged as a "general mistake" — these were never meant to be separate systems. This spec locks the canonical reference model going forward. **Single canonical path.** Every reference is a library reference. There is no separate ad-hoc-mid-debate path; the old `submit_reference` raw-URL-drop RPC is slated for retirement. The new arsenal/loadout `cite_debate_reference` path is the primary and only cite mechanism. **Escalating per-round cite cost carries forward onto the new path**, lifted verbatim from the legacy `debate_references.token_cost` schedule that was already live in production unbeknownst to Pat: 1st cite free, 2nd 5 tokens, 3rd 15, 4th 35, 5th 50, hard cap 5 cites per round per debater. Pat's line: "well i guess they are gonna have to earn more tokens." **Forging cost remains** (current value TBD, needs code verification). **Dedup at forge time via canonical fingerprint.** Forging requires structured fields: `source_title`, `source_author`, `source_date`, `locator` (line/page/timestamp/paragraph), and `claim_text`. The first four are hashed into a canonical fingerprint (lowercased, whitespace-collapsed, punctuation-stripped). Attempting to forge a reference whose fingerprint already exists surfaces the canonical ref instead ("This source+locator already exists as '[existing name]' by [forger]. Use it?") — the user co-cites the canonical ref, which credits the original forger with a strike count. **Canonical references are truly singular. No forks.** The first forger's `claim_text` stands. Subsequent users who disagree with the wording argue their interpretation in the debate itself — that's what debates are for. This kills the "64,000 references all pointing at Gettysburg line 112" burial problem structurally rather than punitively. **In-debate display.** The link dropped into the debate dialogue IS the library link. Same URL serves the live cite and the post-debate browse lookup. Click anywhere = info card popup. This is the universal signal: the only way anyone — debaters, moderator, or spectators — knows a reference or power-up has been used is when the link or icon appears in the text dialogue box. No separate mod-only loadout view; the mod sees cited refs only, same as everyone else. **Rarity and power mechanics.** Rarity is derived, not manually assigned, and recomputes on every seconding and every strike — no background schedule needed. Composite score formula: `(seconds × 2) + strikes`. Thresholds: Common 0-9, Uncommon 10-29, Rare 30-74, Legendary 75-199, Mythic 200+ AND graduated. Mythic is gated behind graduation to prevent brand-new refs from being brigaded straight to top tier. Seconds weight 2x because seconding is harder to earn than striking. Rarity can decrease asymmetrically: successful challenges subtract from seconds (-5 per successful challenge), but strike count is monotonic — history cannot be un-struck. **Rarity tier naming is Common / Uncommon / Rare / Legendary / Mythic** — "Legendary" replaces any prior use of "Epic" in older docs; global rename applied. **Socket counts by rarity** (for F-57 modifier socketing): Common 1 socket, Uncommon 2, Rare 3, Legendary 4, Mythic 5. Sockets unlock as the reference climbs tiers. Existing sockets filled at a lower tier persist through tier climbs — a Common reference with 1 socketed modifier that graduates to Rare gains 2 additional empty sockets alongside the existing one. **Graduation at 25 strikes** does three things: permanent rarity floor bump (cannot drop below Rare regardless of challenges), power ceiling +1 (the only path past source_type ceiling), and a "Graduated Forger" badge for the original forger piggybacking on the F-31 auto-unlock trigger system. **Power formula** is stepped, not linear: `power = min(ceiling, floor(seconds / 3)) + graduation_bonus` where graduation_bonus = +1 if graduated else 0. Every 3 seconds = +1 power. **Seconding (verification).** Minimum profile depth 25% to cast a seconding vote (humanness gate, lower than the F-08 tournament 60% gate because seconding is lighter-weight than creating). Self-seconding is hard-blocked at the RPC level. No downvotes — the challenge mechanic is the negative signal, kept separate from the positive seconding signal to prevent brigade collapse. Once a reference is locked from editing via seconding, re-edits require admin override only at launch; no user-facing appeal flow until demand justifies one. **Challenge mechanic.** Challenger escrows 10 tokens to issue an in-debate challenge; refunded if the challenge succeeds, burned if it fails. Live in-debate challenges are ruled by the active moderator (debate pauses briefly, mod rules, debate resumes — same pause pattern as the legacy path). Post-debate, mod rulings enter a community review queue where seconding-eligible users (profile depth ≥25%) can flag bad rulings; repeated bad rulings hurt the mod's rep score. Out-of-debate library challenges cost 25 tokens (higher because out-of-context challenges skew petty) and enter a 48-hour community review queue. Successful challenges apply a graduated penalty: 1st successful = -5 seconds + "Disputed" badge, 2nd = another -5 + "Heavily Disputed" badge, 3rd = ref auto-frozen (uncitable, unbrowseable, owner notified, can request admin re-review). References are never auto-deleted — owner keeps the row but loses utility until they fix it. Disputed badges are visible in the Armory browse so users can self-filter. **Loadout.** Capacity tiered by profile depth: 0-24% = 3 slots, 25-49% = 5, 50-74% = 7, 75-100% = 10. Locked at debate start — no mid-debate editing (you picked your refs, now fight with them). Exception: if a ref gets auto-frozen mid-debate (3rd successful challenge lands during the match), it is removed from the active loadout and the slot stays empty for the remainder. Moderator sees cited refs only, not the full loadout (neutrality). Spectators see cites live in the feed with a 5-second delay on the full detail card popup so the opposing debater has a beat to react before spectators pile on in spectator chat.
+
+**Parked for a future dedicated ref-system session (questions #24-40 from S243):** ownership/sharing/licensing (#24-27), source-type ceilings policy (#28-31), category taxonomy (#32-34), lifecycle/decay (#35-37), system health/scale (#38-40). These do not block F-27 or F-55 launch but need walking before the system is considered fully spec'd.
+
+---
+
+## F-57 Modifier & Power-Up System
+
+Locks the 60-effect gameplay modifier system originally designed in Session 182 but never propagated from the handoff docx into canonical spec. Consolidates, extends, and replaces: the old 4-power-up list in the deleted `TOKEN-STAKING-POWERUP-PLAN.docx`, F-51 §9's bolt-on 3-power-up section, and all scattered references to "modifiers" in earlier chats. This is the source of truth for everything modifier-related going forward. F-05, F-10, F-27, F-51, and F-55 all point here.
+
+**Core split — modifier vs power-up.** Every effect exists in two product forms: **modifier** (permanent, forged into a reference socket, cannot be un-forged, expensive, one-time investment) and **power-up** (one-shot consumable, burns after one debate, cheap, recurring sink). Same effect, two purchase products, different economics. Modifiers are the end-game gear; power-ups are the week-to-week fuel.
+
+**Effect timing split — end-of-debate vs in-debate.** Effects come in two timing buckets. **End-of-debate effects (30)** apply once at the final score screen, producing the "after effects" breakdown on the post-match display — `Raw: 47 → +2 Point surge → -1 Opponent siphon → Final: 48`. **In-debate effects (29)** apply inline during the debate, modifying individual mod-awarded comment scores as they happen — visible on the F-05 inline format (`+2 × 1.25 = 2.5 pts`). The timing split is orthogonal to the modifier/power-up split: any of the 59 effects can be socketed as a permanent modifier or bought as a one-shot power-up. Total addressable SKUs: 59 effects × 2 product types = 118 distinct shop items.
+
+**Why 59 and not 60.** The original design brief called for 30 in-debate effects to parallel the 30 end-of-debate effects, but one candidate ("Flywheel — every 3rd score ×2") was cut at walkthrough because it required per-comment counter state that no other effect needed, adding implementation complexity disproportionate to its value. Rounded down to 29 in-debate effects. The 30 end-of-debate effects are untouched from the S182 design.
+
+**Rarity and socket counts — anchored to F-55.** Rarity tiers: Common / Uncommon / Rare / Legendary / Mythic. Socket counts per rarity on a forged reference: Common 1, Uncommon 2, Rare 3, Legendary 4, Mythic 5. Sockets can hold any modifier type — end-of-debate or in-debate, mixed freely. A Mythic reference with 5 sockets could hold 5 in-debate modifiers, 5 end-of-debate modifiers, or any mix. There is no separate socket pool per type. Effect tier gating determines which rarity a modifier can be socketed into (a Mythic-only effect cannot go into a Common reference's socket even if that reference has a socket available).
+
+**Power-up cap per debate: 3.** Regardless of how many power-ups a user owns, only 3 can be equipped and brought into a single debate. Enforced at pre-debate loadout. Power-ups burn on debate start and are not refunded if the debate nulls.
+
+**Stacking and math.** Multiple modifiers and power-ups can be active simultaneously. Math rules:
+
+1. **In-debate modifier stacking.** All active in-debate multipliers on a given awarded debater sum into a single combined modifier applied to that comment's base score. `final_contribution = base_score × (1 + sum(in_debate_multipliers)) + sum(in_debate_flats)`. Negative multipliers (opponent debuffs) subtract. Result floors at zero — a comment cannot contribute negative points.
+2. **End-of-debate modifier application.** After all comments are scored and summed into a running total, end-of-debate modifiers apply on top: `final_score = running_total × (1 + sum(end_of_debate_multipliers)) + sum(end_of_debate_flats)`. Negatives (e.g., Point siphon applied to the opponent) subtract from the opponent's final score. Result floors at zero per debater.
+3. **Compounding is natural and expected.** An in-debate +25% modifier on a comment followed by an end-of-debate +25% on the running total produces a compound +56.25% effect on that comment's contribution. This is intended — the S182 design anticipated compounding as a reward for stacking investment.
+4. **Archive storage.** Each point-award event in the feed archive table stores `base_score`, `in_debate_modifier_applied`, and `final_contribution` as separate columns. The post-match breakdown stores raw total, per-effect adjustments, and final total as separate fields on the debate row. Full B2B visibility into the scoring chain.
+
+**Acquisition.** Both modifiers and power-ups are acquired in two ways: (1) **purchase from the F-10 shop** with tokens at listed prices, (2) **drop from debates** as post-match rewards (drop rates and trigger conditions TBD — parked for a dedicated economy session once live earn rates exist). Modifiers are drop-rarer than power-ups. Higher-tier effects are drop-rarer across both categories.
+
+**The 30 end-of-debate effects (S182 list, pricing locked):**
+
+*Token modifiers (5):*
+
+| # | Name | Effect (per socket) | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 1 | Token boost | +10% tokens earned on win cite | Common+ | 40 | 5 |
+| 2 | Token drain | -8% opponent tokens on survived challenge | Uncommon+ | 60 | 8 |
+| 3 | Token multiplier | 2x all token earnings this debate | Mythic | 500 | 50 |
+| 4 | Tip magnet | +15% spectator tips routed to you | Rare+ | 100 | 12 |
+| 5 | Streak saver | Loss doesn't break win streak | Legendary+ | 200 | 25 |
+
+*Point modifiers (7):*
+
+| # | Name | Effect (per socket) | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 6 | Point surge | +1 point to your final score | Legendary+ | 250 | 30 |
+| 7 | Point shield | Absorbs 1 opponent point modifier | Rare+ | 120 | 15 |
+| 8 | Point siphon | -1 point from opponent's final score | Mythic | 500 | 50 |
+| 9 | Momentum | +0.5 pts per consecutive round led | Rare+ | 100 | 12 |
+| 10 | Comeback engine | +2 pts when trailing by 5+ | Legendary+ | 180 | 20 |
+| 11 | Last word | +3 pts if speaking final round | Rare+ | 120 | 15 |
+| 12 | Pressure cooker | -1 pt if opponent no cite by round 3 | Legendary+ | 200 | 22 |
+
+*Reference modifiers (6):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 13 | Citation shield | Reference can't be challenged | Rare+ | 100 | 12 |
+| 14 | Double cite | Each citation counts as 2 for stats | Uncommon+ | 60 | 8 |
+| 15 | Forge accelerator | +3 citations instead of 1 this debate | Common+ | 40 | 5 |
+| 16 | Counter cite | +1 pt when opponent cites | Legendary+ | 250 | 28 |
+| 17 | Mirror | Copy random mod from opponent's best ref | Mythic | 600 | 60 |
+| 18 | Burn notice | On win, destroy modifier from opponent's ref | Mythic | 600 | 55 |
+
+*Elo + XP modifiers (5):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 19 | Elo shield | -25% Elo loss on defeat | Rare+ | 100 | 12 |
+| 20 | Elo amplifier | +15% Elo gain on win | Uncommon+ | 60 | 8 |
+| 21 | XP boost | +20% XP this debate | Common+ | 35 | 4 |
+| 22 | Trophy hunter | Beat 200+ Elo above: double rewards | Legendary+ | 200 | 22 |
+| 23 | Underdog | +1 pt/round if lower Elo | Rare+ | 120 | 15 |
+
+*Crowd + spectator modifiers (4):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 24 | Crowd pleaser | Tips on your side = 1.5x gauge move | Rare+ | 100 | 12 |
+| 25 | Spectator magnet | Debate ranks higher in spectator feed | Uncommon+ | 50 | 6 |
+| 26 | Intimidation | Opponent sees loadout warning pre-debate | Legendary+ | 180 | 20 |
+| 27 | Fog of war | Your loadout hidden from Reveal | Rare+ | 100 | 12 |
+
+*Survival modifiers (3):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 28 | Insurance | On loss, modifiers on this ref survive | Legendary+ | 250 | 28 |
+| 29 | Chain reaction | On win, one modifier regenerates as power-up | Mythic | 500 | 45 |
+| 30 | Parasite | On win, steal opponent modifier to inventory | Mythic | 700 | 65 |
+
+**The 29 in-debate effects (new, designed S246, pricing parallel to end-of-debate effects):**
+
+*Self multipliers on scored comments (7):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 31 | Amplify | Next score ×2 | Rare+ | 120 | 15 |
+| 32 | Surge | Next score ×1.5 | Uncommon+ | 60 | 8 |
+| 33 | Echo | Next 2 scores ×1.25 each | Rare+ | 100 | 12 |
+| 34 | Rally | All your scores this round ×1.5 | Legendary+ | 250 | 28 |
+| 35 | Finisher | Your scores in round 4 ×2 | Rare+ | 120 | 15 |
+| 36 | Opening gambit | Your scores in round 1 ×2 | Uncommon+ | 60 | 8 |
+| 37 | Mic drop | Your final comment of the debate ×3 | Mythic | 500 | 50 |
+
+*Self flat adders (5):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 38 | Boost | Next score +2 flat | Common+ | 40 | 5 |
+| 39 | Double tap | Next 3 scores +1 each flat | Uncommon+ | 60 | 8 |
+| 40 | Citation bonus | Next scored comment that contains a cited ref +3 flat | Rare+ | 100 | 12 |
+| 41 | Closer | Last score of the debate +5 flat | Legendary+ | 180 | 20 |
+| 42 | Banner | Every scored comment this round +0.5 flat | Rare+ | 100 | 12 |
+
+*Opponent debuffs (6):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 43 | Dampen | Next opponent score ×0.5 | Rare+ | 120 | 15 |
+| 44 | Drain | Next opponent score ×0 (nullified) | Mythic | 500 | 50 |
+| 45 | Choke | Opponent's next 2 scores -1 flat each | Legendary+ | 180 | 20 |
+| 46 | Static | Opponent's first score this round ×0.5 | Rare+ | 100 | 12 |
+| 47 | Pressure | If opponent doesn't score this round, they lose 2 pts at round end | Legendary+ | 200 | 22 |
+| 48 | Interrupt | Cancel the next opponent score entirely (counts as zero) | Mythic | 600 | 55 |
+
+*Cite-triggered (5):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 49 | Weaponize | Your next cite's comment scores ×2 automatically | Rare+ | 120 | 15 |
+| 50 | Backfire | If opponent cites a challenged reference, you +3 inline | Legendary+ | 180 | 20 |
+| 51 | Counter-cite | When opponent cites, your next score +2 flat | Uncommon+ | 60 | 8 |
+| 52 | Mythic echo | Citing a Mythic ref triggers inline ×1.5 on that comment | Legendary+ | 250 | 28 |
+| 53 | Loadout lock | After your first cite, all following scores +1 flat | Rare+ | 100 | 12 |
+
+*Conditional / momentum (4):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 54 | Streak | Each consecutive scored comment adds +0.5 to the next (stacks) | Rare+ | 120 | 15 |
+| 55 | Comeback | If trailing by 5+, next 2 scores ×2 | Legendary+ | 200 | 22 |
+| 56 | Underdog surge | If you're lower Elo, +1 flat on every scored comment | Rare+ | 120 | 15 |
+| 57 | Spite | First score after opponent scores, ×1.5 | Uncommon+ | 60 | 8 |
+
+*Specials (2):*
+
+| # | Name | Effect | Tier | Mod cost | PU cost |
+|---|---|---|---|---|---|
+| 58 | Overload | Next score ×3, but only if mod's base award ≥3 | Legendary+ | 200 | 22 |
+| 59 | Bait | If opponent challenges one of your references this debate, your next score ×2.5 | Rare+ | 120 | 15 |
+
+**Implementation notes:**
+
+- All modifier application happens server-side in `score_debate_comment` (F-51 scoring RPC) and in an end-of-debate finalization RPC that computes the "after effects" breakdown. Clients never compute final scores — they render what the server says.
+- The inline modifier display format (`+2 × 1.25 = 2.5 pts` or `+2 pts` when modifier = 1.0) is a render-layer concern in F-51's feed event rendering. Server returns base_score, modifier, final_contribution; client composes the line.
+- Power-up equipped state is a row in a new `user_powerups_equipped_in_debate` staging table keyed on `(user_id, debate_id, powerup_id)`, populated at pre-debate loadout, consumed at debate start, never refunded.
+- Reference socket state is a row in a new `reference_sockets` table keyed on `(reference_id, socket_index)` with `modifier_id` pointing to the specific effect socketed. Never deleted — socketing is permanent per the "cannot un-forge" rule.
+- Pricing is launch-default, subject to re-balancing after live earn-rate data exists. Do not treat as final.
+- The old F-51 §9 power-up list (2x Multiplier, Shield, Reveal) is superseded by this spec. 2x Multiplier's "doubles staking payout on win" behavior is preserved as a standalone staking rule in F-09, NOT as an in-debate effect. Shield's "blocks a reference challenge" behavior is preserved as effect #13 Citation shield above. Reveal's "shows opponent's pre-loaded references" is preserved as a new effect (to be added in a future F-57 supplement) OR scratched — Pat decision at build time.
+
+---

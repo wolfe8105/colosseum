@@ -1,6 +1,7 @@
 # THE MODERATOR — LIVE MODERATED DEBATE FEED SPEC
 ### Complete Design Specification — 77 Questions Answered
 ### Created: Session 175 (March 26, 2026)
+### Updated: Session 246 (April 8, 2026) — Section 4.2 event type 3 rewritten for inline point-award format; Section 6 gains §6.6 Modifier Math; Section 9 power-ups fully replaced by pointer to F-57 Modifier & Power-Up System
 
 > **What this is:** The buildable spec for the live moderated debate feed system.
 > Every design decision in this document was explicitly answered by Pat across
@@ -97,7 +98,7 @@ Five types of events, all inline:
 
 1. **Transcribed speech / typed messages** — color-coded by debater, username attached.
 2. **Reference citations** — clickable inline links (140-char claim statement). When clicked, popup shows reference details (claim statement, source URL, who submitted it, verification status). Moderator ruling text about a reference appears as its own separate entry in the feed.
-3. **Point awards** — inline badges off to the side, like "+3 for Debater A." Tiny fireworks animation on point awards.
+3. **Point awards** — rendered inline on the same line as the scored comment, in the format `[username]: comment text. +N pts` when no modifier is active, or `[username]: comment text. +N × M = T pts` when an in-debate modifier is active. The `×` and `=` are literal; the modifier is hidden entirely when it equals 1.0. Stacked modifiers present as a single combined multiplier. Negative results floor at zero. Running scoreboard totals reflect the modified number. End-of-debate modifiers do NOT render inline — they apply at the final score screen as an "after effects" breakdown. See F-57 for the full modifier system. Fireworks animation dropped in this format (reserve for winner celebration only).
 4. **Moderator actions** — scoring, rulings on challenged references. Moderator comments in a **different color** from both debaters.
 5. **Round dividers** — simple "--- Round 2 ---" markers.
 6. **Power-up alerts** — "powerup: 2x Multiplier activated by Debater A" (text in the feed).
@@ -185,6 +186,16 @@ Same feed, different controls available:
 - Written to `moderator_scores` table via `score_moderator` RPC. **Already exists in code.**
 - Feeds `mod_rating` and `mod_approval_pct` for the mod picker.
 
+## 6.6 Modifier Math (added S246)
+
+- The mod's raw 1-5 tap is the **base score**. Modifiers apply on top of base, automatically, server-side.
+- **In-debate modifiers** (F-57 effects 31-59) apply per scored comment. Formula: `final_contribution = base × (1 + sum(in_debate_multipliers)) + sum(in_debate_flats)`. Negatives subtract. Result floors at zero per comment.
+- **End-of-debate modifiers** (F-57 effects 1-30) apply once at the final score screen. Formula: `final_score = running_total × (1 + sum(end_of_debate_multipliers)) + sum(end_of_debate_flats)`. Applied per debater. Floors at zero.
+- In-debate and end-of-debate modifiers compound naturally when both are active (a 25% inline bonus followed by a 25% end-of-debate bonus produces a compound 56.25% effect on that comment's contribution — intended).
+- Mod never picks a modifier manually — modifiers are applied automatically from active power-ups and socketed reference modifiers on the awarded debater. Mod flow stays two taps: tap comment → tap 1-5.
+- Inline display format (section 4.2 event type 3): `+N pts` when combined modifier = 1.0, `+N × M = T pts` otherwise. Server returns `base_score`, `modifier`, `final_contribution` per point-award event; client composes the line.
+- Feed archive (section 14) stores three columns per point-award event: `base_score`, `in_debate_modifier`, `final_contribution`. End-of-debate modifier adjustments stored as separate columns on the debate row. Full B2B visibility into the scoring chain.
+
 ---
 
 # 7. SPECTATOR SENTIMENT GAUGE
@@ -211,15 +222,16 @@ Same feed, different controls available:
 
 # 9. POWER-UPS IN MODERATED MODE
 
-Three power-ups active (Silence removed):
+**Power-up system is fully specified in F-57 (see `THE-MODERATOR-FEATURE-SPECS-PENDING.md`).** F-57 replaces this section's prior 3-power-up list (2x Multiplier, Shield, Reveal). Summary of what F-51 needs to know:
 
-1. **2x Multiplier** — doubles staking payout on win. Passive. Shows in feed: "powerup: 2x Multiplier activated by Debater A"
-2. **Shield** — blocks a reference challenge. Absorbs the challenge, no animation, no ruling needed.
-3. **Reveal** — shows opponent's pre-loaded references before they cite them.
+- Debaters bring up to **3 power-ups per debate**, selected at pre-debate loadout. Consumed at debate start, never refunded.
+- Power-ups are one-shot versions of the same 59 effects available as permanent modifiers socketed into references (F-55 rarity tier determines socket count: Common 1 → Mythic 5).
+- Effects split into **end-of-debate** (30 effects, apply at final score screen as "after effects" breakdown) and **in-debate** (29 effects, apply inline during the debate on individual mod-awarded comment scores).
+- In-debate effects show in the feed via the modified score line (section 4.2 event type 3). End-of-debate effects show only at the post-match results screen.
+- The moderator sees all power-up activations in the feed as text alerts but **cannot score their strategic use** — power-ups are outside the scoring system itself.
+- 2x Multiplier's legacy "doubles staking payout on win" behavior is preserved as a standalone F-09 staking rule, not as an in-debate effect. Shield's "blocks a reference challenge" behavior is preserved as F-57 effect #13 "Citation shield."
 
-- Available at any time, can be used at any time.
-- If a debater equips power-ups but never uses them, **they get them back** after the debate.
-- Power-up events show in the feed as text alerts. Moderator sees them but **cannot score their strategic use** — power-ups are outside the scoring system.
+All modifier and power-up application happens server-side in `score_debate_comment` and an end-of-debate finalization RPC. Clients render what the server returns.
 
 ---
 

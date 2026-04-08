@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 240 (April 6, 2026)
+### Last Updated: Session 246 (April 8, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -21,7 +21,9 @@
 | Security & identity roadmap (YubiKey, WebAuthn, passkeys) | **THE-MODERATOR-SECURITY-ROADMAP.md** |
 | Cross-file feature work / "what breaks if I change X?" | **THE-MODERATOR-WIRING-MANIFEST.md** — repo only, not in project knowledge. Pre-TS file refs, patterns still valid |
 | Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — repo only, not in project knowledge. Sessions 1-228 |
-| Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — repo only. 77 design questions answered. Referenced as F-51 in Punch List |
+| Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — repo only. 77 design questions answered. Referenced as F-51 in Punch List. Updated S246 for inline point-award format + modifier math + F-57 pointer |
+| Unbuilt feature specs walked but not yet in code | **THE-MODERATOR-FEATURE-SPECS-PENDING.md** — repo. Paragraph-length locked specs for F-04, F-05, F-07, F-08, F-10, F-27, F-28, F-33, F-45, F-53, F-54, F-55, F-57. Each entry is one locked paragraph. This is where walked-but-unbuilt work lives. |
+| Modifier / Power-Up system (scoring effects) | **F-57 in THE-MODERATOR-FEATURE-SPECS-PENDING.md** — 59-effect system (30 end-of-debate + 29 in-debate), both purchasable as permanent modifiers (socketed into forged references, Common=1 socket … Mythic=5 sockets) or one-shot power-ups (cap 3 per debate). Full pricing tables, stacking math, archive storage. Originated S182, propagated S246. Supersedes the deleted `TOKEN-STAKING-POWERUP-PLAN.docx` and F-51 §9's old 3-power-up list. |
 | QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — repo only. Stale, needs full rewrite |
 
 ---
