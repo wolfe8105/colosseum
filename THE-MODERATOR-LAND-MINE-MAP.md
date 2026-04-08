@@ -1,6 +1,6 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 240 (April 6, 2026) — LM-013 updated (preferred_language added to update_profile allow-list). LM-200 added (stamp_debate_language trigger). LM-201 added (spectator entry wiring). 16 sections, 109 entries.
+### Last Updated: Session 247 (April 8, 2026) — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement). 16 sections, 117 entries.
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -2112,4 +2112,188 @@ FIX: Paste the current Resend API key (labeled "supabase-smtp" in Resend
   to verify delivery. Rule: ALWAYS re-paste the API key before saving
   SMTP settings, even if you didn't touch the password field.
 SESSION: Security hardening sessions (Session 5 bug fix).
+```
+
+## LM-202: Mirror page generator deprecated S245, cleanup still pending
+
+```
+WHAT: The Cloudflare Pages mirror generator (colosseum-f30.pages.dev, VPS
+  cron at /opt/colosseum/colosseum-mirror-generator.js) was deprecated
+  Session 245 in favor of /go as the single source of cold traffic.
+  F-40 Mirror Pages with Live Counts was scratched.
+BITES YOU WHEN: You trip over lingering mirror artifacts — the VPS cron
+  still fires, the Cloudflare Pages deployment still resolves, NT and
+  CLAUDE.md still reference the Ring 6 three-zone architecture as if
+  mirrors are live. Any change to /go risks stepping on whatever the
+  mirror generator still thinks is true.
+SYMPTOM: Mirror pages still load at colosseum-f30.pages.dev. Cron still
+  runs. Docs still describe mirrors as the cold-traffic strategy. A new
+  contributor reads the NT and assumes mirrors are the canonical path.
+FIX: Disable VPS cron. Tear down Cloudflare Pages deployment. Remove
+  Ring 6 three-zone framing from NT and CLAUDE.md. Not urgent — flagged
+  for a dedicated cleanup session. Do not rush it; get specs stable first.
+SESSION: 245 (deprecation), 246 (flagged), 247 (still pending).
+```
+
+## LM-203: Stranded handoff-docx design propagation rule
+
+```
+WHAT: Session 182 designed a 30-effect modifier/power-up system with
+  full pricing tables, rarity-to-socket mapping, and acquisition rules.
+  The entire design lived only in SESSION-182-HANDOFF.docx and
+  SESSION-183-HANDOFF.docx. Neither made it into any canonical spec doc.
+  For 64 sessions, the punch list F-10 row pointed at
+  TOKEN-STAKING-POWERUP-PLAN.docx (deleted Session 191), F-51 §9 still
+  listed the pre-S182 3-power-up design, and nothing in project
+  knowledge reflected the S182 locks.
+BITES YOU WHEN: A walk session asks a question the handoff docx already
+  answered, and the answer is invisible. S246 only discovered the S182
+  design because F-05's walk prompted a conversation_search for
+  modifier context. Without that search, F-57 would not exist and F-05
+  would have shipped with an invented modifier model that conflicted
+  with the S182 decisions.
+SYMPTOM: Design work that was "locked long ago" keeps being re-derived
+  from scratch because the only record of it is in a handoff docx that
+  nobody reads. Features get rebuilt with incompatible assumptions.
+  Conflicts pile up silently until a walk exposes them.
+FIX: **Propagation rule (enforced going forward):** any time a walk
+  session locks design decisions, the NEXT session must propagate those
+  decisions into the canonical pending spec file before moving to the
+  next walk. Handoff docs are transient; spec docs are permanent. If a
+  handoff contains a locked design, the next session's first action is
+  to write that design into the canonical spec. No exceptions.
+SESSION: 246 (identified and propagated — F-57 created).
+```
+
+## LM-204: F-10 stale docx pointer
+
+```
+WHAT: The punch list F-10 Power-Up Shop row pointed at
+  TOKEN-STAKING-POWERUP-PLAN.docx as its spec source. That docx was
+  deleted in Session 191 when the power-up design shifted to the S182
+  model. The punch list was never updated. For ~55 sessions, F-10
+  claimed to be spec'd by a file that did not exist.
+BITES YOU WHEN: Anyone tried to build F-10 or look up the power-up
+  catalog and found a dead pointer. The canonical answer was actually
+  in SESSION-182-HANDOFF.docx (see LM-203) but nobody knew to look
+  there.
+SYMPTOM: F-10 looked "spec'd" on the punch list but had no real spec.
+  The build would have gone sideways immediately.
+FIX: S246 replaced the dead pointer with the F-57 reference and wrote a
+  fresh F-10 storefront paragraph into the pending spec file. Going
+  forward: any time a spec source doc is deleted, update every punch
+  list row that pointed at it in the same commit.
+SESSION: 246 (fixed).
+```
+
+## LM-205: Epic → Legendary rarity tier rename
+
+```
+WHAT: S182 used rarity tiers Common/Uncommon/Rare/Legendary/Mythic.
+  F-55 (S244) used Common/Uncommon/Rare/Epic/Mythic. Pat chose
+  "Legendary" in S246 to resolve the conflict. F-55 was edited in the
+  pending spec file to match, F-57 was written with the new naming,
+  and the rename was propagated to every new doc produced in S246.
+BITES YOU WHEN: Older docs (NT, CLAUDE.md, chat archives, scratch
+  notes, legacy SQL comments, older handoff docx files) still use
+  "Epic" and a contributor assumes Epic and Legendary are different
+  tiers, or writes code referencing `rarity = 'epic'` against a schema
+  that uses `'legendary'`.
+SYMPTOM: Queries that filter by `rarity = 'epic'` return zero rows.
+  Display code that renders an "Epic" badge never fires. Forum posts
+  or user-facing copy mixing the two terms confuses users.
+FIX: Every new doc uses "Legendary." If you encounter "Epic" in an
+  older doc, fix it on sight. SQL enum for rarity should be created
+  fresh at F-55 launch migration with only the correct five values
+  (Common/Uncommon/Rare/Legendary/Mythic) — no legacy "epic" value
+  in the enum at all.
+SESSION: 246 (rename locked and propagated).
+```
+
+## LM-206: source_type is the one field locked at creation forever
+
+```
+WHAT: F-55 has a 10-token edit button that lets forgers edit any field
+  on their ref card — source_title, source_author, source_date, locator,
+  claim_text, category. The ONE exception is `source_type`, which is
+  locked at creation forever and cannot be edited even with tokens. This
+  is load-bearing because source_type directly determines the power
+  ceiling (primary 5 / academic 4 / book 3 / news 1 / other 1), and
+  letting it be edited post-forge would create a workaround for
+  successful mis-categorization challenges — a forger could accept the
+  Disputed badge, pay 10 tokens, edit source_type back to `primary`, and
+  undo the challenge ruling.
+BITES YOU WHEN: A future session adds more editable fields and forgets
+  the source_type exception, silently reopening the workaround. Or a
+  schema migration drops the edit-RPC field whitelist check. Or a
+  product-minded contributor argues "just let forgers fix their
+  mistakes" without understanding the economic ceiling dependency.
+SYMPTOM: Forgers start rapidly switching source_types on refs after
+  challenges land. Challenge success rates climb. The Disputed badge
+  system stops having teeth. The ceiling economy drifts.
+FIX: The `edit_reference` RPC must enforce a whitelist of editable
+  fields and explicitly exclude `source_type`. Add a unit test that
+  attempts to edit source_type and asserts it fails. Document the
+  exception in the RPC docstring. If anyone ever asks to make
+  source_type editable, the answer is no — route the request to a
+  dedicated "rebuild the ceiling economy" walk session instead.
+SESSION: 247 (rule locked).
+```
+
+## LM-207: Bots and AI opponents cannot cite references — RPC-level block
+
+```
+WHAT: F-55 leasing + royalty model creates a farm-your-own-ref loophole:
+  a forger could deploy friendly bots or game AI sparring to cite their
+  own refs and farm royalty payouts without ever actually playing. The
+  structural fix (not a detection fix) is that bots and AI opponents
+  cannot cite references at all. Reference loadouts are human-only.
+  F-06 bot army debates and AI sparring sessions skip the loadout/cite
+  system entirely.
+BITES YOU WHEN: Someone adds a new bot type, a new AI opponent mode, or
+  a test harness that exercises `cite_debate_reference` without first
+  checking the `profiles.is_bot` flag on both debaters. The cite
+  succeeds, royalty pays out to the forger, and the farm loophole
+  reopens silently. Or a schema migration renames `is_bot` to
+  `profile_type` and the RPC check silently passes.
+SYMPTOM: Royalty payouts spike for a small set of forgers who suspiciously
+  also own bot accounts. Ref strike counts climb on accounts whose human
+  activity doesn't match. Rarity tiers inflate on refs that nobody is
+  actually using in human debates.
+FIX: The `cite_debate_reference` RPC must check `profiles.is_bot = false`
+  on BOTH the citer and the citer's opponent. If either is a bot, the
+  cite is rejected with a specific error code. AI sparring sessions
+  should not even expose the loadout UI. Add an integration test that
+  creates a bot-vs-human debate and asserts cites fail. If the `is_bot`
+  column is ever renamed or split, the cite RPC is the first place to
+  update.
+SESSION: 247 (rule locked).
+```
+
+## LM-208: `general` category asymmetric enforcement
+
+```
+WHAT: The `general` category value exists in the live category enum
+  (alongside politics/sports/entertainment/music/couples_court). It is
+  legitimately used as a catchall by `submit_hot_take` and related hot
+  take RPCs. However, the F-55 reference Forge picker explicitly
+  EXCLUDES `general` — forgers must pick one of the five real
+  categories. The rule is asymmetric: `general` allowed for hot takes,
+  blocked for references.
+BITES YOU WHEN: A future dev sees `general` in the enum and assumes it's
+  uniformly available, or unifies the category validation logic across
+  hot takes and references into a single shared helper. Suddenly
+  forgers can pick `general` on references, the taxonomy weakens, and
+  the "force the forger to pick a real category" rule silently breaks.
+SYMPTOM: New refs start appearing with `category = 'general'`. The F-27
+  Armory chip-row filters gain a "General" chip that nobody meant to
+  add. Reference browsing devolves into a junk drawer.
+FIX: The `forge_reference` RPC (or whatever the reference creation RPC
+  ends up named) must whitelist-check the category input against the
+  five real values: `politics`, `sports`, `entertainment`, `music`,
+  `couples_court`. Do NOT share the validation helper with hot takes —
+  they have different rules. Document the asymmetry in both RPCs'
+  docstrings. If the category enum is ever migrated, re-verify both
+  rules survive the migration intact.
+SESSION: 247 (rule locked).
 ```
