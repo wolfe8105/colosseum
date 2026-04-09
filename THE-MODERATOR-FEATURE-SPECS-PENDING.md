@@ -464,3 +464,445 @@ ALTER TABLE arena_debates
 - Debaters tipping on their own matches (allowed — per Pat S249, "oh who cares. let them if they have time").
 - Tip-history personal page for users (out of scope; watch history is service-role-only).
 
+
+---
+
+## F-16 / F-17 / F-18 — Groups: Settings, Entry Requirements, Auditions (S250)
+
+Walked S250. Three features walked as a cluster because they share a single `join_mode` state machine on `groups` and a single Settings UI surface. Build order is flexible — can ship as one migration or sequentially, but the DB columns land together. **F-17 and F-18 are siblings (not parent/child) because the Model A decision below makes them mutually exclusive join modes, dissolving the apparent F-18→F-17 dependency from the original stub.**
+
+**Model A — Mutually Exclusive Join Modes.** A group has exactly one `join_mode` at any time, set by the leader. Values:
+
+- `open` — anyone can join (current default behavior)
+- `requirements` — F-17 gates checked on join
+- `audition` — F-18 audition flow intercepts join
+- `invite_only` — leader-generated invite is the only entry path (no Join button for non-invited users)
+
+Switching `join_mode` is a leader-only action via Group Settings. Existing members are never affected by a mode change — gates and auditions apply only to new joiners. Leader-generated invites bypass ALL gates and auditions in ALL modes (invite is a leader override, per S250 Q20 confirmation).
+
+---
+
+### F-16 — Group Settings (post-creation edit)
+
+**Who can edit:** Leader only. No co-leader concept is introduced — the promote RPC and `group_role_rank()` hierarchy is noted but not extended for this feature. Leader-only for all settings, all deletes, all audition approvals, all "must debate leader" audition debates. Members have no elevated permissions.
+
+**Editable fields.** Every field captured in `create_group` is editable post-creation **except `name`**. Name is locked at creation because downstream history (GvG records, leaderboards, challenge logs) references groups by name and renames would break audit trails. Editable:
+
+- `description` (free text)
+- `category` (one of: general, politics, sports, entertainment, music, couples_court — free-for-all to change, no cooldown per S250 Q28)
+- `is_public` (freely flippable per S250 Q24 — no cooldown, no restriction, flipping public→private keeps existing members; mitigation against "build-then-lock" abuse: members can leave at any time, so it's not a trap)
+- `avatar_emoji`
+- `join_mode` (the Model A state machine — drives F-17 and F-18 visibility)
+- F-17 gate values (only visible when `join_mode = requirements`)
+- F-18 audition rule + optional debate parameter overrides (only visible when `join_mode = audition`)
+
+**Delete group.** Leader-only. When deleted:
+
+- Cascade-delete `group_members`, `group_bans`, `group_auditions`, pending `group_challenges`.
+- **Preserve** completed GvG debate history by nulling out the `group_id` foreign key on `arena_debates` (or the equivalent GvG junction table) rather than hard-cascading. Historical debates survive, they just no longer link back to a live group (per S250 Q26).
+- Delete is immediate and final — no soft-delete, no recovery, no undo window. A confirmation modal with a "type the group name to confirm" input is required at the UI layer to prevent fat-finger.
+
+**UI surface — mobile-forward.** Group Settings is a **full-screen modal** pushed from the Group Detail screen (Screen W), accessed via a gear icon in the Group Detail header visible only to the leader. Full-screen modal (not a centered dialog) because (a) mobile screens are narrow and form fields need room to breathe, and (b) the Play Store app target means the Settings screen should feel like an app screen, not a popover. The modal has its own back button, its own scroll, and a "Save" button pinned to the bottom in thumb reach. Sections: General (description, category, avatar, is_public toggle), Join Mode (radio buttons for the 4 modes + conditional sub-sections), Danger Zone (delete group with confirmation).
+
+**Mobile-first design notes.** Thumb reach zones respected — destructive actions (Delete Group) sit inside the Danger Zone section and require an extra confirmation step. Form fields are spaced for 44pt tap targets. The `is_public` toggle uses a native-feeling switch component, not a checkbox. The category selector is a bottom sheet picker, not a dropdown (better for mobile touch).
+
+**New RPC.** `update_group_settings(p_group_id uuid, p_description text, p_category text, p_is_public boolean, p_avatar_emoji text, p_join_mode text, p_entry_requirements jsonb, p_audition_config jsonb)`. SECURITY DEFINER. Leader-only guard via `group_members.role = 'leader'` check. Returns the updated group row as JSON. Any parameter passed as NULL is left unchanged (partial update semantics). `p_entry_requirements` and `p_audition_config` are JSONB for schema flexibility — the F-17 and F-18 fields live inside those columns rather than as dedicated columns, keeping the `groups` table narrow.
+
+**New RPC.** `delete_group(p_group_id uuid, p_confirm_name text)`. SECURITY DEFINER. Leader-only. Requires `p_confirm_name` to match the group name exactly as a fat-finger guard. Runs the cascade + history-preservation sequence documented above. Emits a `group_deleted` event to the event log.
+
+---
+
+### F-17 — Entry Requirements
+
+Active only when `join_mode = requirements`. Gates checked inside `join_group` RPC (single entry point per S250 Q9). Order of checks: ban → audition (N/A in this mode) → entry requirements → insert member row.
+
+**Gate types shipping in v1:**
+
+- **Minimum global Elo.** Integer. Checked against `profiles.elo_rating`. Per S250 Q6, there is no per-category Elo in production — only a single global Elo per user. Per-category Elo gating is out of scope and would be a separate feature requiring a matchmaking and leaderboard rewrite.
+- **Minimum token staking tier.** One of the F-09 tiers: Unranked / Spectator+ / Contender / Gladiator / Champion / Legend. Per S250 Q6, this is the only "tier" system in the codebase. Leader picks a minimum from a dropdown.
+- **Profile completion.** Boolean. "Requires complete profile" means the user has a display name, avatar, bio, and has finished Plinko (the existing `profiles.profile_complete` or equivalent flag). Checked against the existing column.
+
+**Gate combination logic.** AND logic per S250 Q7 — a user must meet **every** gate the leader has set. Leaders can set any subset (zero, one, two, or all three gates). Zero gates with `join_mode = requirements` is legal but functionally identical to `open`.
+
+**Non-member view on a gated group (S250 Q8).** When a non-member taps into a Group Detail screen for a gated group and they don't meet the gates:
+
+- The Join button is **hidden entirely** (not disabled, not shown with a lock icon — the S250 answer was "they can see group members only").
+- The full group info (name, description, member count, member list, Group Elo, category) remains visible.
+- No explanation of WHY they can't join is shown — the group's requirements are not disclosed to non-members. This prevents gate-farming (users calibrating their stats specifically to clear a known bar) and keeps the group's bar a private leader decision.
+
+**Grandfathering (S250 Q10).** Existing members are unaffected when a leader enables or raises gates. New gates apply only to new joiners. No retroactive enforcement, no admin "kick everyone below the bar" tool.
+
+**Storage.** Entry requirement values live in `groups.entry_requirements JSONB` with shape:
+
+```json
+{
+  "min_elo": 1200,
+  "min_tier": "contender",
+  "require_profile_complete": true
+}
+```
+
+Any field absent or null = that gate is not active. All three fields absent = no gating (functionally open).
+
+**`join_group` modification.** Inside the existing RPC, after the ban check and before the insert, add a `join_mode` branch. If mode is `requirements`, fetch `entry_requirements` and check each active gate. Fail with a specific error message per failed gate, e.g., `'Minimum Elo 1200 required'`, `'Minimum tier Contender required'`, `'Profile must be complete'`. The client discards the specific message and shows a generic "You do not meet the requirements to join this group" — the specific failure stays server-side for debugging only (prevents gate-reverse-engineering).
+
+---
+
+### F-18 — Audition System
+
+Active only when `join_mode = audition`. Exhibition-only per S250 Q11 — audition debates do not affect Elo, XP, stats, or Group Elo for either participant. Win/loss is determined by normal debate scoring (whichever debater has the higher final score wins; draws count as fail).
+
+**The 5 audition rules (S250 Q12 confirmed).** Leader picks exactly one from a dropdown in Group Settings:
+
+1. `allowed_by_leader` — no debate required. Candidate taps Join → audition row inserted → leader sees it in a pending list → approve/deny buttons. Shortest flow.
+2. `debate_leader_any` — candidate must debate the leader. Win or lose, completing the debate admits the candidate. Tests willingness, not skill.
+3. `debate_member_any` — candidate must debate any group member. Win or lose, completing the debate admits.
+4. `debate_leader_win` — candidate must debate and WIN against the leader.
+5. `debate_member_win` — candidate must debate and WIN against any group member.
+
+**Audition initiation flow (S250 Q13, suggestion adopted).**
+
+- Candidate taps Join on an audition-mode group → audition modal opens showing the group's audition rule in plain language ("Must win a debate vs. a group member").
+- Candidate fills in the debate parameters: topic, category, ruleset (amplified/unplugged), total rounds. **Leader-override support per S250 Q27:** any parameter the leader has locked in the group's audition config is pre-filled and disabled; any parameter the leader left blank is candidate-editable. Leader who wants full control locks all four; leader who wants "show me what you've got" locks nothing.
+- Candidate taps "Request Audition" → `group_auditions` row inserted with status `pending`, parameters stored, candidate identity stored.
+- For `allowed_by_leader`: notification fires to the leader, leader sees the pending row in a Pending Auditions section on the group page with Approve / Deny buttons.
+- For `debate_leader_*`: notification fires to the leader, leader sees the pending row with an Accept Audition button that launches the debate directly. Leader can also decline with no debate.
+- For `debate_member_*` (S250 Q14, simplified model): pending auditions are visible to ALL group members in a Pending Auditions section on the group page. Any member can tap Accept Audition to claim it, first-come-first-served. Debate launches between the accepting member and the candidate. No assignment, no queue management, no leader intervention required.
+
+**Audition debate wiring.** Launches through the existing `create_private_lobby` infrastructure with a new flag `p_audition_id uuid` that tags the debate as exhibition. The existing `update_arena_debate` / scoring pipeline already has an `unplugged` ruleset branch that skips Elo/XP/stats — audition debates reuse that branch by setting ruleset effects to exhibition-mode regardless of the candidate's ruleset pick. On debate completion, a trigger (or the existing end-of-debate RPC) reads the `audition_id` from the debate row, looks up the audition record, determines pass/fail based on the audition rule type and the winner, and writes the result back to `group_auditions.status` and `group_auditions.resolved_at`. On pass, the candidate is auto-inserted into `group_members`.
+
+**Pending audition lifetime (S250 Q15).** Pending auditions never expire automatically. They sit in the Pending Auditions section of the group page forever unless:
+
+- The leader deletes the group (cascade).
+- The leader manually deletes the audition row via a trash icon in the Pending section.
+- The candidate withdraws by tapping a Withdraw button on their own pending audition.
+- The audition is accepted and the debate runs to completion.
+
+**Retry policy (S250 Q17).** Unlimited retries. A candidate who fails an audition can immediately request another one. No cooldown, no attempt counter, no lockout. This is simple for users to understand and impossible to gate-farm since a failed audition is an exhibition match that costs no tokens and moves no ratings — the only cost is the candidate's time.
+
+**Concurrency (S250 Q18).** Serialized per candidate per group. A candidate can have **one pending audition per group at a time**. Attempting to request a second audition for the same group while one is pending returns an error. Different groups are independent — a candidate can have pending auditions at multiple groups simultaneously.
+
+**Audition debate format (S250 Q27 resolved).** Per-field leader override. The group's `audition_config` JSONB holds optional overrides:
+
+```json
+{
+  "rule": "debate_member_win",
+  "locked_topic": null,
+  "locked_category": "politics",
+  "locked_ruleset": "amplified",
+  "locked_total_rounds": null
+}
+```
+
+In this example, the leader has locked category and ruleset but lets the candidate pick topic and round count. Any locked field becomes disabled (pre-filled, non-editable) in the candidate's audition request modal.
+
+**New table — `group_auditions`.**
+
+```sql
+CREATE TABLE public.group_auditions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES public.groups(id) ON DELETE CASCADE,
+  candidate_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rule TEXT NOT NULL CHECK (rule IN ('allowed_by_leader','debate_leader_any','debate_member_any','debate_leader_win','debate_member_win')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','claimed','in_progress','passed','failed','denied','withdrawn')),
+  topic TEXT,
+  category TEXT,
+  ruleset TEXT DEFAULT 'amplified',
+  total_rounds INTEGER DEFAULT 4,
+  claimed_by_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  debate_id UUID REFERENCES public.arena_debates(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  claimed_at TIMESTAMPTZ,
+  resolved_at TIMESTAMPTZ,
+  UNIQUE (group_id, candidate_user_id) DEFERRABLE
+);
+```
+
+The UNIQUE constraint enforces the "one pending audition per candidate per group" rule (S250 Q18). DEFERRABLE so it can be dropped and re-inserted inside a transaction when a candidate retries after a failed audition (the failed row is deleted first, then the new pending row is inserted).
+
+**New RPCs.**
+
+- `request_audition(p_group_id uuid, p_topic text, p_category text, p_ruleset text, p_total_rounds int)` — candidate-facing, creates pending row with leader-override validation.
+- `accept_audition(p_audition_id uuid)` — member-facing (or leader-facing for `debate_leader_*` rules), claims the audition and launches the debate via `create_private_lobby` with `p_audition_id` wired through.
+- `approve_audition(p_audition_id uuid)` — leader-only, for `allowed_by_leader` rule, directly admits the candidate.
+- `deny_audition(p_audition_id uuid, p_reason text)` — leader-only, for any rule. Marks status `denied`.
+- `withdraw_audition(p_audition_id uuid)` — candidate-only, marks status `withdrawn`.
+- `resolve_audition_from_debate(p_debate_id uuid)` — internal, called by the end-of-debate pipeline. Reads the debate winner, matches against the audition rule, writes final status, admits the candidate on pass.
+- `get_pending_auditions(p_group_id uuid)` — list pending auditions visible to the caller based on their relationship to the group.
+
+**RLS.** The `group_auditions` table is gated: candidates can see their own rows, group members can see pending rows for their group, leaders can see everything for their group, everyone else sees nothing. Matches the existing group private-info pattern.
+
+**Integration with `join_group` RPC.** When `join_mode = audition`, the `join_group` RPC does NOT insert into `group_members`. Instead it returns a special response `{success: false, audition_required: true, rule: 'debate_member_win'}` which the client uses to open the audition request modal. This keeps `join_group` as the single entry point while cleanly branching to the audition flow.
+
+---
+
+### Cluster — build order and migration shape
+
+**One combined migration.** All three features touch `groups` (adding `join_mode`, `entry_requirements`, `audition_config` columns) and add the `group_auditions` table. Bundling into one migration keeps the schema change atomic and avoids a half-shipped state where settings exist but the join modes they toggle don't work.
+
+**Column additions to `groups`:**
+
+```sql
+ALTER TABLE public.groups
+  ADD COLUMN join_mode TEXT NOT NULL DEFAULT 'open'
+    CHECK (join_mode IN ('open','requirements','audition','invite_only')),
+  ADD COLUMN entry_requirements JSONB DEFAULT '{}'::jsonb,
+  ADD COLUMN audition_config JSONB DEFAULT '{}'::jsonb;
+```
+
+Backfill is trivial — every existing group defaults to `open` and the JSONB fields default empty, preserving current behavior.
+
+**Client work:** Group Settings modal (new), Pending Auditions section on Group Detail page (new), audition request modal (new), join flow branch handling (modify existing join button handler), audition debate flag plumbing through the private lobby creation path.
+
+**Build blockers:** none. Zero dependencies on F-10, F-55, F-57, F-58. Can ship independently whenever scheduled.
+
+**Out of scope for this cluster:**
+
+- Co-leader role or any expansion of the group role hierarchy beyond what already exists.
+- Per-category Elo gating (would require a full per-category Elo system that does not exist in production).
+- Group-wide chat, announcements, or sub-groups.
+- Group token balance or group inventory (out of scope for F-16; relevant to F-59 group rewards which were cut from v1 for the same reason).
+- Audition tournaments or multi-round audition sequences — one debate decides, period.
+- Audition spectatorship — pending auditions are internal to the group; no public feed of "hey come watch this audition."
+- Retroactive gate enforcement tools for existing members.
+- Group name editing — permanently locked post-creation.
+
+---
+
+## F-59 — Invite Rewards (Growth Loop)
+
+Walked S250. New feature. The existing `src/share.ts` has a half-built `inviteFriend()` with a broken `generateRefCode()` (returns a random suffix every call, not stable per-user) and a `handleDeepLink()` that captures `?ref=` into localStorage but **never reads it back out anywhere in `src/`**. F-59 replaces that infrastructure with a real attribution system and a tiered item-reward ladder designed to be the first genuinely motivating reason for users to share the app.
+
+**The ladder.** Cumulative milestones (S250 confirmed). Each milestone drops once per user, additive to prior drops:
+
+- **1 successful invite** → 1 **Legendary power-up** (one-shot consumable from the F-57 catalog, user picks from all Legendary-tier power-ups at claim time)
+- **5 successful invites** → 1 **Mythic power-up** (one-shot consumable, user picks from all Mythic-tier power-ups)
+- **25 successful invites** → 1 **Mythic modifier** (permanent, socket into a forged reference, user picks from all Mythic modifiers across both end-of-debate and in-debate categories per S250 Q10)
+
+**Repeating tier.** After the 25-invite prestige reward, users earn **1 additional Mythic power-up for every 25 further successful invites** (at invite 50, 75, 100, …). No further permanent modifiers — the 25-invite Mythic modifier is one-time-only. This keeps the loop rewarding indefinitely for super-inviters without minting infinite permanents into the economy.
+
+**Between-milestone invites are silent.** Invites 2-4 and 6-24 produce no item drops, only a progress counter update on the Invite & Rewards screen and a conversion notification. The milestones ARE the reward — silent grinding builds anticipation.
+
+**Invitee reward (S250 Q9 adopted).** When a new user signs up via an invite link and completes their first ranked debate, they receive **500 tokens** as a welcome gift. This symmetric-reward model measurably lifts conversion in referral systems (Dropbox-style). Small cost, meaningful lift. Awarded automatically at the conversion trigger, same RPC path as the inviter credit.
+
+---
+
+### Definition of "successful invite" (S250 Q1)
+
+A referral converts to "successful" status when the invitee's account reaches **"first ranked debate completed."** Specifically:
+
+- Invitee creates an account via the invite link (status `signed_up` in `referrals` table)
+- Invitee completes Plinko and all onboarding
+- Invitee enters and **completes** (runs to final scoring, not a rage-quit or disconnect) their **first ranked arena debate**
+
+Only at that moment does the referral row flip to `converted`, the inviter's milestone counter increment, and the reward evaluation run. This threshold is:
+
+- Low enough that any legitimate new user will hit it naturally (they're here to debate)
+- High enough to filter out bot-farm signups that never engage
+- Tied to a concrete action that's hard to fake (requires a real opponent, a real matchmaking cycle, a real debate completion)
+
+Completed AI Sparring matches do NOT count as "first ranked debate" — they're unranked practice mode.
+
+---
+
+### Anti-fraud (S250 Q2)
+
+Four protections ship in v1:
+
+1. **Device fingerprint block.** Leverages the existing `src/analytics.ts` visitor UUID pipeline. If the inviter and invitee share the same visitor UUID (same browser, same device), the referral is auto-rejected with `status = 'rejected_fraud', fraud_reason = 'shared_device'`. Invitee keeps their account; inviter gets no credit.
+2. **IP rate-limit.** Max 3 successful conversions per source IP per rolling 30-day window. Protects against a single user cycling through alt accounts on the same network. Shared Wi-Fi households stay under the cap; abusers hit it fast.
+3. **Email domain rate-limit.** Max 5 successful conversions from the same `@domain.com` per inviter per rolling 30-day window. Specifically targets temp-mail farms (`@mailinator.com`, `@10minutemail.com`, etc.) without blocking legitimate workplace/household domains outright.
+4. **Manual review at the 25-invite Mythic modifier tier.** The 1-invite Legendary drop and the 5-invite Mythic power-up drop are auto-paid immediately on conversion. The 25-invite Mythic modifier is paused with status `pending_review` and flagged for admin inspection before the drop lands. A quick glance at the inviter's `referrals` history reveals obvious fraud patterns (IP clustering, time-stamp clustering, same-device-family fingerprints). Admin approves → drop lands normally. Admin rejects → reward cancelled, referrer flagged. This is cheap insurance on the platform's most valuable single reward.
+
+Fraud-rejected referrals stay in the `referrals` table for audit and pattern-matching — never hard-deleted.
+
+---
+
+### Attribution mechanics
+
+**Invite link format (S250 Q1c).** `themoderator.app/i/<code>`. Short, shareable, obviously an invite. A new Vercel route `/i/:code` handles the redirect, records the click server-side via `record_invite_click(p_ref_code text)`, sets the localStorage hint for the happy-path attribution, then forwards the browser to the Plinko signup flow (`moderator-plinko.html`).
+
+**Ref code format (S250 Q2b).** 5-character base36 random string (e.g., `7k2m9`, `a3x4f`). Generated once at signup, stored in `profiles.ref_code TEXT UNIQUE`. ~60 million combinations, non-guessable, username-independent (survives username changes), and compact enough that the full invite link fits comfortably in an SMS preview.
+
+**Attribution flow (S250 Q3 hybrid adopted).**
+
+1. **Click:** User clicks `themoderator.app/i/7k2m9`. Server inserts a `referrals` row with `status = 'clicked'`, stores IP and device fingerprint, sets `localStorage.colosseum_referrer = '7k2m9'`, redirects to Plinko.
+2. **Signup (happy path):** User completes Plinko in the same browser session. Signup RPC reads `localStorage.colosseum_referrer`, calls `attribute_signup(p_ref_code text)`, which matches the ref code to the latest `clicked` row for that code, flips status to `signed_up`, links `invitee_user_id` to the new profile.
+3. **Signup (fallback path):** User clears localStorage, switches devices, or comes back 3 days later. If no ref code in localStorage at signup time, the server runs a fallback match: look for the most recent `clicked` row matching the new account's IP and device fingerprint within a 30-day window. If found, attribute. If not found, no attribution — per S250 Q3, the user "can complain to their friend and get a new invite." The fallback is a best-effort convenience, not a guarantee.
+4. **Conversion:** Invitee completes first ranked debate. The end-of-debate RPC checks if it was the invitee's first ranked completion. If yes AND they have a `signed_up` referral row, the RPC calls `convert_referral(p_invitee_user_id uuid)`, which flips the row to `converted`, increments the inviter's milestone counter, awards the 500-token invitee welcome bonus, and fires milestone evaluation.
+5. **Milestone evaluation:** If the converted invite hits a reward milestone (1, 5, 25, or any multiple of 25 above 25), insert a row into `invite_rewards_log` with `claimed = false`. Fire an in-app toast and inbox notification to the inviter. The reward waits for explicit claim.
+
+**Last-click-wins on competing referrers (S250 Q5).** If an invitee clicked multiple people's invite links before signing up, the **most recent click within the 30-day window** is the attributed referrer. This is the standard affiliate marketing rule and rewards the person who actually closed the deal.
+
+**Existing-user clicks (S250 Q4).** If someone clicks a ref link but their IP/device/email matches an existing user account, the system displays a toast: **"You're already a member"** and takes no attribution action. Existing users never generate credit for anyone, ever.
+
+**Self-invite block.** Hard-block at the RPC layer. If an inviter's own session somehow tries to attribute to their own ref code (alt accounts, shared devices, etc.), the conversion is rejected as fraud. Combined with the device fingerprint check, this catches most trivial self-farm attempts.
+
+---
+
+### Who gets a ref code (S250 Q6)
+
+Ref codes are generated and visible **only after Plinko completion**. Brand-new accounts in the middle of Plinko cannot see their invite link yet. This gates against half-created bot accounts generating ref codes and spamming. Once Plinko is complete, the ref code is immediately visible — no further gating (no "must have played a debate first"). If a brand-new user wants to invite their friends the moment they finish signup, that's the best possible growth moment and we do not block it.
+
+---
+
+### Surface area — 4 proactive nudges (S250 Q7)
+
+All four ship in v1. Growth loops need surface area.
+
+1. **Plinko completion screen nudge.** Final Plinko step displays a "Bring your friends" panel with the user's invite link + share buttons. First impression, maximum momentum.
+2. **Post-debate modal (existing).** The existing post-debate share modal already has an `📨 INVITE` button wired to `inviteFriend()`. Keep the button, rewire it to use the new stable ref code instead of the broken random generator. No visual change.
+3. **First-win celebration nudge.** After a user's first debate win, the celebration modal gets a bonus panel: "Share your first victory AND your invite link."
+4. **Home feed nudge card.** Periodic card in the home feed rotation: "You're 2 invites away from your Mythic power-up." Shown when the user is 1-2 invites from a milestone. Not every load — rate-limited to once per day per user, dismissible, re-surfaces only when progress changes.
+
+---
+
+### Invite & Rewards screen (dedicated)
+
+New profile sub-page accessed from the profile tab. Contents:
+
+- **Headline progress band.** Large text: "X of 25 invites to your Mythic modifier." Progress bar below, filled to the current invite count. Once past 25, headline shifts to "X invites sent" with a repeating Mythic power-up counter underneath.
+- **Your invite link.** Large, copyable, tap-to-copy. Native share button below it (calls `navigator.share` on mobile, falls back to clipboard). Secondary share buttons for WhatsApp, SMS, email.
+- **Recent activity feed.** List of recent invite events: "Alice completed her first debate — your Legendary power-up is ready to claim" / "Bob just signed up — waiting for their first debate". Username visible per S250 Q12, no email or display name.
+- **Unclaimed rewards.** Each unclaimed reward row shows the milestone hit, the item tier, and a pulsing "CLAIM" button. Tapping Claim opens the item picker modal (see below).
+- **Total stats.** "X successful invites / Y rewards claimed / Z currently pending".
+- **How it works.** Collapsible FAQ section with the ladder explanation, fraud rules, and conversion trigger definition.
+
+**Claim flow (S250 Q14).** Tap Claim → bottom sheet opens showing the item picker. For Legendary power-ups: filterable grid of all Legendary-tier power-ups from the F-57 catalog (same chip-row pattern as F-27). For Mythic power-ups: grid of all Mythic-tier power-ups. For the 25-invite Mythic modifier: grid of all Mythic-tier modifiers across both end-of-debate and in-debate categories. User taps an item → full-screen confirmation with the item card in its rarity treatment (Mythic = full purple border + tinted background per F-27 rarity visual language) → tap Confirm → celebration animation (item drops in with rarity-tier visual effect) → item lands in the user's inventory (power-ups to `user_powerups`, modifiers to `user_modifiers` staging area pending F-57 build).
+
+**Heads-up from S250 walk:** The Legendary power-up picker at the 1-invite milestone will show ~30 effects. For a brand-new inviter this may feel overwhelming. If it tests poorly at build time, we can trim to a curated subset of 5-8 "beginner-friendly" Legendary effects without schema changes — just a client-side filter. Flagged for build-time evaluation, not pre-decided.
+
+**Claim expiration (S250 Q8).** Unclaimed rewards **never expire**. They sit in the Unclaimed Rewards section of the Invite & Rewards screen indefinitely. Claim fatigue is a lesser sin than yanking rewards away from users.
+
+---
+
+### Notifications (S250 Q13)
+
+When an invite converts, two notifications fire:
+
+1. **In-app toast (immediate).** "🎉 Alice completed her first debate — your Legendary power-up is ready!" Auto-dismiss after 5 seconds. Tap to jump to Invite & Rewards screen.
+2. **Persistent inbox entry.** Added to the existing notification inbox system. Survives until explicitly dismissed by the user. Serves as the audit trail for users who miss the toast.
+
+No email notifications at launch (those flow through F-35 weekly newsletter infrastructure — defer to that feature's cadence).
+
+---
+
+### Group rewards — CUT from v1
+
+Per S250 walk, group-level invite rewards are **explicitly cut from v1 and deferred to a future version.** Reasoning: groups have no token balance column, no inventory, no item-holding infrastructure. Adding all of that just to support group-level invite attribution is a substantial side quest that would triple the feature's scope and delay the whole growth loop. Individual invites are what growth loops run on. Ship individual-only.
+
+**Optional lightweight group flavor (deferred, not shipping).** The lightest possible group tie-in would be: every successful individual invite where the inviter is a member of a group also adds a small Group Elo bump (e.g., +10) to their primary group. Zero new tables, zero inventory, pure leaderboard pressure — groups start competing to recruit the most active inviters. This is noted here as a v2 extension but is NOT part of the v1 build spec.
+
+---
+
+### Account deletion (S250 Q11)
+
+Clean exit. When a user deletes their account:
+
+- Their `profiles.ref_code` disappears with the profile row (cascade).
+- Their `referrals` rows cascade-delete (both as `referrer_user_id` and `invitee_user_id` via `ON DELETE CASCADE` and `ON DELETE SET NULL` respectively — see schema).
+- Their `invite_rewards_log` unclaimed and claimed rows cascade-delete.
+- In-flight attributions pointing at them (other users' referral rows where this user was the invitee mid-conversion) have `invitee_user_id` nulled out and marked `status = 'rejected_fraud', fraud_reason = 'account_deleted'`.
+
+No data preservation, no soft-delete, no tombstones. Account deletion is final across the whole invite system.
+
+---
+
+### Data model
+
+**Column addition:**
+
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN ref_code TEXT UNIQUE;
+```
+
+Generated at Plinko completion time via a helper that loops on collision (extremely rare with 60M combinations but the UNIQUE constraint enforces it). Existing users get a ref code backfilled on next login via a one-time migration step.
+
+**Table — `referrals`:**
+
+```sql
+CREATE TABLE public.referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  invitee_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  ref_code TEXT NOT NULL,
+  invitee_ip TEXT,
+  invitee_device_id TEXT,
+  invitee_email_domain TEXT,
+  status TEXT NOT NULL DEFAULT 'clicked'
+    CHECK (status IN ('clicked','signed_up','converted','rejected_fraud','paid')),
+  fraud_reason TEXT,
+  clicked_at TIMESTAMPTZ DEFAULT now(),
+  signed_up_at TIMESTAMPTZ,
+  converted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_referrals_referrer ON public.referrals(referrer_user_id);
+CREATE INDEX idx_referrals_invitee ON public.referrals(invitee_user_id);
+CREATE INDEX idx_referrals_ref_code_status ON public.referrals(ref_code, status);
+CREATE INDEX idx_referrals_ip_device ON public.referrals(invitee_ip, invitee_device_id) WHERE status = 'clicked';
+```
+
+**Table — `invite_rewards_log` (append-only audit ledger):**
+
+```sql
+CREATE TABLE public.invite_rewards_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  milestone INTEGER NOT NULL,
+  reward_type TEXT NOT NULL
+    CHECK (reward_type IN ('legendary_powerup','mythic_powerup','mythic_modifier')),
+  reward_effect_id INTEGER,
+  claimed BOOLEAN NOT NULL DEFAULT false,
+  pending_review BOOLEAN NOT NULL DEFAULT false,
+  awarded_at TIMESTAMPTZ DEFAULT now(),
+  claimed_at TIMESTAMPTZ,
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_invite_rewards_user_unclaimed ON public.invite_rewards_log(user_id) WHERE claimed = false;
+```
+
+The `reward_effect_id` is populated only at claim time (when the user picks which effect from the tier). Null on creation, set on claim.
+
+**RLS.** Users see only their own `referrals` and `invite_rewards_log` rows. Service role bypasses for fraud review and admin tools. Referrers CANNOT see details of their invitees beyond the username — no IP, no device fingerprint, no email domain exposure client-side.
+
+---
+
+### RPCs needed
+
+- `get_my_invite_link()` — returns `ref_code` and full URL. Generates the code if missing (Plinko completion flow). Gated behind Plinko completion.
+- `record_invite_click(p_ref_code text, p_device_id text)` — called from the `/i/:code` route handler. Inserts `clicked` row. Service-role callable (unauthenticated, but rate-limited by IP).
+- `attribute_signup(p_ref_code text, p_device_id text)` — called from the Plinko completion flow. Matches ref code to the latest `clicked` row, flips to `signed_up`, runs fraud checks (existing user? self-invite? device match?).
+- `convert_referral(p_invitee_user_id uuid)` — called internally from the end-of-debate RPC when a user completes their first ranked debate. Flips status to `converted`, awards 500 tokens to invitee, evaluates milestones for referrer, inserts `invite_rewards_log` rows as earned.
+- `claim_invite_reward(p_reward_id uuid, p_effect_id integer)` — user-facing. Validates the reward belongs to the caller, is unclaimed, is not `pending_review`, and the effect matches the reward's tier. On success, adds the item to the user's inventory via the same code path as F-10 purchases and marks the reward claimed.
+- `review_invite_reward(p_reward_id uuid, p_approve boolean, p_reason text)` — admin-only. For the 25-invite manual review tier. Approves (clears `pending_review`) or rejects (marks inviter as flagged, cancels the reward).
+- `get_my_invite_stats()` — returns the Invite & Rewards screen data: total invites clicked, signed up, converted, unclaimed rewards list, recent activity feed.
+
+---
+
+### Build blockers
+
+- `src/share.ts` `generateRefCode()` is broken and must be replaced. The existing `inviteFriend()` function stays but is rewired to fetch the stable ref code from the server on first call and cache it client-side.
+- The `/i/:code` route is a new Vercel serverless function — `api/i.js` or `api/invite.js`. Needs to be added to the Vercel routing config.
+- F-59 depends on F-57 inventory tables (`user_powerups`, `user_modifiers`) existing at build time — these are specified in F-10/F-57 but not yet built. If F-59 ships before F-57, the claim flow can stub the inventory insert and defer the actual item addition to F-57 build. Cleaner path: ship F-57 first, then F-59.
+- Fraud detection needs the `src/analytics.ts` visitor UUID pipeline to be reliable. Confirmed exists per NT line 89.
+- Manual review tooling for the 25-invite tier needs a minimal admin surface (even if it's just a Supabase table view + a `review_invite_reward` RPC call from the SQL editor). Full admin panel is out of scope — just needs a way for Pat to approve/reject.
+
+---
+
+### Out of scope for F-59 v1
+
+- Group-level invite rewards (explicitly deferred per S250 walk).
+- Email notifications (deferred to F-35 newsletter infrastructure).
+- Cross-platform attribution (iOS → Android, web → app). Single-device attribution is the v1 target.
+- Invite leaderboards (public "top inviters this week" rankings) — would be a fun v2 add.
+- Invite-based cosmetic unlocks (special badges for hitting milestones) — would piggyback on F-31 badge system, defer.
+- Time-limited invite campaigns (double-rewards weekends) — no infrastructure needed yet.
+- Invitee's ability to see who invited them or thank them in-app.
+- Anti-fraud appeals process — rejected inviters can contact support manually.
+- Integration with F-39 challenge links: currently treated as separate systems. Challenge link signups do NOT count as invite conversions in v1 to avoid double-credit exploitation. This may be unified in a v2 pass once data shows whether the separation is worth maintaining.
+
