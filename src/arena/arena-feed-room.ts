@@ -23,11 +23,11 @@ import {
   currentDebate, screenEl, feedTurnTimer, feedRealtimeChannel,
   loadedRefs, opponentCitedRefs, challengesRemaining,
   feedPaused, feedPauseTimeLeft, challengeRulingTimer,
-  activeChallengeRefId,
+  activeChallengeRefId, activeChallengeId,
   set_currentDebate, set_feedTurnTimer, set_feedRealtimeChannel,
   set_loadedRefs, set_opponentCitedRefs, set_challengesRemaining,
   set_feedPaused, set_feedPauseTimeLeft, set_challengeRulingTimer,
-  set_activeChallengeRefId,
+  set_activeChallengeRefId, set_activeChallengeId,
 } from './arena-state.ts';
 import type {
   CurrentDebate, DebateRole, FeedEvent, FeedEventType, FeedTurnPhase,
@@ -40,7 +40,7 @@ import {
 } from './arena-types.ts';
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
-import { challengeReference } from '../reference-arsenal.ts';
+// challengeReference import removed — F-55: rulings go through rule_on_reference RPC directly
 import { startTranscription, stopTranscription, cleanupDeepgram } from './arena-deepgram.ts';
 import type { DeepgramStatus } from './arena-deepgram.ts';
 import { getLocalStream } from '../webrtc.ts';
@@ -257,11 +257,11 @@ export function appendFeedEvent(ev: FeedEvent): void {
       el.innerHTML = `
         <span class="feed-evt-name">\uD83D\uDCC4 ${escapeHTML(citeName)}</span>
         <span class="feed-cite-claim" data-ref-id="${escapeHTML(ev.reference_id || '')}"
-              data-url="${escapeHTML(String(refMeta.url || ''))}"
-              data-domain="${escapeHTML(String(refMeta.domain || ''))}"
+              data-url="${escapeHTML(String(refMeta.source_url || ''))}"
+              data-source-title="${escapeHTML(String(refMeta.source_title || ''))}"
               data-source-type="${escapeHTML(String(refMeta.source_type || ''))}"
               >"${escapeHTML(ev.content)}"</span>
-        <span class="feed-cite-domain">${escapeHTML(String(refMeta.domain || ''))}</span>
+        <span class="feed-cite-domain">${escapeHTML(String(refMeta.source_title || ''))}</span>
       `;
       playSound('referenceDrop');
       vibrate(60);
@@ -273,8 +273,8 @@ export function appendFeedEvent(ev: FeedEvent): void {
           set_opponentCitedRefs([...opponentCitedRefs, {
             reference_id: ev.reference_id,
             claim: ev.content,
-            url: String(refMeta.url || ''),
-            domain: String(refMeta.domain || ''),
+            url: String(refMeta.source_url || ''),
+            domain: String(refMeta.source_title || ''),
             source_type: String(refMeta.source_type || ''),
             feed_event_id: String(ev.id),
             already_challenged: false,
@@ -1311,8 +1311,8 @@ function showCiteDropdown(debate: CurrentDebate): void {
   for (const ref of uncited) {
     html += `
       <div class="feed-dropdown-item" data-ref-id="${escapeHTML(ref.reference_id)}">
-        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim)}"</span>
-        <span class="feed-dropdown-meta">${escapeHTML(ref.domain)} \u00B7 PWR ${Number(ref.current_power)}</span>
+        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim_text)}"</span>
+        <span class="feed-dropdown-meta">${escapeHTML(ref.source_title)} \u00B7 PWR ${Number(ref.current_power)}</span>
       </div>
     `;
   }
@@ -1380,6 +1380,7 @@ function showChallengeDropdown(debate: CurrentDebate): void {
           set_challengesRemaining(result.challenges_remaining ?? (challengesRemaining - 1));
           updateChallengeButtonState();
           set_activeChallengeRefId(refId);
+          set_activeChallengeId(result.challenge_id || null);  // F-55: store for rule_on_reference
           pauseFeed(debate);
         }
       } catch (e) {
@@ -1400,7 +1401,7 @@ function showReferencePopup(el: HTMLElement): void {
   document.getElementById('feed-ref-popup')?.remove();
 
   const url = el.dataset.url || '';
-  const domain = el.dataset.domain || '';
+  const sourceTitle = el.dataset.sourceTitle || '';
   const sourceType = el.dataset.sourceType || '';
   const claim = el.textContent?.trim() || '';
 
@@ -1412,7 +1413,7 @@ function showReferencePopup(el: HTMLElement): void {
       <div class="feed-ref-popup-claim">"${escapeHTML(claim)}"</div>
       <div class="feed-ref-popup-meta">
         <span class="feed-ref-popup-type">${escapeHTML(sourceType.replace(/_/g, ' '))}</span>
-        <span class="feed-ref-popup-domain">${escapeHTML(domain)}</span>
+        <span class="feed-ref-popup-domain">${escapeHTML(sourceTitle)}</span>
       </div>
       ${url ? `<a class="feed-ref-popup-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Open source \u2197</a>` : ''}
       <button class="feed-ref-popup-close" id="feed-ref-popup-close">\u2715</button>
@@ -1466,8 +1467,12 @@ function pauseFeed(debate: CurrentDebate): void {
           p_reference_id: refId,
           p_metadata: { ruling: 'upheld' },
         }).then(() => {
-          if (refId) {
-            return challengeReference(refId, debate.id, 'upheld');
+          // F-55: rule_on_reference with stored challenge_id
+          if (activeChallengeId) {
+            return safeRpc('rule_on_reference', {
+              p_challenge_id: activeChallengeId,
+              p_ruling: 'upheld',
+            });
           }
         }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
         unpauseFeed();
@@ -1483,6 +1488,7 @@ function unpauseFeed(): void {
   if (challengeRulingTimer) clearInterval(challengeRulingTimer);
   set_challengeRulingTimer(null);
   set_activeChallengeRefId(null);
+  set_activeChallengeId(null);
 
   // Remove ruling panel if present
   document.getElementById('feed-challenge-overlay')?.remove();
@@ -1544,10 +1550,12 @@ function showChallengeRulingPanel(debate: CurrentDebate): void {
         p_reference_id: activeChallengeRefId,
         p_metadata: { ruling },
       });
-      // Update arsenal stats for the challenged reference
-      if (activeChallengeRefId) {
-        challengeReference(activeChallengeRefId, debate.id, ruling)
-          .catch((e) => console.warn('[Arena] challengeReference failed:', e));
+      // F-55: rule_on_reference with stored challenge_id
+      if (activeChallengeId) {
+        safeRpc('rule_on_reference', {
+          p_challenge_id: activeChallengeId,
+          p_ruling: ruling,
+        }).catch((e) => console.warn('[Arena] rule_on_reference failed:', e));
       }
     } catch (e) {
       showToast('Ruling failed: ' + (e instanceof Error ? e.message : 'unknown'), 'error');

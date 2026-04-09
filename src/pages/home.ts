@@ -41,7 +41,7 @@ import '../tiers.ts';
 import '../paywall.ts';
 import '../cards.ts';
 import '../analytics.ts';
-import { showForgeForm, renderArsenal, renderLibrary, verifyReference, ArsenalReference } from '../reference-arsenal.ts';
+import { showForgeForm, renderArsenal, renderLibrary, secondReference, ArsenalReference } from '../reference-arsenal.ts';
 
 // ============================================================
 // CATEGORIES (used by openCategory, ?cat= param)
@@ -406,7 +406,7 @@ async function loadMyArsenal(container: HTMLElement): Promise<void> {
 
 async function loadLibrary(container: HTMLElement): Promise<void> {
   await renderLibrary(container, async (refId: string) => {
-    await verifyReference(refId);
+    await secondReference(refId);
     await loadLibrary(container);
   });
 }

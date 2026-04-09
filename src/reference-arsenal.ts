@@ -1,117 +1,154 @@
 /**
  * THE MODERATOR — Reference Arsenal Module (TypeScript)
  *
- * Runtime module. New file — no legacy JS predecessor.
+ * F-55 OVERHAUL — Session 252.
+ * Full rewrite for new structured reference schema.
+ *
  * Depends on: auth.ts (safeRpc, getCurrentUser), config.ts (escapeHTML, showToast)
  *
  * Provides:
- *   - 4 RPC wrappers: forgeReference, verifyReference, citeReference, challengeReference
- *   - 5-step forge form renderer
+ *   - RPC wrappers: forgeReference, editReference, deleteReference,
+ *     secondReference, citeReference, challengeReference
+ *   - Structured forge form (title/author/date/locator/claim/type/category/url)
  *   - Arsenal list + reference card renderer
- *   - Constants: source types, power ceilings, verification thresholds, categories
+ *   - Loadout picker, debate cite/challenge wrappers
+ *   - Constants: source types, categories, rarity colors
  *
  * Session 147: initial build.
+ * Session 236: F-51 Phase 3 debate reference RPCs.
+ * Session 252: F-55 overhaul — new schema, structured fields, rarity system.
  */
 
 import { safeRpc, getCurrentUser } from './auth.ts';
 import { escapeHTML, showToast } from './config.ts';
 
 // ============================================================
-// TYPE DEFINITIONS
+// TYPE DEFINITIONS (F-55 schema)
 // ============================================================
 
 export interface ArsenalReference {
   id: string;
   user_id: string;
-  claim: string;
-  url: string;
-  domain: string;
-  author: string;
-  publication_year: number;
+  source_title: string;
+  source_author: string;
+  source_date: string;
+  locator: string;
+  claim_text: string;
   source_type: SourceType;
-  power_ceiling: number;
   category: ReferenceCategory;
-  verification_points: number;
-  current_power: number;
-  citation_count: number;
-  win_count: number;
-  loss_count: number;
-  challenge_count: number;
-  challenge_wins: number;
-  challenge_losses: number;
-  xp: number;
+  source_url: string | null;
+  seconds: number;
+  strikes: number;
   rarity: Rarity;
+  current_power: number;
+  graduated: boolean;
+  challenge_status: ChallengeStatus;
   created_at: string;
-}
-
-export interface VerifyResult {
-  voter_type: VoterType;
-  vote_value: number;
-  new_points: number;
-  new_power: number;
-  power_ceiling: number;
-}
-
-export interface CiteResult {
-  action: 'cited' | 'win_recorded' | 'loss_recorded';
-  citation_count?: number;
-  win_count?: number;
-  loss_count?: number;
-  xp_awarded?: number;
-  total_xp?: number;
-}
-
-export interface ChallengeResult {
-  ruling: 'upheld' | 'rejected';
-  challenge_wins?: number;
-  challenge_losses?: number;
-  challenge_count: number;
-  points_deducted?: number;
-  new_points?: number;
-  new_power?: number;
-  message: string;
+  // Joined field from library query
+  owner_username?: string;
 }
 
 export interface ForgeParams {
-  claim: string;
-  url: string;
-  author: string;
-  publication_year: number;
+  source_title: string;
+  source_author: string;
+  source_date: string;
+  locator: string;
+  claim_text: string;
   source_type: SourceType;
   category: ReferenceCategory;
+  source_url?: string;
 }
 
-export type SourceType = 'peer-reviewed' | 'data' | 'expert' | 'government' | 'news' | 'other';
-export type ReferenceCategory = 'politics' | 'sports' | 'tech' | 'science' | 'entertainment' | 'business' | 'health' | 'general';
+export interface ForgeResult {
+  action: 'forged' | 'collision';
+  ref_id?: string;
+  existing_ref_id?: string;
+  existing_owner?: string;
+  existing_name?: string;
+}
+
+export interface EditResult {
+  action: 'edited' | 'collision';
+  existing_ref_id?: string;
+  existing_owner?: string;
+  existing_name?: string;
+}
+
+export interface SecondResult {
+  action: 'seconded';
+  seconds: number;
+  strikes: number;
+  rarity: string;
+  current_power: number;
+}
+
+export interface ChallengeResult {
+  action: 'challenged' | 'shield_blocked';
+  challenge_id?: string;
+  escrow_amount?: number;
+  event_id?: number;
+  message?: string;
+}
+
+export interface LoadoutRef {
+  reference_id: string;
+  cited: boolean;
+  cited_at: string | null;
+  source_title: string;
+  claim_text: string;
+  source_author: string;
+  source_type: string;
+  source_url: string | null;
+  current_power: number;
+  rarity: string;
+  seconds: number;
+  strikes: number;
+  challenge_status: string;
+  graduated: boolean;
+}
+
+export interface CiteResult2 {
+  success: boolean;
+  event_id: number;
+  claim: string;
+  reference_id: string;
+}
+
+export interface ChallengeResult2 {
+  blocked: boolean;
+  event_id: number;
+  challenges_remaining?: number;
+  challenge_id?: string;
+  message?: string;
+}
+
+export type SourceType = 'primary' | 'academic' | 'book' | 'news' | 'other';
+export type ReferenceCategory = 'politics' | 'sports' | 'entertainment' | 'music' | 'couples_court';
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'mythic';
-export type VoterType = 'clan' | 'outside' | 'rival';
+export type ChallengeStatus = 'none' | 'disputed' | 'heavily_disputed' | 'frozen';
 
 // ============================================================
 // CONSTANTS
 // ============================================================
 
 export const SOURCE_TYPES: Record<SourceType, { label: string; ceiling: number; tier: string }> = {
-  'peer-reviewed': { label: 'Peer-Reviewed', ceiling: 5, tier: 'S' },
-  'data':          { label: 'Data / Dataset', ceiling: 4, tier: 'A' },
-  'expert':        { label: 'Expert Analysis', ceiling: 4, tier: 'A' },
-  'government':    { label: 'Government', ceiling: 3, tier: 'B' },
-  'news':          { label: 'News', ceiling: 1, tier: 'D' },
-  'other':         { label: 'Other', ceiling: 1, tier: 'D' },
+  'primary':  { label: 'Primary Source', ceiling: 5, tier: 'S' },
+  'academic': { label: 'Academic',       ceiling: 4, tier: 'A' },
+  'book':     { label: 'Book',           ceiling: 3, tier: 'B' },
+  'news':     { label: 'News',           ceiling: 1, tier: 'D' },
+  'other':    { label: 'Other',          ceiling: 1, tier: 'D' },
 };
 
 export const CATEGORIES: ReferenceCategory[] = [
-  'politics', 'sports', 'tech', 'science',
-  'entertainment', 'business', 'health', 'general',
+  'politics', 'sports', 'entertainment', 'music', 'couples_court',
 ];
 
-/** Points required to reach each power level, by source type */
-export const VERIFICATION_THRESHOLDS: Record<SourceType, number[]> = {
-  'peer-reviewed': [20, 60, 150, 300, 500],
-  'data':          [15, 50, 120, 250],
-  'expert':        [15, 50, 120, 250],
-  'government':    [10, 40, 100],
-  'news':          [5],
-  'other':         [5],
+const CATEGORY_LABELS: Record<ReferenceCategory, string> = {
+  'politics':      'Politics',
+  'sports':        'Sports',
+  'entertainment': 'Entertainment',
+  'music':         'Music',
+  'couples_court': 'Couples Court',
 };
 
 const RARITY_COLORS: Record<Rarity, string> = {
@@ -122,110 +159,112 @@ const RARITY_COLORS: Record<Rarity, string> = {
   mythic:    '#ef4444',
 };
 
+const CHALLENGE_STATUS_LABELS: Record<ChallengeStatus, string> = {
+  none:             '',
+  disputed:         '⚠️ Disputed',
+  heavily_disputed: '🔴 Heavily Disputed',
+  frozen:           '🧊 Frozen',
+};
+
 // ============================================================
 // RPC 1: FORGE REFERENCE
 // ============================================================
 
-/**
- * Create a new reference in the arsenal.
- * Returns the new reference UUID on success.
- */
-export async function forgeReference(params: ForgeParams): Promise<string> {
-  const { data, error } = await safeRpc<string>('forge_reference', {
-    p_claim: params.claim.trim(),
-    p_url: params.url.trim(),
-    p_author: params.author.trim(),
-    p_publication_year: params.publication_year,
+export async function forgeReference(params: ForgeParams): Promise<ForgeResult> {
+  const { data, error } = await safeRpc<ForgeResult>('forge_reference', {
+    p_source_title: params.source_title.trim(),
+    p_source_author: params.source_author.trim(),
+    p_source_date: params.source_date,
+    p_locator: params.locator.trim(),
+    p_claim_text: params.claim_text.trim(),
     p_source_type: params.source_type,
     p_category: params.category,
+    p_source_url: params.source_url?.trim() || null,
   });
 
   if (error) throw new Error(error.message || 'Failed to forge reference');
-  return data as string;
+  return data as ForgeResult;
 }
 
 // ============================================================
-// RPC 1B: EDIT REFERENCE (pre-verification only)
+// RPC 2: EDIT REFERENCE
 // ============================================================
 
-/**
- * Edit an existing reference. Only allowed when verification_points = 0.
- * Once anyone has verified it, the reference is locked.
- */
 export async function editReference(
   referenceId: string,
-  params: Partial<ForgeParams>,
-): Promise<void> {
-  const { error } = await safeRpc<{ success: boolean }>('edit_reference', {
-    p_reference_id: referenceId,
-    p_claim: params.claim?.trim() || null,
-    p_url: params.url?.trim() || null,
-    p_author: params.author?.trim() || null,
-    p_publication_year: params.publication_year || null,
-    p_source_type: params.source_type || null,
-    p_category: params.category || null,
+  params: Omit<ForgeParams, 'source_type' | 'source_url'>,
+): Promise<EditResult> {
+  const { data, error } = await safeRpc<EditResult>('edit_reference', {
+    p_ref_id: referenceId,
+    p_source_title: params.source_title.trim(),
+    p_source_author: params.source_author.trim(),
+    p_source_date: params.source_date,
+    p_locator: params.locator.trim(),
+    p_claim_text: params.claim_text.trim(),
+    p_category: params.category,
   });
 
   if (error) throw new Error(error.message || 'Failed to edit reference');
+  return data as EditResult;
 }
 
 // ============================================================
-// RPC 2: VERIFY REFERENCE
+// RPC 3: DELETE REFERENCE
 // ============================================================
 
-/**
- * Cast a community verification vote on a reference.
- * Voter type (clan/outside/rival) determined server-side.
- */
-export async function verifyReference(referenceId: string): Promise<VerifyResult> {
-  const { data, error } = await safeRpc<VerifyResult>('verify_reference', {
-    p_reference_id: referenceId,
+export async function deleteReference(referenceId: string): Promise<void> {
+  const { error } = await safeRpc<{ action: string }>('delete_reference', {
+    p_ref_id: referenceId,
   });
 
-  if (error) throw new Error(error.message || 'Failed to verify reference');
-  return data as VerifyResult;
+  if (error) throw new Error(error.message || 'Failed to delete reference');
 }
 
 // ============================================================
-// RPC 3: CITE REFERENCE
+// RPC 4: SECOND REFERENCE (replaces verify)
 // ============================================================
 
-/**
- * Record a citation in a debate. Call with outcome=null on cite,
- * 'win' or 'loss' on debate settle.
- */
+export async function secondReference(referenceId: string): Promise<SecondResult> {
+  const { data, error } = await safeRpc<SecondResult>('second_reference', {
+    p_ref_id: referenceId,
+  });
+
+  if (error) throw new Error(error.message || 'Failed to second reference');
+  return data as SecondResult;
+}
+
+// ============================================================
+// RPC 5: CITE REFERENCE (kept — backward compat, no-op in F-55)
+// ============================================================
+
 export async function citeReference(
   referenceId: string,
   debateId: string,
-  outcome: 'win' | 'loss' | null = null,
-): Promise<CiteResult> {
-  const { data, error } = await safeRpc<CiteResult>('cite_reference', {
+  _outcome: 'win' | 'loss' | null = null,
+): Promise<{ action: string }> {
+  const { data, error } = await safeRpc<{ action: string }>('cite_reference', {
     p_reference_id: referenceId,
     p_debate_id: debateId,
-    p_outcome: outcome,
+    p_outcome: _outcome,
   });
 
   if (error) throw new Error(error.message || 'Failed to cite reference');
-  return data as CiteResult;
+  return data as { action: string };
 }
 
 // ============================================================
-// RPC 4: CHALLENGE REFERENCE
+// RPC 6: CHALLENGE REFERENCE
 // ============================================================
 
-/**
- * Challenge a reference mid-debate. Moderator ruling required.
- * 'upheld' = reference survives. 'rejected' = -10 verification points.
- */
 export async function challengeReference(
   referenceId: string,
-  debateId: string,
-  ruling: 'upheld' | 'rejected',
+  grounds: string,
+  contextDebateId: string | null = null,
 ): Promise<ChallengeResult> {
   const { data, error } = await safeRpc<ChallengeResult>('challenge_reference', {
-    p_reference_id: referenceId,
-    p_debate_id: debateId,
-    p_ruling: ruling,
+    p_ref_id: referenceId,
+    p_grounds: grounds,
+    p_context_debate_id: contextDebateId,
   });
 
   if (error) throw new Error(error.message || 'Failed to process challenge');
@@ -236,67 +275,38 @@ export async function challengeReference(
 // HELPERS
 // ============================================================
 
-/** Extract domain from URL (strips protocol, www, and path) */
-export function extractDomain(url: string): string {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, '');
-  } catch {
-    return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '');
-  }
+/** Composite score for display */
+export function compositeScore(ref: ArsenalReference): number {
+  return (ref.seconds * 2) + ref.strikes;
 }
 
-/** Get win rate as a percentage string, or '—' if no debates */
-export function winRate(ref: ArsenalReference): string {
-  const total = ref.win_count + ref.loss_count;
-  if (total === 0) return '—';
-  return Math.round((ref.win_count / total) * 100) + '%';
-}
-
-/** Power meter fill as a fraction 0–1 */
-export function powerFill(ref: ArsenalReference): number {
-  if (ref.power_ceiling === 0) return 0;
-  return ref.current_power / ref.power_ceiling;
-}
-
-/** Threshold progress: how far toward next power level */
-export function nextThresholdProgress(ref: ArsenalReference): { current: number; next: number | null; pct: number } {
-  const thresholds = VERIFICATION_THRESHOLDS[ref.source_type];
-  const pts = ref.verification_points;
-
-  // Find next threshold
-  let prev = 0;
-  for (const t of thresholds) {
-    if (pts < t) {
-      const range = t - prev;
-      const progress = pts - prev;
-      return { current: pts, next: t, pct: range > 0 ? progress / range : 0 };
-    }
-    prev = t;
-  }
-  // At ceiling
-  return { current: pts, next: null, pct: 1 };
+/** Power display string */
+export function powerDisplay(ref: ArsenalReference): string {
+  const srcInfo = SOURCE_TYPES[ref.source_type];
+  const ceiling = srcInfo ? srcInfo.ceiling : 1;
+  return `${Number(ref.current_power)}/${ceiling + (ref.graduated ? 1 : 0)}`;
 }
 
 // ============================================================
-// 5-STEP FORGE FORM
+// FORGE FORM (structured fields)
 // ============================================================
 
 interface ForgeFormState {
   step: number;
-  claim: string;
-  url: string;
-  domain: string;
-  author: string;
-  publication_year: number;
+  source_title: string;
+  source_author: string;
+  source_date: string;
+  locator: string;
+  claim_text: string;
   source_type: SourceType | '';
   category: ReferenceCategory | '';
+  source_url: string;
 }
 
 /**
- * Render the 5-step forge form into a container element.
- * Returns a cleanup function to remove event listeners.
+ * Render the structured forge form into a container element.
  * If editRef is provided, pre-fills the form and calls editReference on submit.
+ * source_type is disabled during edit (LM-206: locked at creation).
  */
 export function showForgeForm(
   container: HTMLElement,
@@ -307,13 +317,14 @@ export function showForgeForm(
   const isEdit = !!editRef;
   const state: ForgeFormState = {
     step: 1,
-    claim: editRef?.claim || '',
-    url: editRef?.url || '',
-    domain: editRef?.domain || '',
-    author: editRef?.author || '',
-    publication_year: editRef?.publication_year || new Date().getFullYear(),
+    source_title: editRef?.source_title || '',
+    source_author: editRef?.source_author || '',
+    source_date: editRef?.source_date || '',
+    locator: editRef?.locator || '',
+    claim_text: editRef?.claim_text || '',
     source_type: editRef?.source_type || '',
     category: editRef?.category || '',
+    source_url: editRef?.source_url || '',
   };
 
   let destroyed = false;
@@ -325,7 +336,13 @@ export function showForgeForm(
     let html = '';
 
     // Step indicator
-    const stepNames = ['Name Your Weapon', 'Load the Chamber', 'Tag the Source', 'Choose Your Arena', 'Review & Forge'];
+    const stepNames = [
+      'Source Details',
+      'Your Claim',
+      'Source Type',
+      'Choose Arena',
+      'Review & Forge',
+    ];
     html += `<div class="forge-steps">`;
     for (let i = 1; i <= 5; i++) {
       const cls = i === state.step ? 'forge-step active' : i < state.step ? 'forge-step done' : 'forge-step';
@@ -333,36 +350,42 @@ export function showForgeForm(
     }
     html += `</div>`;
 
-    // Step content
     html += `<div class="forge-body">`;
 
     if (state.step === 1) {
       html += `
-        <h3>Name Your Weapon</h3>
-        <p class="forge-hint">What does this source prove? 120 characters max.</p>
-        <textarea id="forge-claim" maxlength="120" rows="3" placeholder="e.g. Global temperatures rose 1.1°C since pre-industrial era">${esc(state.claim)}</textarea>
-        <div class="forge-charcount"><span id="forge-claim-count">${state.claim.length}</span>/120</div>
+        <h3>Source Details</h3>
+        <p class="forge-hint">Title, author, date, and specific locator (page, timestamp, paragraph).</p>
+        <label class="forge-label">Source Title</label>
+        <input type="text" id="forge-title" placeholder="e.g. IPCC Climate Report 2023" value="${esc(state.source_title)}" />
+        <label class="forge-label">Author / Organization</label>
+        <input type="text" id="forge-author" placeholder="e.g. IPCC Working Group I" value="${esc(state.source_author)}" />
+        <label class="forge-label">Source Date</label>
+        <input type="date" id="forge-date" value="${esc(state.source_date)}" />
+        <label class="forge-label">Locator (page, timestamp, paragraph)</label>
+        <input type="text" id="forge-locator" placeholder="e.g. p.42, 3:15, Section 2.1" value="${esc(state.locator)}" />
+        <label class="forge-label">Source URL (optional)</label>
+        <input type="url" id="forge-url" placeholder="https://..." value="${esc(state.source_url)}" />
       `;
     } else if (state.step === 2) {
       html += `
-        <h3>Load the Chamber</h3>
-        <p class="forge-hint">Paste the source URL. Domain extracted automatically.</p>
-        <input type="url" id="forge-url" placeholder="https://..." value="${esc(state.url)}" />
-        ${state.domain ? `<div class="forge-domain">${esc(state.domain)}</div>` : ''}
+        <h3>Your Claim</h3>
+        <p class="forge-hint">What does this source prove? Be specific. 120 characters max.</p>
+        <textarea id="forge-claim" maxlength="120" rows="3" placeholder="e.g. Global temperatures rose 1.1\u00B0C since pre-industrial era">${esc(state.claim_text)}</textarea>
+        <div class="forge-charcount"><span id="forge-claim-count">${state.claim_text.length}</span>/120</div>
       `;
     } else if (state.step === 3) {
       html += `
-        <h3>Tag the Source</h3>
-        <p class="forge-hint">Who wrote it, when, and what kind of source is it?</p>
-        <input type="text" id="forge-author" placeholder="Author or organization" value="${esc(state.author)}" />
-        <input type="number" id="forge-year" min="1900" max="2100" placeholder="Year" value="${state.publication_year}" />
+        <h3>Source Type</h3>
+        <p class="forge-hint">What kind of source is this? ${isEdit ? '<strong>Locked at creation — cannot be changed.</strong>' : 'This determines the power ceiling.'}</p>
         <div class="forge-source-types">
       `;
       for (const [key, info] of Object.entries(SOURCE_TYPES)) {
         const selected = state.source_type === key ? ' selected' : '';
-        html += `<button class="forge-source-btn${selected}" data-source="${key}">
+        const disabled = isEdit ? ' disabled' : '';
+        html += `<button class="forge-source-btn${selected}${disabled}" data-source="${key}" ${isEdit ? 'disabled' : ''}>
           <span class="source-label">${info.label}</span>
-          <span class="source-tier">${info.tier}-tier · Ceiling ${info.ceiling}</span>
+          <span class="source-tier">${info.tier}-tier \u00B7 Ceiling ${info.ceiling}</span>
         </button>`;
       }
       html += `</div>`;
@@ -374,7 +397,7 @@ export function showForgeForm(
       `;
       for (const cat of CATEGORIES) {
         const selected = state.category === cat ? ' selected' : '';
-        html += `<button class="forge-cat-btn${selected}" data-cat="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</button>`;
+        html += `<button class="forge-cat-btn${selected}" data-cat="${cat}">${CATEGORY_LABELS[cat]}</button>`;
       }
       html += `</div>`;
     } else if (state.step === 5) {
@@ -382,20 +405,25 @@ export function showForgeForm(
       html += `
         <h3>Review & Forge</h3>
         <div class="forge-review-card">
-          <div class="forge-review-claim">"${esc(state.claim)}"</div>
+          <div class="forge-review-claim">"${esc(state.claim_text)}"</div>
           <div class="forge-review-meta">
-            <span>${esc(state.domain)}</span>
-            <span>${esc(state.author)} · ${state.publication_year}</span>
+            <strong>${esc(state.source_title)}</strong><br/>
+            ${esc(state.source_author)} \u00B7 ${esc(state.source_date)}
+          </div>
+          <div class="forge-review-meta">
+            Locator: ${esc(state.locator)}
+            ${state.source_url ? `<br/><a href="${esc(state.source_url)}" target="_blank" rel="noopener">${esc(state.source_url)}</a>` : ''}
           </div>
           <div class="forge-review-type">
-            ${srcInfo ? `${srcInfo.label} (${srcInfo.tier}-tier · Max Power ${srcInfo.ceiling})` : ''}
+            ${srcInfo ? `${srcInfo.label} (${srcInfo.tier}-tier \u00B7 Max Power ${srcInfo.ceiling})` : ''}
           </div>
-          <div class="forge-review-cat">${state.category ? state.category.charAt(0).toUpperCase() + (state.category as string).slice(1) : ''}</div>
+          <div class="forge-review-cat">${state.category ? CATEGORY_LABELS[state.category as ReferenceCategory] : ''}</div>
         </div>
+        ${isEdit ? '<p class="forge-hint">Editing costs 10 tokens.</p>' : '<p class="forge-hint">Forging costs 50 tokens.</p>'}
       `;
     }
 
-    html += `</div>`; // .forge-body
+    html += `</div>`;
 
     // Nav buttons
     html += `<div class="forge-nav">`;
@@ -407,7 +435,7 @@ export function showForgeForm(
     if (state.step < 5) {
       html += `<button id="forge-next" class="forge-btn-primary">Next</button>`;
     } else {
-      html += `<button id="forge-submit" class="forge-btn-primary">${isEdit ? '✏️ Save Changes' : '⚔ Forge Weapon'}</button>`;
+      html += `<button id="forge-submit" class="forge-btn-primary">${isEdit ? '\u270F\uFE0F Save Changes (10t)' : '\u2694 Forge Weapon (50t)'}</button>`;
     }
     html += `</div>`;
 
@@ -416,52 +444,49 @@ export function showForgeForm(
   }
 
   function wireStepListeners(): void {
-    // Char count for step 1
+    // Step 1: source details
+    const titleEl = document.getElementById('forge-title') as HTMLInputElement | null;
+    if (titleEl) {
+      titleEl.addEventListener('input', () => { state.source_title = titleEl.value; });
+    }
+    const authorEl = document.getElementById('forge-author') as HTMLInputElement | null;
+    if (authorEl) {
+      authorEl.addEventListener('input', () => { state.source_author = authorEl.value; });
+    }
+    const dateEl = document.getElementById('forge-date') as HTMLInputElement | null;
+    if (dateEl) {
+      dateEl.addEventListener('input', () => { state.source_date = dateEl.value; });
+    }
+    const locatorEl = document.getElementById('forge-locator') as HTMLInputElement | null;
+    if (locatorEl) {
+      locatorEl.addEventListener('input', () => { state.locator = locatorEl.value; });
+    }
+    const urlEl = document.getElementById('forge-url') as HTMLInputElement | null;
+    if (urlEl) {
+      urlEl.addEventListener('input', () => { state.source_url = urlEl.value; });
+    }
+
+    // Step 2: claim
     const claimEl = document.getElementById('forge-claim') as HTMLTextAreaElement | null;
     if (claimEl) {
       claimEl.addEventListener('input', () => {
-        state.claim = claimEl.value;
+        state.claim_text = claimEl.value;
         const countEl = document.getElementById('forge-claim-count');
-        if (countEl) countEl.textContent = String(state.claim.length);
+        if (countEl) countEl.textContent = String(state.claim_text.length);
       });
     }
 
-    // URL auto-domain for step 2
-    const urlEl = document.getElementById('forge-url') as HTMLInputElement | null;
-    if (urlEl) {
-      urlEl.addEventListener('input', () => {
-        state.url = urlEl.value;
-        state.domain = state.url ? extractDomain(state.url) : '';
-        // Re-render to show domain
-        render();
-        // Re-focus URL input after render
-        const refocused = document.getElementById('forge-url') as HTMLInputElement | null;
-        if (refocused) {
-          refocused.focus();
-          refocused.setSelectionRange(refocused.value.length, refocused.value.length);
-        }
+    // Step 3: source type buttons
+    if (!isEdit) {
+      container.querySelectorAll('.forge-source-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.source_type = (btn as HTMLElement).dataset.source as SourceType;
+          render();
+        });
       });
     }
 
-    // Author + year for step 3
-    const authorEl = document.getElementById('forge-author') as HTMLInputElement | null;
-    if (authorEl) {
-      authorEl.addEventListener('input', () => { state.author = authorEl.value; });
-    }
-    const yearEl = document.getElementById('forge-year') as HTMLInputElement | null;
-    if (yearEl) {
-      yearEl.addEventListener('input', () => { state.publication_year = parseInt(yearEl.value, 10) || new Date().getFullYear(); });
-    }
-
-    // Source type buttons for step 3
-    container.querySelectorAll('.forge-source-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.source_type = (btn as HTMLElement).dataset.source as SourceType;
-        render();
-      });
-    });
-
-    // Category buttons for step 4
+    // Step 4: category buttons
     container.querySelectorAll('.forge-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         state.category = (btn as HTMLElement).dataset.cat as ReferenceCategory;
@@ -493,24 +518,32 @@ export function showForgeForm(
 
   function validateStep(): boolean {
     if (state.step === 1) {
-      if (state.claim.trim().length < 5) {
-        showToast('Claim must be at least 5 characters', 'error');
+      if (state.source_title.trim().length < 2) {
+        showToast('Source title must be at least 2 characters', 'error');
+        return false;
+      }
+      if (state.source_author.trim().length < 2) {
+        showToast('Author must be at least 2 characters', 'error');
+        return false;
+      }
+      if (!state.source_date) {
+        showToast('Source date is required', 'error');
+        return false;
+      }
+      if (state.locator.trim().length < 1) {
+        showToast('Locator is required (page, timestamp, paragraph, etc.)', 'error');
         return false;
       }
       return true;
     }
     if (state.step === 2) {
-      if (!/^https?:\/\//.test(state.url)) {
-        showToast('URL must start with http:// or https://', 'error');
+      if (state.claim_text.trim().length < 5) {
+        showToast('Claim must be at least 5 characters', 'error');
         return false;
       }
       return true;
     }
     if (state.step === 3) {
-      if (state.author.trim().length < 2) {
-        showToast('Author must be at least 2 characters', 'error');
-        return false;
-      }
       if (!state.source_type) {
         showToast('Select a source type', 'error');
         return false;
@@ -535,38 +568,63 @@ export function showForgeForm(
     }
 
     try {
-      const params: ForgeParams = {
-        claim: state.claim,
-        url: state.url,
-        author: state.author,
-        publication_year: state.publication_year,
-        source_type: state.source_type as SourceType,
-        category: state.category as ReferenceCategory,
-      };
-
       if (isEdit && editRef) {
-        await editReference(editRef.id, params);
-        showToast('Reference updated! ✏️', 'success');
+        const result = await editReference(editRef.id, {
+          source_title: state.source_title,
+          source_author: state.source_author,
+          source_date: state.source_date,
+          locator: state.locator,
+          claim_text: state.claim_text,
+          category: state.category as ReferenceCategory,
+        });
+
+        if (result.action === 'collision') {
+          showToast(`Collision: this source+locator already exists as "${result.existing_name}". Use the existing one instead.`, 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '\u270F\uFE0F Save Changes (10t)';
+          }
+          return;
+        }
+
+        showToast('Reference updated! \u270F\uFE0F', 'success');
         onComplete(editRef.id);
       } else {
-        const refId = await forgeReference(params);
-        showToast('Reference forged! ⚔️', 'success');
-        onComplete(refId);
+        const result = await forgeReference({
+          source_title: state.source_title,
+          source_author: state.source_author,
+          source_date: state.source_date,
+          locator: state.locator,
+          claim_text: state.claim_text,
+          source_type: state.source_type as SourceType,
+          category: state.category as ReferenceCategory,
+          source_url: state.source_url || undefined,
+        });
+
+        if (result.action === 'collision') {
+          showToast(`This source+locator already exists as "${result.existing_name}". Use it instead of forging a duplicate.`, 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '\u2694 Forge Weapon (50t)';
+          }
+          return;
+        }
+
+        showToast('Reference forged! \u2694\uFE0F', 'success');
+        onComplete(result.ref_id || '');
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : isEdit ? 'Edit failed' : 'Forge failed';
       showToast(msg, 'error');
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = isEdit ? '✏️ Save Changes' : '⚔ Forge Weapon';
+        submitBtn.textContent = isEdit ? '\u270F\uFE0F Save Changes (10t)' : '\u2694 Forge Weapon (50t)';
       }
     }
   }
 
-  // Initial render
   render();
 
-  // Cleanup
   return () => {
     destroyed = true;
     container.innerHTML = '';
@@ -577,48 +635,43 @@ export function showForgeForm(
 // REFERENCE CARD RENDERER
 // ============================================================
 
-/**
- * Render a single reference card as HTML string.
- * Caller is responsible for inserting into DOM and wiring click handlers.
- */
-export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolean, showEditBtn: boolean = false): string {
+export function renderReferenceCard(
+  ref: ArsenalReference,
+  showSecondBtn: boolean,
+  showEditBtn: boolean = false,
+): string {
   const esc = escapeHTML;
   const srcInfo = SOURCE_TYPES[ref.source_type];
-  const wr = winRate(ref);
-  const fill = powerFill(ref);
   const rarityColor = RARITY_COLORS[ref.rarity];
-  const progress = nextThresholdProgress(ref);
+  const score = compositeScore(ref);
+  const statusLabel = CHALLENGE_STATUS_LABELS[ref.challenge_status] || '';
 
   return `
     <div class="ref-card" data-ref-id="${esc(ref.id)}" style="border-color: ${rarityColor}">
       <div class="ref-card-header">
         <span class="ref-card-type" title="${srcInfo.tier}-tier">${esc(srcInfo.label)}</span>
         <span class="ref-card-rarity" style="color: ${rarityColor}">${ref.rarity.toUpperCase()}</span>
+        ${ref.graduated ? '<span class="ref-card-graduated" title="Graduated">\u2B50</span>' : ''}
       </div>
-      <div class="ref-card-claim">"${esc(ref.claim)}"</div>
+      <div class="ref-card-claim">"${esc(ref.claim_text)}"</div>
       <div class="ref-card-meta">
-        <span class="ref-card-domain">${esc(ref.domain)}</span>
-        <span class="ref-card-author">${esc(ref.author)} · ${Number(ref.publication_year)}</span>
+        <span class="ref-card-title">${esc(ref.source_title)}</span>
+        <span class="ref-card-author">${esc(ref.source_author)} \u00B7 ${esc(ref.source_date)}</span>
+        <span class="ref-card-locator">Loc: ${esc(ref.locator)}</span>
       </div>
       <div class="ref-card-power">
-        <span class="ref-card-power-label">Power ${Number(ref.current_power)}/${Number(ref.power_ceiling)}</span>
-        <div class="ref-card-power-bar">
-          <div class="ref-card-power-fill" style="width: ${Math.round(fill * 100)}%"></div>
-        </div>
-        ${progress.next !== null
-          ? `<span class="ref-card-power-next">${Math.round(ref.verification_points)}/${progress.next} pts to next level</span>`
-          : `<span class="ref-card-power-next">MAX</span>`
-        }
+        <span class="ref-card-power-label">Power ${powerDisplay(ref)}</span>
       </div>
       <div class="ref-card-stats">
-        <span title="Citations">📄 ${Number(ref.citation_count)}</span>
-        <span title="Win Rate">🏆 ${wr}</span>
-        <span title="Challenges survived">${Number(ref.challenge_wins)}/${Number(ref.challenge_count)} challenges</span>
-        <span title="XP">✨ ${Number(ref.xp)} XP</span>
+        <span title="Seconds">\u{1F44D} ${Number(ref.seconds)}</span>
+        <span title="Strikes">\u{1F4C4} ${Number(ref.strikes)}</span>
+        <span title="Composite Score">\u2728 ${Number(score)}</span>
       </div>
-      ${showVerifyBtn ? `<button class="ref-card-verify-btn" data-ref-id="${esc(ref.id)}">⚡ Verify</button>` : ''}
-      ${showEditBtn && ref.verification_points === 0 ? `<button class="ref-card-edit-btn" data-ref-id="${esc(ref.id)}">✏️ Edit</button>` : ''}
-      ${showEditBtn && ref.verification_points > 0 ? `<span class="ref-card-locked">🔒 Verified — locked</span>` : ''}
+      ${statusLabel ? `<div class="ref-card-status">${statusLabel}</div>` : ''}
+      ${ref.source_url ? `<a class="ref-card-url" href="${esc(ref.source_url)}" target="_blank" rel="noopener">View Source</a>` : ''}
+      ${showSecondBtn ? `<button class="ref-card-second-btn" data-ref-id="${esc(ref.id)}">\u{1F44D} Second</button>` : ''}
+      ${showEditBtn ? `<button class="ref-card-edit-btn" data-ref-id="${esc(ref.id)}">\u270F\uFE0F Edit</button>` : ''}
+      ${showEditBtn ? `<button class="ref-card-delete-btn" data-ref-id="${esc(ref.id)}">\u{1F5D1}\uFE0F Delete</button>` : ''}
     </div>
   `;
 }
@@ -627,10 +680,6 @@ export function renderReferenceCard(ref: ArsenalReference, showVerifyBtn: boolea
 // ARSENAL LIST RENDERER
 // ============================================================
 
-/**
- * Render the user's arsenal (list of their references) into a container.
- * Fetches from arsenal_references via a read-only select.
- */
 export async function renderArsenal(container: HTMLElement): Promise<ArsenalReference[]> {
   const user = getCurrentUser();
   if (!user) {
@@ -640,18 +689,13 @@ export async function renderArsenal(container: HTMLElement): Promise<ArsenalRefe
 
   container.innerHTML = '<p class="arsenal-loading">Loading arsenal...</p>';
 
-  // Read via safeRpc — but arsenal_references has RLS SELECT for all authenticated.
-  // We need a lightweight read. Using a raw select via supabase client isn't available
-  // through safeRpc, so we read all and filter client-side. At scale, add a get_my_arsenal RPC.
-  // For now, this works because RLS SELECT is open to authenticated.
   const { data, error } = await safeRpc<ArsenalReference[]>('get_my_arsenal', {});
 
   if (error) {
-    // RPC might not exist yet — fall back to empty state
     container.innerHTML = `
       <div class="arsenal-empty">
         <p>Your arsenal is empty.</p>
-        <button id="arsenal-forge-btn" class="forge-btn-primary">⚔ Forge Your First Weapon</button>
+        <button id="arsenal-forge-btn" class="forge-btn-primary">\u2694 Forge Your First Weapon</button>
       </div>
     `;
     return [];
@@ -663,18 +707,17 @@ export async function renderArsenal(container: HTMLElement): Promise<ArsenalRefe
     container.innerHTML = `
       <div class="arsenal-empty">
         <p>Your arsenal is empty.</p>
-        <button id="arsenal-forge-btn" class="forge-btn-primary">⚔ Forge Your First Weapon</button>
+        <button id="arsenal-forge-btn" class="forge-btn-primary">\u2694 Forge Your First Weapon</button>
       </div>
     `;
     return [];
   }
 
-  // Sort by current_power DESC, then created_at DESC
   refs.sort((a, b) => b.current_power - a.current_power || Date.parse(b.created_at) - Date.parse(a.created_at));
 
   let html = `<div class="arsenal-header">
     <h2>Your Arsenal</h2>
-    <button id="arsenal-forge-btn" class="forge-btn-primary">⚔ Forge New</button>
+    <button id="arsenal-forge-btn" class="forge-btn-primary">\u2694 Forge New</button>
   </div>`;
   html += `<div class="arsenal-grid">`;
   for (const ref of refs) {
@@ -684,21 +727,16 @@ export async function renderArsenal(container: HTMLElement): Promise<ArsenalRefe
 
   container.innerHTML = html;
 
-  // Return refs so caller can wire edit buttons with full data
   return refs;
 }
 
 // ============================================================
-// LIBRARY RENDERER (browse all references)
+// LIBRARY RENDERER
 // ============================================================
 
-/**
- * Render a browsable library of all references.
- * Shows verify button on references not owned by current user.
- */
 export async function renderLibrary(
   container: HTMLElement,
-  onVerify: (refId: string) => Promise<void>,
+  onSecond: (refId: string) => Promise<void>,
 ): Promise<void> {
   container.innerHTML = '<p class="arsenal-loading">Loading reference library...</p>';
 
@@ -727,62 +765,30 @@ export async function renderLibrary(
 
   container.innerHTML = html;
 
-  // Wire verify buttons
-  container.querySelectorAll('.ref-card-verify-btn').forEach((btn) => {
+  // Wire second buttons
+  container.querySelectorAll('.ref-card-second-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const refId = (e.currentTarget as HTMLElement).dataset.refId;
       if (!refId) return;
       const button = e.currentTarget as HTMLButtonElement;
       button.disabled = true;
-      button.textContent = 'Verifying...';
+      button.textContent = 'Seconding...';
       try {
-        await onVerify(refId);
-        button.textContent = '✓ Verified';
+        await onSecond(refId);
+        button.textContent = '\u2713 Seconded';
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Verify failed';
+        const msg = err instanceof Error ? err.message : 'Second failed';
         showToast(msg, 'error');
         button.disabled = false;
-        button.textContent = '⚡ Verify';
+        button.textContent = '\u{1F44D} Second';
       }
     });
   });
 }
 
 // ============================================================
-// F-51 PHASE 3: DEBATE REFERENCE RPCs (Session 236)
+// DEBATE REFERENCE RPCs (F-51 Phase 3 + F-55 updates)
 // ============================================================
-
-export interface LoadoutRef {
-  reference_id: string;
-  cited: boolean;
-  cited_at: string | null;
-  claim: string;
-  url: string;
-  domain: string;
-  author: string;
-  source_type: string;
-  current_power: number;
-  power_ceiling: number;
-  rarity: string;
-  verification_points: number;
-  citation_count: number;
-  win_count: number;
-  loss_count: number;
-}
-
-export interface CiteResult2 {
-  success: boolean;
-  event_id: number;
-  claim: string;
-  reference_id: string;
-}
-
-export interface ChallengeResult2 {
-  blocked: boolean;
-  event_id: number;
-  challenges_remaining?: number;
-  message?: string;
-}
 
 /** Save pre-debate reference loadout (max 5) */
 export async function saveDebateLoadout(debateId: string, referenceIds: string[]): Promise<void> {
@@ -831,14 +837,9 @@ export async function fileReferenceChallenge(
 }
 
 // ============================================================
-// PRE-DEBATE LOADOUT PICKER (F-51 Phase 3)
+// LOADOUT PICKER
 // ============================================================
 
-/**
- * Render the reference loadout picker for pre-debate screen.
- * Shows user's arsenal as selectable cards, max 5.
- * Calls save_debate_loadout on each selection change.
- */
 export async function renderLoadoutPicker(
   container: HTMLElement,
   debateId: string,
@@ -863,7 +864,9 @@ export async function renderLoadoutPicker(
     return;
   }
 
-  // Sort by power DESC
+  // Filter out frozen refs (can't be loaded)
+  arsenal = arsenal.filter(r => r.challenge_status !== 'frozen');
+
   arsenal.sort((a, b) => b.current_power - a.current_power || Date.parse(b.created_at) - Date.parse(a.created_at));
 
   const selected = new Set<string>();
@@ -884,10 +887,10 @@ export async function renderLoadoutPicker(
              data-ref-id="${escapeHTML(ref.id)}">
           <div class="ref-loadout-card-top">
             <span class="ref-loadout-type" style="border-color:${rarityColor}">${escapeHTML(srcInfo?.label || ref.source_type)}</span>
-            <span class="ref-loadout-power">PWR ${Number(ref.current_power)}/${Number(ref.power_ceiling)}</span>
+            <span class="ref-loadout-power">PWR ${powerDisplay(ref)}</span>
           </div>
-          <div class="ref-loadout-claim">${escapeHTML(ref.claim)}</div>
-          <div class="ref-loadout-domain">${escapeHTML(ref.domain)}</div>
+          <div class="ref-loadout-claim">${escapeHTML(ref.claim_text)}</div>
+          <div class="ref-loadout-meta">${escapeHTML(ref.source_title)} \u00B7 ${escapeHTML(ref.source_author)}</div>
           ${isSelected ? '<div class="ref-loadout-check">\u2705</div>' : ''}
         </div>
       `;
@@ -895,7 +898,6 @@ export async function renderLoadoutPicker(
     html += '</div>';
     container.innerHTML = html;
 
-    // Wire click handlers
     container.querySelectorAll('.ref-loadout-card:not(.disabled)').forEach((card) => {
       card.addEventListener('click', () => {
         const refId = (card as HTMLElement).dataset.refId;
@@ -906,7 +908,6 @@ export async function renderLoadoutPicker(
           selected.add(refId);
         }
         render();
-        // Save loadout (fire-and-forget, non-blocking)
         saveDebateLoadout(debateId, Array.from(selected)).catch((e) =>
           console.warn('[Arena] Loadout save failed:', e)
         );
@@ -918,22 +919,22 @@ export async function renderLoadoutPicker(
 }
 
 // ============================================================
-// WINDOW BRIDGE (for non-module consumers during migration)
+// WINDOW BRIDGE
 // ============================================================
 
 (window as unknown as Record<string, unknown>).ModeratorArsenal = {
   forgeReference,
   editReference,
-  verifyReference,
+  deleteReference,
+  secondReference,
   citeReference,
   challengeReference,
   showForgeForm,
   renderArsenal,
   renderLibrary,
   renderReferenceCard,
-  extractDomain,
-  winRate,
-  powerFill,
+  compositeScore,
+  powerDisplay,
   saveDebateLoadout,
   getMyDebateLoadout,
   citeDebateReference,
@@ -941,5 +942,4 @@ export async function renderLoadoutPicker(
   renderLoadoutPicker,
   SOURCE_TYPES,
   CATEGORIES,
-  VERIFICATION_THRESHOLDS,
 };
