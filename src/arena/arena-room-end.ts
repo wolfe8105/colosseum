@@ -183,7 +183,7 @@ export async function endCurrentDebate(): Promise<void> {
         // Session 230: winner + multiplier params removed — SQL reads both server-side
         const stakeResult = await settleStakes(debate.id);
         debate._stakingResult = stakeResult;
-      } catch { /* warned */ }
+      } catch (err) { console.error('[Arena] settleStakes failed:', err); }
     }
   }
 
