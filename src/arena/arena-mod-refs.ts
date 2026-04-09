@@ -22,19 +22,11 @@ export async function assignSelectedMod(debateId: string): Promise<void> {
 }
 
 export function addReferenceButton(): void {
-  const inputArea = document.getElementById('arena-input-area');
-  if (!inputArea) return;
-  if (currentDebate?.mode === 'ai') return;
-
-  const existing = document.getElementById('arena-ref-btn');
-  if (existing) return;
-
-  const btn = document.createElement('button');
-  btn.className = 'arena-ref-btn';
-  btn.id = 'arena-ref-btn';
-  btn.innerHTML = '\uD83D\uDCCE EVIDENCE';
-  btn.addEventListener('click', showReferenceForm);
-  inputArea.appendChild(btn);
+  // F-55: Old evidence submission path retired. All modes now use the
+  // loadout-based citation system (F-51 Phase 3). The submit_reference
+  // RPC no longer exists. This function is kept as a no-op so callsites
+  // don't need changes.
+  return;
 }
 
 export function showReferenceForm(): void {
@@ -200,38 +192,13 @@ export function showRulingPanel(ref: ReferenceItem): void {
   });
 }
 
-export function startReferencePoll(debateId: string): void {
-  if (referencePollTimer) clearInterval(referencePollTimer);
-  const seenRefs = new Set<string>();
-
-  set_referencePollTimer(setInterval(async () => {
-    const refs = await getDebateReferences(debateId);
-    const profile = getCurrentProfile();
-    if (!profile || !refs) return;
-
-    // Check if we're the moderator — show ruling panel for pending refs
-    const debate = currentDebate;
-    if (debate?.moderatorId && debate.moderatorId === profile.id) {
-      (refs as ReferenceItem[]).filter((r: ReferenceItem) => r.ruling === 'pending' && !seenRefs.has(r.id)).forEach((ref: ReferenceItem) => {
-        seenRefs.add(ref.id);
-        showRulingPanel(ref);
-      });
-    }
-
-    // For debaters — show system messages for rulings
-    (refs as ReferenceItem[]).filter((r: ReferenceItem) => (r.ruling === 'allowed' || r.ruling === 'denied') && !seenRefs.has(r.id + '-ruled')).forEach((ref: ReferenceItem) => {
-      seenRefs.add(ref.id + '-ruled');
-      // Session 110: Shield blocks reference denials
-      if (ref.ruling === 'denied' && shieldActive) {
-        set_shieldActive(false);
-        removeShieldIndicator();
-        addSystemMessage('\uD83D\uDEE1\uFE0F SHIELD BLOCKED a reference denial! Evidence stays.');
-        return;
-      }
-      const icon = ref.ruling === 'allowed' ? '\u2705' : '\u274C';
-      addSystemMessage(`${icon} Evidence ${ref.ruling.toUpperCase()}${ref.ruling_reason ? ': ' + ref.ruling_reason : ''}`);
-    });
-  }, 3000));
+export function startReferencePoll(_debateId: string): void {
+  // F-55: Old submit_reference → moderator ruling poll retired.
+  // The submit_reference RPC no longer exists, so no new debate_references
+  // rows will be inserted. The poll is now a no-op. Challenges in the new
+  // system go through file_reference_challenge → rule_on_reference, which
+  // uses debate_feed_events and reference_challenges (not debate_references).
+  return;
 }
 
 export function stopReferencePoll(): void {
