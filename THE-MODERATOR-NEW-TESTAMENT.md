@@ -329,7 +329,7 @@ Previous architecture (preserved for reference):
 - **Arena debate queue** — join_debate_queue() uses two-phase match: strict category first, then any-category fallback. queue_count scoped to mode + category (Session 170).
 - **Match acceptance** — respond_to_match + check_match_acceptance RPCs. player_a_ready/player_b_ready columns. 12s countdown. (Session 168)
 - **Token staking + power-up ALL PHASES COMPLETE** (Sessions 108-110/117-118/123-124). Phase 6 (polish/balance) remains.
-- **Edge Functions use Claude/Anthropic** (Session 220) — `ANTHROPIC_API_KEY` in Supabase env vars. `GROQ_API_KEY` is only used by bot army on VPS and api/go-respond.js on Vercel.
+- **Edge Functions use Claude/Anthropic** (Session 220) — `ANTHROPIC_API_KEY` in Supabase env vars. `GROQ_API_KEY` is inert post-S248 — bot army is SCRATCHED, and `api/go-respond.js` migrated Groq→Claude in Session 208. Key can be rotated/removed at convenience.
 - **AI Sparring has two modes** — `mode: 'score'` for 4-criteria judging (Logic/Evidence/Delivery/Rebuttal), default for debate responses. Both via Claude.
 - **Prediction system** — wager picker UI (1-500 tokens), refund-on-update with net charge calculation (Session 227). `place_prediction` takes TEXT ('a'/'b') for `p_predicted_winner`.
 - **localStorage key is `moderator_settings`** (renamed from `colosseum_settings`, Session 227). Migration code reads old key on first load, copies to new, deletes old.

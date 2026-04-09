@@ -1,6 +1,6 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 247 (April 8, 2026) — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement). 16 sections, 117 entries.
+### Last Updated: Session 248 (April 9, 2026) — LM-209 added (profiles.is_bot column missing, F-55 build blocker). S248 also scratched bot army system in full: Session 43 Groq-model-kill lesson scratched, LM-005/LM-066 protection rationales rewritten off bot-army-funnel framing, LM-207 WHAT clause rewritten to drop "F-06 bot army" wrong-F-number reference, B2B secrecy LM "bot army posts" reference removed. 16 sections, 118 entries. | Prior: S247 — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement).
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -106,7 +106,7 @@ SESSION: 240.
 ```
 DECISION: colosseum-fix-auto-debate-rls.sql — allows anonymous SELECT on auto_debates
   WHERE status = 'active' only
-PROTECTS: Bot army funnel — verdict pages are ungated
+PROTECTS: Guest content access (formerly framed as "bot army funnel" — bot army SCRATCHED S248; the ungated-verdict-pages rule stands on its own for the guest/cold-traffic experience via /go)
 BITES YOU WHEN: You query auto_debates for status='complete' or 'pending' without auth,
   or try to JOIN auto_debates with a table that has stricter RLS.
 SYMPTOM: Empty result set, no error thrown. Looks like no data exists.
@@ -461,24 +461,15 @@ SESSIONS: Burned us Session 24
 
 ---
 
-LESSON (Session 43): When Groq kills a model (llama-3.1-70b-versatile
-  decommissioned), it affects two separate systems:
-  1. Bot army config on VPS (bot-config.js)
-  2. Edge Functions on Supabase (ai-sparring + ai-moderator)
-  Session 42 fixed bot-config but missed Edge Functions. Session 43
-  caught and fixed both.
-BITES YOU WHEN: You update the model in one place but forget the other.
-  Bot army works fine but AI sparring and AI moderation return 400 errors.
-SYMPTOM: Groq API returns 400 "model not found" from Edge Functions.
-  Bot army works because it reads from bot-config.js (already updated).
-FIX: When changing Groq models, update ALL THREE locations:
-  1. /opt/colosseum/bot-config.js (or wherever bot army reads model)
-  2. /opt/colosseum/supabase/functions/ai-sparring/index.ts
-  3. /opt/colosseum/supabase/functions/ai-moderator/index.ts
-  Then redeploy Edge Functions:
-  supabase functions deploy ai-sparring --project-ref faomczmipsccwbhpivmp
-  supabase functions deploy ai-moderator --project-ref faomczmipsccwbhpivmp
-SESSION: 43.
+LESSON (Session 43, SCRATCHED S248): This entry tracked a dual-update rule
+  when Groq killed a model — bot army (VPS bot-config.js) AND Edge Functions
+  (ai-sparring + ai-moderator) both needed the new model ID. The rule is
+  obsolete. Bot army is SCRATCHED S248, Edge Functions migrated Groq→Claude
+  in Session 220. Groq is no longer used in Edge Functions. If a future Groq
+  model change is ever needed, it would only affect api/go-respond.js on
+  Vercel — and that file also migrated Groq→Claude in S208. The whole
+  dual-update concern is dead. Kept as historical context only.
+SESSION: 43 (logged), 248 (scratched).
 ```
 
 
@@ -600,7 +591,7 @@ DECISION: Build order is critical — Plinko Gate first, then strip Members Zone
 PROTECTS: Unauthenticated users always have somewhere valid to go
 BITES YOU WHEN: You strip guest fallbacks from Members Zone before Plinko Gate exists.
   Unauthenticated users hit a blank screen or JavaScript crash instead of signup flow.
-SYMPTOM: App completely inaccessible to any new user. Bot army funnel is dead.
+SYMPTOM: App completely inaccessible to any new user. Guest/cold-traffic funnel via /go is dead.
 FIX: moderator-plinko.html must be deployed and tested before any page removes
   its guest fallback logic. Do not do these in the same deploy.
 SESSIONS: Decision Session 28/29
@@ -761,9 +752,9 @@ DO NOT CHANGE API signature without updating all call sites simultaneously.
 ## LM-066: Guest access is default (NT 4.33)
 ```
 DECISION: Anonymous users see the full app. Auth only required for actions.
-PROTECTS: Bot army funnel — user lands on content immediately, not login wall.
+PROTECTS: Guest/cold-traffic funnel via /go — user lands on content immediately, not login wall. (Formerly framed as "bot army funnel" — bot army SCRATCHED S248; rule stands on its own for guest experience.)
 BITES YOU WHEN: You add auth checks to content browsing (hot takes feed, auto-debates,
-  leaderboard viewing, arena lobby). Kills every bot-referred user before they convert.
+  leaderboard viewing, arena lobby). Kills every guest-referred user before they convert.
 SYMPTOM: Conversion drops to near zero.
 DO NOT add auth gates to any view-only action.
 FIX: Auth gates belong ONLY on: post, vote in human debates, follow, challenge, debate.
@@ -1033,7 +1024,7 @@ PROTECTS: Data integrity. If users know they're being mined for intelligence,
   behavior changes. Arguments become performative. Data gets contaminated.
   Same reason Nielsen households weren't supposed to know.
 BITES YOU WHEN: Someone adds "powered by data analytics" or any B2B reference
-  to the consumer app, mirror pages, bot army posts, or any public-facing asset.
+  to the consumer app or any public-facing asset.
   Also bites if B2B client list leaks.
 SYMPTOM: Users start performing instead of arguing naturally. Data quality drops.
   Potential PR backlash if framed as "debate app secretly sells your arguments."
@@ -2244,12 +2235,15 @@ SESSION: 247 (rule locked).
 
 ```
 WHAT: F-55 leasing + royalty model creates a farm-your-own-ref loophole:
-  a forger could deploy friendly bots or game AI sparring to cite their
-  own refs and farm royalty payouts without ever actually playing. The
-  structural fix (not a detection fix) is that bots and AI opponents
-  cannot cite references at all. Reference loadouts are human-only.
-  F-06 bot army debates and AI sparring sessions skip the loadout/cite
-  system entirely.
+  a forger could exploit AI sparring to cite their own refs and farm
+  royalty payouts without ever actually playing. The structural fix
+  (not a detection fix) is that non-human counterparties cannot cite
+  references at all. Reference loadouts are human-only. AI sparring
+  sessions skip the loadout/cite system entirely. (Historical note:
+  earlier versions of this rule also referenced the "F-06 bot army"
+  growth system as an attack vector — that system is SCRATCHED S248
+  and is no longer a concern; the rule is preserved for the remaining
+  AI sparring / future bot-type attack surface.)
 BITES YOU WHEN: Someone adds a new bot type, a new AI opponent mode, or
   a test harness that exercises `cite_debate_reference` without first
   checking the `profiles.is_bot` flag on both debaters. The cite
@@ -2267,7 +2261,11 @@ FIX: The `cite_debate_reference` RPC must check `profiles.is_bot = false`
   creates a bot-vs-human debate and asserts cites fail. If the `is_bot`
   column is ever renamed or split, the cite RPC is the first place to
   update.
-SESSION: 247 (rule locked).
+  **BUILD BLOCKER (S248):** The `profiles.is_bot` column does NOT exist
+  in schema as of S248 — only `hot_takes.is_bot_generated` exists.
+  The F-55 build migration must add `profiles.is_bot BOOLEAN DEFAULT false NOT NULL`
+  before the cite RPC check can be wired. See LM-209.
+SESSION: 247 (rule locked), 248 (build blocker flagged).
 ```
 
 ## LM-208: `general` category asymmetric enforcement
@@ -2296,4 +2294,32 @@ FIX: The `forge_reference` RPC (or whatever the reference creation RPC
   docstrings. If the category enum is ever migrated, re-verify both
   rules survive the migration intact.
 SESSION: 247 (rule locked).
+```
+
+## LM-209: `profiles.is_bot` column does not exist yet — F-55 build blocker
+
+```
+WHAT: LM-207 and the F-55 pending spec both require the `cite_debate_reference`
+  RPC to check `profiles.is_bot = false` on both debaters. As of S248, the
+  `profiles` table does NOT have an `is_bot` column. The only is_bot-adjacent
+  column anywhere in schema is `hot_takes.is_bot_generated` (from
+  `moderator-bot-army-schema.sql`, created pre-quarantine). The F-55 rule
+  guards a column that does not exist.
+BITES YOU WHEN: F-55 build work starts and the `cite_debate_reference` RPC
+  migration references `profiles.is_bot` — the migration fails, or worse,
+  the check is silently compiled against a non-existent column and
+  defaults to a falsy read, letting all cites through unchecked.
+SYMPTOM: F-55 migration SQL errors on column-not-exist, OR the cite RPC
+  deploys but the bot-block check is silently inert. Since bot army is
+  SCRATCHED S248, there are no bots to actually trigger the hole, but any
+  future AI opponent mode or test harness would reopen the farm loophole.
+FIX: The F-55 build migration must add:
+  `ALTER TABLE profiles ADD COLUMN is_bot BOOLEAN DEFAULT false NOT NULL;`
+  as its first step, before the `cite_debate_reference` RPC is created or
+  updated. Backfill is a no-op — every existing profile is human, default
+  false is correct. AI sparring opponents (if they ever get profile rows)
+  must be inserted with is_bot=true. Add a CHECK or partial index if bot
+  volume ever grows.
+SESSION: 248 (flagged during F-06 scratch walk — discovered while auditing
+  bot-army-related surface area for the scratch).
 ```
