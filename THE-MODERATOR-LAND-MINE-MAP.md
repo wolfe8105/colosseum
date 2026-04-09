@@ -1,6 +1,6 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 248 (April 9, 2026) — LM-209 added (profiles.is_bot column missing, F-55 build blocker). S248 also scratched bot army system in full: Session 43 Groq-model-kill lesson scratched, LM-005/LM-066 protection rationales rewritten off bot-army-funnel framing, LM-207 WHAT clause rewritten to drop "F-06 bot army" wrong-F-number reference, B2B secrecy LM "bot army posts" reference removed. 16 sections, 118 entries. | Prior: S247 — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement).
+### Last Updated: Session 249 (April 9, 2026) — LM-210 added (`supabase-deployed-functions-export.sql` is stale — last re-synced S227, NT line 127 claim of sync is false, discovered during F-09 audit when the deployed `settle_stakes` signature mismatch surfaced). LM-211 added (Auto-debate consumer-side system RETIRED — tables/RPCs/page/TS module dropped in S249 as an extension of the S248 bot army scratch; distinct disposition from the bot army carcass since auto-debate gets a full rip while the bot army floats in the ether). 16 sections, 120 entries. | Prior: S248 — LM-209 added (profiles.is_bot column missing, F-55 build blocker); Session 43 Groq-model-kill lesson scratched, LM-005/LM-066 protection rationales rewritten off bot-army-funnel framing, LM-207 WHAT clause rewritten to drop "F-06 bot army" wrong-F-number reference, B2B secrecy LM "bot army posts" reference removed. | Prior: S247 — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement).
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -2323,3 +2323,165 @@ FIX: The F-55 build migration must add:
 SESSION: 248 (flagged during F-06 scratch walk — discovered while auditing
   bot-army-related surface area for the scratch).
 ```
+
+---
+
+## LM-210: `supabase-deployed-functions-export.sql` is stale — last re-synced S227
+```
+DECISION (Session 249, discovered during F-09 audit): The committed
+  `supabase-deployed-functions-export.sql` in the repo is at minimum 22
+  sessions out of date with respect to production. NT line 127 claims the
+  export is "in sync with production (174 RPCs, re-exported S227)" — but
+  S227 is BEFORE S230, and S230 was a security-fix batch that modified
+  multiple RPCs (including `settle_stakes`). Post-S230 signature changes
+  appear never to have been re-exported.
+
+WHAT SURFACED IT: F-09 audit S249. The committed export shows
+  `settle_stakes(p_debate_id uuid, p_winner text, p_multiplier numeric DEFAULT 1)`
+  — `p_winner` has NO DEFAULT. But `src/staking.ts:105` calls the RPC with
+  only `{p_debate_id}` and a comment saying "Session 230: winner and
+  multiplier params removed." If the deployed signature truly required
+  `p_winner`, every settlement call would fail at runtime with a
+  PostgREST "missing parameter" error. Pat confirmed winning payouts
+  actually appear on the results screen in production, so the deployed
+  signature MUST have been modified further (either `p_winner` got a
+  default, or it was dropped entirely) — and that change is not in any
+  `.sql` file in the repo.
+
+ALSO SURFACED: `cast_sentiment_vote` RPC is called from
+  `src/arena/arena-feed-room.ts:544` but does NOT exist anywhere in the
+  exported SQL. Either it was deployed after S227 and the export is stale,
+  or it was never deployed and the client has been calling a missing RPC
+  silently (the call site has no visible error handling that would catch
+  a missing-function error). Moot post-F-58 since `cast_sentiment_vote`
+  is being dropped anyway, but illustrative of the staleness.
+
+BITES YOU WHEN:
+  1. You grep the export to answer "what's in production right now" —
+     your answer is wrong for any RPC touched post-S227.
+  2. You write a migration that assumes the exported signature is correct
+     and your migration conflicts with the real deployed signature.
+  3. You debug a client-side RPC error by looking at the exported
+     signature and concluding the call site is wrong when actually the
+     export is wrong.
+  4. You run a diff between "what's committed" and "what's live" to audit
+     for drift and you get a diff that's at least 22 sessions of drift.
+
+SYMPTOM: Client code calls an RPC with arguments that don't match the
+  exported signature, but production works fine. Or: a newly written
+  migration fails with "function already exists with different signature"
+  when dropped-and-recreated. Or: you reference the export as a source
+  of truth for an audit and the audit conclusions are wrong.
+
+FIX:
+  1. Re-export the deployed functions from Supabase now. Run the same
+     export command that produced the original file (likely
+     `pg_dump --schema-only --section=pre-data` or a Supabase CLI
+     equivalent) against the production database and commit the result.
+  2. Fix NT line 127 — the "re-exported S227" claim has been stale for
+     22+ sessions. S249 edit updates this to "last re-exported S227,
+     stale post-S230 RPC changes, see LM-210."
+  3. Add a lightweight session-level reminder: whenever any session
+     deploys SQL changes (via Supabase SQL Editor or via migration),
+     re-export afterward. Treat `supabase-deployed-functions-export.sql`
+     as a build artifact that must be kept current, not a one-time dump.
+  4. Long-term: automate the export as part of a session-close script.
+
+PATTERN: This is the same class of bug as LM-174 and LM-175 (Session 109
+  RPCs that were wrong from day one because they were written against
+  an assumed schema that was never verified). The fix pattern is the same:
+  the export is the source of truth for "what's deployed," so if it
+  drifts, every audit against it is corrupted.
+
+SESSION: 249 (discovered during F-09 audit + F-58 walkthrough).
+```
+
+---
+
+## LM-211: Auto-debate consumer-side system RETIRED (S249 full rip)
+```
+DECISION (Session 249): The auto-debate consumer-side plumbing — the
+  downstream half of the bot army Leg 3 Auto-Debate Rage-Click Engine —
+  is fully retired. Tables dropped, RPCs dropped, page files deleted,
+  TS module deleted, vite entry removed, feed UNION annotated as
+  historical. This is the second-phase consequence of the S248 bot army
+  scratch: S248 killed the generator (Leg 3 stopped creating auto_debates),
+  and S249 demolishes the plumbing that consumed them.
+
+WHAT GOT RIPPED:
+  - `auto_debates` table (dropped from production)
+  - `auto_debate_votes` table (dropped from production)
+  - `auto_debate_stakes` table (dropped from production — the S99 auto-debate
+    staking subsystem that was layered on top)
+  - `cast_auto_debate_vote` RPC (dropped)
+  - `view_auto_debate` RPC (dropped)
+  - `place_auto_debate_stake` + 3 other S99 auto-debate staking RPCs (dropped)
+  - `moderator-auto-debate.html` (deleted from repo)
+  - `src/auto-debate.ts` (deleted from repo)
+  - `vite.config.ts` autoDebate entry (removed)
+  - `UNPLUGGED-QUEUE-FIX.sql` UNION from `auto_debates` (annotated as
+    historical — file is a historical migration, left in place as
+    reference but the UNION no longer executes against live data)
+  - NT line 180 auto-debate entry (removed)
+  - CLAUDE.md lines 89 and 92 `auto-debate.ts` / `moderator-auto-debate.html`
+    references (removed)
+  - Wiring Manifest lines 528-553 `auto_debate_stakes` block (marked
+    SCRATCHED S249 with pointer to this LM entry)
+  - H-14 Test Walkthrough update fold — auto-debate scenarios (lines 874,
+    884) will be deleted entirely alongside the bot army scenario section
+    when H-14 is finally run
+
+WHAT WAS NOT RIPPED (intentional):
+  - Old Testament / War Chest / Playbook / User Guide historical references
+    to auto-debate — left as historical narrative. These documents describe
+    past events ("Bot army was running perfectly with 29 auto-debates"),
+    not current state, so scrubbing them would falsify the historical
+    record.
+
+DISPOSITION DIFFERENT FROM BOT ARMY PROPER: The S248 bot army scratch
+  chose "float in the ether" — code, tables, VPS, and Groq key all left
+  inert but in place, no teardown plan. S249 auto-debate chose "full rip"
+  — tables dropped, RPCs dropped, files deleted. Why the asymmetry? Pat's
+  call: the bot army carcass has a "think end of this year" retirement
+  horizon and Pat wasn't ready to commit to teardown; auto-debate is a
+  cleaner target because the page was never linked from anywhere after
+  S195 quarantine, the tables had zero incoming writes post-Leg-3-death,
+  and the S99 auto-debate staking subsystem was dead on arrival once
+  auto-debate generation stopped. Full rip leaves the codebase cleaner.
+
+BITES YOU WHEN:
+  1. Some older doc or code path still tries to query `auto_debates` —
+     the table is gone, the query errors at runtime. Fix: update the
+     doc/code to stop referencing the retired table.
+  2. A Supabase migration replays an older script that references
+     `cast_auto_debate_vote` or `place_auto_debate_stake` — migration
+     errors on missing function. Fix: either skip the old migration or
+     patch it to no-op.
+  3. Someone reads Old Testament / War Chest historical references and
+     believes auto-debate is still a live feature. Fix: those documents
+     are narrative history, not current-state specs — the pending spec
+     file and punch list are the source of truth for live features.
+  4. `UNPLUGGED-QUEUE-FIX.sql` gets re-run from scratch on a fresh
+     database. The UNION from `auto_debates` will fail on missing
+     table. Fix: the migration has been annotated; any replay must
+     patch out the UNION block first.
+
+SYMPTOM: Queries against `auto_debates` / `auto_debate_votes` /
+  `auto_debate_stakes` fail with "relation does not exist." Calls to
+  `cast_auto_debate_vote` / `view_auto_debate` / `place_auto_debate_stake`
+  fail with "function does not exist."
+
+FIX: If you find a reference to any of the retired auto-debate surfaces,
+  remove it. The feature is dead end-to-end. There is no replacement,
+  no migration path, no backup. If a future session wants AI-generated
+  debate content for the lobby, build it as a fresh feature with a new
+  name and new tables — do not revive the `auto_debates` namespace.
+
+RELATED: See Bot Army scratch note in THE-MODERATOR-FEATURE-SPECS-PENDING.md
+  under "Bot Army Growth System" heading for the broader S248 scratch
+  context. See LM-210 for why the `cast_auto_debate_vote` drop must be
+  verified against production (the deployed-functions export is stale).
+
+SESSION: 249 (S248 started the scratch, S249 completed the consumer-side rip).
+```
+

@@ -20,7 +20,7 @@ Replay enrichment for the archive pipeline. Two distinct pieces, both landing on
 
 ## F-07 Spectator Features
 
-Pulse/sentiment gauge is locked and shipped via F-51 Phase 5 (cast_sentiment_vote RPC, cyan/magenta gauge, ad-break voting, 30s end-of-debate vote gate) with tipping tier gates (Observer 1 debate → Fan 5 → Analyst 15 → Insider 50, min 5min watched, tips burn tokens, correct predictions refund 50% per F-09). Two additions: (1) In-debate spectator chat — a single separate channel per debate, distinct from the two debater channels, open to all spectators with no tier gating, rate limit high enough to be invisible in normal use but defensive against spam/flood, report-only moderation routing flagged messages to reports@themoderator.app, hidden from debaters entirely, ephemeral and erased at debate end. Design goal: get spectators arguing with each other so they spin up their own debates. (2) Pre-debate share link — when a debate is created, the creation screen surfaces a shareable spectator link with a copy-icon button so the creator can paste it anywhere ("hey I'm debating mom at 7pm, come watch"). This is distinct from the debater/moderator invite link generated in the same flow. The share link is only copyable from the creation screen; once the debate starts that screen is gone and the link can no longer be copied from there. Recipients landing on the link go to the live spectate view if the debate is live, or the mirror/replay page if it has ended. Reuses the `?spectate=<debateId>` URL pattern wired in S240.
+Pulse/sentiment gauge is a paid token-burn mechanism — see **F-58 Sentiment Tipping** below for the full spec. The old `cast_sentiment_vote` free-tap-to-vote model is SCRATCHED S249; there is no free vote button. Every point of sentiment movement is paid for by a spectator tip. F-51 Phase 5's legacy "tipping tier gates" and "correct predictions refund 50% per F-09" phrasing is superseded by F-58. Two additions: (1) In-debate spectator chat — a single separate channel per debate, distinct from the two debater channels, open to all spectators with no tier gating, rate limit high enough to be invisible in normal use but defensive against spam/flood, report-only moderation routing flagged messages to reports@themoderator.app, hidden from debaters entirely, ephemeral and erased at debate end. Design goal: get spectators arguing with each other so they spin up their own debates. (2) Pre-debate share link — when a debate is created, the creation screen surfaces a shareable spectator link with a copy-icon button so the creator can paste it anywhere ("hey I'm debating mom at 7pm, come watch"). This is distinct from the debater/moderator invite link generated in the same flow. The share link is only copyable from the creation screen; once the debate starts that screen is gone and the link can no longer be copied from there. Recipients landing on the link go to the live spectate view if the debate is live, or the mirror/replay page if it has ended. Reuses the `?spectate=<debateId>` URL pattern wired in S240.
 
 ---
 
@@ -99,6 +99,8 @@ Profile-depth-gated identity badge that also serves as the F-08 tournament creat
 ## Bot Army Growth System
 
 **SCRATCHED Session 248.** The 3-leg bot army growth/marketing system (reddit/twitter/discord posting, news scanning, Leg 3 Auto-Debate Rage-Click Engine) is scratched in full. Bot army was already quarantined in Session 195 (growth strategy discontinued, PM2 idle, no active posting) and is now formally retired. Scope of scratch covers anything bot-army-related anywhere in the docs: growth legs, auto-debate generation, bot army link templates (Product Vision §5), rematch narrative hook (PV §7.3.4), article distribution (PV §9.3), and F-29 Source Meta Report's bot-army distribution line. Not scratched: AI Sparring and AI Moderator (separate live systems on Supabase Edge Functions using Claude), F-06 Debate Analytics Overlay on the punch list (unrelated feature, numbering collision only — the "F-06 bot army" phrasing that appeared in earlier docs was a wrong F-number, bot army was never formally F-numbered; see H-05 on punch list for the only real bot-army task). DigitalOcean VPS (`161.35.137.21`, $6/mo) and repo files left in place ("float in the ether") — no teardown plan, no Groq key rotation, no table drop. `bot_activity` table, `hot_takes.is_bot_generated`/`source_headline`/`source_url` columns, and ~19 bot army `.ts` files in repo are inert. Retirement is indefinite; Pat's mental horizon is "end of this year" at earliest but that is not a written review date. See Land Mine Map for related cleanup entries (LM entries touching bot army funnel rationale, bot-config.js notes, and the wrong-F-number reference all updated S248).
+
+**S249 EXTENSION — Auto-debate consumer side FULL RIP.** The bot army scratch left the auto-debate consumption plumbing dormant-but-alive (`auto_debates` table, `auto_debate_votes`, `auto_debate_stakes` + 4 S99 auto-debate staking RPCs, `cast_auto_debate_vote`, `view_auto_debate`, `moderator-auto-debate.html`, `src/auto-debate.ts`, vite autoDebate entry, UNPLUGGED-QUEUE-FIX.sql UNION, NT line 180, CLAUDE.md entries). Session 249 extends the scratch into a full rip on the consumer side: files deleted, tables dropped in production, RPCs dropped in production, UNION removed. Auto-debate is gone end-to-end. Distinct from the bot army carcass (which remains "float in the ether") — the auto-debate consumer plumbing is fully demolished. H-14 Test Walkthrough auto-debate scenarios were folded into the bot army scenario deletion at H-14. Old Testament / War Chest / Playbook historical references to auto-debate left as historical narrative. See Land Mine Map LM-211 for the scratch record.
 
 ---
 
@@ -312,3 +314,153 @@ Locks the 60-effect gameplay modifier system originally designed in Session 182 
 - The old F-51 §9 power-up list (2x Multiplier, Shield, Reveal) is superseded by this spec. 2x Multiplier's "doubles staking payout on win" behavior is preserved as a standalone staking rule in F-09, NOT as an in-debate effect. Shield's "blocks a reference challenge" behavior is preserved as effect #13 Citation shield above. Reveal's "shows opponent's pre-loaded references" is preserved as a new effect (to be added in a future F-57 supplement) OR scratched — Pat decision at build time.
 
 ---
+
+## F-09 Token Prediction Staking — Audit (Session 249)
+
+F-09 is substantially built and live in production. This section is an audit of as-shipped state, not a forward spec. The source of truth `TOKEN-STAKING-POWERUP-PLAN.docx` was erased from the repo in an earlier session; all F-09 content is now captured here.
+
+**What shipped.** Parimutuel stake pool on any pending/lobby/matched debate, pre-debate only. Single stake per user per debate, no updates, no cancel-after-placement. Panel renders at `src/staking.ts:renderStakingPanel()` (343-line TS module, migrated from `moderator-staking.js` in S126, window-bridged S140). Three live RPCs: `place_stake`, `get_stake_pool`, `settle_stakes`. Tables: `stakes` and `stake_pools`. Screenshot confirmation S249 shows the panel live at `themoderator.app` in an AI Sparring match (SPECTATOR+ · MAX 5 tier gate displayed, NO STAKES YET pool state, two side buttons showing 2.00X starting odds, 5/10/25 quick-amount buttons, SELECT A SIDE CTA).
+
+**Tier ladder (from `place_stake` source of truth, not TS mirror):**
+
+| Questions answered | Tier | Stake cap |
+|---|---|---|
+| 0–9 | Unranked | 0 (locked) |
+| 10–24 | Spectator+ | 5 |
+| 25–49 | Contender | 25 |
+| 50–74 | Gladiator | 50 |
+| 75–99 | Champion | 100 |
+| 100+ | Legend | 999999 (effective no cap) |
+
+Client mirror `src/tiers.ts TIER_THRESHOLDS` must stay in sync — LM-172 governs the dual-update rule.
+
+**Parimutuel settlement math.** `settle_stakes` reads the authoritative winner from `arena_debates.winner` (never from client param post-S230), loops stake rows with FOR UPDATE locks, and pays out `FLOOR((stake_amount / winning_side_total) * total_pool)` to each winner. Losers get zero (original stake was deducted at `place_stake` time). Draws refund every staker their original amount. Multi-pass safe via `v_pool.status = 'settled'` idempotency check at the top of the RPC. Concurrent-settlement race blocked by the `SELECT ... FOR UPDATE` lock on the pool row.
+
+**2x Multiplier carryover from F-51 §9 (standalone F-09 rule).** The legacy 2x Multiplier power-up's "doubles staking payout on win" behavior is preserved as a standalone F-09 staking rule, NOT as an F-57 in-debate effect. Only applies to staking refund math. Does NOT apply to F-58 sentiment tipping refunds. Implementation path: `settle_stakes` accepts a `p_multiplier` parameter (originally client-sent, hardened S230 to always read server-side — current implementation hardcodes to 1.0 pending F-57 build). When F-57 ships and 2x Multiplier becomes a real user-purchasable power-up, `settle_stakes` reads the winner's equipped multiplier from the F-57 staging table and applies `v_payout := FLOOR(v_payout * multiplier)`.
+
+**Pre-debate window.** `place_stake` enforces `status IN ('pending','lobby','matched')`. Once the debate flips to `'live'` (via `update_arena_debate` in `enterRoom`), the staking window is closed. LM-184 protects this: AI debates must be created as `'pending'` not `'live'` or staking is impossible.
+
+**Known issues.**
+
+1. **Deployed-functions export is stale (LM-210).** `supabase-deployed-functions-export.sql` was last re-synced at S227 — before the S230 `settle_stakes` hardening and before any subsequent signature changes. The committed export shows `settle_stakes(p_debate_id uuid, p_winner text, p_multiplier numeric DEFAULT 1)` with `p_winner` having no default, while `src/staking.ts:105` calls the RPC with only `{p_debate_id}`. Settlement works in production (Pat confirmed winning payouts appear on the results screen), so the deployed signature was further modified in a session between S230 and now and that change is not captured in any `.sql` file in the repo. NT line 127's claim that the export is "in sync with production" is false. See LM-210.
+
+2. **`try/catch` swallows settlement errors silently.** `src/arena/arena-room-end.ts:184` wraps the `settleStakes(debate.id)` call in `try { ... } catch { /* warned */ }` but there is no `console.warn` inside the catch block — only a comment. If settlement ever fails (RPC exception, auth issue, schema drift), the failure is invisible to both the user and the dev console. Recommend adding a real `console.error('[Arena] settleStakes failed:', err)` inside the catch when F-09 is next touched.
+
+3. **`cast_sentiment_vote` RPC is missing from the export** (LM-210 symptom). `src/arena/arena-feed-room.ts:544` calls it, the client-side enum references it, but no `cast_sentiment_vote` definition exists in `supabase-deployed-functions-export.sql`. Either deployed and not exported, or missing entirely. Moot post-F-58 scratch of the free-vote mechanic, but worth verifying during the F-58 build.
+
+**F-09 punch list status:** ✅ shipped, with the three known issues above logged against LM-210 and future cleanup.
+
+---
+
+## F-58 Sentiment Tipping
+
+New feature. Replaces the scratched F-51 Phase 5 free-tap sentiment vote model. **There is no free vote button.** The only way to move the sentiment gauge is to spend tokens. Every gauge tick is paid for.
+
+**Core loop.** During a live debate, spectators see a pulse gauge (cyan = side A, magenta = side B) and a four-button tip strip: **2 · 3 · 5 · 10**. Each tap immediately burns that many tokens from the spectator's balance and adds the same number to the chosen side's running sentiment total on `arena_debates`. The gauge visual renders the two totals as an absolute bar — no percentages, no log scale. Every token = 1 unit of gauge movement. Tipping is continuous throughout the live debate window; no ad-break gating, no 30s-end-of-debate window restriction. A user may tip both sides of the same debate if they want (no side-lock, unlike staking which is one-side-only). Unlimited cumulative taps.
+
+**Minimum tip = 2 tokens.** Server-side floor. The `FLOOR(amount * 0.5) = 0` refund edge on 1-token tips is the reason — no point letting a user pay 1 token to win back 0 tokens even on the winning side. Button strip is **2 · 3 · 5 · 10**.
+
+**Scope — live only, human vs human only.** Tipping is enabled only while `arena_debates.status = 'live'`. Replays, mirror pages, and completed debates show the gauge read-only (final sentiment totals frozen). AI Sparring matches (mode = `'ai'`) have the tip strip **hidden entirely** — no tipping against an AI opponent. Cancelled or declined debates keep all burned tips (no refund) — the tokens already moved the gauge before cancellation, so the burn stands.
+
+**Tier gate — watch-based, not question-based.** F-58 introduces a second tier ladder parallel to (and completely independent of) the F-09 `questions_answered` staking ladder. The tipping ladder is based on **debates watched**, derived from the new `debate_watches` table (see below):
+
+| Debates watched | Tier | Tipping allowed? |
+|---|---|---|
+| 0 | Unranked | Locked — "Watch a debate to unlock tipping" |
+| 1–4 | Observer | ✅ |
+| 5–14 | Fan | ✅ |
+| 15–49 | Analyst | ✅ |
+| 50+ | Insider | ✅ |
+
+The ladder is a **binary gate** — once Observer tier is reached, all tiers have unlimited tipping up to the 1-billion-per-side per-debate cap. No per-tier amount caps. The tier display is purely a status marker.
+
+**Settlement — 50% refund for winners.** When a debate ends (status `'complete'`, winner set on `arena_debates`), a new `settle_sentiment_tips` RPC loops every unsettled tip row for that debate and:
+
+- If tipper's side = winner side: `refund_amount = FLOOR(amount * 0.5)`, credited back to `profiles.token_balance`.
+- If tipper's side = loser side: `refund_amount = 0`. The original burn stands.
+- If winner = `'draw'`: `refund_amount = 0` for all tips. Burn stands (draws do not refund tips, unlike stakes which fully refund on draw). Deliberate: the tokens already moved the gauge during the live debate, which is the thing they paid for.
+
+Settlement is called from the same post-debate path as `settle_stakes` (in `src/arena/arena-room-end.ts`), ideally wrapped in the same transaction for atomicity. Both settlement functions should co-locate in the post-debate flow so a failure in one rolls back the other.
+
+**Database schema.**
+
+```sql
+-- New table: debate_watches (B2B tracking + tier gate source)
+CREATE TABLE debate_watches (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  debate_id   UUID NOT NULL REFERENCES arena_debates(id) ON DELETE CASCADE,
+  watched_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, debate_id)
+);
+CREATE INDEX idx_debate_watches_user ON debate_watches(user_id);
+CREATE INDEX idx_debate_watches_debate ON debate_watches(debate_id);
+
+-- RLS: service-role only, access via RPC (Option A: maximum privacy)
+ALTER TABLE debate_watches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY debate_watches_service_only ON debate_watches
+  FOR ALL USING (current_setting('role') IN ('postgres', 'service_role'));
+
+-- New table: sentiment_tips
+CREATE TABLE sentiment_tips (
+  id             BIGSERIAL PRIMARY KEY,
+  debate_id      UUID NOT NULL REFERENCES arena_debates(id) ON DELETE CASCADE,
+  user_id        UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  side           TEXT NOT NULL CHECK (side IN ('a','b')),
+  amount         INTEGER NOT NULL CHECK (amount >= 2),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  refund_amount  INTEGER,           -- NULL until settled
+  settled_at     TIMESTAMPTZ
+);
+CREATE INDEX idx_sentiment_tips_debate ON sentiment_tips(debate_id);
+CREATE INDEX idx_sentiment_tips_user_recent ON sentiment_tips(user_id, created_at DESC);
+CREATE INDEX idx_sentiment_tips_settlement ON sentiment_tips(debate_id) WHERE settled_at IS NULL;
+
+-- Cached running totals on arena_debates (gauge reads one row, not an aggregate)
+ALTER TABLE arena_debates
+  ADD COLUMN sentiment_total_a BIGINT NOT NULL DEFAULT 0,
+  ADD COLUMN sentiment_total_b BIGINT NOT NULL DEFAULT 0,
+  ADD CONSTRAINT sentiment_cap_a CHECK (sentiment_total_a <= 1000000000),
+  ADD CONSTRAINT sentiment_cap_b CHECK (sentiment_total_b <= 1000000000);
+```
+
+**RPCs to build.**
+
+1. **`log_debate_watch(p_debate_id UUID)`** — SECURITY DEFINER. Called from `src/pages/spectate.ts` on page load, same moment as `bump_spectator_count`. Inserts into `debate_watches`, ON CONFLICT DO NOTHING (UNIQUE handles re-entry). **Debaters excluded:** check if `auth.uid()` matches either `debater_a` or `debater_b` on `arena_debates`; if yes, skip the insert. **Guest spectators excluded:** NULL `auth.uid()` returns early with success. Instant log — no dwell threshold.
+
+2. **`get_user_watch_tier()`** — SECURITY DEFINER, no params. Returns `{tier: text, count: int}`. Reads `COUNT(*) FROM debate_watches WHERE user_id = auth.uid()` and derives the Observer/Fan/Analyst/Insider tier from the ladder. Cheap — indexed on `user_id`. Called once per spectate-page-load by the client to render the tier badge and unlock the tip strip.
+
+3. **`cast_sentiment_tip(p_debate_id UUID, p_side TEXT, p_amount INTEGER)`** — SECURITY DEFINER. Auth check → validate side `IN ('a','b')` → validate amount `>= 2` → derive user's watch tier via inline subquery on `debate_watches` → reject if tier = Unranked → read debate status + mode → reject if status != `'live'` → reject if mode = `'ai'` → atomically deduct `p_amount` from `profiles.token_balance` (WHERE `token_balance >= p_amount` defense-in-depth) → insert `sentiment_tips` row → update `arena_debates.sentiment_total_<side>` by `p_amount` (CHECK constraint rejects if the add would push past 1B — per-side cap) → emit `sentiment_tip` feed event via `append_feed_event` → return `{success, new_total_a, new_total_b, new_balance}`. Rate limit client-side to ~4 taps/sec; no server-side per-second rate limit since the token cost is itself the throttle.
+
+4. **`settle_sentiment_tips(p_debate_id UUID)`** — SECURITY DEFINER. Called from post-debate flow. Reads authoritative winner from `arena_debates.winner`. Loops unsettled tip rows (`WHERE debate_id = p_debate_id AND settled_at IS NULL FOR UPDATE`). For each: if `side = winner AND winner IN ('a','b')`, compute `refund_amount = FLOOR(amount * 0.5)`, credit to profile balance, set `settled_at = now()`. Otherwise (loser or draw), set `refund_amount = 0` and `settled_at = now()` with no credit. Idempotent via `WHERE settled_at IS NULL`. Should run in the same transaction as `settle_stakes` for post-debate atomicity.
+
+5. **DROP `cast_sentiment_vote`** — the free-vote RPC (if it exists in production; export is stale so unclear) is dropped. No fallback. The feed event type `sentiment_vote` is superseded by `sentiment_tip` in `debate_feed_events`. Historical rows with `sentiment_vote` remain as legacy tags; new events use `sentiment_tip`.
+
+**Client changes.**
+
+- `src/arena/arena-feed-room.ts:544` — delete the `cast_sentiment_vote` call, replace with a `cast_sentiment_tip` handler wired to the 2/3/5/10 tip strip.
+- `src/arena/arena-types.ts:276` — add `'sentiment_tip'` to the `FeedEventType` enum (keep `'sentiment_vote'` for historical row compatibility).
+- `src/pages/spectate.ts:305` — add `safeRpc('log_debate_watch', {p_debate_id: debateId})` right after the existing `bump_spectator_count` call.
+- New tip strip UI component in the arena feed-room render path: four buttons labeled **2 · 3 · 5 · 10**, color-coded per side (cyan A, magenta B), shown in the debate room while `debate.status === 'live' && debate.mode !== 'ai'`. Locked state for Unranked tier: "Watch a full debate to unlock tipping." The gauge bar above reads `arena_debates.sentiment_total_a` and `sentiment_total_b` as absolute values.
+- The gauge renders as an absolute bar — side A's length proportional to `sentiment_total_a`, side B's length proportional to `sentiment_total_b`, the total bar width is the sum. When side A = 50M and side B = 100, the bar is essentially all cyan with a hairline of magenta at the end. This is deliberate — the visual communicates dominance directly.
+
+**B2B data payload.** Every tip emits a `sentiment_tip` feed event with `{side, amount, new_total_a, new_total_b, tipper_user_id}`. The `debate_feed_events` archive is the B2B export — buyers can reconstruct exactly how the gauge moved over time during the live debate. The `debate_watches` table is also B2B-grade (who watched what, when) — service-role-only RLS keeps it off the client, aggregate exports to buyers per standard analytics flow. **Dwell time (`left_at` column, session-length data) is NOT part of the launch spec.** Research during S249 confirmed dwell data is valuable when the platform runs ad inventory or sponsorship deals (DOOH model: high-dwell screens command premium CPMs; Litmus charges $25-35K/year for enterprise email dwell analytics as a standalone product), but no such inventory exists on The Moderator yet. Adding `left_at` is a cheap ALTER TABLE later when ad monetization becomes concrete. Don't pre-build speculative infrastructure.
+
+**Build blockers.**
+
+- Neither `debate_watches` nor `sentiment_tips` exists in schema. F-58 build migration must create both tables first, then the RPCs, then the client wiring.
+- `cast_sentiment_vote` RPC cleanup depends on first verifying deployed state (LM-210 stale export). Safe move: run a diagnostic query against production to confirm whether the RPC exists before dropping anything.
+- No dependency on F-55 or F-57 — F-58 can ship independently.
+
+**Out of scope for F-58:**
+
+- Per-tier tip amount caps (none — all tipping tiers have unlimited amount).
+- Dwell time tracking / `left_at` column on `debate_watches`.
+- Tipping on completed debates / replays.
+- Tipping on AI Sparring matches.
+- Integration with the 2x Multiplier staking carveover (staking-only rule, does not apply to tip refunds).
+- Backfill of `debate_watches` from historical spectator activity (everyone starts at 0 watched on rollout).
+- Anonymous/guest tipping (guests watch but do not tip; tipping requires auth).
+- Debaters tipping on their own matches (allowed — per Pat S249, "oh who cares. let them if they have time").
+- Tip-history personal page for users (out of scope; watch history is service-role-only).
+

@@ -523,34 +523,22 @@ Communication:
 
 ---
 
-## 3.9 AUTO-DEBATE STAKING (Session 99)
+## 3.9 AUTO-DEBATE STAKING (Session 99) — **SCRATCHED S249**
 
-### auto_debate_stakes (Table)
-- DEFINED IN: Supabase (Session 99)
-- PURPOSE: Token staking on auto-debate (AI vs AI) outcomes
-- SEPARATE FROM: arena stakes (stakes/stake_pools tables). Auto-debates use their own table.
+**This entire subsystem was RETIRED in Session 249** as part of the auto-debate consumer-side full rip (extension of the S248 bot army scratch). Tables dropped from production, RPCs dropped from production, page and TS module deleted from repo. See Land Mine Map LM-211 for full disposition details and the `Bot Army Growth System` section in `THE-MODERATOR-FEATURE-SPECS-PENDING.md` for scratch context.
 
-### place_auto_debate_stake(p_debate_id, p_amount, p_predicted_winner) (RPC)
-- DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Stake tokens on an auto-debate outcome
-- CALLED FROM: moderator-auto-debate.html staking UI
-- EXPECTS: Valid auto_debate ID, sufficient token_balance
-- STATUS: Backend live. Frontend staking UI on auto-debate page.
+Historical listing preserved below for reference — do not write code against any of these surfaces; they no longer exist:
 
-### get_auto_debate_stakes(p_debate_id) (RPC)
-- DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Get current stake totals for an auto-debate
-- BLAST RADIUS: Low — read-only.
+### ~~auto_debate_stakes (Table)~~ — DROPPED S249
+- PREVIOUSLY: Token staking on auto-debate (AI vs AI) outcomes
+- SEPARATE FROM: arena stakes (stakes/stake_pools tables) — those remain live for F-09
 
-### resolve_auto_debate_stakes(p_debate_id) (RPC)
-- DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Settle auto-debate stakes after debate completes
-- BLAST RADIUS: Same as settle_stakes — if called twice, double payout.
+### ~~place_auto_debate_stake(p_debate_id, p_amount, p_predicted_winner)~~ — DROPPED S249
+### ~~get_auto_debate_stakes(p_debate_id)~~ — DROPPED S249
+### ~~resolve_auto_debate_stakes(p_debate_id)~~ — DROPPED S249
+### ~~settle_auto_debate_stakes(p_debate_id)~~ — DROPPED S249
 
-### settle_auto_debate_stakes(p_debate_id) (RPC)
-- DEFINED IN: Supabase RPC (SECURITY DEFINER)
-- PURPOSE: Parimutuel payout for auto-debate stakes
-- NOTE: 4 RPCs total for auto-debate staking system (Session 99)
+All 4 RPCs and the underlying table were dropped because their sole consumer (`moderator-auto-debate.html` + Leg 3 auto-debate generation) is dead. The F-09 arena staking system (`stakes` / `stake_pools` / `place_stake` / `get_stake_pool` / `settle_stakes`) is unaffected and remains live.
 
 ---
 
