@@ -2326,7 +2326,21 @@ SESSION: 248 (flagged during F-06 scratch walk — discovered while auditing
 
 ---
 
-## LM-210: `supabase-deployed-functions-export.sql` is stale — last re-synced S227
+## LM-210: `supabase-deployed-functions-export.sql` is stale — last re-synced S227 — ✅ RESOLVED S250
+
+```
+RESOLUTION (Session 250): Re-exported from production via pg_proc query
+  in Supabase SQL Editor against faomczmipsccwbhpivmp. File rebuilt with
+  186 functions (up from S227's 174 — twelve RPCs had been deployed
+  during the 23-session drift window). Header updated to "Last updated:
+  Session 250 (April 9, 2026)." NT lines 127 and 186 de-STALE-ed in
+  same session. cast_sentiment_vote confirmed present in production
+  (signature matches client call at arena-feed-room.ts:544) — not a
+  missing RPC, just a staleness artifact. Entry retained for historical
+  context and for the lesson in the PATTERN section.
+```
+
+## LM-210 (original entry):
 ```
 DECISION (Session 249, discovered during F-09 audit): The committed
   `supabase-deployed-functions-export.sql` in the repo is at minimum 22
