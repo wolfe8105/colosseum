@@ -1,73 +1,113 @@
 -- THE MODERATOR — Deployed Functions Export
 -- Auto-generated from Supabase production database
--- Last updated: Session 250 (April 9, 2026)
+-- Last updated: Session 252 (April 9, 2026) — F-55 Reference System Overhaul landed
 --
 -- This file is the source of truth for what RPCs are live in production.
 -- Re-export after any session that modifies RPCs.
 
-CREATE OR REPLACE FUNCTION public._calc_reference_power(p_source_type text, p_ceiling integer, p_points numeric)
- RETURNS integer
+CREATE OR REPLACE FUNCTION public._canonical_fingerprint(p_title text, p_author text, p_date date, p_locator text)
+ RETURNS text
  LANGUAGE plpgsql
-IMMUTABLE
 AS $function$
+
+DECLARE
+  v_t TEXT;
+  v_a TEXT;
+  v_l TEXT;
 BEGIN
-  -- Peer-reviewed: ceiling 5, thresholds 20/60/150/300/500
-  IF p_source_type = 'peer-reviewed' THEN
-    IF p_points >= 500 THEN RETURN 5;
-    ELSIF p_points >= 300 THEN RETURN 4;
-    ELSIF p_points >= 150 THEN RETURN 3;
-    ELSIF p_points >= 60  THEN RETURN 2;
-    ELSIF p_points >= 20  THEN RETURN 1;
-    ELSE RETURN 0;
-    END IF;
-  END IF;
+  -- Lowercase, strip non-alphanumeric except spaces, collapse whitespace, trim
+  v_t := trim(regexp_replace(regexp_replace(lower(trim(p_title)), '[^a-z0-9 ]', '', 'g'), ' +', ' ', 'g'));
+  v_a := trim(regexp_replace(regexp_replace(lower(trim(p_author)), '[^a-z0-9 ]', '', 'g'), ' +', ' ', 'g'));
+  v_l := trim(regexp_replace(regexp_replace(lower(trim(p_locator)), '[^a-z0-9. ]', '', 'g'), ' +', ' ', 'g'));
 
-  -- Data / Expert: ceiling 4, thresholds 15/50/120/250
-  IF p_source_type IN ('data', 'expert') THEN
-    IF p_points >= 250 THEN RETURN 4;
-    ELSIF p_points >= 120 THEN RETURN 3;
-    ELSIF p_points >= 50  THEN RETURN 2;
-    ELSIF p_points >= 15  THEN RETURN 1;
-    ELSE RETURN 0;
-    END IF;
-  END IF;
-
-  -- Government: ceiling 3, thresholds 10/40/100
-  IF p_source_type = 'government' THEN
-    IF p_points >= 100 THEN RETURN 3;
-    ELSIF p_points >= 40  THEN RETURN 2;
-    ELSIF p_points >= 10  THEN RETURN 1;
-    ELSE RETURN 0;
-    END IF;
-  END IF;
-
-  -- News / Other: ceiling 1, threshold 5
-  IF p_source_type IN ('news', 'other') THEN
-    IF p_points >= 5 THEN RETURN 1;
-    ELSE RETURN 0;
-    END IF;
-  END IF;
-
-  RETURN 0;
+  RETURN v_t || '|' || v_a || '|' || p_date::TEXT || '|' || v_l;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public._notify_user(p_user_id uuid, p_type text, p_title text, p_body text DEFAULT NULL::text, p_data jsonb DEFAULT '{}'::jsonb)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   INSERT INTO notifications (user_id, type, title, body, data)
   VALUES (p_user_id, p_type, p_title, p_body, p_data);
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public._recompute_reference_rarity_and_power(p_ref_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_ref       RECORD;
+  v_composite INTEGER;
+  v_new_rarity TEXT;
+  v_ceiling   INTEGER;
+  v_power     INTEGER;
+  v_graduated BOOLEAN;
+BEGIN
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_ref_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN; END IF;
+
+  -- Graduation latch: once true, stays true (one-way, never recomputed down)
+  v_graduated := v_ref.graduated;
+  IF NOT v_graduated AND v_ref.strikes >= 25 THEN
+    v_graduated := true;
+  END IF;
+
+  -- Composite score = (seconds x 2) + strikes
+  v_composite := (v_ref.seconds * 2) + v_ref.strikes;
+
+  -- Rarity thresholds: Common 0-9, Uncommon 10-29, Rare 30-74, Legendary 75-199, Mythic 200+
+  -- Mythic requires graduated = true
+  IF v_graduated AND v_composite >= 200 THEN
+    v_new_rarity := 'mythic';
+  ELSIF v_composite >= 75 THEN
+    v_new_rarity := 'legendary';
+  ELSIF v_composite >= 30 THEN
+    v_new_rarity := 'rare';
+  ELSIF v_composite >= 10 THEN
+    v_new_rarity := 'uncommon';
+  ELSE
+    v_new_rarity := 'common';
+  END IF;
+
+  -- Power ceiling by source_type: primary 5, academic 4, book 3, news 1, other 1
+  CASE v_ref.source_type
+    WHEN 'primary'  THEN v_ceiling := 5;
+    WHEN 'academic' THEN v_ceiling := 4;
+    WHEN 'book'     THEN v_ceiling := 3;
+    WHEN 'news'     THEN v_ceiling := 1;
+    WHEN 'other'    THEN v_ceiling := 1;
+    ELSE v_ceiling := 1;
+  END CASE;
+
+  -- Power = min(ceiling, floor(seconds / 3)) + graduation_bonus
+  v_power := LEAST(v_ceiling, FLOOR(v_ref.seconds / 3.0)::INTEGER);
+  IF v_graduated THEN
+    v_power := v_power + 1;
+  END IF;
+
+  UPDATE arsenal_references
+  SET rarity        = v_new_rarity,
+      current_power = v_power,
+      graduated     = v_graduated
+  WHERE id = p_ref_id;
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public._source_type_ceiling(p_source_type text)
  RETURNS integer
  LANGUAGE plpgsql
-IMMUTABLE
 AS $function$
+
 BEGIN
   CASE p_source_type
     WHEN 'peer-reviewed' THEN RETURN 5;
@@ -79,13 +119,15 @@ BEGIN
     ELSE RETURN 1;
   END CASE;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.activate_power_up(p_debate_id uuid, p_power_up_id text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_row debate_power_ups%ROWTYPE;
@@ -112,13 +154,15 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'power_up_id', p_power_up_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.advance_round(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -173,13 +217,15 @@ BEGIN
     RETURN json_build_object('success', true, 'status', 'live', 'round', v_debate.current_round + 1);
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.assign_moderator(p_debate_id uuid, p_moderator_id uuid DEFAULT NULL::uuid, p_moderator_type text DEFAULT 'human'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -274,13 +320,15 @@ BEGIN
     'moderator_rating', v_mod.mod_rating
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.assign_moderator(p_debate_id uuid, p_moderator_type text, p_moderator_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -372,58 +420,15 @@ BEGIN
     'moderator_rating', v_mod.mod_rating
   );
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.auto_allow_expired_references()
- RETURNS json
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_ref RECORD;
-  v_count INTEGER := 0;
-BEGIN
-  FOR v_ref IN
-    SELECT dr.id AS ref_id, dr.debate_id
-    FROM public.debate_references dr
-    JOIN public.debates d ON d.id = dr.debate_id
-    WHERE dr.ruling = 'pending'
-      AND d.is_paused = true
-      AND d.paused_at < now() - interval '60 seconds'
-  LOOP
-    UPDATE public.debate_references SET
-      ruling = 'allowed',
-      ruled_by_type = 'auto',
-      ruling_reason = 'Auto-allowed after 60s timeout',
-      ruled_at = now()
-    WHERE id = v_ref.ref_id;
-
-    UPDATE public.debates SET
-      is_paused = false, paused_at = NULL, updated_at = now()
-    WHERE id = v_ref.debate_id;
-
-    -- FIXED: named parameters (LM-188 audit)
-    PERFORM log_event(
-      p_event_type := 'reference_auto_allowed',
-      p_user_id    := NULL,
-      p_debate_id  := v_ref.debate_id,
-      p_category   := NULL,
-      p_side       := NULL,
-      p_metadata   := jsonb_build_object('reference_id', v_ref.ref_id)
-    );
-
-    v_count := v_count + 1;
-  END LOOP;
-
-  RETURN json_build_object('success', true, 'auto_allowed_count', v_count);
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.auto_grant_depth_cosmetics()
  RETURNS trigger
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_old_depth NUMERIC := OLD.questions_answered / 100.0;
   v_new_depth NUMERIC := NEW.questions_answered / 100.0;
@@ -450,13 +455,15 @@ BEGIN
 
   RETURN NEW;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.ban_group_member(p_group_id uuid, p_user_id uuid, p_reason text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller_id   uuid := auth.uid();
   v_caller_role text;
@@ -507,13 +514,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.broadcast_feed_event()
  RETURNS trigger
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   PERFORM realtime.broadcast_changes(
     'debate:' || NEW.debate_id::text,   -- topic: debate:<uuid>
@@ -531,13 +540,15 @@ EXCEPTION WHEN OTHERS THEN
   RAISE WARNING 'broadcast_feed_event failed: % %', SQLERRM, SQLSTATE;
   RETURN NULL;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.browse_mod_queue()
  RETURNS TABLE(debate_id uuid, topic text, category text, mode text, created_at timestamp with time zone, debater_a_name text, debater_b_name text, mod_status text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_mod_categories TEXT[];
@@ -573,13 +584,15 @@ BEGIN
     AND (ad.debater_b IS NULL OR ad.debater_b != v_user_id)
   ORDER BY ad.created_at ASC;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.bump_spectator_count(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   UPDATE arena_debates
     SET spectator_count = spectator_count + 1
@@ -591,13 +604,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.buy_power_up(p_power_up_id text, p_quantity integer DEFAULT 1)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID;
   v_balance INTEGER;
@@ -681,13 +696,15 @@ BEGIN
     'new_balance', v_balance - v_total_cost
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.calculate_elo(rating_a integer, rating_b integer, winner text, debates_a integer DEFAULT 0, debates_b integer DEFAULT 0)
  RETURNS TABLE(new_rating_a integer, new_rating_b integer, change_a integer, change_b integer)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   k_a INTEGER;
   k_b INTEGER;
@@ -738,13 +755,15 @@ BEGIN
 
   RETURN QUERY SELECT new_rating_a, new_rating_b, change_a, change_b;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cancel_mod_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid    UUID := auth.uid();
   v_debate RECORD;
@@ -777,13 +796,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cancel_private_lobby(p_debate_id uuid)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
 BEGIN
@@ -801,76 +822,29 @@ BEGIN
     RAISE EXCEPTION 'Lobby not found or already started';
   END IF;
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.cast_auto_debate_vote(p_debate_id uuid, p_fingerprint text, p_voted_for text, p_user_id uuid DEFAULT NULL::uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_existing UUID;
-  v_result JSONB;
-BEGIN
-  -- Validate side
-  IF p_voted_for NOT IN ('a', 'b') THEN
-    RETURN jsonb_build_object('error', 'Invalid vote. Must be a or b.');
-  END IF;
-
-  -- Check for existing vote
-  SELECT id INTO v_existing
-  FROM auto_debate_votes
-  WHERE auto_debate_id = p_debate_id AND voter_fingerprint = p_fingerprint;
-
-  IF v_existing IS NOT NULL THEN
-    RETURN jsonb_build_object('error', 'Already voted on this debate.');
-  END IF;
-
-  -- Insert vote
-  INSERT INTO auto_debate_votes (auto_debate_id, voter_fingerprint, user_id, voted_for)
-  VALUES (p_debate_id, p_fingerprint, p_user_id, p_voted_for);
-
-  -- Update counts on auto_debates
-  IF p_voted_for = 'a' THEN
-    UPDATE auto_debates
-    SET votes_a = votes_a + 1, vote_count = vote_count + 1
-    WHERE id = p_debate_id;
-  ELSE
-    UPDATE auto_debates
-    SET votes_b = votes_b + 1, vote_count = vote_count + 1
-    WHERE id = p_debate_id;
-  END IF;
-
-  -- Return updated counts
-  SELECT jsonb_build_object(
-    'success', true,
-    'votes_a', ad.votes_a,
-    'votes_b', ad.votes_b,
-    'vote_count', ad.vote_count
-  ) INTO v_result
-  FROM auto_debates ad WHERE ad.id = p_debate_id;
-
-  RETURN v_result;
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cast_landing_vote(p_topic_slug text, p_side text, p_fingerprint text)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   INSERT INTO landing_votes (topic_slug, side, fingerprint)
   VALUES (p_topic_slug, p_side, p_fingerprint)
   ON CONFLICT (topic_slug, fingerprint) DO UPDATE SET side = EXCLUDED.side;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cast_landing_vote(p_topic text, p_side text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   result JSON;
 BEGIN
@@ -900,13 +874,15 @@ BEGIN
 
   RETURN result;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cast_sentiment_vote(p_debate_id uuid, p_side text, p_round integer)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -945,13 +921,15 @@ BEGIN
   
   RETURN jsonb_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cast_vote(p_debate_id uuid, p_voted_for text, p_round integer DEFAULT NULL::integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -1022,13 +1000,15 @@ BEGIN
     'your_vote', p_voted_for
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.challenge_reference(p_reference_id uuid, p_debate_id uuid, p_ruling text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id        uuid;
   v_ref            record;
@@ -1111,13 +1091,182 @@ BEGIN
     );
   END IF;
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.challenge_reference(p_ref_id uuid, p_grounds text, p_context_debate_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id       UUID := auth.uid();
+  v_ref           RECORD;
+  v_escrow        INTEGER;
+  v_debit         JSON;
+  v_challenge_id  UUID;
+  v_debate        RECORD;
+  v_shield_row    RECORD;
+  v_event_id      BIGINT;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Load reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_ref_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reference not found';
+  END IF;
+
+  -- Cannot challenge own reference
+  IF v_ref.user_id = v_user_id THEN
+    RAISE EXCEPTION 'Cannot challenge your own reference';
+  END IF;
+
+  -- Cannot challenge deleted or frozen refs
+  IF v_ref.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Cannot challenge a deleted reference';
+  END IF;
+  IF v_ref.challenge_status = 'frozen' THEN
+    RAISE EXCEPTION 'Reference is already frozen';
+  END IF;
+
+  -- Check for existing pending challenge by this user on this ref
+  IF EXISTS (
+    SELECT 1 FROM reference_challenges
+    WHERE reference_id = p_ref_id
+      AND challenger_id = v_user_id
+      AND status = 'pending'
+  ) THEN
+    RAISE EXCEPTION 'You already have a pending challenge on this reference';
+  END IF;
+
+  -- Escrow: in-debate = 10 tokens, out-of-debate = 25 tokens
+  IF p_context_debate_id IS NOT NULL THEN
+    v_escrow := 10;
+  ELSE
+    v_escrow := 25;
+  END IF;
+
+  -- Debit escrow
+  v_debit := debit_tokens(v_user_id, v_escrow, 'challenge_reference_escrow');
+  IF NOT (v_debit->>'success')::BOOLEAN THEN
+    RAISE EXCEPTION 'Insufficient tokens for challenge escrow (need %)', v_escrow;
+  END IF;
+
+  -- If in-debate, check Shield power-up on opponent
+  IF p_context_debate_id IS NOT NULL THEN
+    SELECT * INTO v_debate FROM arena_debates WHERE id = p_context_debate_id;
+
+    IF v_debate IS NOT NULL AND v_debate.status = 'live' THEN
+      SELECT * INTO v_shield_row
+        FROM debate_power_ups
+        WHERE debate_id = p_context_debate_id
+          AND user_id = v_ref.user_id
+          AND power_up_id = 'shield'
+          AND activated = false
+        LIMIT 1
+        FOR UPDATE;
+
+      IF v_shield_row IS NOT NULL THEN
+        -- Shield absorbs the challenge — refund escrow
+        UPDATE profiles
+        SET token_balance = token_balance + v_escrow
+        WHERE id = v_user_id;
+
+        INSERT INTO token_transactions (user_id, amount, type, source, balance_after)
+        VALUES (v_user_id, v_escrow, 'refund', 'challenge_shield_block',
+                (SELECT token_balance FROM profiles WHERE id = v_user_id));
+
+        -- Activate shield
+        UPDATE debate_power_ups
+        SET activated = true, activated_at = now()
+        WHERE id = v_shield_row.id;
+
+        -- Insert shield block feed event
+        INSERT INTO debate_feed_events (
+          debate_id, user_id, event_type, round, side, content,
+          reference_id, metadata
+        ) VALUES (
+          p_context_debate_id, v_ref.user_id, 'power_up', 0,
+          CASE WHEN v_ref.user_id = v_debate.debater_a THEN 'a' ELSE 'b' END,
+          'SHIELD BLOCKED! Reference is protected.',
+          p_ref_id,
+          jsonb_build_object(
+            'power_up_id', 'shield',
+            'blocked_challenger', v_user_id,
+            'claim', v_ref.claim_text
+          )
+        )
+        RETURNING id INTO v_event_id;
+
+        RETURN jsonb_build_object(
+          'action', 'shield_blocked',
+          'event_id', v_event_id,
+          'message', 'Shield absorbed the challenge. Escrow refunded.'
+        );
+      END IF;
+    END IF;
+  END IF;
+
+  -- No Shield or out-of-debate — file the challenge
+  INSERT INTO reference_challenges (
+    reference_id, challenger_id, debate_id, grounds, escrow_amount, status
+  ) VALUES (
+    p_ref_id, v_user_id, p_context_debate_id, p_grounds, v_escrow, 'pending'
+  )
+  RETURNING id INTO v_challenge_id;
+
+  -- If in-debate, insert feed event
+  IF p_context_debate_id IS NOT NULL AND v_debate IS NOT NULL THEN
+    INSERT INTO debate_feed_events (
+      debate_id, user_id, event_type, round, side, content,
+      reference_id, metadata
+    ) VALUES (
+      p_context_debate_id, v_user_id, 'reference_challenge', 0,
+      CASE WHEN v_user_id = v_debate.debater_a THEN 'a' ELSE 'b' END,
+      sanitize_text(v_ref.claim_text),
+      p_ref_id,
+      jsonb_build_object(
+        'challenge_id', v_challenge_id,
+        'challenged_user', v_ref.user_id,
+        'grounds', p_grounds,
+        'source_type', v_ref.source_type
+      )
+    );
+  END IF;
+
+  -- Analytics
+  PERFORM log_event(
+    p_event_type := 'reference_challenged',
+    p_user_id := v_user_id,
+    p_debate_id := p_context_debate_id,
+    p_metadata := jsonb_build_object(
+      'challenge_id', v_challenge_id,
+      'reference_id', p_ref_id,
+      'escrow', v_escrow,
+      'in_debate', p_context_debate_id IS NOT NULL
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'action', 'challenged',
+    'challenge_id', v_challenge_id,
+    'escrow_amount', v_escrow
+  );
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_achievements()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_profile RECORD;
@@ -1194,13 +1343,15 @@ BEGIN
     'achievements_granted', v_granted
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_match_acceptance(p_debate_id uuid)
  RETURNS TABLE(player_a_ready boolean, player_b_ready boolean, status text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller UUID := auth.uid();
   v_row arena_debates%ROWTYPE;
@@ -1217,13 +1368,15 @@ BEGIN
 
   RETURN QUERY SELECT v_row.player_a_ready, v_row.player_b_ready, v_row.status::TEXT;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_mod_cooldown(p_moderator_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_today_start TIMESTAMPTZ;
   v_dropouts_today INT;
@@ -1274,13 +1427,15 @@ BEGIN
     'next_offense_cooldown_minutes', get_mod_cooldown_minutes(v_dropouts_today + 1)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_mod_debate(p_debate_id uuid)
  RETURNS TABLE(status text, debater_a_id uuid, debater_a_name text, debater_b_id uuid, debater_b_name text, topic text, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid    UUID := auth.uid();
   v_debate RECORD;
@@ -1327,13 +1482,15 @@ BEGIN
 
   RETURN NEXT;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_private_lobby(p_debate_id uuid)
  RETURNS TABLE(status text, opponent_id uuid, opponent_name text, opponent_elo integer, player_b_ready boolean, total_rounds integer, language text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_debate  arena_debates%ROWTYPE;
@@ -1371,13 +1528,15 @@ BEGIN
     FROM profiles p WHERE p.id = v_debate.debater_b;
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_queue_status()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_entry record;
   v_opponent record;
@@ -1426,13 +1585,15 @@ BEGIN
     'language', COALESCE(v_lang, 'en')
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_ranked_eligible()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid uuid := auth.uid();
   v_pct int;
@@ -1454,13 +1615,15 @@ BEGIN
 
   RETURN json_build_object('eligible', true, 'profile_pct', v_pct, 'reason', 'ok');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_rate_limit(p_user_id uuid, p_action text, p_window_minutes integer, p_max_count integer)
  RETURNS boolean
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_window_start TIMESTAMPTZ;
   v_current_count INTEGER;
@@ -1493,19 +1656,26 @@ BEGIN
 
   RETURN v_current_count <= p_max_count;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cite_debate_reference(p_debate_id uuid, p_reference_id uuid, p_round integer, p_side text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
-  v_uid      UUID := auth.uid();
-  v_debate   RECORD;
-  v_loadout  RECORD;
-  v_ref      RECORD;
-  v_event_id BIGINT;
+  v_uid           UUID := auth.uid();
+  v_debate        RECORD;
+  v_loadout       RECORD;
+  v_ref           RECORD;
+  v_event_id      BIGINT;
+  v_is_bot_a      BOOLEAN;
+  v_is_bot_b      BOOLEAN;
+  v_cites_this_round INTEGER;
+  v_cite_cost     INTEGER;
+  v_debit         JSON;
 BEGIN
   -- Auth
   IF v_uid IS NULL THEN
@@ -1532,6 +1702,29 @@ BEGIN
     RAISE EXCEPTION 'Side does not match your role';
   END IF;
 
+  -- Bot-pair check (LM-207): if either debater is a bot, reject cite
+  SELECT is_bot INTO v_is_bot_a FROM profiles WHERE id = v_debate.debater_a;
+  SELECT is_bot INTO v_is_bot_b FROM profiles WHERE id = v_debate.debater_b;
+  IF COALESCE(v_is_bot_a, false) OR COALESCE(v_is_bot_b, false) THEN
+    RAISE EXCEPTION 'Bot accounts cannot cite references';
+  END IF;
+
+  -- Load arsenal reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_reference_id;
+  IF v_ref IS NULL THEN
+    RAISE EXCEPTION 'Arsenal reference not found';
+  END IF;
+
+  -- Deleted ref check
+  IF v_ref.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Cannot cite a deleted reference';
+  END IF;
+
+  -- Frozen ref check
+  IF v_ref.challenge_status = 'frozen' THEN
+    RAISE EXCEPTION 'Cannot cite a frozen reference';
+  END IF;
+
   -- Check loadout: reference must be loaded and not yet cited
   SELECT * INTO v_loadout
     FROM debate_reference_loadouts
@@ -1547,21 +1740,50 @@ BEGIN
     RAISE EXCEPTION 'Reference already cited (one and done)';
   END IF;
 
-  -- Get arsenal reference for claim text
-  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_reference_id;
-  IF v_ref IS NULL THEN
-    RAISE EXCEPTION 'Arsenal reference not found';
+  -- Per-round cite cost escalation: 1st free, 2nd 5t, 3rd 15t, 4th 35t, 5th 50t, cap 5/round
+  SELECT COUNT(*) INTO v_cites_this_round
+    FROM debate_feed_events
+    WHERE debate_id = p_debate_id
+      AND user_id = v_uid
+      AND event_type = 'reference_cite'
+      AND round = p_round;
+
+  IF v_cites_this_round >= 5 THEN
+    RAISE EXCEPTION 'Maximum 5 citations per round reached';
   END IF;
 
-  -- Mark cited
-  UPDATE debate_reference_loadouts
-    SET cited = true, cited_at = now()
-    WHERE id = v_loadout.id;
+  -- Cost schedule
+  CASE v_cites_this_round
+    WHEN 0 THEN v_cite_cost := 0;   -- 1st free
+    WHEN 1 THEN v_cite_cost := 5;
+    WHEN 2 THEN v_cite_cost := 15;
+    WHEN 3 THEN v_cite_cost := 35;
+    WHEN 4 THEN v_cite_cost := 50;
+    ELSE v_cite_cost := 50;
+  END CASE;
 
-  -- Update arsenal stats (citation_count)
+  -- Debit cite cost (burns to platform, not routed to forger)
+  IF v_cite_cost > 0 THEN
+    v_debit := debit_tokens(v_uid, v_cite_cost, 'cite_reference_round');
+    IF NOT (v_debit->>'success')::BOOLEAN THEN
+      RAISE EXCEPTION 'Insufficient tokens for citation (need %)', v_cite_cost;
+    END IF;
+  END IF;
+
+  -- Mark cited + snapshot rarity at cite time
+  UPDATE debate_reference_loadouts
+  SET cited = true,
+      cited_at = now(),
+      rarity_at_cite = v_ref.rarity
+  WHERE id = v_loadout.id;
+
+  -- Update strikes on arsenal reference
   UPDATE arsenal_references
-    SET citation_count = citation_count + 1
-    WHERE id = p_reference_id;
+  SET strikes = strikes + 1
+  WHERE id = p_reference_id;
+
+  -- Recompute rarity and power
+  PERFORM _recompute_reference_rarity_and_power(p_reference_id);
 
   -- Insert feed event
   INSERT INTO debate_feed_events (
@@ -1569,119 +1791,70 @@ BEGIN
     reference_id, metadata
   ) VALUES (
     p_debate_id, v_uid, 'reference_cite', p_round, p_side,
-    sanitize_text(v_ref.claim),
+    sanitize_text(v_ref.claim_text),
     p_reference_id,
     jsonb_build_object(
-      'url', v_ref.url,
-      'domain', v_ref.domain,
+      'source_url', v_ref.source_url,
+      'source_title', v_ref.source_title,
+      'source_author', v_ref.source_author,
       'source_type', v_ref.source_type,
       'current_power', v_ref.current_power,
-      'rarity', v_ref.rarity
+      'rarity', v_ref.rarity,
+      'cite_cost', v_cite_cost
     )
   )
   RETURNING id INTO v_event_id;
 
-  -- Analytics double-write
+  -- Analytics
   PERFORM log_event(
-    'feed_reference_cite', v_uid, p_debate_id,
-    v_debate.category, p_side,
-    jsonb_build_object(
+    p_event_type := 'feed_reference_cite',
+    p_user_id := v_uid,
+    p_debate_id := p_debate_id,
+    p_category := v_debate.category,
+    p_side := p_side,
+    p_metadata := jsonb_build_object(
       'feed_event_id', v_event_id,
       'round', p_round,
       'reference_id', p_reference_id,
-      'source_type', v_ref.source_type
+      'source_type', v_ref.source_type,
+      'cite_cost', v_cite_cost
     )
   );
 
   RETURN jsonb_build_object(
     'success', true,
     'event_id', v_event_id,
-    'claim', v_ref.claim,
+    'claim', v_ref.claim_text,
     'reference_id', p_reference_id
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cite_reference(p_reference_id uuid, p_debate_id uuid, p_outcome text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
-DECLARE
-  v_user_id   uuid;
-  v_ref       record;
-  v_xp_award  integer := 0;
-  v_base_xp   integer := 10;
+
 BEGIN
-  -- Auth check
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
+  IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- Get the reference
-  SELECT * INTO v_ref
-    FROM public.arsenal_references
-    WHERE id = p_reference_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Reference not found';
-  END IF;
-
-  -- Must be the owner to cite their own reference
-  IF v_ref.user_id != v_user_id THEN
-    RAISE EXCEPTION 'Can only cite your own references';
-  END IF;
-
-  IF p_outcome IS NULL THEN
-    -- Initial citation: increment count
-    UPDATE public.arsenal_references
-      SET citation_count = citation_count + 1
-      WHERE id = p_reference_id;
-
-    RETURN jsonb_build_object(
-      'action', 'cited',
-      'citation_count', v_ref.citation_count + 1
-    );
-
-  ELSIF p_outcome = 'win' THEN
-    -- Debate won: increment win_count, award XP
-    v_xp_award := v_base_xp * GREATEST(v_ref.current_power, 1);
-
-    UPDATE public.arsenal_references
-      SET win_count = win_count + 1,
-          xp        = xp + v_xp_award
-      WHERE id = p_reference_id;
-
-    RETURN jsonb_build_object(
-      'action', 'win_recorded',
-      'win_count', v_ref.win_count + 1,
-      'xp_awarded', v_xp_award,
-      'total_xp', v_ref.xp + v_xp_award
-    );
-
-  ELSIF p_outcome = 'loss' THEN
-    -- Debate lost: increment loss_count, no XP
-    UPDATE public.arsenal_references
-      SET loss_count = loss_count + 1
-      WHERE id = p_reference_id;
-
-    RETURN jsonb_build_object(
-      'action', 'loss_recorded',
-      'loss_count', v_ref.loss_count + 1
-    );
-
-  ELSE
-    RAISE EXCEPTION 'Invalid outcome: must be NULL, win, or loss';
-  END IF;
+  -- In F-55 the outcome tracking (win/loss per ref) is replaced by royalties.
+  -- This function is kept as a no-op for backward compatibility.
+  RETURN jsonb_build_object('action', 'acknowledged');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_action_tokens(p_action text, p_reference_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID;
   v_today DATE := CURRENT_DATE;
@@ -1793,13 +1966,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_daily_login()
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_last_login DATE;
@@ -1885,13 +2060,15 @@ BEGIN
     'streak_freezes', v_freezes
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_daily_tokens()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_tier TEXT;
@@ -1942,13 +2119,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_debate_tokens(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID;
   v_already_claimed BOOLEAN;
@@ -2088,13 +2267,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_milestone(p_milestone_key text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_tokens INT;
@@ -2181,13 +2362,15 @@ BEGIN
     'new_balance', COALESCE(v_new_balance, 0)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.claim_section_reward(p_section_id text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_power_up_id TEXT;
@@ -2250,13 +2433,15 @@ BEGIN
     'new_quantity', v_new_qty
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.cleanup_notifications()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_deleted INTEGER;
@@ -2276,13 +2461,15 @@ BEGIN
     'deleted', v_deleted
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_ai_debate(p_category text DEFAULT NULL::text, p_topic text DEFAULT 'Open Debate'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid uuid := auth.uid();
   v_debate_id uuid;
@@ -2305,13 +2492,15 @@ BEGIN
 
   RETURN json_build_object('debate_id', v_debate_id, 'topic', p_topic, 'role', 'a');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_challenge(p_hot_take_id uuid, p_counter_argument text, p_topic text DEFAULT ''::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_take RECORD;
@@ -2419,13 +2608,15 @@ BEGIN
     'status', 'open'
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_debate(p_topic text, p_category text DEFAULT 'general'::text, p_format text DEFAULT 'standard'::text, p_opponent_id uuid DEFAULT NULL::uuid, p_side text DEFAULT 'a'::text)
  RETURNS uuid
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate_id UUID;
@@ -2479,13 +2670,15 @@ BEGIN
 
   RETURN v_debate_id;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_group(p_name text, p_description text DEFAULT NULL::text, p_category text DEFAULT 'general'::text, p_is_public boolean DEFAULT true, p_avatar_emoji text DEFAULT '⚔️'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id  uuid := auth.uid();
   v_slug     text;
@@ -2524,13 +2717,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'group_id', v_group_id, 'slug', v_slug);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_group_challenge(p_challenger_group_id uuid, p_defender_group_id uuid, p_topic text, p_category text DEFAULT 'miscellaneous'::text, p_format text DEFAULT '1v1'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID;
   v_is_member BOOLEAN;
@@ -2608,13 +2803,15 @@ BEGIN
 
   RETURN json_build_object('challenge_id', v_challenge_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_hot_take(p_content text, p_section text DEFAULT 'trending'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_take_id UUID;
@@ -2672,13 +2869,76 @@ BEGIN
     'section', p_section
   );
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text DEFAULT 'text'::text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_ruleset text DEFAULT 'amplified'::text)
+ RETURNS TABLE(debate_id uuid, join_code text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_uid        UUID := auth.uid();
+  v_profile    RECORD;
+  v_debate_id  UUID;
+  v_join_code  TEXT;
+  v_attempts   INT := 0;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT p.is_moderator INTO v_profile
+  FROM profiles p WHERE p.id = v_uid;
+
+  IF NOT FOUND OR v_profile.is_moderator IS NOT TRUE THEN
+    RAISE EXCEPTION 'Not a moderator';
+  END IF;
+
+  IF p_ruleset NOT IN ('amplified', 'unplugged') THEN
+    p_ruleset := 'amplified';
+  END IF;
+
+  IF p_mode NOT IN ('text', 'live', 'voicememo') THEN
+    p_mode := 'text';
+  END IF;
+
+  LOOP
+    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM arena_debates ad
+      WHERE ad.join_code = v_join_code
+        AND ad.status IN ('lobby', 'matched', 'live')
+    );
+    v_attempts := v_attempts + 1;
+    IF v_attempts > 10 THEN
+      RAISE EXCEPTION 'Could not generate unique join code';
+    END IF;
+  END LOOP;
+
+  INSERT INTO arena_debates (
+    debater_a, debater_b, moderator_id, mode, topic, category,
+    ranked, ruleset, status, mod_status, visibility, join_code, total_rounds
+  ) VALUES (
+    NULL, NULL, v_uid, p_mode, p_topic, p_category,
+    p_ranked, p_ruleset, 'lobby', 'claimed', 'code', v_join_code, 3
+  )
+  RETURNING id INTO v_debate_id;
+
+  debate_id := v_debate_id;
+  join_code := v_join_code;
+  RETURN NEXT;
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text DEFAULT 'text'::text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_ruleset text DEFAULT 'amplified'::text, p_total_rounds integer DEFAULT 4)
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid        UUID := auth.uid();
   v_profile    RECORD;
@@ -2764,72 +3024,15 @@ BEGIN
   join_code := v_join_code;
   RETURN NEXT;
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text DEFAULT 'text'::text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_ruleset text DEFAULT 'amplified'::text)
- RETURNS TABLE(debate_id uuid, join_code text)
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_uid        UUID := auth.uid();
-  v_profile    RECORD;
-  v_debate_id  UUID;
-  v_join_code  TEXT;
-  v_attempts   INT := 0;
-BEGIN
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  SELECT p.is_moderator INTO v_profile
-  FROM profiles p WHERE p.id = v_uid;
-
-  IF NOT FOUND OR v_profile.is_moderator IS NOT TRUE THEN
-    RAISE EXCEPTION 'Not a moderator';
-  END IF;
-
-  IF p_ruleset NOT IN ('amplified', 'unplugged') THEN
-    p_ruleset := 'amplified';
-  END IF;
-
-  IF p_mode NOT IN ('text', 'live', 'voicememo') THEN
-    p_mode := 'text';
-  END IF;
-
-  LOOP
-    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
-    EXIT WHEN NOT EXISTS (
-      SELECT 1 FROM arena_debates ad
-      WHERE ad.join_code = v_join_code
-        AND ad.status IN ('lobby', 'matched', 'live')
-    );
-    v_attempts := v_attempts + 1;
-    IF v_attempts > 10 THEN
-      RAISE EXCEPTION 'Could not generate unique join code';
-    END IF;
-  END LOOP;
-
-  INSERT INTO arena_debates (
-    debater_a, debater_b, moderator_id, mode, topic, category,
-    ranked, ruleset, status, mod_status, visibility, join_code, total_rounds
-  ) VALUES (
-    NULL, NULL, v_uid, p_mode, p_topic, p_category,
-    p_ranked, p_ruleset, 'lobby', 'claimed', 'code', v_join_code, 3
-  )
-  RETURNING id INTO v_debate_id;
-
-  debate_id := v_debate_id;
-  join_code := v_join_code;
-  RETURN NEXT;
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false)
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id  UUID := auth.uid();
   v_is_mod   BOOLEAN;
@@ -2891,13 +3094,15 @@ BEGIN
 
   RETURN QUERY SELECT v_debate_id, v_code;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_prediction_question(p_topic text, p_side_a_label text DEFAULT 'Yes'::text, p_side_b_label text DEFAULT 'No'::text, p_category text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_clean_topic TEXT;
@@ -2943,13 +3148,153 @@ BEGIN
 
   RETURN json_build_object('success', true, 'question_id', v_question_id);
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(debate_id uuid, join_code text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id   uuid := auth.uid();
+  v_debate_id uuid;
+  v_code      text := NULL;
+  v_attempts  int  := 0;
+  v_candidate text;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF p_visibility NOT IN ('private', 'group', 'code') THEN
+    RAISE EXCEPTION 'Invalid visibility value';
+  END IF;
+  IF p_visibility = 'private' AND p_invited_user_id IS NULL THEN
+    RAISE EXCEPTION 'invited_user_id required for private lobbies';
+  END IF;
+  IF p_visibility = 'group' THEN
+    IF p_group_id IS NULL THEN
+      RAISE EXCEPTION 'group_id required for group lobbies';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_id = p_group_id AND user_id = v_user_id
+    ) THEN
+      RAISE EXCEPTION 'Not a member of this group';
+    END IF;
+  END IF;
+  IF p_visibility = 'code' THEN
+    LOOP
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      EXIT WHEN NOT EXISTS (
+        SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
+      );
+      v_attempts := v_attempts + 1;
+      IF v_attempts >= 5 THEN
+        RAISE EXCEPTION 'Could not generate unique join code';
+      END IF;
+    END LOOP;
+    v_code := v_candidate;
+  END IF;
+  INSERT INTO arena_debates (
+    debater_a, mode, topic, category, ranked,
+    status, visibility, join_code, invited_user_id, lobby_group_id,
+    player_a_ready
+  ) VALUES (
+    v_user_id, p_mode, p_topic, p_category, p_ranked,
+    'pending', p_visibility, v_code, p_invited_user_id, p_group_id,
+    true
+  )
+  RETURNING id INTO v_debate_id;
+  PERFORM log_event(
+    p_event_type := 'private_lobby_created',
+    p_user_id    := v_user_id,
+    p_debate_id  := v_debate_id,
+    p_category   := p_category,
+    p_side       := NULL,
+    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode)
+  );
+  RETURN QUERY SELECT v_debate_id, v_code;
+END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid, p_ruleset text DEFAULT 'amplified'::text)
+ RETURNS TABLE(debate_id uuid, join_code text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id   uuid := auth.uid();
+  v_debate_id uuid;
+  v_code      text := NULL;
+  v_attempts  int  := 0;
+  v_candidate text;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF p_visibility NOT IN ('private', 'group', 'code') THEN
+    RAISE EXCEPTION 'Invalid visibility value';
+  END IF;
+  IF p_visibility = 'private' AND p_invited_user_id IS NULL THEN
+    RAISE EXCEPTION 'invited_user_id required for private lobbies';
+  END IF;
+  IF p_visibility = 'group' THEN
+    IF p_group_id IS NULL THEN
+      RAISE EXCEPTION 'group_id required for group lobbies';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_id = p_group_id AND user_id = v_user_id
+    ) THEN
+      RAISE EXCEPTION 'Not a member of this group';
+    END IF;
+  END IF;
+  IF p_visibility = 'code' THEN
+    LOOP
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      EXIT WHEN NOT EXISTS (
+        SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
+      );
+      v_attempts := v_attempts + 1;
+      IF v_attempts >= 5 THEN
+        RAISE EXCEPTION 'Could not generate unique join code';
+      END IF;
+    END LOOP;
+    v_code := v_candidate;
+  END IF;
+  INSERT INTO arena_debates (
+    debater_a, mode, topic, category, ranked, ruleset,
+    status, visibility, join_code, invited_user_id, lobby_group_id,
+    player_a_ready
+  ) VALUES (
+    v_user_id, p_mode, p_topic, p_category, p_ranked, p_ruleset,
+    'pending', p_visibility, v_code, p_invited_user_id, p_group_id,
+    true
+  )
+  RETURNING id INTO v_debate_id;
+  PERFORM log_event(
+    p_event_type := 'private_lobby_created',
+    p_user_id    := v_user_id,
+    p_debate_id  := v_debate_id,
+    p_category   := p_category,
+    p_side       := NULL,
+    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode, 'ruleset', p_ruleset)
+  );
+  RETURN QUERY SELECT v_debate_id, v_code;
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid, p_ruleset text DEFAULT 'amplified'::text, p_total_rounds integer DEFAULT 4)
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id   uuid := auth.uid();
   v_debate_id uuid;
@@ -3015,147 +3360,15 @@ BEGIN
   );
   RETURN QUERY SELECT v_debate_id, v_code;
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid)
- RETURNS TABLE(debate_id uuid, join_code text)
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_user_id   uuid := auth.uid();
-  v_debate_id uuid;
-  v_code      text := NULL;
-  v_attempts  int  := 0;
-  v_candidate text;
-BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-  IF p_visibility NOT IN ('private', 'group', 'code') THEN
-    RAISE EXCEPTION 'Invalid visibility value';
-  END IF;
-  IF p_visibility = 'private' AND p_invited_user_id IS NULL THEN
-    RAISE EXCEPTION 'invited_user_id required for private lobbies';
-  END IF;
-  IF p_visibility = 'group' THEN
-    IF p_group_id IS NULL THEN
-      RAISE EXCEPTION 'group_id required for group lobbies';
-    END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM group_members
-      WHERE group_id = p_group_id AND user_id = v_user_id
-    ) THEN
-      RAISE EXCEPTION 'Not a member of this group';
-    END IF;
-  END IF;
-  IF p_visibility = 'code' THEN
-    LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
-      EXIT WHEN NOT EXISTS (
-        SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
-      );
-      v_attempts := v_attempts + 1;
-      IF v_attempts >= 5 THEN
-        RAISE EXCEPTION 'Could not generate unique join code';
-      END IF;
-    END LOOP;
-    v_code := v_candidate;
-  END IF;
-  INSERT INTO arena_debates (
-    debater_a, mode, topic, category, ranked,
-    status, visibility, join_code, invited_user_id, lobby_group_id,
-    player_a_ready
-  ) VALUES (
-    v_user_id, p_mode, p_topic, p_category, p_ranked,
-    'pending', p_visibility, v_code, p_invited_user_id, p_group_id,
-    true
-  )
-  RETURNING id INTO v_debate_id;
-  PERFORM log_event(
-    p_event_type := 'private_lobby_created',
-    p_user_id    := v_user_id,
-    p_debate_id  := v_debate_id,
-    p_category   := p_category,
-    p_side       := NULL,
-    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode)
-  );
-  RETURN QUERY SELECT v_debate_id, v_code;
-END;
-$function$;
-
-CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_visibility text DEFAULT 'private'::text, p_invited_user_id uuid DEFAULT NULL::uuid, p_group_id uuid DEFAULT NULL::uuid, p_ruleset text DEFAULT 'amplified'::text)
- RETURNS TABLE(debate_id uuid, join_code text)
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_user_id   uuid := auth.uid();
-  v_debate_id uuid;
-  v_code      text := NULL;
-  v_attempts  int  := 0;
-  v_candidate text;
-BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-  IF p_visibility NOT IN ('private', 'group', 'code') THEN
-    RAISE EXCEPTION 'Invalid visibility value';
-  END IF;
-  IF p_visibility = 'private' AND p_invited_user_id IS NULL THEN
-    RAISE EXCEPTION 'invited_user_id required for private lobbies';
-  END IF;
-  IF p_visibility = 'group' THEN
-    IF p_group_id IS NULL THEN
-      RAISE EXCEPTION 'group_id required for group lobbies';
-    END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM group_members
-      WHERE group_id = p_group_id AND user_id = v_user_id
-    ) THEN
-      RAISE EXCEPTION 'Not a member of this group';
-    END IF;
-  END IF;
-  IF p_visibility = 'code' THEN
-    LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
-      EXIT WHEN NOT EXISTS (
-        SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
-      );
-      v_attempts := v_attempts + 1;
-      IF v_attempts >= 5 THEN
-        RAISE EXCEPTION 'Could not generate unique join code';
-      END IF;
-    END LOOP;
-    v_code := v_candidate;
-  END IF;
-  INSERT INTO arena_debates (
-    debater_a, mode, topic, category, ranked, ruleset,
-    status, visibility, join_code, invited_user_id, lobby_group_id,
-    player_a_ready
-  ) VALUES (
-    v_user_id, p_mode, p_topic, p_category, p_ranked, p_ruleset,
-    'pending', p_visibility, v_code, p_invited_user_id, p_group_id,
-    true
-  )
-  RETURNING id INTO v_debate_id;
-  PERFORM log_event(
-    p_event_type := 'private_lobby_created',
-    p_user_id    := v_user_id,
-    p_debate_id  := v_debate_id,
-    p_category   := p_category,
-    p_side       := NULL,
-    p_metadata   := jsonb_build_object('visibility', p_visibility, 'mode', p_mode, 'ruleset', p_ruleset)
-  );
-  RETURN QUERY SELECT v_debate_id, v_code;
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.create_voice_take(p_section text DEFAULT 'trending'::text, p_voice_memo_url text DEFAULT NULL::text, p_voice_memo_path text DEFAULT NULL::text, p_voice_memo_duration integer DEFAULT NULL::integer, p_parent_id uuid DEFAULT NULL::uuid, p_content text DEFAULT '🎤 Voice Take'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_take_id UUID;
@@ -3188,13 +3401,15 @@ BEGIN
     'section', p_section
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.credit_tokens(p_user_id uuid, p_amount integer, p_reason text DEFAULT 'purchase'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_new_balance INTEGER;
   v_caller TEXT;
@@ -3229,13 +3444,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.debit_tokens(p_user_id uuid, p_amount integer, p_reason text DEFAULT 'spend'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller_id UUID := auth.uid();
   v_caller_role TEXT;
@@ -3276,13 +3493,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.declare_rival(p_target_id uuid, p_message text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_existing RECORD;
@@ -3327,13 +3546,73 @@ BEGIN
 
   RETURN json_build_object('success', true, 'id', v_result.id, 'status', v_result.status);
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.delete_reference(p_ref_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id       UUID := auth.uid();
+  v_ref           RECORD;
+  v_delete_count  INTEGER;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Load reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_ref_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reference not found';
+  END IF;
+
+  -- Ownership check
+  IF v_ref.user_id != v_user_id THEN
+    RAISE EXCEPTION 'You can only delete your own references';
+  END IF;
+
+  -- Already deleted?
+  IF v_ref.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Reference is already deleted';
+  END IF;
+
+  -- Rate limit: max 7 deletes per 24h
+  SELECT COUNT(*) INTO v_delete_count
+    FROM arsenal_references
+    WHERE user_id = v_user_id
+      AND deleted_at IS NOT NULL
+      AND deleted_at > now() - INTERVAL '24 hours';
+
+  IF v_delete_count >= 7 THEN
+    RAISE EXCEPTION 'Delete rate limit reached (max 7 per 24 hours)';
+  END IF;
+
+  -- Soft-delete the reference
+  UPDATE arsenal_references
+  SET deleted_at = now()
+  WHERE id = p_ref_id;
+
+  -- Burn socketed modifiers (soft-delete doesn't cascade, so explicit delete)
+  DELETE FROM reference_sockets WHERE reference_id = p_ref_id;
+
+  -- Do NOT cascade-delete debate_references — historical pointers preserved for replay integrity
+
+  RETURN jsonb_build_object('action', 'deleted');
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.discover_groups(p_limit integer DEFAULT 20, p_category text DEFAULT NULL::text, p_search text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_result JSON;
 BEGIN
@@ -3359,13 +3638,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.earn_tokens(p_reason text, p_reference_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_amount INTEGER;
@@ -3438,13 +3719,15 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.edit_reference(p_reference_id uuid, p_claim text DEFAULT NULL::text, p_url text DEFAULT NULL::text, p_author text DEFAULT NULL::text, p_publication_year integer DEFAULT NULL::integer, p_source_type text DEFAULT NULL::text, p_category text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id   uuid;
   v_ref       record;
@@ -3538,13 +3821,110 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'reference_id', p_reference_id);
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.edit_reference(p_ref_id uuid, p_source_title text, p_source_author text, p_source_date date, p_locator text, p_claim_text text, p_category text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id     UUID := auth.uid();
+  v_ref         RECORD;
+  v_fingerprint TEXT;
+  v_collision   RECORD;
+  v_cost        INTEGER := 10;
+  v_debit       JSON;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Load reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_ref_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reference not found';
+  END IF;
+
+  -- Ownership check
+  IF v_ref.user_id != v_user_id THEN
+    RAISE EXCEPTION 'You can only edit your own references';
+  END IF;
+
+  -- Cannot edit deleted refs
+  IF v_ref.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Cannot edit a deleted reference';
+  END IF;
+
+  -- Category whitelist (LM-208)
+  IF p_category NOT IN ('politics','sports','entertainment','music','couples_court') THEN
+    RAISE EXCEPTION 'Invalid category: %', p_category;
+  END IF;
+
+  -- Field validation
+  IF length(trim(p_source_title)) < 2 THEN
+    RAISE EXCEPTION 'Source title must be at least 2 characters';
+  END IF;
+  IF length(trim(p_source_author)) < 2 THEN
+    RAISE EXCEPTION 'Source author must be at least 2 characters';
+  END IF;
+  IF length(trim(p_locator)) < 1 THEN
+    RAISE EXCEPTION 'Locator must not be empty';
+  END IF;
+  IF length(trim(p_claim_text)) < 5 THEN
+    RAISE EXCEPTION 'Claim text must be at least 5 characters';
+  END IF;
+
+  -- Recompute fingerprint (source_type excluded — locked at creation, LM-206)
+  v_fingerprint := _canonical_fingerprint(p_source_title, p_source_author, p_source_date, p_locator);
+
+  -- Check collision against OTHER refs (exclude self)
+  SELECT id, user_id, source_title INTO v_collision
+    FROM arsenal_references
+    WHERE canonical_fingerprint = v_fingerprint
+      AND id != p_ref_id
+    LIMIT 1;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'action', 'collision',
+      'existing_ref_id', v_collision.id,
+      'existing_owner', v_collision.user_id,
+      'existing_name', v_collision.source_title
+    );
+  END IF;
+
+  -- Debit edit fee
+  v_debit := debit_tokens(v_user_id, v_cost, 'edit_reference');
+  IF NOT (v_debit->>'success')::BOOLEAN THEN
+    RAISE EXCEPTION 'Insufficient tokens to edit (need %)', v_cost;
+  END IF;
+
+  -- Update editable fields. challenge_status preserved (Disputed badges survive edits per spec S133).
+  UPDATE arsenal_references
+  SET source_title          = trim(p_source_title),
+      source_author         = trim(p_source_author),
+      source_date           = p_source_date,
+      locator               = trim(p_locator),
+      claim_text            = trim(p_claim_text),
+      category              = p_category,
+      canonical_fingerprint = v_fingerprint
+  WHERE id = p_ref_id;
+
+  RETURN jsonb_build_object('action', 'edited');
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.equip_cosmetic(p_cosmetic_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_item    cosmetic_items%ROWTYPE;
@@ -3596,13 +3976,15 @@ BEGIN
     'category',  v_item.category
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.equip_power_up(p_debate_id uuid, p_power_up_id text, p_slot_number integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID;
   v_questions INTEGER;
@@ -3684,199 +4066,63 @@ BEGIN
     'remaining_quantity', v_qty - 1
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.expire_stale_queue()
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   UPDATE debate_queue SET status = 'expired'
     WHERE status = 'waiting' AND joined_at < now() - interval '5 minutes';
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.file_reference_challenge(p_debate_id uuid, p_reference_id uuid, p_round integer, p_side text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
-  v_uid             UUID := auth.uid();
-  v_debate          RECORD;
-  v_ref             RECORD;
-  v_ref_owner       UUID;
-  v_challenge_count INTEGER;
-  v_max_challenges  INTEGER := 3;  -- FEED_TOTAL_ROUNDS (4) - 1
-  v_shield_row      RECORD;
-  v_event_id        BIGINT;
+  v_result JSONB;
 BEGIN
-  -- Auth
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
+  -- Delegate to the new unified challenge_reference RPC
+  v_result := challenge_reference(
+    p_ref_id := p_reference_id,
+    p_grounds := 'In-debate challenge (round ' || p_round || ')',
+    p_context_debate_id := p_debate_id
+  );
 
-  -- Validate side
-  IF p_side NOT IN ('a', 'b') THEN
-    RAISE EXCEPTION 'Side must be a or b';
-  END IF;
-
-  -- Load debate
-  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
-  IF v_debate IS NULL THEN
-    RAISE EXCEPTION 'Debate not found';
-  END IF;
-  IF v_debate.status != 'live' THEN
-    RAISE EXCEPTION 'Debate is not live';
-  END IF;
-
-  -- Caller must be the debater matching p_side
-  IF (p_side = 'a' AND v_uid != v_debate.debater_a)
-  OR (p_side = 'b' AND v_uid != v_debate.debater_b) THEN
-    RAISE EXCEPTION 'Side does not match your role';
-  END IF;
-
-  -- The challenged reference must belong to the OPPONENT
-  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_reference_id;
-  IF v_ref IS NULL THEN
-    RAISE EXCEPTION 'Reference not found';
-  END IF;
-  v_ref_owner := v_ref.user_id;
-
-  -- Verify the opponent owns this reference
-  IF p_side = 'a' AND v_ref_owner != v_debate.debater_b THEN
-    RAISE EXCEPTION 'Can only challenge opponent references';
-  END IF;
-  IF p_side = 'b' AND v_ref_owner != v_debate.debater_a THEN
-    RAISE EXCEPTION 'Can only challenge opponent references';
-  END IF;
-
-  -- Verify this reference was actually cited in this debate
-  IF NOT EXISTS (
-    SELECT 1 FROM debate_feed_events
-    WHERE debate_id = p_debate_id
-      AND event_type = 'reference_cite'
-      AND reference_id = p_reference_id
-  ) THEN
-    RAISE EXCEPTION 'Reference has not been cited in this debate';
-  END IF;
-
-  -- Prevent double-challenging the same reference
-  IF EXISTS (
-    SELECT 1 FROM debate_feed_events
-    WHERE debate_id = p_debate_id
-      AND event_type = 'reference_challenge'
-      AND reference_id = p_reference_id
-  ) THEN
-    RAISE EXCEPTION 'This reference has already been challenged';
-  END IF;
-
-  -- Check challenge limit: max (FEED_TOTAL_ROUNDS - 1) per debater per debate
-  SELECT COUNT(*) INTO v_challenge_count
-    FROM debate_feed_events
-    WHERE debate_id = p_debate_id
-      AND user_id = v_uid
-      AND event_type = 'reference_challenge';
-
-  IF v_challenge_count >= v_max_challenges THEN
-    RAISE EXCEPTION 'No challenges remaining (% of % used)', v_challenge_count, v_max_challenges;
-  END IF;
-
-  -- Check opponent Shield: equipped but not yet activated
-  SELECT * INTO v_shield_row
-    FROM debate_power_ups
-    WHERE debate_id = p_debate_id
-      AND user_id = v_ref_owner
-      AND power_up_id = 'shield'
-      AND activated = false
-    LIMIT 1
-    FOR UPDATE;
-
-  IF v_shield_row IS NOT NULL THEN
-    -- Shield absorbs the challenge
-    UPDATE debate_power_ups
-      SET activated = true, activated_at = now()
-      WHERE id = v_shield_row.id;
-
-    -- Insert Shield block feed event (visible to everyone)
-    INSERT INTO debate_feed_events (
-      debate_id, user_id, event_type, round, side, content,
-      reference_id, metadata
-    ) VALUES (
-      p_debate_id, v_ref_owner, 'power_up', p_round,
-      CASE WHEN v_ref_owner = v_debate.debater_a THEN 'a' ELSE 'b' END,
-      'SHIELD BLOCKED! Reference is protected.',
-      p_reference_id,
-      jsonb_build_object(
-        'power_up_id', 'shield',
-        'blocked_challenger', v_uid,
-        'claim', v_ref.claim
-      )
-    )
-    RETURNING id INTO v_event_id;
-
-    PERFORM log_event(
-      'feed_shield_block', v_ref_owner, p_debate_id,
-      v_debate.category, p_side,
-      jsonb_build_object(
-        'feed_event_id', v_event_id,
-        'round', p_round,
-        'reference_id', p_reference_id,
-        'challenger', v_uid
-      )
-    );
-
+  -- Translate response format for backward compatibility
+  IF v_result->>'action' = 'shield_blocked' THEN
     RETURN jsonb_build_object(
       'blocked', true,
-      'event_id', v_event_id,
+      'event_id', v_result->'event_id',
       'message', 'Shield absorbed the challenge'
     );
+  ELSE
+    RETURN jsonb_build_object(
+      'blocked', false,
+      'event_id', 0,
+      'challenges_remaining', 3,
+      'challenge_id', v_result->>'challenge_id'
+    );
   END IF;
-
-  -- No Shield — file the challenge
-  INSERT INTO debate_feed_events (
-    debate_id, user_id, event_type, round, side, content,
-    reference_id, metadata
-  ) VALUES (
-    p_debate_id, v_uid, 'reference_challenge', p_round, p_side,
-    sanitize_text(v_ref.claim),
-    p_reference_id,
-    jsonb_build_object(
-      'challenged_user', v_ref_owner,
-      'url', v_ref.url,
-      'domain', v_ref.domain,
-      'source_type', v_ref.source_type
-    )
-  )
-  RETURNING id INTO v_event_id;
-
-  PERFORM log_event(
-    'feed_reference_challenge', v_uid, p_debate_id,
-    v_debate.category, p_side,
-    jsonb_build_object(
-      'feed_event_id', v_event_id,
-      'round', p_round,
-      'reference_id', p_reference_id,
-      'challenged_user', v_ref_owner,
-      'challenges_used', v_challenge_count + 1,
-      'challenges_max', v_max_challenges
-    )
-  );
-
-  RETURN jsonb_build_object(
-    'blocked', false,
-    'event_id', v_event_id,
-    'challenges_remaining', v_max_challenges - v_challenge_count - 1
-  );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.finalize_async_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -3914,13 +4160,15 @@ BEGIN
     'votes_defender', v_debate.votes_defender
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.finalize_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_caller_role TEXT;
@@ -3929,14 +4177,14 @@ DECLARE
   v_profile_b RECORD;
   v_votes_a INTEGER;
   v_votes_b INTEGER;
-  v_winner TEXT;  -- 'a', 'b', 'draw'
+  v_winner TEXT;
   v_winner_id UUID;
   v_elo RECORD;
   v_xp_winner INTEGER := 25;
   v_xp_loser INTEGER := 10;
   v_xp_draw INTEGER := 15;
 BEGIN
-  -- FIX: auth check
+  -- Auth check
   v_caller_role := current_setting('request.jwt.claim.role', true);
   IF v_user_id IS NULL AND v_caller_role IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -3944,12 +4192,11 @@ BEGIN
 
   -- Lock the debate row
   SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id FOR UPDATE;
-
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Debate not found';
   END IF;
 
-  -- FIX: authorization — must be a participant or service_role
+  -- Authorization: must be a participant or service_role
   IF v_caller_role IS DISTINCT FROM 'service_role'
      AND v_user_id IS DISTINCT FROM v_debate.debater_a
      AND v_user_id IS DISTINCT FROM v_debate.debater_b THEN
@@ -4051,8 +4298,7 @@ BEGIN
     updated_at = now()
   WHERE id = v_debate.debater_b;
 
-  -- Resolve predictions (correct = boolean, tokens_wagered = amount)
-  -- predicted_winner is TEXT ('a' or 'b'), v_winner is TEXT ('a', 'b', 'draw')
+  -- Resolve predictions
   UPDATE public.predictions SET
     correct = CASE
       WHEN predicted_winner = v_winner THEN true
@@ -4060,18 +4306,21 @@ BEGIN
     END,
     payout = CASE
       WHEN predicted_winner = v_winner THEN ROUND(tokens_wagered * 1.8)
-      WHEN v_winner = 'draw' THEN tokens_wagered  -- refund on draw
+      WHEN v_winner = 'draw' THEN tokens_wagered
       ELSE 0
     END
   WHERE debate_id = p_debate_id AND correct IS NULL;
 
-  -- Pay out winners + refund draws (anyone with payout > 0)
+  -- Pay out prediction winners + refund draws
   UPDATE public.profiles p SET
     token_balance = token_balance + pred.payout
   FROM public.predictions pred
   WHERE pred.debate_id = p_debate_id
     AND pred.user_id = p.id
     AND pred.payout > 0;
+
+  -- F-55: Pay reference royalties (after winner is recorded)
+  PERFORM pay_reference_royalties(p_debate_id);
 
   RETURN json_build_object(
     'success', true,
@@ -4085,13 +4334,15 @@ BEGIN
     'new_elo_b', v_elo.new_rating_b
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.follow_user(p_target_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -4124,13 +4375,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'following', p_target_user_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.forge_reference(p_claim text, p_url text, p_author text, p_publication_year integer, p_source_type text, p_category text)
  RETURNS uuid
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id  uuid;
   v_domain   text;
@@ -4198,22 +4451,121 @@ BEGIN
 
   RETURN v_ref_id;
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.forge_reference(p_source_title text, p_source_author text, p_source_date date, p_locator text, p_claim_text text, p_source_type text, p_category text, p_source_url text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id     UUID := auth.uid();
+  v_fingerprint TEXT;
+  v_existing    RECORD;
+  v_cost        INTEGER := 50;  -- PARKED VALUE: forging cost placeholder
+  v_debit       JSON;
+  v_ref_id      UUID;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Source type validation
+  IF p_source_type NOT IN ('primary','academic','book','news','other') THEN
+    RAISE EXCEPTION 'Invalid source_type: %', p_source_type;
+  END IF;
+
+  -- Category whitelist (LM-208: 'general' blocked from forge)
+  IF p_category NOT IN ('politics','sports','entertainment','music','couples_court') THEN
+    RAISE EXCEPTION 'Invalid category: %. general is not allowed for references.', p_category;
+  END IF;
+
+  -- Field validation
+  IF length(trim(p_source_title)) < 2 THEN
+    RAISE EXCEPTION 'Source title must be at least 2 characters';
+  END IF;
+  IF length(trim(p_source_author)) < 2 THEN
+    RAISE EXCEPTION 'Source author must be at least 2 characters';
+  END IF;
+  IF length(trim(p_locator)) < 1 THEN
+    RAISE EXCEPTION 'Locator must not be empty';
+  END IF;
+  IF length(trim(p_claim_text)) < 5 THEN
+    RAISE EXCEPTION 'Claim text must be at least 5 characters';
+  END IF;
+
+  -- Compute fingerprint
+  v_fingerprint := _canonical_fingerprint(p_source_title, p_source_author, p_source_date, p_locator);
+
+  -- Check for existing fingerprint collision
+  SELECT id, user_id, source_title INTO v_existing
+    FROM arsenal_references
+    WHERE canonical_fingerprint = v_fingerprint
+    LIMIT 1;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'action', 'collision',
+      'existing_ref_id', v_existing.id,
+      'existing_owner', v_existing.user_id,
+      'existing_name', v_existing.source_title
+    );
+  END IF;
+
+  -- Debit forging cost
+  v_debit := debit_tokens(v_user_id, v_cost, 'forge_reference');
+  IF NOT (v_debit->>'success')::BOOLEAN THEN
+    RAISE EXCEPTION 'Insufficient tokens to forge (need %)', v_cost;
+  END IF;
+
+  -- Insert new reference
+  INSERT INTO arsenal_references (
+    user_id, source_title, source_author, source_date, locator,
+    claim_text, source_type, category, source_url, canonical_fingerprint,
+    seconds, strikes, rarity, current_power, graduated, challenge_status
+  ) VALUES (
+    v_user_id, trim(p_source_title), trim(p_source_author), p_source_date, trim(p_locator),
+    trim(p_claim_text), p_source_type, p_category, p_source_url,
+    v_fingerprint, 0, 0, 'common', 0, false, 'none'
+  )
+  RETURNING id INTO v_ref_id;
+
+  -- Analytics
+  PERFORM log_event(
+    p_event_type := 'reference_forged',
+    p_user_id := v_user_id,
+    p_category := p_category,
+    p_metadata := jsonb_build_object(
+      'ref_id', v_ref_id,
+      'source_type', p_source_type,
+      'cost', v_cost
+    )
+  );
+
+  RETURN jsonb_build_object('action', 'forged', 'ref_id', v_ref_id);
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_app_config()
  RETURNS jsonb
  LANGUAGE sql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
   SELECT jsonb_object_agg(key, value) FROM app_config;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_arena_debate_spectator(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_result json;
 BEGIN
@@ -4259,13 +4611,66 @@ BEGIN
 
   RETURN v_result;
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_arena_feed(p_limit integer DEFAULT 20, p_category text DEFAULT NULL::text)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+BEGIN
+  RETURN COALESCE((
+    SELECT json_agg(row_to_json(d) ORDER BY d.created_at DESC)
+    FROM (
+      (
+        SELECT ad.id, ad.topic, 'arena'::text as source, ad.mode, ad.status,
+               ad.current_round, ad.total_rounds,
+               ad.score_a, ad.score_b,
+               ad.vote_count_a, ad.vote_count_b,
+               ad.ruleset,
+               pa.display_name as debater_a_name, pa.elo_rating as elo_a,
+               pb.display_name as debater_b_name, pb.elo_rating as elo_b,
+               ad.created_at
+        FROM arena_debates ad
+          LEFT JOIN profiles pa ON pa.id = ad.debater_a
+          LEFT JOIN profiles pb ON pb.id = ad.debater_b
+        WHERE ad.status IN ('live', 'voting', 'complete')
+          AND (p_category IS NULL OR ad.category = p_category)
+        ORDER BY ad.created_at DESC
+        LIMIT p_limit / 2
+      )
+
+      UNION ALL
+
+      (
+        SELECT aud.id, aud.topic, 'auto_debate'::text as source, 'ai'::text as mode, aud.status,
+               3 as current_round, 3 as total_rounds,
+               aud.score_a, aud.score_b,
+               (SELECT count(*)::int FROM auto_debate_votes WHERE auto_debate_id = aud.id AND voted_for = 'a') as vote_count_a,
+               (SELECT count(*)::int FROM auto_debate_votes WHERE auto_debate_id = aud.id AND voted_for = 'b') as vote_count_b,
+               'amplified'::text as ruleset,
+               aud.side_a_label as debater_a_name, 0 as elo_a,
+               aud.side_b_label as debater_b_name, 0 as elo_b,
+               aud.created_at
+        FROM auto_debates aud
+        WHERE aud.status = 'active'
+        ORDER BY aud.created_at DESC
+        LIMIT p_limit / 2
+      )
+    ) d
+  ), '[]'::json);
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_arena_feed(p_limit integer DEFAULT 20)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN COALESCE((
     SELECT json_agg(row_to_json(d) ORDER BY d.created_at DESC)
@@ -4309,62 +4714,15 @@ BEGIN
     ) d
   ), '[]'::json);
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.get_arena_feed(p_limit integer DEFAULT 20, p_category text DEFAULT NULL::text)
- RETURNS json
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-BEGIN
-  RETURN COALESCE((
-    SELECT json_agg(row_to_json(d) ORDER BY d.created_at DESC)
-    FROM (
-      (
-        SELECT ad.id, ad.topic, 'arena'::text as source, ad.mode, ad.status,
-               ad.current_round, ad.total_rounds,
-               ad.score_a, ad.score_b,
-               ad.vote_count_a, ad.vote_count_b,
-               ad.ruleset,
-               pa.display_name as debater_a_name, pa.elo_rating as elo_a,
-               pb.display_name as debater_b_name, pb.elo_rating as elo_b,
-               ad.created_at
-        FROM arena_debates ad
-          LEFT JOIN profiles pa ON pa.id = ad.debater_a
-          LEFT JOIN profiles pb ON pb.id = ad.debater_b
-        WHERE ad.status IN ('live', 'voting', 'complete')
-          AND (p_category IS NULL OR ad.category = p_category)
-        ORDER BY ad.created_at DESC
-        LIMIT p_limit / 2
-      )
-
-      UNION ALL
-
-      (
-        SELECT aud.id, aud.topic, 'auto_debate'::text as source, 'ai'::text as mode, aud.status,
-               3 as current_round, 3 as total_rounds,
-               aud.score_a, aud.score_b,
-               (SELECT count(*)::int FROM auto_debate_votes WHERE auto_debate_id = aud.id AND voted_for = 'a') as vote_count_a,
-               (SELECT count(*)::int FROM auto_debate_votes WHERE auto_debate_id = aud.id AND voted_for = 'b') as vote_count_b,
-               'amplified'::text as ruleset,
-               aud.side_a_label as debater_a_name, 0 as elo_a,
-               aud.side_b_label as debater_b_name, 0 as elo_b,
-               aud.created_at
-        FROM auto_debates aud
-        WHERE aud.status = 'active'
-        ORDER BY aud.created_at DESC
-        LIMIT p_limit / 2
-      )
-    ) d
-  ), '[]'::json);
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_available_moderators(p_exclude_ids uuid[] DEFAULT ARRAY[]::uuid[])
  RETURNS TABLE(id uuid, display_name text, username text, mod_rating numeric, mod_debates_total integer, mod_approval_pct numeric, avatar_url text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
   SELECT
@@ -4383,14 +4741,15 @@ BEGIN
   ORDER BY p.mod_rating DESC, p.mod_debates_total DESC
   LIMIT 20;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_category_counts()
  RETURNS TABLE(section text, live_debates bigint, hot_takes bigint)
  LANGUAGE sql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
   SELECT
     s.section,
     COALESCE(d.live_count, 0) AS live_debates,
@@ -4417,13 +4776,15 @@ AS $function$
       AND created_at > NOW() - INTERVAL '24 hours'
     GROUP BY section
   ) h ON h.section = s.section;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_challenge_preview(p_join_code text)
  RETURNS TABLE(debate_id uuid, topic text, category text, mode text, status text, challenger_username text, challenger_display_name text, challenger_elo integer, created_at timestamp with time zone)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
   SELECT
@@ -4442,13 +4803,15 @@ BEGIN
     AND d.visibility = 'code'
   LIMIT 1;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_cosmetic_catalog()
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, unlock_type text, token_cost integer, depth_threshold numeric, unlock_condition text, asset_url text, sort_order integer, owned boolean, equipped boolean, acquired_via text, metadata jsonb)
  LANGUAGE sql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
   SELECT
     ci.id,
     ci.name,
@@ -4469,26 +4832,30 @@ AS $function$
     ON uc.cosmetic_id = ci.id
    AND uc.user_id = auth.uid()
   ORDER BY ci.category, ci.sort_order;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_debate_messages(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN COALESCE((
     SELECT json_agg(row_to_json(m) ORDER BY m.round, m.created_at)
     FROM debate_messages m WHERE m.debate_id = p_debate_id
   ), '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_debate_mod_status(p_debate_id uuid)
  RETURNS TABLE(mod_status text, mod_requested_by uuid, moderator_id uuid, moderator_display_name text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_debate arena_debates%ROWTYPE;
   v_user_id UUID := auth.uid();
@@ -4518,14 +4885,15 @@ BEGIN
     v_debate.moderator_id,
     COALESCE(v_mod_name, '');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_debate_predictions(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_total INT;
   v_side_a INT;
@@ -4550,13 +4918,15 @@ BEGIN
     'user_pick', v_user_pick
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_debate_references(p_debate_id uuid)
  RETURNS TABLE(id uuid, debate_id uuid, submitter_id uuid, round integer, url text, description text, supports_side text, ruling text, ruling_reason text, ruled_by uuid, created_at timestamp with time zone, ruled_at timestamp with time zone, submitter_name text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
   SELECT
@@ -4578,13 +4948,15 @@ BEGIN
   WHERE r.debate_id = p_debate_id
   ORDER BY r.created_at ASC;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_debate_replay_data(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_power_ups json;
   v_references json;
@@ -4668,13 +5040,15 @@ BEGIN
     'mod_scores', v_mod_scores
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_feed_events(p_debate_id uuid, p_after timestamp with time zone DEFAULT NULL::timestamp with time zone, p_limit integer DEFAULT 500)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   IF p_limit > 1000 THEN
     p_limit := 1000;  -- hard cap
@@ -4694,27 +5068,30 @@ BEGIN
     ) e
   ), '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_follow_counts(p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN json_build_object(
     'followers', (SELECT count(*) FROM follows WHERE following_id = p_user_id),
     'following', (SELECT count(*) FROM follows WHERE follower_id = p_user_id)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_group_challenges(p_group_id uuid, p_status text DEFAULT NULL::text, p_limit integer DEFAULT 20)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_result JSON;
 BEGIN
@@ -4766,13 +5143,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::JSON);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_group_details(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_group public.groups;
@@ -4812,13 +5191,15 @@ BEGIN
     'my_role', v_my_role
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_group_leaderboard(p_limit integer DEFAULT 20, p_category text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_result JSON;
 BEGIN
@@ -4845,13 +5226,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_group_members(p_group_id uuid, p_limit integer DEFAULT 50)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_is_public BOOLEAN;
@@ -4910,13 +5293,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_hot_predictions(p_limit integer DEFAULT 10)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN COALESCE((
     SELECT json_agg(row_to_json(r))
@@ -4951,13 +5336,15 @@ BEGIN
     ) r
   ), '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_landing_vote_counts(p_topic_slug text)
  RETURNS TABLE(yes_count bigint, no_count bigint)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
   SELECT
@@ -4966,13 +5353,15 @@ BEGIN
   FROM landing_votes
   WHERE topic_slug = p_topic_slug;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_landing_votes(p_topics text[])
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   result JSON;
 BEGIN
@@ -4985,13 +5374,15 @@ BEGIN
 
   RETURN COALESCE(result, '{}'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_leaderboard(p_sort_by text DEFAULT 'elo'::text, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN (
     SELECT json_agg(row_to_json(r))
@@ -5033,13 +5424,15 @@ BEGIN
     ) r
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_live_debates(p_category text DEFAULT NULL::text, p_limit integer DEFAULT 10)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN (
     SELECT json_agg(row_to_json(d))
@@ -5069,25 +5462,28 @@ BEGIN
     ) d
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_mod_cooldown_minutes(p_offense_number integer)
  RETURNS integer
  LANGUAGE sql
-IMMUTABLE
 AS $function$
+
   SELECT CASE
     WHEN p_offense_number <= 1 THEN 10
     WHEN p_offense_number = 2 THEN 60
     ELSE 1440
   END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_mod_profile(p_moderator_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_mod RECORD;
 BEGIN
@@ -5125,34 +5521,44 @@ BEGIN
     'member_since',      v_mod.created_at
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_arsenal()
- RETURNS SETOF arsenal_references
+ RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
-  v_user_id uuid;
+  v_user_id UUID := auth.uid();
 BEGIN
-  v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  RETURN QUERY
-    SELECT *
-    FROM public.arsenal_references
-    WHERE user_id = v_user_id
-    ORDER BY current_power DESC, created_at DESC;
+  RETURN (
+    SELECT COALESCE(jsonb_agg(row_to_json(r)), '[]'::jsonb)
+    FROM (
+      SELECT id, user_id, source_title, source_author, source_date, locator,
+             claim_text, source_type, category, source_url, seconds, strikes,
+             rarity, current_power, graduated, challenge_status, created_at
+      FROM arsenal_references
+      WHERE user_id = v_user_id
+        AND deleted_at IS NULL
+      ORDER BY current_power DESC, created_at DESC
+    ) r
+  );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_cosmetics()
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, unlock_type text, token_cost integer, depth_threshold numeric, unlock_condition text, asset_url text, sort_order integer, acquired_via text, equipped boolean, metadata jsonb, acquired_at timestamp with time zone)
  LANGUAGE sql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
   SELECT
     ci.id,
     ci.name,
@@ -5172,13 +5578,15 @@ AS $function$
   JOIN cosmetic_items ci ON ci.id = uc.cosmetic_id
   WHERE uc.user_id = auth.uid()
   ORDER BY ci.category, ci.sort_order;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_debate_loadout(p_debate_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
 BEGIN
@@ -5193,18 +5601,17 @@ BEGIN
         drl.reference_id,
         drl.cited,
         drl.cited_at,
-        ar.claim,
-        ar.url,
-        ar.domain,
-        ar.author,
+        ar.source_title,
+        ar.claim_text,
+        ar.source_author,
         ar.source_type,
+        ar.source_url,
         ar.current_power,
-        ar.power_ceiling,
         ar.rarity,
-        ar.verification_points,
-        ar.citation_count,
-        ar.win_count,
-        ar.loss_count
+        ar.seconds,
+        ar.strikes,
+        ar.challenge_status,
+        ar.graduated
       FROM debate_reference_loadouts drl
       JOIN arsenal_references ar ON ar.id = drl.reference_id
       WHERE drl.debate_id = p_debate_id
@@ -5213,13 +5620,15 @@ BEGIN
     ) r
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_groups()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_result JSON;
@@ -5249,13 +5658,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_milestones()
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_claimed TEXT[];
@@ -5282,13 +5693,15 @@ BEGIN
     'login_streak', COALESCE(v_streak, 0)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_power_ups(p_debate_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID;
   v_inventory JSON;
@@ -5332,13 +5745,15 @@ BEGIN
     'questions_answered', COALESCE(v_questions, 0)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_rivals()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -5369,13 +5784,15 @@ BEGIN
     ) r
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_my_token_summary()
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID;
   v_profile RECORD;
@@ -5416,13 +5833,15 @@ BEGIN
     'today_breakdown', COALESCE(v_today_log, '[]'::json)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_opponent_power_ups(p_debate_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_opponent_id uuid;
@@ -5467,14 +5886,15 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'equipped', v_result);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_own_profile()
  RETURNS json
  LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_row profiles%ROWTYPE;
@@ -5495,13 +5915,15 @@ BEGIN
   -- added to profiles are automatically included.
   RETURN row_to_json(v_row);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_pending_challenges()
  RETURNS TABLE(debate_id uuid, mode text, topic text, ranked boolean, challenger_name text, challenger_id uuid, challenger_elo integer, created_at timestamp with time zone)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
 BEGIN
@@ -5526,13 +5948,15 @@ BEGIN
     AND ad.visibility      = 'private'
   ORDER BY ad.created_at DESC;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_prediction_questions(p_limit integer DEFAULT 20, p_category text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_result JSON;
 BEGIN
@@ -5562,13 +5986,15 @@ BEGIN
 
   RETURN COALESCE(v_result, '[]'::json);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_public_cosmetics(p_user_id uuid)
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, asset_url text, acquired_via text, metadata jsonb, acquired_at timestamp with time zone)
  LANGUAGE sql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
   SELECT
     ci.id,
     ci.name,
@@ -5586,14 +6012,15 @@ AS $function$
       OR uc.equipped = true
     )
   ORDER BY ci.category, ci.sort_order;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_public_profile(p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_profile RECORD;
   v_follow_counts JSON;
@@ -5634,31 +6061,43 @@ BEGIN
     'is_following', v_is_following
   );
 END;
+
 $function$;
 
-CREATE OR REPLACE FUNCTION public.get_reference_library()
- RETURNS SETOF arsenal_references
+CREATE OR REPLACE FUNCTION public.get_reference_library(p_category text DEFAULT NULL::text, p_rarity text DEFAULT NULL::text)
+ RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
 
-  RETURN QUERY
-    SELECT *
-    FROM public.arsenal_references
-    ORDER BY current_power DESC, created_at DESC
-    LIMIT 100;
+BEGIN
+  RETURN (
+    SELECT COALESCE(jsonb_agg(row_to_json(r)), '[]'::jsonb)
+    FROM (
+      SELECT ar.id, ar.user_id, ar.source_title, ar.source_author, ar.source_date,
+             ar.locator, ar.claim_text, ar.source_type, ar.category, ar.source_url,
+             ar.seconds, ar.strikes, ar.rarity, ar.current_power, ar.graduated,
+             ar.challenge_status, ar.created_at,
+             p.username AS owner_username
+      FROM arsenal_references ar
+      JOIN profiles p ON p.id = ar.user_id
+      WHERE ar.deleted_at IS NULL
+        AND (p_category IS NULL OR ar.category = p_category)
+        AND (p_rarity IS NULL OR ar.rarity = p_rarity)
+      ORDER BY ar.current_power DESC, ar.strikes DESC, ar.created_at DESC
+      LIMIT 200
+    ) r
+  );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_spectator_chat(p_debate_id uuid, p_limit integer DEFAULT 100)
  RETURNS TABLE(id uuid, user_id uuid, display_name text, avatar_url text, message text, created_at timestamp with time zone)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
     SELECT
@@ -5674,13 +6113,15 @@ BEGIN
     ORDER BY sc.created_at ASC
     LIMIT LEAST(p_limit, 200);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_stake_pool(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_pool RECORD;
   v_uid UUID;
@@ -5719,13 +6160,14 @@ BEGIN
     END
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.group_role_rank(p_role text)
  RETURNS integer
  LANGUAGE sql
-IMMUTABLE
 AS $function$
+
   SELECT CASE p_role
     WHEN 'leader'    THEN 4
     WHEN 'co_leader' THEN 3
@@ -5733,12 +6175,14 @@ AS $function$
     WHEN 'member'    THEN 1
     ELSE 0
   END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.guard_profile_columns()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
+
 BEGIN
   -- Allow bypass from SECURITY DEFINER RPCs that set this flag
   IF current_setting('app.bypass_column_guard', true) IS NOT DISTINCT FROM 'on' THEN
@@ -5764,12 +6208,14 @@ BEGIN
 
   RETURN NEW;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.guard_profile_update()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
+
 BEGIN
   -- If called from a SECURITY DEFINER function, allow everything
   -- (SECURITY DEFINER functions run as the function owner, not the user)
@@ -5813,13 +6259,15 @@ BEGIN
 
   RETURN NEW;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   INSERT INTO public.profiles (id, username, display_name, date_of_birth, is_minor)
   VALUES (
@@ -5845,13 +6293,15 @@ BEGIN
 
   RETURN new;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.increment_questions_answered(p_count integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_old_total integer;
@@ -5905,13 +6355,15 @@ BEGIN
 
   RETURN json_build_object('ok', true, 'questions_answered', v_new_total);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.insert_feed_event(p_debate_id uuid, p_event_type text, p_round integer DEFAULT NULL::integer, p_side text DEFAULT NULL::text, p_content text DEFAULT NULL::text, p_score integer DEFAULT NULL::integer, p_reference_id uuid DEFAULT NULL::uuid, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -5996,26 +6448,29 @@ BEGIN
     'event_id', v_event_id
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.is_following(p_target_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM follows WHERE follower_id = auth.uid() AND following_id = p_target_id
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_async_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -6051,13 +6506,15 @@ BEGIN
     'status', 'active'
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -6090,13 +6547,132 @@ BEGIN
     'status', 'matched'
   );
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text DEFAULT NULL::text, p_topic text DEFAULT NULL::text, p_ranked boolean DEFAULT false)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_uid        uuid := auth.uid();
+  v_elo        int;
+  v_queue_id   uuid;
+  v_match      record;
+  v_debate_id  uuid;
+  v_topic      text;
+  v_elo_range  int  := CASE WHEN p_ranked THEN 300 ELSE 400 END;
+  v_lang       text;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+
+  SELECT elo_rating INTO v_elo FROM profiles WHERE id = v_uid;
+
+  -- Clear any stale waiting entries for this user
+  DELETE FROM debate_queue WHERE user_id = v_uid AND status = 'waiting';
+
+  -- Phase 1: strict match — same mode, same category (if specified), within elo range
+  IF p_category IS NOT NULL THEN
+    SELECT * INTO v_match FROM debate_queue
+      WHERE status = 'waiting'
+        AND mode = p_mode
+        AND user_id != v_uid
+        AND ABS(elo_rating - COALESCE(v_elo, 1200)) < v_elo_range
+        AND (category = p_category OR category IS NULL)
+      ORDER BY joined_at ASC
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED;
+  END IF;
+
+  -- Phase 2: loose match — same mode, any category
+  IF v_match IS NULL THEN
+    SELECT * INTO v_match FROM debate_queue
+      WHERE status = 'waiting'
+        AND mode = p_mode
+        AND user_id != v_uid
+        AND ABS(elo_rating - COALESCE(v_elo, 1200)) < v_elo_range
+      ORDER BY joined_at ASC
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED;
+  END IF;
+
+  IF v_match IS NOT NULL THEN
+    v_topic := COALESCE(p_topic, v_match.topic, 'Open Debate');
+
+    INSERT INTO arena_debates (debater_a, debater_b, mode, category, topic, status, total_rounds, ranked)
+    VALUES (
+      v_match.user_id,
+      v_uid,
+      p_mode,
+      COALESCE(p_category, v_match.category),
+      v_topic,
+      'pending',
+      3,
+      p_ranked
+    )
+    RETURNING id INTO v_debate_id;
+
+    -- Read back the language stamped by trigger
+    SELECT ad.language INTO v_lang FROM arena_debates ad WHERE ad.id = v_debate_id;
+
+    UPDATE debate_queue
+      SET status = 'matched', matched_with = v_uid, debate_id = v_debate_id
+      WHERE id = v_match.id;
+
+    INSERT INTO debate_queue (user_id, mode, category, topic, elo_rating, status, matched_with, debate_id, ranked)
+    VALUES (v_uid, p_mode, p_category, p_topic, COALESCE(v_elo, 1200), 'matched', v_match.user_id, v_debate_id, p_ranked)
+    RETURNING id INTO v_queue_id;
+
+    PERFORM log_event(
+      p_event_type := 'queue_matched',
+      p_user_id    := v_uid,
+      p_debate_id  := v_debate_id,
+      p_category   := COALESCE(p_category, v_match.category),
+      p_side       := 'b',
+      p_metadata   := jsonb_build_object('mode', p_mode, 'ranked', p_ranked)
+    );
+
+    RETURN json_build_object(
+      'status',      'matched',
+      'queue_id',    v_queue_id,
+      'debate_id',   v_debate_id,
+      'opponent_id', v_match.user_id,
+      'topic',       v_topic,
+      'role',        'b',
+      'language',    COALESCE(v_lang, 'en')
+    );
+
+  ELSE
+    INSERT INTO debate_queue (user_id, mode, category, topic, elo_rating, status, ranked)
+    VALUES (v_uid, p_mode, p_category, p_topic, COALESCE(v_elo, 1200), 'waiting', p_ranked)
+    RETURNING id INTO v_queue_id;
+
+    PERFORM log_event(
+      p_event_type := 'queue_joined',
+      p_user_id    := v_uid,
+      p_debate_id  := NULL,
+      p_category   := p_category,
+      p_side       := NULL,
+      p_metadata   := jsonb_build_object('mode', p_mode, 'ranked', p_ranked)
+    );
+
+    RETURN json_build_object(
+      'status',   'waiting',
+      'queue_id', v_queue_id
+    );
+  END IF;
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text DEFAULT NULL::text, p_topic text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_ruleset text DEFAULT 'amplified'::text, p_total_rounds integer DEFAULT 4)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid       uuid := auth.uid();
   v_elo       int;
@@ -6230,13 +6806,15 @@ BEGIN
     );
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text DEFAULT NULL::text, p_topic text DEFAULT NULL::text, p_ranked boolean DEFAULT false, p_ruleset text DEFAULT 'amplified'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid       uuid := auth.uid();
   v_elo       int;
@@ -6352,128 +6930,15 @@ BEGIN
     RETURN json_build_object('status', 'waiting', 'queue_id', v_queue_id);
   END IF;
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text DEFAULT NULL::text, p_topic text DEFAULT NULL::text, p_ranked boolean DEFAULT false)
- RETURNS json
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_uid        uuid := auth.uid();
-  v_elo        int;
-  v_queue_id   uuid;
-  v_match      record;
-  v_debate_id  uuid;
-  v_topic      text;
-  v_elo_range  int  := CASE WHEN p_ranked THEN 300 ELSE 400 END;
-  v_lang       text;
-BEGIN
-  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-
-  SELECT elo_rating INTO v_elo FROM profiles WHERE id = v_uid;
-
-  -- Clear any stale waiting entries for this user
-  DELETE FROM debate_queue WHERE user_id = v_uid AND status = 'waiting';
-
-  -- Phase 1: strict match — same mode, same category (if specified), within elo range
-  IF p_category IS NOT NULL THEN
-    SELECT * INTO v_match FROM debate_queue
-      WHERE status = 'waiting'
-        AND mode = p_mode
-        AND user_id != v_uid
-        AND ABS(elo_rating - COALESCE(v_elo, 1200)) < v_elo_range
-        AND (category = p_category OR category IS NULL)
-      ORDER BY joined_at ASC
-      LIMIT 1
-      FOR UPDATE SKIP LOCKED;
-  END IF;
-
-  -- Phase 2: loose match — same mode, any category
-  IF v_match IS NULL THEN
-    SELECT * INTO v_match FROM debate_queue
-      WHERE status = 'waiting'
-        AND mode = p_mode
-        AND user_id != v_uid
-        AND ABS(elo_rating - COALESCE(v_elo, 1200)) < v_elo_range
-      ORDER BY joined_at ASC
-      LIMIT 1
-      FOR UPDATE SKIP LOCKED;
-  END IF;
-
-  IF v_match IS NOT NULL THEN
-    v_topic := COALESCE(p_topic, v_match.topic, 'Open Debate');
-
-    INSERT INTO arena_debates (debater_a, debater_b, mode, category, topic, status, total_rounds, ranked)
-    VALUES (
-      v_match.user_id,
-      v_uid,
-      p_mode,
-      COALESCE(p_category, v_match.category),
-      v_topic,
-      'pending',
-      3,
-      p_ranked
-    )
-    RETURNING id INTO v_debate_id;
-
-    -- Read back the language stamped by trigger
-    SELECT ad.language INTO v_lang FROM arena_debates ad WHERE ad.id = v_debate_id;
-
-    UPDATE debate_queue
-      SET status = 'matched', matched_with = v_uid, debate_id = v_debate_id
-      WHERE id = v_match.id;
-
-    INSERT INTO debate_queue (user_id, mode, category, topic, elo_rating, status, matched_with, debate_id, ranked)
-    VALUES (v_uid, p_mode, p_category, p_topic, COALESCE(v_elo, 1200), 'matched', v_match.user_id, v_debate_id, p_ranked)
-    RETURNING id INTO v_queue_id;
-
-    PERFORM log_event(
-      p_event_type := 'queue_matched',
-      p_user_id    := v_uid,
-      p_debate_id  := v_debate_id,
-      p_category   := COALESCE(p_category, v_match.category),
-      p_side       := 'b',
-      p_metadata   := jsonb_build_object('mode', p_mode, 'ranked', p_ranked)
-    );
-
-    RETURN json_build_object(
-      'status',      'matched',
-      'queue_id',    v_queue_id,
-      'debate_id',   v_debate_id,
-      'opponent_id', v_match.user_id,
-      'topic',       v_topic,
-      'role',        'b',
-      'language',    COALESCE(v_lang, 'en')
-    );
-
-  ELSE
-    INSERT INTO debate_queue (user_id, mode, category, topic, elo_rating, status, ranked)
-    VALUES (v_uid, p_mode, p_category, p_topic, COALESCE(v_elo, 1200), 'waiting', p_ranked)
-    RETURNING id INTO v_queue_id;
-
-    PERFORM log_event(
-      p_event_type := 'queue_joined',
-      p_user_id    := v_uid,
-      p_debate_id  := NULL,
-      p_category   := p_category,
-      p_side       := NULL,
-      p_metadata   := jsonb_build_object('mode', p_mode, 'ranked', p_ranked)
-    );
-
-    RETURN json_build_object(
-      'status',   'waiting',
-      'queue_id', v_queue_id
-    );
-  END IF;
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_group(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_group   public.groups;
@@ -6522,13 +6987,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_mod_debate(p_join_code text)
  RETURNS TABLE(debate_id uuid, role text, status text, topic text, mode text, ranked boolean, moderator_name text, opponent_name text, opponent_id uuid, opponent_elo integer, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid     UUID := auth.uid();
   v_debate  RECORD;
@@ -6605,13 +7072,15 @@ BEGIN
 
   RETURN NEXT;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.join_private_lobby(p_debate_id uuid DEFAULT NULL::uuid, p_join_code text DEFAULT NULL::text)
  RETURNS TABLE(debate_id uuid, status text, topic text, mode text, opponent_name text, opponent_id uuid, opponent_elo integer, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id      uuid := auth.uid();
   v_debate       arena_debates%ROWTYPE;
@@ -6692,13 +7161,24 @@ BEGIN
     COALESCE(v_debate.total_rounds, 4),
     COALESCE(v_debate.language, 'en');
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.jsonb_object_keys_count(j jsonb)
+ RETURNS integer
+ LANGUAGE sql
+AS $function$
+
+  SELECT COUNT(*)::INTEGER FROM jsonb_object_keys(j);
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.kick_group_member(p_group_id uuid, p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller_id   uuid := auth.uid();
   v_caller_role text;
@@ -6741,23 +7221,27 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.leave_debate_queue()
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   DELETE FROM debate_queue WHERE user_id = auth.uid() AND status = 'waiting';
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.leave_group(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id     uuid := auth.uid();
   v_caller_role text;
@@ -6805,13 +7289,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'dissolved', false);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.log_event(p_event_type text, p_user_id uuid DEFAULT NULL::uuid, p_debate_id uuid DEFAULT NULL::uuid, p_category text DEFAULT NULL::text, p_side text DEFAULT NULL::text, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   INSERT INTO public.event_log (event_type, user_id, debate_id, category, side, metadata)
   VALUES (p_event_type, p_user_id, p_debate_id, p_category, p_side, p_metadata);
@@ -6820,13 +7306,15 @@ EXCEPTION WHEN OTHERS THEN
   -- Never let analytics break the app. Swallow errors.
   RAISE WARNING 'log_event failed: % %', SQLERRM, SQLSTATE;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.mark_notifications_read(p_notification_ids uuid[] DEFAULT NULL::uuid[])
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_updated INTEGER;
@@ -6856,13 +7344,15 @@ BEGIN
     'marked_read', v_updated
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.mod_null_debate(p_debate_id uuid, p_reason text DEFAULT 'null'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -6910,13 +7400,15 @@ BEGIN
     'reason', p_reason
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.notify_new_follower()
  RETURNS trigger
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_follower_name TEXT;
 BEGIN
@@ -6933,13 +7425,186 @@ BEGIN
 
   RETURN NEW;
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.pay_reference_royalties(p_debate_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_debate        RECORD;
+  v_winner_id     UUID;
+  v_cite          RECORD;
+  v_base_rate     NUMERIC(6,2);
+  v_status_mult   NUMERIC(6,2);
+  v_win_mult      NUMERIC(6,2);
+  v_amount        NUMERIC(6,2);
+  v_total_by_forger JSONB := '{}'::JSONB;
+  v_forger_id     UUID;
+  v_forger_total  NUMERIC(6,2);
+  v_paid_count    INTEGER := 0;
+  v_skipped_count INTEGER := 0;
+BEGIN
+  -- Load debate
+  SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
+  IF v_debate IS NULL THEN
+    RETURN jsonb_build_object('action', 'error', 'message', 'Debate not found');
+  END IF;
+
+  -- Skip null/abandoned/tech_failure debates — zero royalties
+  IF v_debate.status IN ('nulled', 'abandoned', 'tech_failure') THEN
+    RETURN jsonb_build_object(
+      'action', 'skipped',
+      'reason', 'Debate status is ' || v_debate.status
+    );
+  END IF;
+
+  -- Determine winner
+  IF v_debate.winner = 'a' THEN
+    v_winner_id := v_debate.debater_a;
+  ELSIF v_debate.winner = 'b' THEN
+    v_winner_id := v_debate.debater_b;
+  ELSE
+    v_winner_id := NULL; -- draw
+  END IF;
+
+  -- Iterate through all cited references in this debate
+  FOR v_cite IN
+    SELECT
+      drl.reference_id,
+      drl.user_id AS citer_user_id,
+      drl.rarity_at_cite,
+      ar.user_id AS forger_user_id,
+      ar.source_title AS ref_name,
+      ar.challenge_status,
+      ar.deleted_at
+    FROM debate_reference_loadouts drl
+    JOIN arsenal_references ar ON ar.id = drl.reference_id
+    WHERE drl.debate_id = p_debate_id
+      AND drl.cited = true
+  LOOP
+    -- Skip self-cites (no royalty if forger = citer)
+    IF v_cite.forger_user_id = v_cite.citer_user_id THEN
+      v_skipped_count := v_skipped_count + 1;
+      CONTINUE;
+    END IF;
+
+    -- Skip deleted-ref royalties (tokens burn to platform)
+    IF v_cite.deleted_at IS NOT NULL THEN
+      v_skipped_count := v_skipped_count + 1;
+      CONTINUE;
+    END IF;
+
+    -- Base royalty from tiered schedule by rarity at cite time
+    CASE COALESCE(v_cite.rarity_at_cite, 'common')
+      WHEN 'common'    THEN v_base_rate := 0.1;
+      WHEN 'uncommon'  THEN v_base_rate := 0.25;
+      WHEN 'rare'      THEN v_base_rate := 0.5;
+      WHEN 'legendary' THEN v_base_rate := 1.0;
+      WHEN 'mythic'    THEN v_base_rate := 2.0;
+      ELSE v_base_rate := 0.1;
+    END CASE;
+
+    -- Disputed modifiers
+    CASE v_cite.challenge_status
+      WHEN 'disputed'         THEN v_status_mult := 0.75;
+      WHEN 'heavily_disputed' THEN v_status_mult := 0.25;
+      WHEN 'frozen'           THEN v_status_mult := 0.0;
+      ELSE v_status_mult := 1.0;
+    END CASE;
+
+    -- Win bonus x2 if citer won
+    IF v_winner_id IS NOT NULL AND v_cite.citer_user_id = v_winner_id THEN
+      v_win_mult := 2.0;
+    ELSE
+      v_win_mult := 1.0;
+    END IF;
+
+    -- Calculate and round UP to nearest 0.1
+    v_amount := v_base_rate * v_status_mult * v_win_mult;
+    v_amount := CEILING(v_amount * 10) / 10.0;
+
+    -- Skip zero payouts (e.g., frozen refs)
+    IF v_amount <= 0 THEN
+      v_skipped_count := v_skipped_count + 1;
+      CONTINUE;
+    END IF;
+
+    -- Insert per-cite log row (B2B granularity)
+    INSERT INTO reference_royalty_log (
+      forger_user_id, citer_user_id, reference_id, debate_id,
+      reference_name, rarity_at_cite, base_royalty,
+      win_bonus_applied, citer_won_debate, final_payout
+    ) VALUES (
+      v_cite.forger_user_id, v_cite.citer_user_id, v_cite.reference_id, p_debate_id,
+      v_cite.ref_name, COALESCE(v_cite.rarity_at_cite, 'common'), v_base_rate,
+      (v_win_mult > 1.0), (v_winner_id IS NOT NULL AND v_cite.citer_user_id = v_winner_id),
+      v_amount
+    );
+
+    -- Accumulate per-forger total for batched UPDATE
+    IF v_total_by_forger ? v_cite.forger_user_id::TEXT THEN
+      v_total_by_forger := jsonb_set(
+        v_total_by_forger,
+        ARRAY[v_cite.forger_user_id::TEXT],
+        to_jsonb((v_total_by_forger->>v_cite.forger_user_id::TEXT)::NUMERIC + v_amount)
+      );
+    ELSE
+      v_total_by_forger := jsonb_set(
+        v_total_by_forger,
+        ARRAY[v_cite.forger_user_id::TEXT],
+        to_jsonb(v_amount)
+      );
+    END IF;
+
+    v_paid_count := v_paid_count + 1;
+  END LOOP;
+
+  -- Batched payout: one UPDATE per forger
+  FOR v_forger_id, v_forger_total IN
+    SELECT key::UUID, value::NUMERIC(6,2)
+    FROM jsonb_each_text(v_total_by_forger)
+  LOOP
+    -- Credit tokens (round to integer for token_balance)
+    UPDATE profiles
+    SET token_balance = token_balance + CEIL(v_forger_total)::INTEGER
+    WHERE id = v_forger_id;
+
+    -- Log transaction
+    INSERT INTO token_transactions (user_id, amount, type, source, balance_after)
+    VALUES (v_forger_id, CEIL(v_forger_total)::INTEGER, 'earn', 'reference_royalty',
+            (SELECT token_balance FROM profiles WHERE id = v_forger_id));
+  END LOOP;
+
+  -- Analytics
+  PERFORM log_event(
+    p_event_type := 'reference_royalties_paid',
+    p_debate_id := p_debate_id,
+    p_metadata := jsonb_build_object(
+      'paid_count', v_paid_count,
+      'skipped_count', v_skipped_count,
+      'forger_count', jsonb_object_keys_count(v_total_by_forger)
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'action', 'paid',
+    'cites_paid', v_paid_count,
+    'cites_skipped', v_skipped_count
+  );
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.pick_prediction(p_question_id uuid, p_pick text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_question RECORD;
@@ -6997,13 +7662,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'pick', p_pick);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.pin_feed_event(p_debate_id uuid, p_feed_event_id bigint)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -7062,13 +7729,15 @@ BEGIN
     'pinned', v_new_pinned
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.place_prediction(p_debate_id uuid, p_predicted_winner text, p_amount integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_balance INTEGER;
@@ -7145,13 +7814,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'amount', p_amount, 'net_charge', v_net_charge, 'new_balance', v_balance - v_net_charge);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.place_stake(p_debate_id uuid, p_side text, p_amount integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID;
   v_questions INTEGER;
@@ -7288,13 +7959,15 @@ BEGIN
     'stake_cap', v_stake_cap
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.promote_group_member(p_group_id uuid, p_user_id uuid, p_new_role text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller_id   uuid := auth.uid();
   v_caller_role text;
@@ -7368,13 +8041,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'new_role', p_new_role);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.purchase_cosmetic(p_cosmetic_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_profile RECORD;
@@ -7437,24 +8112,28 @@ BEGIN
     'new_balance', v_new_balance
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.purge_old_stripe_events()
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   DELETE FROM stripe_processed_events
   WHERE processed_at < NOW() - INTERVAL '7 days';
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.react_hot_take(p_hot_take_id uuid, p_reaction_type text DEFAULT 'fire'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_exists BOOLEAN;
@@ -7525,13 +8204,15 @@ BEGIN
     'reaction_count', v_new_count
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.record_mod_dropout(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -7663,13 +8344,15 @@ BEGIN
     'new_approval', ROUND(v_new_approval, 2)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.request_mod_for_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -7709,13 +8392,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'mod_status', 'waiting');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.request_to_moderate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -7772,13 +8457,15 @@ BEGIN
     'moderator_name', v_mod.display_name
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.resolve_group_challenge(p_challenge_id uuid, p_winner_group_id uuid, p_debate_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid            uuid := auth.uid();
   v_caller_role    text;
@@ -7904,13 +8591,15 @@ BEGIN
     'loser_elo_change', -v_delta
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.respond_rival(p_rival_id uuid, p_accept boolean)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_rival RECORD;
@@ -7944,13 +8633,15 @@ BEGIN
     RETURN json_build_object('success', true, 'status', 'declined');
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.respond_to_group_challenge(p_challenge_id uuid, p_action text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID;
   v_challenge RECORD;
@@ -7998,13 +8689,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'status', CASE WHEN p_action = 'accept' THEN 'accepted' ELSE 'declined' END);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.respond_to_match(p_debate_id uuid, p_accept boolean)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_row arena_debates%ROWTYPE;
   v_caller UUID := auth.uid();
@@ -8035,13 +8728,15 @@ BEGIN
     UPDATE arena_debates SET status = 'cancelled' WHERE id = p_debate_id AND status = 'pending';
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.respond_to_mod_request(p_debate_id uuid, p_accept boolean)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -8115,13 +8810,15 @@ BEGIN
     );
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.rule_on_reference(p_reference_id uuid, p_ruling text, p_reason text DEFAULT NULL::text, p_ruled_by_type text DEFAULT 'human'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_ref RECORD;
@@ -8197,13 +8894,126 @@ BEGIN
     'unpaused', true
   );
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.rule_on_reference(p_challenge_id uuid, p_ruling text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id     UUID := auth.uid();
+  v_challenge   RECORD;
+  v_ref         RECORD;
+  v_new_seconds INTEGER;
+  v_new_status  TEXT;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Ruling validation
+  IF p_ruling NOT IN ('upheld', 'denied') THEN
+    RAISE EXCEPTION 'Ruling must be upheld or denied';
+  END IF;
+
+  -- Load challenge
+  SELECT * INTO v_challenge FROM reference_challenges WHERE id = p_challenge_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Challenge not found';
+  END IF;
+  IF v_challenge.status != 'pending' THEN
+    RAISE EXCEPTION 'Challenge already ruled on';
+  END IF;
+
+  -- Load reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = v_challenge.reference_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reference not found';
+  END IF;
+
+  IF p_ruling = 'upheld' THEN
+    -- Challenger wins — ref is at fault
+    -- Refund challenger escrow
+    UPDATE profiles
+    SET token_balance = token_balance + v_challenge.escrow_amount
+    WHERE id = v_challenge.challenger_id;
+
+    INSERT INTO token_transactions (user_id, amount, type, source, balance_after)
+    VALUES (v_challenge.challenger_id, v_challenge.escrow_amount, 'refund', 'challenge_upheld',
+            (SELECT token_balance FROM profiles WHERE id = v_challenge.challenger_id));
+
+    -- Apply graduated penalty based on current challenge_status
+    CASE v_ref.challenge_status
+      WHEN 'none' THEN
+        -- 1st upheld: -5 seconds, status → 'disputed'
+        v_new_seconds := GREATEST(v_ref.seconds - 5, 0);
+        v_new_status := 'disputed';
+      WHEN 'disputed' THEN
+        -- 2nd upheld: -5 seconds, status → 'heavily_disputed'
+        v_new_seconds := GREATEST(v_ref.seconds - 5, 0);
+        v_new_status := 'heavily_disputed';
+      WHEN 'heavily_disputed' THEN
+        -- 3rd upheld: status → 'frozen' (no more seconds deduction)
+        v_new_seconds := v_ref.seconds;
+        v_new_status := 'frozen';
+      ELSE
+        -- Already frozen — shouldn't happen but defend
+        v_new_seconds := v_ref.seconds;
+        v_new_status := v_ref.challenge_status;
+    END CASE;
+
+    UPDATE arsenal_references
+    SET seconds = v_new_seconds,
+        challenge_status = v_new_status
+    WHERE id = v_challenge.reference_id;
+
+    -- Recompute rarity and power after seconds adjustment
+    PERFORM _recompute_reference_rarity_and_power(v_challenge.reference_id);
+
+  ELSE
+    -- Ruling = 'denied' — burn challenger escrow (already debited, no refund)
+    -- No ref penalty
+    v_new_status := v_ref.challenge_status;
+  END IF;
+
+  -- Update challenge record
+  UPDATE reference_challenges
+  SET status = p_ruling,
+      ruled_at = now()
+  WHERE id = p_challenge_id;
+
+  -- Analytics
+  PERFORM log_event(
+    p_event_type := 'reference_ruling',
+    p_user_id := v_user_id,
+    p_debate_id := v_challenge.debate_id,
+    p_metadata := jsonb_build_object(
+      'challenge_id', p_challenge_id,
+      'reference_id', v_challenge.reference_id,
+      'ruling', p_ruling,
+      'new_challenge_status', v_new_status
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'action', 'ruled',
+    'ruling', p_ruling,
+    'new_challenge_status', v_new_status
+  );
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.run_daily_snapshot()
  RETURNS integer
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_date DATE := CURRENT_DATE;
   v_count INTEGER := 0;
@@ -8256,13 +9066,14 @@ BEGIN
 
   RETURN v_count;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.sanitize_text(p_input text)
  RETURNS text
  LANGUAGE plpgsql
-IMMUTABLE
 AS $function$
+
 DECLARE
   v_clean TEXT;
 BEGIN
@@ -8300,13 +9111,14 @@ BEGIN
 
   RETURN v_clean;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.sanitize_url(p_input text)
  RETURNS text
  LANGUAGE plpgsql
-IMMUTABLE
 AS $function$
+
 BEGIN
   IF p_input IS NULL THEN
     RETURN NULL;
@@ -8329,13 +9141,15 @@ BEGIN
 
   RETURN p_input;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.save_ai_scorecard(p_debate_id uuid, p_scorecard jsonb)
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -8366,13 +9180,15 @@ BEGIN
   WHERE id = p_debate_id
     AND ai_scorecard IS NULL; -- Don't overwrite if already saved (idempotent)
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.save_debate_loadout(p_debate_id uuid, p_reference_ids uuid[])
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid       UUID := auth.uid();
   v_debate    RECORD;
@@ -8380,12 +9196,10 @@ DECLARE
   v_owned     INTEGER;
   v_rid       UUID;
 BEGIN
-  -- Auth
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- Validate debate exists and caller is a debater
   SELECT * INTO v_debate FROM arena_debates WHERE id = p_debate_id;
   IF v_debate IS NULL THEN
     RAISE EXCEPTION 'Debate not found';
@@ -8394,33 +9208,32 @@ BEGIN
     RAISE EXCEPTION 'Only debaters can load references';
   END IF;
 
-  -- Debate must not be live yet (loadout is pre-debate)
   IF v_debate.status NOT IN ('pending', 'lobby', 'matched') THEN
     RAISE EXCEPTION 'Can only load references before debate starts';
   END IF;
 
-  -- Max 5
   v_ref_count := COALESCE(array_length(p_reference_ids, 1), 0);
   IF v_ref_count > 5 THEN
     RAISE EXCEPTION 'Maximum 5 references per debate';
   END IF;
 
-  -- Empty array = clear loadout
   IF v_ref_count = 0 THEN
     DELETE FROM debate_reference_loadouts
       WHERE debate_id = p_debate_id AND user_id = v_uid;
     RETURN jsonb_build_object('success', true, 'loaded', 0);
   END IF;
 
-  -- Verify all references belong to the caller
+  -- Verify all references: owned by caller, not deleted, not frozen
   SELECT COUNT(*) INTO v_owned
     FROM arsenal_references
-    WHERE id = ANY(p_reference_ids) AND user_id = v_uid;
+    WHERE id = ANY(p_reference_ids)
+      AND user_id = v_uid
+      AND deleted_at IS NULL
+      AND challenge_status != 'frozen';
   IF v_owned != v_ref_count THEN
-    RAISE EXCEPTION 'Can only load your own references';
+    RAISE EXCEPTION 'Can only load your own active (non-deleted, non-frozen) references';
   END IF;
 
-  -- Replace: delete old, insert new
   DELETE FROM debate_reference_loadouts
     WHERE debate_id = p_debate_id AND user_id = v_uid;
 
@@ -8431,13 +9244,15 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'loaded', v_ref_count);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.save_profile_depth(p_section_id text, p_answers jsonb)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_current JSONB;
@@ -8485,13 +9300,15 @@ BEGIN
     'sections_completed', v_completed
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.save_user_settings(p_notif_challenge boolean DEFAULT true, p_notif_debate boolean DEFAULT true, p_notif_follow boolean DEFAULT true, p_notif_reactions boolean DEFAULT true, p_audio_sfx boolean DEFAULT true, p_audio_mute boolean DEFAULT false, p_privacy_public boolean DEFAULT true, p_privacy_online boolean DEFAULT true, p_privacy_challenges boolean DEFAULT true)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
 BEGIN
@@ -8537,13 +9354,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.score_debate_comment(p_debate_id uuid, p_feed_event_id bigint, p_score integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_debate RECORD;
@@ -8700,13 +9519,15 @@ BEGIN
     'score_b', v_new_score_b
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.score_moderator(p_debate_id uuid, p_score integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -8782,13 +9603,15 @@ BEGIN
     'new_approval', ROUND(v_new_approval, 2)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.search_users_by_username(p_query text)
  RETURNS TABLE(id uuid, username text, display_name text, elo_rating integer)
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   RETURN QUERY
   SELECT p.id, p.username, p.display_name, COALESCE(p.elo_rating, 1200)::int
@@ -8798,13 +9621,90 @@ BEGIN
   ORDER BY p.username
   LIMIT 10;
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.second_reference(p_ref_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id       UUID := auth.uid();
+  v_ref           RECORD;
+  v_profile_depth INTEGER;
+BEGIN
+  -- Auth check
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Profile depth gate: must be >= 25%
+  SELECT profile_depth_pct INTO v_profile_depth
+    FROM profiles WHERE id = v_user_id;
+  IF v_profile_depth IS NULL OR v_profile_depth < 25 THEN
+    RAISE EXCEPTION 'Profile must be at least 25%% complete to second references';
+  END IF;
+
+  -- Load reference
+  SELECT * INTO v_ref FROM arsenal_references WHERE id = p_ref_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reference not found';
+  END IF;
+
+  -- Cannot second deleted refs
+  IF v_ref.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Cannot second a deleted reference';
+  END IF;
+
+  -- Self-seconding hard block
+  IF v_ref.user_id = v_user_id THEN
+    RAISE EXCEPTION 'Cannot second your own reference';
+  END IF;
+
+  -- Check for existing seconding (unique constraint also catches this)
+  IF EXISTS (
+    SELECT 1 FROM reference_seconds
+    WHERE reference_id = p_ref_id AND voter_id = v_user_id
+  ) THEN
+    RAISE EXCEPTION 'Already seconded this reference';
+  END IF;
+
+  -- Insert seconding record
+  INSERT INTO reference_seconds (reference_id, voter_id)
+  VALUES (p_ref_id, v_user_id);
+
+  -- Increment seconds counter
+  UPDATE arsenal_references
+  SET seconds = seconds + 1
+  WHERE id = p_ref_id;
+
+  -- Recompute rarity and power
+  PERFORM _recompute_reference_rarity_and_power(p_ref_id);
+
+  -- Re-read for response
+  SELECT seconds, strikes, rarity, current_power, graduated
+  INTO v_ref
+  FROM arsenal_references WHERE id = p_ref_id;
+
+  RETURN jsonb_build_object(
+    'action', 'seconded',
+    'seconds', v_ref.seconds,
+    'strikes', v_ref.strikes,
+    'rarity', v_ref.rarity,
+    'current_power', v_ref.current_power
+  );
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.send_spectator_chat(p_debate_id uuid, p_message text)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid;
   v_display_name text;
@@ -8865,13 +9765,15 @@ BEGIN
     'avatar_url', v_avatar_url
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.set_profile_dob(p_dob date)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid UUID := auth.uid();
   v_existing DATE;
@@ -8892,13 +9794,15 @@ BEGIN
 
   RETURN jsonb_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.settle_stakes(p_debate_id uuid, p_winner text, p_multiplier numeric DEFAULT 1)
  RETURNS jsonb
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id uuid := auth.uid();
   v_pool stake_pools%ROWTYPE;
@@ -9027,13 +9931,15 @@ BEGIN
 
   RETURN jsonb_build_object('success', true, 'payout', v_caller_payout);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.soft_delete_account()
  RETURNS void
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   UPDATE profiles
   SET deleted_at = now(),
@@ -9048,12 +9954,14 @@ BEGIN
     RAISE EXCEPTION 'Account not found or already deleted';
   END IF;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.stamp_debate_language()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
+
 DECLARE
   v_creator_id UUID;
   v_lang TEXT;
@@ -9074,13 +9982,15 @@ BEGIN
 
   RETURN NEW;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.start_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -9106,13 +10016,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'status', 'live');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.submit_async_round(p_debate_id uuid, p_content text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -9198,13 +10110,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'round', v_round_count + 1, 'status', 'active');
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.submit_debate_message(p_debate_id uuid, p_round integer, p_side text, p_content text, p_is_ai boolean DEFAULT false)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid uuid := auth.uid();
   v_id uuid;
@@ -9241,13 +10155,15 @@ BEGIN
 
   RETURN json_build_object('id', v_id, 'success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.submit_reference(p_debate_id uuid, p_content text, p_reference_type text DEFAULT 'url'::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -9357,13 +10273,15 @@ BEGIN
     END
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.submit_report(p_reported_user_id uuid DEFAULT NULL::uuid, p_debate_id uuid DEFAULT NULL::uuid, p_reason text DEFAULT ''::text, p_details text DEFAULT ''::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_clean_reason TEXT;
@@ -9403,13 +10321,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'report_id', v_report_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.toggle_mod_available(p_available boolean)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_is_mod BOOLEAN;
@@ -9430,13 +10350,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'mod_available', p_available);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.toggle_moderator_status(p_enabled boolean)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -9459,23 +10381,27 @@ BEGIN
 
   RETURN json_build_object('success', true, 'is_moderator', p_enabled);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.touch_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
+
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.unban_group_member(p_group_id uuid, p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_caller_id   uuid := auth.uid();
   v_caller_role text;
@@ -9497,13 +10423,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.unequip_cosmetic(p_cosmetic_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -9517,13 +10445,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'unequipped', p_cosmetic_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.unfollow_user(p_target_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -9546,13 +10476,15 @@ BEGIN
 
   RETURN json_build_object('success', true, 'unfollowed', p_target_user_id);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_arena_debate(p_debate_id uuid, p_status text DEFAULT NULL::text, p_current_round integer DEFAULT NULL::integer, p_winner text DEFAULT NULL::text, p_score_a integer DEFAULT NULL::integer, p_score_b integer DEFAULT NULL::integer)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid uuid := auth.uid();
   v_debate record;
@@ -9739,13 +10671,15 @@ BEGIN
     'vote_count_b', COALESCE(v_debate.vote_count_b, 0)
   );
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_mod_categories(p_categories text[])
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -9761,13 +10695,94 @@ BEGIN
 
   RETURN json_build_object('success', true, 'categories', p_categories);
 END;
+
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_profile(p_display_name text DEFAULT NULL::text, p_avatar_url text DEFAULT NULL::text, p_bio text DEFAULT NULL::text, p_username text DEFAULT NULL::text)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_clean_name TEXT;
+  v_clean_bio TEXT;
+  v_clean_url TEXT;
+  v_clean_username TEXT;
+  v_allowed BOOLEAN;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE LOG 'SECURITY|auth_failure|anonymous|update_profile|unauthenticated profile update';
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Rate limit: 20 profile updates per hour
+  v_allowed := check_rate_limit(v_user_id, 'profile_update', 60, 20);
+  IF NOT v_allowed THEN
+    RAISE LOG 'SECURITY|rate_limit_blocked|%|update_profile|profile_update limit exceeded', v_user_id;
+    RAISE EXCEPTION 'Rate limit: too many profile updates';
+  END IF;
+
+  v_clean_name := sanitize_text(p_display_name);
+  v_clean_bio := sanitize_text(p_bio);
+  v_clean_url := sanitize_url(p_avatar_url);
+  v_clean_username := p_username;
+
+  IF v_clean_username IS NOT NULL THEN
+    IF char_length(v_clean_username) < 3 OR char_length(v_clean_username) > 20 THEN
+      RAISE EXCEPTION 'Username must be 3-20 characters';
+    END IF;
+    IF v_clean_username !~ '^[a-zA-Z0-9_]+$' THEN
+      RAISE LOG 'SECURITY|input_violation|%|update_profile|invalid username chars=%', v_user_id, v_clean_username;
+      RAISE EXCEPTION 'Username: alphanumeric + underscores only';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE username = v_clean_username AND id != v_user_id) THEN
+      RAISE EXCEPTION 'Username already taken';
+    END IF;
+  END IF;
+
+  IF v_clean_name IS NOT NULL AND char_length(v_clean_name) > 50 THEN
+    RAISE EXCEPTION 'Display name max 50 characters';
+  END IF;
+  IF v_clean_bio IS NOT NULL AND char_length(v_clean_bio) > 500 THEN
+    RAISE EXCEPTION 'Bio max 500 characters';
+  END IF;
+
+  UPDATE public.profiles SET
+    username = COALESCE(v_clean_username, username),
+    display_name = COALESCE(v_clean_name, display_name),
+    avatar_url = COALESCE(v_clean_url, avatar_url),
+    bio = COALESCE(v_clean_bio, bio),
+    updated_at = now()
+  WHERE id = v_user_id;
+
+  -- FIXED: named parameters (LM-188 audit)
+  PERFORM log_event(
+    p_event_type := 'profile_updated',
+    p_user_id    := v_user_id,
+    p_debate_id  := NULL,
+    p_category   := NULL,
+    p_side       := NULL,
+    p_metadata   := jsonb_build_object(
+      'changed_name', p_display_name IS NOT NULL,
+      'changed_bio', p_bio IS NOT NULL,
+      'changed_avatar', p_avatar_url IS NOT NULL,
+      'changed_username', p_username IS NOT NULL
+    )
+  );
+
+  RETURN json_build_object('success', true);
+END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_profile(p_display_name text DEFAULT NULL::text, p_avatar_url text DEFAULT NULL::text, p_bio text DEFAULT NULL::text, p_username text DEFAULT NULL::text, p_preferred_language text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_clean_name TEXT;
@@ -9849,90 +10864,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.update_profile(p_display_name text DEFAULT NULL::text, p_avatar_url text DEFAULT NULL::text, p_bio text DEFAULT NULL::text, p_username text DEFAULT NULL::text)
- RETURNS json
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_user_id UUID := auth.uid();
-  v_clean_name TEXT;
-  v_clean_bio TEXT;
-  v_clean_url TEXT;
-  v_clean_username TEXT;
-  v_allowed BOOLEAN;
-BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE LOG 'SECURITY|auth_failure|anonymous|update_profile|unauthenticated profile update';
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  -- Rate limit: 20 profile updates per hour
-  v_allowed := check_rate_limit(v_user_id, 'profile_update', 60, 20);
-  IF NOT v_allowed THEN
-    RAISE LOG 'SECURITY|rate_limit_blocked|%|update_profile|profile_update limit exceeded', v_user_id;
-    RAISE EXCEPTION 'Rate limit: too many profile updates';
-  END IF;
-
-  v_clean_name := sanitize_text(p_display_name);
-  v_clean_bio := sanitize_text(p_bio);
-  v_clean_url := sanitize_url(p_avatar_url);
-  v_clean_username := p_username;
-
-  IF v_clean_username IS NOT NULL THEN
-    IF char_length(v_clean_username) < 3 OR char_length(v_clean_username) > 20 THEN
-      RAISE EXCEPTION 'Username must be 3-20 characters';
-    END IF;
-    IF v_clean_username !~ '^[a-zA-Z0-9_]+$' THEN
-      RAISE LOG 'SECURITY|input_violation|%|update_profile|invalid username chars=%', v_user_id, v_clean_username;
-      RAISE EXCEPTION 'Username: alphanumeric + underscores only';
-    END IF;
-    IF EXISTS (SELECT 1 FROM public.profiles WHERE username = v_clean_username AND id != v_user_id) THEN
-      RAISE EXCEPTION 'Username already taken';
-    END IF;
-  END IF;
-
-  IF v_clean_name IS NOT NULL AND char_length(v_clean_name) > 50 THEN
-    RAISE EXCEPTION 'Display name max 50 characters';
-  END IF;
-  IF v_clean_bio IS NOT NULL AND char_length(v_clean_bio) > 500 THEN
-    RAISE EXCEPTION 'Bio max 500 characters';
-  END IF;
-
-  UPDATE public.profiles SET
-    username = COALESCE(v_clean_username, username),
-    display_name = COALESCE(v_clean_name, display_name),
-    avatar_url = COALESCE(v_clean_url, avatar_url),
-    bio = COALESCE(v_clean_bio, bio),
-    updated_at = now()
-  WHERE id = v_user_id;
-
-  -- FIXED: named parameters (LM-188 audit)
-  PERFORM log_event(
-    p_event_type := 'profile_updated',
-    p_user_id    := v_user_id,
-    p_debate_id  := NULL,
-    p_category   := NULL,
-    p_side       := NULL,
-    p_metadata   := jsonb_build_object(
-      'changed_name', p_display_name IS NOT NULL,
-      'changed_bio', p_bio IS NOT NULL,
-      'changed_avatar', p_avatar_url IS NOT NULL,
-      'changed_username', p_username IS NOT NULL
-    )
-  );
-
-  RETURN json_build_object('success', true);
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_reaction_count()
  RETURNS trigger
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE public.hot_takes SET reaction_count = reaction_count + 1 WHERE id = NEW.hot_take_id;
@@ -9941,13 +10881,15 @@ BEGIN
   END IF;
   RETURN COALESCE(NEW, OLD);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_settings(p_notif_challenges boolean DEFAULT NULL::boolean, p_notif_results boolean DEFAULT NULL::boolean, p_notif_reactions boolean DEFAULT NULL::boolean, p_notif_follows boolean DEFAULT NULL::boolean, p_privacy_public_profile boolean DEFAULT NULL::boolean, p_privacy_debate_history boolean DEFAULT NULL::boolean, p_privacy_allow_challenges boolean DEFAULT NULL::boolean, p_audio_auto_mute boolean DEFAULT NULL::boolean, p_audio_effects boolean DEFAULT NULL::boolean)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
@@ -9974,129 +10916,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
-$function$;
 
-CREATE OR REPLACE FUNCTION public.verify_reference(p_reference_id uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-DECLARE
-  v_voter_id      uuid;
-  v_ref           record;
-  v_voter_type    text;
-  v_vote_value    numeric;
-  v_is_clan       boolean := false;
-  v_is_rival      boolean := false;
-  v_new_points    numeric;
-  v_new_power     integer;
-BEGIN
-  -- Auth check
-  v_voter_id := auth.uid();
-  IF v_voter_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  -- Get the reference
-  SELECT * INTO v_ref
-    FROM public.arsenal_references
-    WHERE id = p_reference_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Reference not found';
-  END IF;
-
-  -- Cannot verify your own reference
-  IF v_ref.user_id = v_voter_id THEN
-    RAISE EXCEPTION 'Cannot verify your own reference';
-  END IF;
-
-  -- Check if voter already voted (unique constraint will also catch this)
-  IF EXISTS (
-    SELECT 1 FROM public.reference_verifications
-    WHERE reference_id = p_reference_id AND voter_id = v_voter_id
-  ) THEN
-    RAISE EXCEPTION 'Already verified this reference';
-  END IF;
-
-  -- Determine voter_type:
-  -- 1. Check if voter and ref owner share a group (clan = 0.5)
-  v_is_clan := EXISTS (
-    SELECT 1
-    FROM public.group_members gm1
-    JOIN public.group_members gm2
-      ON gm1.group_id = gm2.group_id
-    WHERE gm1.user_id = v_voter_id
-      AND gm2.user_id = v_ref.user_id
-  );
-
-  -- 2. Check if voter is a rival of ref owner (rival = 2.0)
-  v_is_rival := EXISTS (
-    SELECT 1
-    FROM public.rivals
-    WHERE (challenger_id = v_voter_id AND target_id = v_ref.user_id)
-       OR (challenger_id = v_ref.user_id AND target_id = v_voter_id)
-  );
-
-  -- Priority: rival > clan > outside
-  -- A rival who is also in your clan still counts as rival (strongest signal wins)
-  IF v_is_rival THEN
-    v_voter_type := 'rival';
-    v_vote_value := 2.0;
-  ELSIF v_is_clan THEN
-    v_voter_type := 'clan';
-    v_vote_value := 0.5;
-  ELSE
-    v_voter_type := 'outside';
-    v_vote_value := 1.0;
-  END IF;
-
-  -- Insert vote
-  INSERT INTO public.reference_verifications (
-    reference_id, voter_id, voter_type, vote_value
-  ) VALUES (
-    p_reference_id, v_voter_id, v_voter_type, v_vote_value
-  );
-
-  -- Update verification_points and recalculate power
-  v_new_points := v_ref.verification_points + v_vote_value;
-  v_new_power  := _calc_reference_power(v_ref.source_type, v_ref.power_ceiling, v_new_points);
-
-  -- Cap power at ceiling
-  IF v_new_power > v_ref.power_ceiling THEN
-    v_new_power := v_ref.power_ceiling;
-  END IF;
-
-  UPDATE public.arsenal_references
-    SET verification_points = v_new_points,
-        current_power       = v_new_power
-    WHERE id = p_reference_id;
-
-  RETURN jsonb_build_object(
-    'voter_type', v_voter_type,
-    'vote_value', v_vote_value,
-    'new_points', v_new_points,
-    'new_power', v_new_power,
-    'power_ceiling', v_ref.power_ceiling
-  );
-END;
-$function$;
-
-CREATE OR REPLACE FUNCTION public.view_auto_debate(p_debate_id uuid)
- RETURNS void
- LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-BEGIN
-  UPDATE auto_debates SET view_count = view_count + 1 WHERE id = p_debate_id;
-END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.vote_arena_debate(p_debate_id uuid, p_vote text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_uid uuid := auth.uid();
   v_debate RECORD;
@@ -10122,13 +10950,15 @@ BEGIN
 
   RETURN json_build_object('success', true);
 END;
+
 $function$;
 
 CREATE OR REPLACE FUNCTION public.vote_async_debate(p_debate_id uuid, p_voted_for text)
  RETURNS json
  LANGUAGE plpgsql
-SECURITY DEFINER
+ SECURITY DEFINER
 AS $function$
+
 DECLARE
   v_user_id UUID := auth.uid();
   v_debate RECORD;
@@ -10181,4 +11011,5 @@ BEGIN
     'voted_for', p_voted_for
   );
 END;
+
 $function$;
