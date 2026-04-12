@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+
+<!-- OG / Twitter — static challenge card -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="You've Been Challenged — The Moderator">
+<meta property="og:description" content="Someone wants to debate you. Click to accept the challenge, pick your side, and prove them wrong.">
+<meta property="og:image" content="https://themoderator.app/og-card-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://themoderator.app/challenge">
+<meta property="og:site_name" content="The Moderator">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="You've Been Challenged — The Moderator">
+<meta name="twitter:description" content="Someone wants to debate you. Accept the challenge on The Moderator.">
+<meta name="twitter:image" content="https://themoderator.app/og-card-default.png">
+
+<title>You've Been Challenged — The Moderator</title>
+<link rel="canonical" href="https://themoderator.app/challenge">
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase JS (same version as main app) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+
+:root {
+  --bg:           #04040e;
+  --card:         #0d0d22;
+  --card-border:  rgba(212,168,67,0.25);
+  --accent:       #d4a843;
+  --accent-glow:  rgba(212,168,67,0.18);
+  --text-head:    #f0e6c8;
+  --text-body:    #a89878;
+  --text-muted:   #5a5040;
+  --danger:       #ff4444;
+  --safe-top:     env(safe-area-inset-top, 0px);
+  --safe-bottom:  env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'Antonio', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-body);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + var(--safe-top)) 20px calc(32px + var(--safe-bottom));
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-y: auto;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%,   rgba(212,168,67,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 100%,  rgba(10,10,40,0.9)   0%, transparent 70%);
+}
+
+/* ── Card ──────────────────────────────────────────── */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 36px 28px 32px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,168,67,0.06);
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Sword icon ─────────────────────────────────────── */
+.sword-icon {
+  font-size: 52px;
+  line-height: 1;
+  margin-bottom: 20px;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(212,168,67,0.4));
+}
+
+/* ── Eyebrow ────────────────────────────────────────── */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ── Headline ───────────────────────────────────────── */
+.headline {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-head);
+  line-height: 1.1;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Sub ─────────────────────────────────────────────── */
+.sub {
+  font-size: 15px;
+  color: var(--text-body);
+  line-height: 1.5;
+  margin-bottom: 32px;
+  font-family: system-ui, sans-serif;
+  font-weight: 400;
+}
+
+/* ── Code pill ──────────────────────────────────────── */
+.code-pill {
+  display: inline-block;
+  background: var(--accent-glow);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 6px;
+  margin-bottom: 28px;
+}
+
+/* ── Buttons ────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background: var(--accent);
+  color: #000;
+  font-family: 'Antonio', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover  { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: var(--accent);
+  font-family: 'Antonio', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn-secondary:hover { background: var(--accent-glow); border-color: var(--accent); }
+
+/* ── Divider ────────────────────────────────────────── */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(212,168,67,0.12);
+}
+
+/* ── Error state ────────────────────────────────────── */
+.error-state { color: var(--danger); font-size: 14px; font-family: system-ui, sans-serif; line-height: 1.5; }
+
+/* ── Spinner ────────────────────────────────────────── */
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid rgba(212,168,67,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Footer ─────────────────────────────────────────── */
+.footer-note {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: system-ui, sans-serif;
+  text-align: center;
+  line-height: 1.6;
+}
+.footer-note a { color: var(--text-body); text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <!-- Content rendered by JS below -->
+  <div class="spinner"></div>
+</div>
+
+<p class="footer-note">
+  By joining you agree to our
+  <a href="moderator-terms.html">Terms of Service</a> &amp;
+  <a href="moderator-privacy.html">Privacy Policy</a>.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Config (must match src/config.ts) ───────────────────────
+  var SUPABASE_URL = 'https://faomczmipsccwbhpivmp.supabase.co';
+  var SUPABASE_ANON_KEY = document.querySelector('meta[name="sb-anon"]')?.content || '';
+
+  // Inline the anon key — same pattern as auth.core.ts reads from config.ts
+  // We pull it from the window global set by the Vite build on the main app,
+  // but on this standalone page we embed it directly.
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
+
+  var STORAGE_KEY = 'mod_pending_challenge';
+  var card = document.getElementById('card');
+
+  // ── Read ?code= param ────────────────────────────────────────
+  var params = new URLSearchParams(window.location.search);
+  var code = (params.get('code') || '').trim().toUpperCase();
+
+  // ── No code — show error ─────────────────────────────────────
+  if (!code) {
+    renderError('No challenge code found in this link. Ask the challenger to share it again.');
+    return;
+  }
+
+  // ── Store code for post-auth pickup ─────────────────────────
+  try {
+    localStorage.setItem(STORAGE_KEY, code);
+  } catch (e) { /* private browsing — silent */ }
+
+  // ── Init Supabase and check session ─────────────────────────
+  var sb;
+  try {
+    sb = supabase.createClient(SUPABASE_URL, ANON_KEY);
+  } catch (e) {
+    // Supabase CDN failed — degrade gracefully, show CTA anyway
+    renderGuest(code);
+    return;
+  }
+
+  sb.auth.getSession().then(function (res) {
+    var session = res.data && res.data.session;
+    if (session && session.user) {
+      // Already logged in — go straight to arena with join code
+      renderRedirecting(code);
+      window.location.href = '/?joinCode=' + encodeURIComponent(code);
+    } else {
+      renderGuest(code);
+    }
+  }).catch(function () {
+    renderGuest(code);
+  });
+
+  // ── Render: redirecting (logged-in fast path) ────────────────
+  function renderRedirecting(c) {
+    card.innerHTML =
+      '<span class="sword-icon">⚔️</span>' +
+      '<p class="eyebrow">Challenge Accepted</p>' +
+      '<h1 class="headline">Taking You to the Arena</h1>' +
+      '<div class="spinner" style="margin:24px auto 0;"></div>';
+  }
+
+  // ── Render: guest CTA ────────────────────────────────────────
+  function renderGuest(c) {
+    card.innerHTML =
+      '<span class="sword-icon">⚔️</span>' +
+      '<p class="eyebrow">Challenge Incoming</p>' +
+      '<h1 class="headline">You\'ve Been Called Out</h1>' +
+      '<p class="sub">Someone wants to test your argument. Accept the challenge, pick your side, and prove them wrong.</p>' +
+      '<div class="code-pill">' + escHtml(c) + '</div>' +
+      '<a href="moderator-plinko.html?challenge=' + encodeURIComponent(c) + '" class="btn-primary">⚔️ Accept &amp; Sign Up</a>' +
+      '<div class="divider">OR</div>' +
+      '<a href="moderator-login.html?challenge=' + encodeURIComponent(c) + '" class="btn-secondary">Log In to Accept</a>';
+  }
+
+  // ── Render: error ────────────────────────────────────────────
+  function renderError(msg) {
+    card.innerHTML =
+      '<span class="sword-icon">🛡️</span>' +
+      '<h1 class="headline" style="font-size:22px;margin-bottom:16px;">Invalid Link</h1>' +
+      '<p class="error-state">' + escHtml(msg) + '</p>' +
+      '<div style="margin-top:28px;">' +
+      '<a href="/" class="btn-secondary">Go to The Moderator</a>' +
+      '</div>';
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+})();
+</script>
+
+</body>
+</html>

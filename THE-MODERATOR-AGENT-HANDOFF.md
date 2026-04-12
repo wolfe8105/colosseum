@@ -16,7 +16,7 @@
 | 2 | F-54 | Private Profile Toggle | ✅ S272 |
 | 3 | F-53 | Profile Debate Archive | ✅ S273 |
 | 4 | F-33 | Verified Gladiator Badge | ✅ S273 |
-| 5 | F-35.3 | Orange Dot Indicator | ⏳ not started |
+| 5 | F-35.3 | Orange Dot Indicator | ✅ S274 |
 | 6 | F-39 | Embeddable Challenge Links | ⏳ specced, not built |
 | 7 | F-21 | Intro Music | ⏳ not started |
 | 8 | F-03 | Entrance Sequence / Battle Animations | 🔶 concept only — blocked on F-21 |

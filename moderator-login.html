@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000" id="meta-theme-color">
 <script>(function(){var d=document.documentElement;var s=localStorage.getItem("theme");var t=s||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");d.setAttribute("data-theme",t);if(t==="light"){var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
+<!-- F-39: Preserve challenge code through login flow -->
+<script>(function(){try{var c=new URLSearchParams(window.location.search).get('challenge');if(c)localStorage.setItem('mod_pending_challenge',c.trim().toUpperCase());}catch(e){}})()</script>
 <title>The Moderator — Enter the Arena</title>
 
 <style>

@@ -113,6 +113,16 @@ export function init(): void {
   if (challengeCode) {
     window.history.replaceState({}, '', window.location.pathname);
     void joinWithCode(challengeCode.toUpperCase());
+  } else {
+    // F-39: Consume pending challenge stored by moderator-challenge.html (post-login path)
+    try {
+      const pending = localStorage.getItem('mod_pending_challenge');
+      if (pending) {
+        localStorage.removeItem('mod_pending_challenge');
+        window.history.replaceState({}, '', window.location.pathname);
+        void joinWithCode(pending.toUpperCase());
+      }
+    } catch { /* localStorage blocked — ignore */ }
   }
   // Session 240: Auto-spectate via ?spectate=<debateId>
   const spectateId = new URLSearchParams(window.location.search).get('spectate');
