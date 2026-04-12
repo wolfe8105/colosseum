@@ -28,6 +28,7 @@ import { startModStatusPoll } from './arena-mod-queue.ts';
 import { enterFeedRoom } from './arena-feed-room.ts';
 import { renderLoadoutPicker } from '../reference-arsenal.ts';
 import { renderPresetBar } from './arena-loadout-presets.ts';
+import { renderBountyClaimDropdown, resetBountyClaim } from './arena-bounty-claim.ts';
 
 export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   set_view('room');
@@ -71,6 +72,7 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
     <div id="pre-debate-staking" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-loadout" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-refs" style="width:100%;max-width:360px;"></div>
+    <div id="pre-debate-bounty" style="width:100%;max-width:360px;"></div>
     <button class="arena-pre-debate-enter" id="pre-debate-enter-btn">
       <span class="btn-pulse"></span> ENTER BATTLE
     </button>
@@ -123,6 +125,13 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   const presetsEl = document.getElementById('pre-debate-presets');
   if (presetsEl && debateData.mode !== 'ai') {
     void renderPresetBar(presetsEl, debateData, refsEl, loadoutEl);
+  }
+
+  // F-28: Bounty claim dropdown — ranked debates with a real opponent only
+  const bountyEl = document.getElementById('pre-debate-bounty');
+  if (bountyEl && debateData.ranked && debateData.opponentId && debateData.mode !== 'ai') {
+    resetBountyClaim();
+    void renderBountyClaimDropdown(bountyEl, debateData.id, debateData.opponentId, debateData.opponentName);
   }
 
   // Wire enter button

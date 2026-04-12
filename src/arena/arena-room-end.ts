@@ -200,6 +200,14 @@ export async function endCurrentDebate(): Promise<void> {
       }
     }
 
+    // F-28: Resolve any bounty attempt locked in for this debate
+    if (debate.ranked && winner) {
+      safeRpc('resolve_bounty_attempt', {
+        p_debate_id: debate.id,
+        p_winner_id: winner,
+      }).catch((e) => console.warn('[Arena] resolve_bounty_attempt failed (non-fatal):', e));
+    }
+
     // Session 234: Persist AI scorecard for replay
     if (aiScores) {
       try {

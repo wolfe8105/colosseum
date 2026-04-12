@@ -8,6 +8,7 @@ import { vgBadge } from './badge.ts';
 import { followUser, unfollowUser } from './auth.follows.ts';
 import { declareRival } from './auth.rivals.ts';
 import type { AuthResult, PublicProfile, ProfileUpdate } from './auth.types.ts';
+import { renderProfileBountySection, bountySlotLimit } from './bounties.ts';
 
 export async function updateProfile(updates: ProfileUpdate): Promise<AuthResult> {
   const currentProfile = getCurrentProfile();
@@ -218,4 +219,30 @@ export async function showUserProfile(userId: string): Promise<void> {
     }
     if (rivalBtn) rivalBtn.style.opacity = '1';
   });
+
+  // F-28: Bounty section — only shown to authenticated users viewing another user's profile
+  const currentUser = getCurrentUser();
+  const currentProfile = getCurrentProfile();
+  if (currentUser && currentProfile && userId !== currentUser.id) {
+    const bountyContainer = document.createElement('div');
+    bountyContainer.id = 'upm-bounty-section';
+    modalInner.appendChild(bountyContainer);
+
+    // Count viewer's open outgoing bounties for slot check
+    // We pass 0 as a starting count and let renderProfileBountySection
+    // fetch the real count via getMyBounties internally
+    const viewerDepth = Number(currentProfile.profile_depth_pct) || 0;
+    const viewerBalance = Number(currentProfile.token_balance) || 0;
+    const slotLimit = bountySlotLimit(viewerDepth);
+
+    if (slotLimit > 0) {
+      void renderProfileBountySection(
+        bountyContainer,
+        userId,
+        viewerDepth,
+        viewerBalance,
+        0, // open count fetched inside renderProfileBountySection via getMyBounties
+      );
+    }
+  }
 }
