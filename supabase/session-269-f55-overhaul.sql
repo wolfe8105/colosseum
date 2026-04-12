@@ -94,6 +94,9 @@ DELETE FROM public.debate_reference_loadouts
   );
 
 ALTER TABLE public.debate_reference_loadouts
+  DROP CONSTRAINT IF EXISTS debate_reference_loadouts_reference_id_fkey;
+
+ALTER TABLE public.debate_reference_loadouts
   ADD CONSTRAINT debate_reference_loadouts_reference_id_fkey
   FOREIGN KEY (reference_id) REFERENCES public.arsenal_references(id);
 
@@ -104,6 +107,7 @@ ALTER TABLE public.debate_reference_loadouts
 
 
 -- A.8 — Reference seconds junction table (replaces reference_verifications)
+DROP TABLE IF EXISTS public.reference_seconds CASCADE;
 CREATE TABLE public.reference_seconds (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reference_id  UUID NOT NULL REFERENCES public.arsenal_references(id) ON DELETE CASCADE,
@@ -122,6 +126,7 @@ CREATE POLICY "Reference seconds inserted by server" ON public.reference_seconds
 
 
 -- A.9 — Reference challenges table (for escrow + ruling workflow)
+DROP TABLE IF EXISTS public.reference_challenges CASCADE;
 CREATE TABLE public.reference_challenges (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reference_id    UUID NOT NULL REFERENCES public.arsenal_references(id),
@@ -153,6 +158,7 @@ CREATE POLICY "Reference challenges updated by server" ON public.reference_chall
 -- S269 patch: FKs to user_modifiers + modifier_effects added to match
 -- F-57 Phase 1 deployment. F-57 CASCADE already dropped the old table;
 -- this recreates it with the correct constraints.
+DROP TABLE IF EXISTS public.reference_sockets CASCADE;
 CREATE TABLE public.reference_sockets (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reference_id    UUID NOT NULL REFERENCES public.arsenal_references(id) ON DELETE CASCADE,
@@ -184,6 +190,7 @@ CREATE POLICY "reference_sockets_server_delete" ON public.reference_sockets
 
 
 -- A.11 — Reference royalty log (B2B granularity — one row per cite)
+DROP TABLE IF EXISTS public.reference_royalty_log CASCADE;
 CREATE TABLE public.reference_royalty_log (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   forger_user_id    UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
