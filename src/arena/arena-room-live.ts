@@ -180,6 +180,28 @@ export function advanceRound(): void {
     setTimeout(() => void endCurrentDebate(), 1500);
     return;
   }
+
+  // F-57 round-end cluster: snapshot scores + apply pressure before advancing.
+  // Fire-and-forget — non-fatal if it fails. ON CONFLICT DO NOTHING on the
+  // server means only the first caller (of potentially two debaters) does work.
+  const completedRound = debate.round;
+  if (!debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && debate.mode !== 'ai') {
+    void safeRpc('close_debate_round', {
+      p_debate_id: debate.id,
+      p_round:     completedRound,
+    }).then(({ data }) => {
+      if (!data) return;
+      const result = data as { pressure_on_a?: boolean; pressure_on_b?: boolean; score_a?: number; score_b?: number };
+      const myRole = debate.role;
+      const pressureHitMe =
+        (myRole === 'a' && result.pressure_on_a) ||
+        (myRole === 'b' && result.pressure_on_b);
+      if (pressureHitMe) {
+        addSystemMessage('🗜️ Pressure — you scored 0 this round: −2 pts');
+      }
+    }).catch(() => { /* non-fatal */ });
+  }
+
   debate.round++;
   nudge('round_end', '\uD83D\uDD14 Round complete. Stay sharp.');
   addSystemMessage(`Round ${debate.round} of ${debate.totalRounds} \u2014 Your turn.`);
