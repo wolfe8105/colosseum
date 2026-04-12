@@ -184,6 +184,12 @@ export async function endCurrentDebate(): Promise<void> {
         debate._stakingResult = stakeResult;
       } catch (err) { console.error('[Arena] settleStakes failed:', err); }
 
+      // F-58: settle sentiment tips (50% refund to winning side)
+      try {
+        const { safeRpc } = await import('../auth.ts');
+        await safeRpc('settle_sentiment_tips', { p_debate_id: debate.id });
+      } catch (err) { console.error('[Arena] settle_sentiment_tips failed:', err); }
+
       // F-18: resolve audition pass/fail if this was an audition debate
       try {
         const { getSupabaseClient } = await import('../auth.ts');

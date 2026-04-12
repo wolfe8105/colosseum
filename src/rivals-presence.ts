@@ -11,7 +11,6 @@
 import { getSupabaseClient, getMyRivals, getCurrentUser, getIsPlaceholderMode } from './auth.ts';
 import { FEATURES } from './config.ts';
 import type { RivalEntry } from './async.ts';
-import type { RivalEntry } from './async.ts';
 
 // ============================================================
 // TYPES
