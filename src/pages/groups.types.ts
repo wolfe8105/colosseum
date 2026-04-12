@@ -46,6 +46,8 @@ export interface GroupDetail extends GroupListItem {
   banner_tier?: 1 | 2 | 3;
   banner_static_url?: string | null;
   banner_animated_url?: string | null;
+  // F-20: Shared fate
+  shared_fate_pct?: number;
 }
 
 /** Member row as returned by get_group_members RPC */

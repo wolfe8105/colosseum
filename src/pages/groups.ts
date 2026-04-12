@@ -179,6 +179,14 @@ async function openGroup(groupId: string) {
       renderGroupBanner(bannerEl, g as GroupDetail, g.my_role === 'leader' || g.my_role === 'co_leader');
     }
 
+    // F-20: Show shared fate bonus
+    const fateEl = document.getElementById('detail-fate');
+    if (fateEl) {
+      const pct = (g as GroupDetail).shared_fate_pct ?? 0;
+      fateEl.textContent = pct > 0 ? `+${pct}%` : '—';
+      fateEl.style.color = pct > 0 ? 'var(--mod-accent)' : '';
+    }
+
     setIsMember(g.is_member);
     setCallerRole(g.my_role ?? null); // F-14: must be set before loadGroupMembers renders action buttons
     currentGroupData = g as GroupDetail;

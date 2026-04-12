@@ -50,6 +50,8 @@ export interface ClaimResult {
   streak_bonus?: number;
   login_streak?: number;
   token_balance?: number;
+  fate_bonus?: number;
+  fate_pct?: number;
 }
 
 export interface MilestoneListItem extends MilestoneDefinition {
@@ -403,6 +405,9 @@ export async function claimDebate(debateId: string): Promise<ClaimResult | null>
   if (result.is_winner) {
     label = 'Debate win!';
     if ((result.upset_bonus ?? 0) > 0) label = 'Upset victory!';
+  }
+  if ((result.fate_bonus ?? 0) > 0) {
+    label += ` (+${result.fate_pct}% Group Fate)`;
   }
   _tokenToast(result.tokens_earned ?? 0, label);
   void claimMilestone('first_debate');
