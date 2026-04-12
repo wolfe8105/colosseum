@@ -1,7 +1,7 @@
 // arena-match.ts — Match found, accept/decline, AI debate start
 // Part of the arena.ts monolith split
 
-import { safeRpc, getCurrentUser } from '../auth.ts';
+import { safeRpc, getCurrentUser, getCurrentProfile } from '../auth.ts';
 import { escapeHTML, DEBATE } from '../config.ts';
 import {
   selectedMode, selectedRanked, selectedRuleset, selectedWantMod, selectedRounds,
@@ -17,6 +17,7 @@ import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TO
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
 import { showPreDebate, enterRoom } from './arena-room-setup.ts';
 import { enterQueue } from './arena-queue.ts';
+import { playIntroMusic } from './arena-sounds.ts';
 
 function clearQueueTimersInline(): void {
   if (queuePollTimer) { clearInterval(queuePollTimer); set_queuePollTimer(null); }
@@ -90,6 +91,10 @@ export function showMatchFound(debateData: CurrentDebate): void {
 
   document.getElementById('mf-accept-btn')?.addEventListener('click', () => onMatchAccept());
   document.getElementById('mf-decline-btn')?.addEventListener('click', () => onMatchDecline());
+
+  // F-21: Play the user's own intro music
+  const profile = getCurrentProfile();
+  playIntroMusic(profile?.intro_music_id ?? 'gladiator', profile?.custom_intro_url);
 
   set_matchAcceptTimer(setInterval(() => {
     set_matchAcceptSeconds(matchAcceptSeconds - 1);

@@ -160,6 +160,8 @@ async function showPreDebateLoadout(debateData: CurrentDebate, container: HTMLEl
 
 export function enterRoom(debate: CurrentDebate): void {
   set_view('room');
+  // F-21: Stop any playing intro music when entering the room
+  import('./arena-sounds.ts').then(({ stopIntroMusic }) => stopIntroMusic()).catch(() => {});
 
   // F-51: Route live mode to the new feed room
   if (debate.mode === 'live') {

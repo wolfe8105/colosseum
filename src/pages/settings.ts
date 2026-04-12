@@ -485,4 +485,24 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }
   }
+
+  // F-21: Intro Music row
+  const introRow  = document.getElementById('intro-music-row');
+  const introDesc = document.getElementById('intro-music-desc');
+  if (introRow) {
+    // Show current track name in the description
+    const profile = getCurrentProfile();
+    const currentId = profile?.intro_music_id ?? 'gladiator';
+    const { INTRO_TRACKS } = await import('../arena/arena-sounds.ts');
+    const currentTrack = INTRO_TRACKS.find(t => t.id === currentId);
+    if (introDesc && currentTrack) {
+      introDesc.textContent = `${currentTrack.icon} ${currentTrack.label}`;
+    } else if (introDesc && currentId === 'custom') {
+      introDesc.textContent = '🎵 Custom';
+    }
+    introRow.addEventListener('click', async () => {
+      const { openIntroMusicPicker } = await import('../intro-music.ts');
+      openIntroMusicPicker();
+    });
+  }
 });

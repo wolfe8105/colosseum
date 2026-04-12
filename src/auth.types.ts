@@ -79,6 +79,8 @@ export interface PublicProfile {
   created_at: string;
   is_private?: boolean;
   verified_gladiator?: boolean;
+  intro_music_id?: string;
+  custom_intro_url?: string | null;
   error?: string;
 }
 
