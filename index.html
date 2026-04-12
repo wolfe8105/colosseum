@@ -232,6 +232,86 @@ html,body{height:100%;overflow:hidden}
 
 /* Feed card styles — for #screen-home */
 #screen-home{padding:12px;gap:12px}
+
+/* ── F-10 Power-Up Shop ───────────────────────────────── */
+.shop-wrap{padding:0 0 80px}
+.shop-loading{padding:40px;text-align:center;font-family:var(--mod-font-ui);font-size:12px;letter-spacing:2px;color:var(--mod-text-muted)}
+.shop-empty{padding:40px;text-align:center;font-family:var(--mod-font-ui);font-size:12px;letter-spacing:2px;color:var(--mod-text-muted)}
+
+/* Product type toggle */
+.shop-toggle-row{display:flex;gap:8px;padding:16px 16px 0}
+.shop-toggle-btn{flex:1;padding:10px 0;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid var(--mod-border-primary);background:transparent;color:var(--mod-text-muted);transition:all 0.15s}
+.shop-toggle-btn.active{background:var(--mod-accent);border-color:var(--mod-accent);color:var(--mod-bg-base)}
+
+/* Token balance pill */
+.shop-balance-pill{display:flex;align-items:center;gap:6px;margin:12px 16px 0;padding:8px 14px;background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);border-radius:var(--mod-radius-pill);width:fit-content}
+.shop-balance-pill__icon{font-size:14px}
+.shop-balance-pill__val{font-family:var(--mod-font-ui);font-size:16px;font-weight:700;color:var(--mod-text-heading)}
+.shop-balance-pill__lbl{font-family:var(--mod-font-ui);font-size:10px;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase}
+
+/* Filter chip rows */
+.shop-filter-row{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.shop-filter-row::-webkit-scrollbar{display:none}
+.shop-chip{flex-shrink:0;padding:5px 12px;border-radius:var(--mod-radius-pill);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--mod-border-primary);background:transparent;color:var(--mod-text-muted);transition:all 0.15s;white-space:nowrap}
+.shop-chip.active{background:var(--mod-accent-muted);border-color:var(--mod-accent-border);color:var(--mod-accent-text)}
+.shop-chip--afford.active{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ade80}
+
+/* Result count */
+.shop-result-count{padding:10px 16px 0;font-family:var(--mod-font-ui);font-size:10px;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase}
+
+/* Card grid */
+.shop-card-grid{display:flex;flex-direction:column;gap:10px;padding:10px 16px 0}
+
+/* ── Modifier/Power-Up effect cards (shared by shop + other surfaces) ── */
+.mod-effect-card{background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:14px;cursor:pointer;transition:border-color 0.15s}
+.mod-effect-card:active{border-color:var(--mod-accent-border)}
+.mod-effect-card--common{border-left:3px solid #6b7280}
+.mod-effect-card--uncommon{border-left:3px solid #22c55e}
+.mod-effect-card--rare{border-left:3px solid #3b82f6}
+.mod-effect-card--legendary{border-left:3px solid #a855f7}
+.mod-effect-card--mythic{border-left:3px solid #f59e0b}
+.mod-effect-card__header{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.mod-effect-card__name{font-family:var(--mod-font-ui);font-size:13px;font-weight:700;letter-spacing:0.5px;color:var(--mod-text-heading);flex:1;min-width:0}
+.mod-effect-card__desc{font-size:13px;color:var(--mod-text-body);line-height:1.5;margin:0 0 8px;text-transform:none}
+.mod-effect-card__meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.mod-effect-card__actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Rarity badges */
+.mod-rarity-badge{padding:2px 7px;border-radius:var(--mod-radius-pill);font-family:var(--mod-font-ui);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.mod-rarity-badge--common{background:rgba(107,114,128,0.2);color:#9ca3af}
+.mod-rarity-badge--uncommon{background:rgba(34,197,94,0.15);color:#4ade80}
+.mod-rarity-badge--rare{background:rgba(59,130,246,0.15);color:#60a5fa}
+.mod-rarity-badge--legendary{background:rgba(168,85,247,0.15);color:#c084fc}
+.mod-rarity-badge--mythic{background:rgba(245,158,11,0.15);color:#fbbf24}
+
+/* Timing badges */
+.mod-timing-badge{padding:2px 7px;border-radius:var(--mod-radius-pill);font-family:var(--mod-font-ui);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.mod-timing-badge--live{background:rgba(239,68,68,0.15);color:#f87171}
+.mod-timing-badge--post{background:rgba(99,102,241,0.15);color:#818cf8}
+
+/* Category tag */
+.mod-category-tag{padding:2px 7px;border-radius:var(--mod-radius-pill);font-family:var(--mod-font-ui);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:var(--mod-accent-muted);color:var(--mod-text-muted);border:1px solid var(--mod-border-primary)}
+
+/* Buy buttons on cards */
+.mod-buy-btn{padding:7px 14px;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;border:1px solid}
+.mod-buy-btn--powerup{background:var(--mod-accent-muted);border-color:var(--mod-accent-border);color:var(--mod-accent-text)}
+.mod-buy-btn--powerup:active{background:var(--mod-accent);color:var(--mod-bg-base)}
+.mod-buy-btn--modifier{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);color:#c084fc}
+.mod-buy-btn--modifier:active{background:rgba(168,85,247,0.25)}
+
+/* ── Bottom sheet additions for F-10 ── */
+.sheet-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+.sheet-desc{font-size:14px;color:var(--mod-text-body);line-height:1.6;text-align:center;margin:0 0 12px;text-transform:none}
+.sheet-socket-note{font-size:12px;color:var(--mod-text-muted);line-height:1.5;text-align:center;margin:0 0 16px;padding:10px;background:var(--mod-bg-inset);border-radius:var(--mod-radius-sm);text-transform:none}
+.sheet-socket-note strong{color:var(--mod-text-heading)}
+.sheet-cost-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--mod-border-primary);border-bottom:1px solid var(--mod-border-primary);margin-bottom:12px}
+.sheet-cost-label{font-family:var(--mod-font-ui);font-size:11px;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase}
+.sheet-cost-val{font-family:var(--mod-font-ui);font-size:16px;font-weight:700;color:var(--mod-text-heading)}
+.sheet-cost-val--broke{color:#f87171}
+.sheet-broke-note{font-size:12px;color:#f87171;text-align:center;margin:0 0 12px;text-transform:none}
+.sheet-confirm-btn{width:100%;padding:14px;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--mod-accent);color:var(--mod-bg-base);border:none;margin-bottom:10px;transition:opacity 0.15s}
+.sheet-confirm-btn.disabled,.sheet-confirm-btn:disabled{opacity:0.4;cursor:not-allowed}
+.sheet-cancel-btn{width:100%;padding:12px;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--mod-text-muted);border:1px solid var(--mod-border-primary)}
 </style>
 <link rel="stylesheet" href="/src/moderator-tokens.css">
 <link rel="stylesheet" href="/src/lcars-shell.css">
@@ -363,6 +443,7 @@ html,body{height:100%;overflow:hidden}
   <div class="arsenal-tabs" id="arsenal-tabs">
     <div class="arsenal-tab active" data-arsenal-tab="my-arsenal">My Arsenal</div>
     <div class="arsenal-tab" data-arsenal-tab="library">Library</div>
+    <div class="arsenal-tab" data-arsenal-tab="shop">Shop</div>
   </div>
   <div id="arsenal-content"></div>
 </div>

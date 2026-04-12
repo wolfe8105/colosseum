@@ -7,9 +7,11 @@
 import { showForgeForm, renderArsenal, renderLibrary, secondReference } from '../reference-arsenal.ts';
 import type { ArsenalReference } from '../reference-arsenal.ts';
 import { state } from './home.state.ts';
+import { loadShopScreen, cleanupShopScreen } from './home.arsenal-shop.ts';
 
 export function loadArsenalScreen(): void {
   if (state.arsenalForgeCleanup) { state.arsenalForgeCleanup(); state.arsenalForgeCleanup = null; }
+  cleanupShopScreen();
   const container = document.getElementById('arsenal-content');
   if (!container) return;
   state.arsenalActiveTab = 'my-arsenal';
@@ -72,5 +74,6 @@ document.querySelectorAll('[data-arsenal-tab]').forEach(tab => {
     if (!container) return;
     if (tabId === 'my-arsenal') { loadMyArsenal(container); }
     else if (tabId === 'library') { loadLibrary(container); }
+    else if (tabId === 'shop') { loadShopScreen(container); }
   });
 });
