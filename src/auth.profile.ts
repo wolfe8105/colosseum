@@ -24,6 +24,7 @@ export async function updateProfile(updates: ProfileUpdate): Promise<AuthResult>
       p_bio: updates.bio !== undefined ? updates.bio : null,
       p_username: updates.username !== undefined ? updates.username : null,
       p_preferred_language: updates.preferred_language !== undefined ? updates.preferred_language : null,
+      p_is_private: updates.is_private !== undefined ? updates.is_private : null,
     });
     if (error) throw error;
 
@@ -106,7 +107,13 @@ export async function showUserProfile(userId: string): Promise<void> {
   const profile = await getPublicProfile(userId);
   if (!profile || profile.error) {
     const container = modal.querySelector('div > div:last-child');
-    if (container) container.innerHTML = '<div style="text-align:center;color:var(--mod-magenta);font-size:14px;">User not found</div>';
+    if (container) {
+      if (profile?.error === 'profile_private') {
+        container.innerHTML = '<div style="text-align:center;padding:16px 0;"><div style="font-size:24px;margin-bottom:8px;">🔒</div><div style="font-family:var(--mod-font-display);font-size:14px;letter-spacing:1px;color:var(--mod-text-secondary);">PRIVATE PROFILE</div><div style="font-size:12px;color:var(--mod-text-muted);margin-top:6px;">This user has made their profile private.</div></div>';
+      } else {
+        container.innerHTML = '<div style="text-align:center;color:var(--mod-magenta);font-size:14px;">User not found</div>';
+      }
+    }
     return;
   }
 

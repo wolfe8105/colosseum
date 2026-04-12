@@ -77,6 +77,7 @@ export interface PublicProfile {
   is_following: boolean;
   subscription_tier: string;
   created_at: string;
+  is_private?: boolean;
   error?: string;
 }
 
@@ -127,6 +128,7 @@ export interface ProfileUpdate {
   bio?: string | null;
   username?: string | null;
   preferred_language?: string | null;
+  is_private?: boolean | null;
 }
 
 /** Auth state change listener */

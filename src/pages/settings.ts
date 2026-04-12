@@ -154,6 +154,11 @@ function loadSettings(): void {
     if (langSelect && typeof p.preferred_language === 'string') {
       langSelect.value = p.preferred_language;
     }
+
+    // is_private from DB overrides localStorage (toggle is inverted: checked = public = not private)
+    if (typeof p.is_private === 'boolean') {
+      setChecked('set-privacy-public', !p.is_private);
+    }
   }
 }
 
@@ -212,6 +217,7 @@ function saveSettings(): void {
       username: settings.username,
       bio: settings.bio,
       preferred_language: settings.preferred_language,
+      is_private: !settings.privacy_public,
     }).catch((err: unknown) => { console.warn('[Settings] updateProfile failed:', err); });
 
     // SESSION 52/64: Save toggles via RPC (not direct upsert)
