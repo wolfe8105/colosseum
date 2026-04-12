@@ -227,6 +227,18 @@ export async function endCurrentDebate(): Promise<void> {
         await _sb.rpc('resolve_audition_from_debate', { p_debate_id: debate.id });
       } catch (err) { console.error('[Arena] resolve_audition_from_debate failed:', err); }
     }
+      // Only for human PvP ranked debates (not AI sparring, not casual)
+      if (debate.mode !== 'ai' && debate.ranked) {
+        try {
+          const userId = getCurrentUser()?.id;
+          const profile = getCurrentProfile();
+          // wins/losses haven't been incremented locally yet — server side has the real count.
+          // We fire unconditionally; convert_referral is idempotent (checks for signed_up row).
+          if (userId && profile) {
+            void safeRpc('convert_referral', { p_invitee_user_id: userId });
+          }
+        } catch (err) { console.warn('[Arena] convert_referral failed (non-fatal):', err); }
+      }
   }
 
   // Ensure scores have display values

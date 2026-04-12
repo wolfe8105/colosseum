@@ -40,6 +40,11 @@ document.getElementById('arsenal-back-btn')?.addEventListener('click', () => {
   navigateTo('profile');
 });
 
+// F-59: Invite back button — same pattern as arsenal
+document.getElementById('invite-back-btn')?.addEventListener('click', () => {
+  navigateTo('profile');
+});
+
 // Auth state → UI
 onChange(updateUIFromProfile);
 

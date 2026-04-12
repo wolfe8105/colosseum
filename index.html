@@ -312,6 +312,47 @@ html,body{height:100%;overflow:hidden}
 .sheet-confirm-btn{width:100%;padding:14px;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:var(--mod-accent);color:var(--mod-bg-base);border:none;margin-bottom:10px;transition:opacity 0.15s}
 .sheet-confirm-btn.disabled,.sheet-confirm-btn:disabled{opacity:0.4;cursor:not-allowed}
 .sheet-cancel-btn{width:100%;padding:12px;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--mod-text-muted);border:1px solid var(--mod-border-primary)}
+
+/* ── F-59 Invite & Rewards screen ────────────────────── */
+#screen-invite{padding-bottom:48px}
+#screen-invite .section-banner{position:relative;padding:16px 16px 12px}
+.invite-wrap{padding:0 0 60px}
+.invite-loading{padding:40px;text-align:center;font-family:var(--mod-font-ui);font-size:12px;letter-spacing:2px;color:var(--mod-text-muted)}
+.invite-empty-activity{padding:16px 0;font-size:13px;color:var(--mod-text-muted);text-transform:none}
+.invite-progress-band{margin:16px;padding:16px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md)}
+.invite-progress-headline{font-family:var(--mod-font-ui);font-size:13px;font-weight:700;color:var(--mod-text-heading);margin-bottom:10px;letter-spacing:0.5px}
+.invite-progress-bar{height:6px;background:var(--mod-bg-inset);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.invite-progress-fill{height:100%;background:var(--mod-accent);border-radius:3px;transition:width 0.4s ease}
+.invite-progress-stats{display:flex;gap:12px;font-family:var(--mod-font-ui);font-size:10px;letter-spacing:1.5px;color:var(--mod-text-muted);text-transform:uppercase}
+.invite-section{padding:0 16px 4px}
+.invite-section-title{font-family:var(--mod-font-ui);font-size:10px;font-weight:700;letter-spacing:3px;color:var(--mod-text-muted);text-transform:uppercase;margin:16px 0 10px}
+.invite-link-box{display:flex;gap:8px;align-items:center;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-sm);padding:10px 12px;margin-bottom:10px}
+.invite-link-text{flex:1;font-size:12px;color:var(--mod-accent-text);word-break:break-all;text-transform:none}
+.invite-copy-btn{flex-shrink:0;padding:6px 14px;background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-accent-text);cursor:pointer;white-space:nowrap}
+.invite-share-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.invite-share-btn{padding:8px 16px;background:transparent;border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--mod-text-muted);cursor:pointer;text-decoration:none;text-transform:uppercase}
+.invite-reward-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--mod-border-primary)}
+.invite-reward-info{display:flex;flex-direction:column;gap:3px}
+.invite-reward-type{font-family:var(--mod-font-ui);font-size:13px;font-weight:700;color:var(--mod-text-heading)}
+.invite-reward-milestone,.invite-reward-date{font-size:11px;color:var(--mod-text-muted)}
+.invite-claim-btn{padding:8px 16px;background:var(--mod-accent);border:none;border-radius:var(--mod-radius-sm);font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--mod-bg-base);cursor:pointer;white-space:nowrap;animation:invite-pulse 2s infinite}
+.invite-claim-btn--review{background:var(--mod-bg-card);color:var(--mod-text-muted);border:1px solid var(--mod-border-primary);animation:none}
+@keyframes invite-pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+.invite-activity-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--mod-border-primary)}
+.invite-activity-msg{font-size:13px;color:var(--mod-text-body);text-transform:none;flex:1}
+.invite-activity-date{font-size:11px;color:var(--mod-text-muted);white-space:nowrap;flex-shrink:0}
+.invite-faq{margin:20px 16px 0;border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-sm)}
+.invite-faq-summary{padding:12px 14px;font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--mod-text-muted);cursor:pointer;list-style:none}
+.invite-faq-summary::marker,.invite-faq-summary::-webkit-details-marker{display:none}
+.invite-faq-body{padding:0 14px 14px;font-size:13px;color:var(--mod-text-body);line-height:1.6;text-transform:none}
+.invite-faq-body p{margin:0 0 10px}
+.invite-faq-body strong{color:var(--mod-text-heading)}
+.invite-ladder{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.invite-ladder-row{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.invite-ladder-milestone{color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-weight:700;letter-spacing:0.5px;white-space:nowrap}
+.invite-ladder-reward{color:var(--mod-text-heading)}
+.invite-claim-grid{display:flex;flex-direction:column;gap:10px;margin-top:8px;max-height:50vh;overflow-y:auto}
+
 </style>
 <link rel="stylesheet" href="/src/moderator-tokens.css">
 <link rel="stylesheet" href="/src/lcars-shell.css">
@@ -393,7 +434,7 @@ html,body{height:100%;overflow:hidden}
     <div class="profile-link" data-action="arsenal"><span class="link-label">⚔️ Reference Arsenal</span><span class="link-arrow">→</span></div>
     <a href="moderator-cosmetics.html" class="profile-link"><span class="link-label">🛡️ Armory</span><span class="link-arrow">→</span></a>
     <div class="profile-link" data-action="share-profile"><span class="link-label">🔗 Share Profile</span><span class="link-arrow">→</span></div>
-    <div class="profile-link" data-action="invite-friend"><span class="link-label">📨 Invite a Friend</span><span class="link-arrow">→</span></div>
+    <div class="profile-link" data-action="invite-rewards"><span class="link-label">📨 Invite a Friend</span><span class="link-arrow">→</span></div>
   </div>
 </div>
 
@@ -432,6 +473,17 @@ html,body{height:100%;overflow:hidden}
 
 <!-- Leaderboard -->
 <div class="screen" id="screen-leaderboard"></div>
+
+<!-- Invite & Rewards -->
+<div class="screen" id="screen-invite">
+  <div class="section-banner">
+    <button class="arsenal-back-btn" id="invite-back-btn">← Back</button>
+    <h2>📨 INVITE & REWARDS</h2>
+    <div class="subtitle">Bring your friends. Earn legendary gear.</div>
+  </div>
+  <div id="invite-content"></div>
+</div>
+
 
 <!-- Reference Arsenal -->
 <div class="screen" id="screen-arsenal">

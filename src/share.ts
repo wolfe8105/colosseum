@@ -59,10 +59,24 @@ function getBaseUrl(): string {
   return APP.baseUrl || window.location.origin;
 }
 
-function generateRefCode(userId: string): string {
-  const base = (userId || 'demo').slice(0, 8);
-  const rand = Math.random().toString(36).slice(2, 6);
-  return `${base}-${rand}`;
+// F-59: stable ref code fetched from server once per session, cached in memory
+let _cachedRefCode: string | null = null;
+let _cachedInviteUrl: string | null = null;
+
+async function getStableInviteUrl(): Promise<string> {
+  if (_cachedInviteUrl) return _cachedInviteUrl;
+  try {
+    const { safeRpc } = await import('./auth.ts');
+    const result = await safeRpc('get_my_invite_link', {});
+    const data = result.data as { url?: string; ref_code?: string } | null;
+    if (data?.url) {
+      _cachedInviteUrl = data.url;
+      _cachedRefCode = data.ref_code ?? null;
+      return _cachedInviteUrl;
+    }
+  } catch { /* fall through */ }
+  // Fallback: unauthenticated or onboarding incomplete
+  return `${getBaseUrl()}/moderator-plinko.html`;
 }
 
 
@@ -127,11 +141,10 @@ export function shareProfile({
 }
 
 export function inviteFriend(): void {
-  const userId = getCurrentUser()?.id ?? 'demo';
-  const refCode = generateRefCode(userId);
-  const url = `${getBaseUrl()}/join?ref=${encodeURIComponent(refCode)}`;
-  const text = `Think you can hold your own? Join me on The Moderator.\n\n${url}`;
-  void share({ title: 'Join The Moderator', text, url });
+  void getStableInviteUrl().then(url => {
+    const text = `Think you can hold your own? Join me on The Moderator.\n\n${url}`;
+    void share({ title: 'Join The Moderator', text, url });
+  });
 }
 
 export function shareTake(takeId: string, takeText: string): void {
@@ -220,6 +233,17 @@ export function handleDeepLink(): void {
 
   if (ref) {
     localStorage.setItem('colosseum_referrer', ref);
+    // F-59: If user is already authenticated (e.g. OAuth flow), attribute immediately
+    const user = getCurrentUser();
+    if (user) {
+      void import('./auth.ts').then(({ safeRpc }) => {
+        const deviceId = localStorage.getItem('mod_visitor_id') ?? undefined;
+        void safeRpc('attribute_signup', {
+          p_ref_code: ref,
+          ...(deviceId ? { p_device_id: deviceId } : {}),
+        });
+      });
+    }
   }
 
   if (debate) {

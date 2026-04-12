@@ -9,10 +9,11 @@ import { getCurrentProfile, getCurrentUser } from '../auth.ts';
 import { ModeratorAsync } from '../async.ts';
 import { renderFeed } from './home.feed.ts';
 import { loadArsenalScreen } from './home.arsenal.ts';
+import { loadInviteScreen, cleanupInviteScreen } from './home.invite.ts';
 import { loadFollowCounts } from './home.profile.ts';
 import { state } from './home.state.ts';
 
-const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal'];
+const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite'];
 
 export function navigateTo(screenId: string) {
   if (!VALID_SCREENS.includes(screenId)) screenId = 'home';
@@ -38,6 +39,10 @@ export function navigateTo(screenId: string) {
   if (screenId === 'arsenal') {
     loadArsenalScreen();
   }
+  if (screenId === 'invite') {
+    const container = document.getElementById('invite-content');
+    if (container) loadInviteScreen(container);
+  }
 }
 
 // Bottom nav wiring
@@ -58,8 +63,8 @@ document.addEventListener('click', (e: Event) => {
     const p = getCurrentProfile();
     const u = getCurrentUser();
     shareProfile({ userId: u?.id, username: p?.username, displayName: p?.display_name, elo: p?.elo_rating, wins: p?.wins, losses: p?.losses, streak: p?.current_streak });
-  } else if (action === 'invite-friend') {
-    inviteFriend();
+  } else if (action === 'invite-rewards') {
+    navigateTo('invite');
   } else if (action === 'subscribe') {
     const tier = el.dataset.tier;
     if (tier) subscribe(tier);
