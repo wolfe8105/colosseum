@@ -273,7 +273,8 @@ export type FeedEventType =
   | 'reference_challenge'
   | 'mod_ruling'
   | 'power_up'
-  | 'sentiment_vote'
+  | 'sentiment_vote'   // legacy rows — keep for historical replay compat
+  | 'sentiment_tip'   // F-58: paid tip (replaces free vote)
   | 'disconnect';
 
 export interface FeedEvent {

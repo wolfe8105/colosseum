@@ -20,7 +20,7 @@ import {
 import {
   phase, round, timeLeft,
   scoreUsed, budgetRound,
-  sentimentA, sentimentB, votedRounds,
+  sentimentA, sentimentB,
   pendingSentimentA, pendingSentimentB,
   set_budgetRound,
   set_sentimentA, set_sentimentB,
@@ -81,14 +81,11 @@ export function resetBudget(newRound: number): void {
   updateBudgetDisplay();
 }
 
-export function setSpectatorVotingEnabled(enabled: boolean): void {
-  const btnA = document.getElementById('feed-vote-a') as HTMLButtonElement | null;
-  const btnB = document.getElementById('feed-vote-b') as HTMLButtonElement | null;
-  const statusEl = document.getElementById('feed-vote-status');
-  if (btnA) btnA.disabled = !enabled;
-  if (btnB) btnB.disabled = !enabled;
-  if (statusEl && enabled) statusEl.textContent = 'Cast your vote!';
-  if (statusEl && !enabled && !votedRounds.has(round)) statusEl.textContent = 'Voting opens during breaks';
+export function setSpectatorVotingEnabled(_enabled: boolean): void {
+  // F-58: Tip strip is always active during live debates.
+  // The tier gate (Unranked check in cast_sentiment_tip) is the only lock —
+  // not the round timer. Called by arena-feed-machine at ad-break start/end;
+  // intentionally leave tip buttons untouched here.
 }
 
 export function updateSentimentGauge(): void {

@@ -1,7 +1,7 @@
 /**
  * arena-feed-wiring.ts — DOM event listener wiring for the feed room.
  *
- * wireDebaterControls, wireSpectatorVoteButtons, wireModControls,
+ * wireDebaterControls, wireSpectatorTipButtons, wireModControls,
  * submitDebaterMessage, submitModComment, handlePinClick, renderControls.
  *
  * renderControls lives here (not in arena-feed-ui.ts) because it calls
@@ -27,12 +27,14 @@ import {
 import {
   round,
   scoreUsed, pinnedEventIds,
-  votedRounds,
+  pendingSentimentA, pendingSentimentB,
+  set_pendingSentimentA, set_pendingSentimentB,
 } from './arena-feed-state.ts';
 import { appendFeedEvent, writeFeedEvent } from './arena-feed-events.ts';
 import {
   setDebaterInputEnabled, updateBudgetDisplay,
   updateCiteButtonState, updateChallengeButtonState,
+  applySentimentUpdate,
 } from './arena-feed-ui.ts';
 import { clearFeedTimer, finishCurrentTurn, startFinalAdBreak, pauseFeed } from './arena-feed-machine.ts';
 import { showCiteDropdown, showChallengeDropdown, showReferencePopup } from './arena-feed-references.ts';
@@ -70,20 +72,30 @@ export function renderControls(debate: CurrentDebate, isModView: boolean): void 
     `;
     wireModControls();
   } else if (debate.spectatorView) {
-    // Spectator controls: vote buttons only
+    // Spectator controls: sentiment tip strip (F-58)
     const aName = debate.debaterAName || 'Side A';
     const bName = debate.debaterBName || 'Side B';
     controlsEl.innerHTML = `
       <div class="feed-spectator-controls">
-        <div class="feed-vote-label">WHO'S WINNING?</div>
-        <div class="feed-vote-row">
-          <button class="feed-vote-btn feed-vote-a" id="feed-vote-a" disabled>${escapeHTML(aName)}</button>
-          <button class="feed-vote-btn feed-vote-b" id="feed-vote-b" disabled>${escapeHTML(bName)}</button>
+        <div class="feed-tip-label" id="feed-tip-label">TIP THE DEBATE</div>
+        <div class="feed-tip-row feed-tip-row-a">
+          <span class="feed-tip-side-label feed-tip-label-a">${escapeHTML(aName)}</span>
+          <button class="feed-tip-btn feed-tip-btn-a" data-side="a" data-amount="2"  disabled>2</button>
+          <button class="feed-tip-btn feed-tip-btn-a" data-side="a" data-amount="3"  disabled>3</button>
+          <button class="feed-tip-btn feed-tip-btn-a" data-side="a" data-amount="5"  disabled>5</button>
+          <button class="feed-tip-btn feed-tip-btn-a" data-side="a" data-amount="10" disabled>10</button>
         </div>
-        <div class="feed-vote-status" id="feed-vote-status">Voting opens during breaks</div>
+        <div class="feed-tip-row feed-tip-row-b">
+          <span class="feed-tip-side-label feed-tip-label-b">${escapeHTML(bName)}</span>
+          <button class="feed-tip-btn feed-tip-btn-b" data-side="b" data-amount="2"  disabled>2</button>
+          <button class="feed-tip-btn feed-tip-btn-b" data-side="b" data-amount="3"  disabled>3</button>
+          <button class="feed-tip-btn feed-tip-btn-b" data-side="b" data-amount="5"  disabled>5</button>
+          <button class="feed-tip-btn feed-tip-btn-b" data-side="b" data-amount="10" disabled>10</button>
+        </div>
+        <div class="feed-tip-status" id="feed-tip-status">Loading...</div>
       </div>
     `;
-    wireSpectatorVoteButtons(debate);
+    void wireSpectatorTipButtons(debate);
   } else {
     // Debater controls: text input + finish round + cite/challenge + concede
     controlsEl.innerHTML = `
@@ -163,31 +175,102 @@ export function wireDebaterControls(debate: CurrentDebate): void {
   });
 }
 
-export function wireSpectatorVoteButtons(debate: CurrentDebate): void {
-  const btnA = document.getElementById('feed-vote-a') as HTMLButtonElement | null;
-  const btnB = document.getElementById('feed-vote-b') as HTMLButtonElement | null;
+/** F-58: Sentiment tip strip wiring. Checks watch tier on mount, enables/disables accordingly. */
+export async function wireSpectatorTipButtons(debate: CurrentDebate): Promise<void> {
+  const statusEl = document.getElementById('feed-tip-status');
+  const tipBtns = Array.from(document.querySelectorAll('.feed-tip-btn')) as HTMLButtonElement[];
 
-  const handleVote = async (side: 'a' | 'b') => {
-    if (btnA) btnA.disabled = true;
-    if (btnB) btnB.disabled = true;
-    votedRounds.add(round);
-    const statusEl = document.getElementById('feed-vote-status');
-    if (statusEl) statusEl.textContent = 'Vote cast \u2713';
-
-    try {
-      await safeRpc('cast_sentiment_vote', {
-        p_debate_id: debate.id,
-        p_side: side,
-        p_round: round,
-      });
-    } catch (e) {
-      console.warn('[FeedRoom] cast_sentiment_vote failed:', e);
-      showToast('Vote failed', 'error');
+  // Fetch watch tier
+  let tier = 'Unranked';
+  try {
+    const { data, error } = await safeRpc('get_user_watch_tier', {});
+    if (!error && data && Array.isArray(data) && data[0]) {
+      tier = (data[0] as { tier: string }).tier;
+    } else if (!error && data && typeof data === 'object' && 'tier' in data) {
+      tier = (data as { tier: string }).tier;
     }
-  };
+  } catch (e) {
+    console.warn('[FeedRoom] get_user_watch_tier failed:', e);
+  }
 
-  btnA?.addEventListener('click', () => void handleVote('a'));
-  btnB?.addEventListener('click', () => void handleVote('b'));
+  if (tier === 'Unranked') {
+    if (statusEl) statusEl.textContent = 'Watch a full debate to unlock tipping.';
+    // Buttons stay disabled
+    return;
+  }
+
+  // Enable tip buttons for non-Unranked watchers
+  tipBtns.forEach(btn => { btn.disabled = false; });
+  if (statusEl) statusEl.textContent = tier + ' · Tap to tip';
+
+  // Wire each button
+  tipBtns.forEach(btn => {
+    btn.addEventListener('click', () => void handleTip(btn, debate, statusEl));
+  });
+}
+
+async function handleTip(
+  btn: HTMLButtonElement,
+  debate: CurrentDebate,
+  statusEl: HTMLElement | null,
+): Promise<void> {
+  const side = btn.dataset.side as 'a' | 'b';
+  const amount = Number(btn.dataset.amount);
+  if (!side || !amount) return;
+
+  // Disable all buttons while in-flight to prevent double-tap
+  const allBtns = Array.from(document.querySelectorAll('.feed-tip-btn')) as HTMLButtonElement[];
+  allBtns.forEach(b => { b.disabled = true; });
+
+  try {
+    const { data, error } = await safeRpc('cast_sentiment_tip', {
+      p_debate_id: debate.id,
+      p_side: side,
+      p_amount: amount,
+    });
+
+    if (error || !data) {
+      console.warn('[FeedRoom] cast_sentiment_tip failed:', error);
+      showToast('Tip failed', 'error');
+      allBtns.forEach(b => { b.disabled = false; });
+      return;
+    }
+
+    const result = data as { success?: boolean; error?: string; new_total_a?: number; new_total_b?: number; new_balance?: number };
+
+    if (result.error) {
+      if (result.error === 'insufficient_tokens') {
+        showToast('Not enough tokens', 'error');
+      } else if (result.error === 'unranked_blocked') {
+        showToast('Watch a full debate to unlock tipping', 'error');
+      } else if (result.error === 'debate_not_live') {
+        showToast('Debate is no longer live', 'error');
+      } else {
+        showToast('Tip failed', 'error');
+      }
+      allBtns.forEach(b => { b.disabled = false; });
+      return;
+    }
+
+    // Success — update gauge immediately via pending state
+    if (side === 'a') set_pendingSentimentA(pendingSentimentA + amount);
+    else              set_pendingSentimentB(pendingSentimentB + amount);
+    applySentimentUpdate();
+
+    if (statusEl) statusEl.textContent = `+${amount} → ${side.toUpperCase()} ✓`;
+    showToast(`+${amount} tokens tipped`, 'success');
+
+    // Re-enable after brief visual feedback
+    setTimeout(() => {
+      allBtns.forEach(b => { b.disabled = false; });
+      if (statusEl) statusEl.textContent = 'Tap to tip';
+    }, 800);
+
+  } catch (e) {
+    console.warn('[FeedRoom] cast_sentiment_tip error:', e);
+    showToast('Tip failed', 'error');
+    allBtns.forEach(b => { b.disabled = false; });
+  }
 }
 
 export function wireModControls(): void {

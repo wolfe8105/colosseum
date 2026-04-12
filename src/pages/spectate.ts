@@ -154,6 +154,9 @@ async function loadDebate(): Promise<void> {
     // Bump spectator count (fire-and-forget)
     safeRpc('bump_spectator_count', { p_debate_id: state.debateId }).catch((e) => console.warn('[Spectate] bump_spectator_count failed:', e));
 
+    // F-58: Log watch for sentiment tip tier progression (fire-and-forget, excludes guests via RPC guard)
+    safeRpc('log_debate_watch', { p_debate_id: state.debateId }).catch((e) => console.warn('[Spectate] log_debate_watch failed:', e));
+
     // Log view event (non-blocking)
     safeRpc('log_event', { p_event_type: 'spectate_view', p_metadata: { debate_id: state.debateId, topic: debate.topic || null } }).catch((e) => console.warn('[Spectate] log_event failed:', e));
 

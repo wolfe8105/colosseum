@@ -217,8 +217,15 @@ export function appendFeedEvent(ev: FeedEvent): void {
       el.textContent = ev.content;
       break;
     }
+    case 'sentiment_tip': {
+      // F-58: paid tip — accumulate token amount (not flat +1) for gauge weight
+      const tipAmount = Number(ev.metadata?.amount ?? 1);
+      if (ev.side === 'a') set_pendingSentimentA(pendingSentimentA + tipAmount);
+      if (ev.side === 'b') set_pendingSentimentB(pendingSentimentB + tipAmount);
+      return; // Exit early — do NOT append to DOM
+    }
     case 'sentiment_vote': {
-      // Silent — track counts but don't render in feed
+      // Legacy rows from before F-58 — flat +1 for historical replay compat
       if (ev.side === 'a') set_pendingSentimentA(pendingSentimentA + 1);
       if (ev.side === 'b') set_pendingSentimentB(pendingSentimentB + 1);
       return; // Exit early — do NOT append to DOM
