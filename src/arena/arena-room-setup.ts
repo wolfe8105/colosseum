@@ -175,6 +175,14 @@ export function enterRoom(debate: CurrentDebate): void {
     return;
   }
 
+  // F-03: Play entrance sequence, then render the room
+  import('./arena-entrance.ts')
+    .then(({ playEntranceSequence }) => playEntranceSequence(debate))
+    .catch(() => {})
+    .finally(() => _renderRoom(debate));
+}
+
+function _renderRoom(debate: CurrentDebate): void {
   pushArenaState('room');
   set_currentDebate(debate);
   if (screenEl) screenEl.innerHTML = '';
