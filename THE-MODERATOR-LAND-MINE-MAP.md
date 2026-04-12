@@ -2843,3 +2843,32 @@ RELATED: LM-219 (F-23 silent-block realtime is the DM surface;
 
 SESSION: 253 (F-24 Search walk-close).
 ```
+
+---
+
+## LM-224: `src/settings.ts` is a stale root-level duplicate — do NOT decompose
+```
+DECISION (Session 254 / TypeScript Refactor): src/settings.ts at the repo
+  root is a dead duplicate of src/pages/settings.ts. The pages version
+  is the live one. The root-level copy has zero references — confirmed via
+  grep and Knip. It was deleted as part of the source decomposition
+  housekeeping commit.
+
+BITES YOU WHEN:
+  A future session discovers src/settings.ts in git history or a stale
+  branch and assumes it is canonical. It is not. Any settings logic lives
+  exclusively in src/pages/settings.ts and its decomposed sub-modules
+  (after Session 254 refactor).
+
+SYMPTOM: Confusion about which settings file is authoritative, or an
+  attempt to decompose the root-level copy as if it were live code.
+
+FIX: Do nothing — the file is deleted. If it reappears (e.g., bad merge),
+  delete it again. src/pages/settings.ts is the only settings source of
+  truth.
+
+RELATED: LM-SETTINGS-DUP-001 (original handoff ID). Session 254 TypeScript
+  refactor — source decomposition complete.
+
+SESSION: 254 (TypeScript Refactor — Track A complete).
+```
