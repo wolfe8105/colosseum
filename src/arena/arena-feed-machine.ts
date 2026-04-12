@@ -323,7 +323,7 @@ function showAdOverlay(durationSec: number): HTMLElement | null {
         <!-- Replace PUBLISHER_ID with ca-pub-XXXXXXXXXXXXXXXX and AD_UNIT_ID with your slot ID -->
         <ins class="adsbygoogle feed-ad-unit"
              style="display:block"
-             data-ad-client="ca-pub-REPLACE_WITH_PUBLISHER_ID"
+             data-ad-client="ca-pub-1800696416995461"
              data-ad-slot="REPLACE_WITH_AD_UNIT_ID"
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>
