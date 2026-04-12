@@ -381,13 +381,13 @@ Previous architecture (preserved for reference):
 - **Broadcast private channels require setAuth() + { config: { private: true } }** — see LM-193.
 - **Supabase Dashboard → Realtime → Settings: "Allow public access" must be DISABLED** for private channels to work.
 
-## F-51 Live Moderated Debate Feed — Phase 1 + Phase 2 (Sessions 234-235)
-- **Phase 1 (S234):** Core feed rendering, turn-taking UI, speech event flow. Code complete, untested.
+## F-51 Live Moderated Debate Feed — Phase 1 + Phase 2 (Sessions 234-235, tested S261)
+- **Phase 1 (S234):** Core feed rendering, turn-taking UI, speech event flow.
 - **Phase 2 (S235):** Pin fallback (`pin_feed_event` graceful fallback if pinning fails). Fireworks animation on `point_award` feed events. Per-value scoring budget enforcement.
+- **Both phases tested S261 — 20/20 passing.** Test file: `tests/f51-live-debate-feed.test.ts`.
 - Per-value scoring budget: hardcoded CASE in `score_debate_comment` — 5pts=max 2, 4pts=max 3, 3pts=max 4, 2pts=max 5, 1pt=max 6 per round. 20 total actions, 50 max points per round. NOT enforced via `scoring_budget_per_round` column (column unused, see Session 178 section).
 - SQL: `session-235-scoring-budget.sql` run in Supabase.
 - **Moderator token payout (designed, not built):** ~7 tokens target. Split payout — debater half (0-4 tokens) instant, spectator half (0-4 tokens) delayed 48h. Zero spectators = spectator half stays at 0, 48-hour window for late scoring. Separate RPC needed (not part of F-51 phases).
-- Both phases untested — blocked on 3 test accounts.
 
 ## F-23 / F-24 / F-32 Status (Session 253 Mother-Doc Walk-Close)
 - **F-23 DM/Chat — FULLY SPECCED S253.** Standalone build, no dependency on F-57/F-58/F-59. 5 tables (`dm_eligibility`, `dm_threads`, `dm_messages`, `dm_blocks`, `dm_reports`) + 9 RPCs. Silent DM-scoped block, single user-scoped realtime channel, 1:1 text only, rate limits 30 msg/min + 5 new threads/24h. One-CC-session job. Build brief required before CC handoff. Full spec in pending spec file. Land Mines: LM-217/218/219 (LM-219 silent-block realtime leak is CRITICAL — non-negotiable build-time test).
