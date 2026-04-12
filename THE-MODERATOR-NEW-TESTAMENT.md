@@ -1,5 +1,5 @@
 # THE MODERATOR — NEW TESTAMENT (Project Knowledge Edition)
-### Last Updated: Session 266 (April 12, 2026)
+### Last Updated: Session 267 (April 12, 2026)
 
 > **This is the condensed NT for Claude Project Knowledge.** It loads automatically every session.
 > Build logs live in the Old Testament. Session handoffs go in the chat message, not this file.
@@ -23,7 +23,7 @@
 | Session history, past decisions, how we got here | **THE-MODERATOR-OLD-TESTAMENT.md** — repo only, not in project knowledge. Sessions 1-228 |
 | Live debate feed feature (unbuilt) | **LIVE-DEBATE-FEED-SPEC.md** — repo only. 77 design questions answered. Referenced as F-51 in Punch List. Updated S246 for inline point-award format + modifier math + F-57 pointer |
 | Unbuilt feature specs walked but not yet in code | **THE-MODERATOR-FEATURE-SPECS-PENDING.md** — repo. Paragraph-length locked specs for F-04, F-05, F-07, F-08, F-10, F-27, F-28, F-33, F-45, F-53, F-54, F-55, F-57. Each entry is one locked paragraph. This is where walked-but-unbuilt work lives. |
-| Modifier / Power-Up system (scoring effects) | **F-57 in THE-MODERATOR-FEATURE-SPECS-PENDING.md** — 59-effect system (30 end-of-debate + 29 in-debate), both purchasable as permanent modifiers (socketed into forged references, Common=1 socket … Mythic=5 sockets) or one-shot power-ups (cap 3 per debate). Full pricing tables, stacking math, archive storage. Originated S182, propagated S246. Supersedes the deleted `TOKEN-STAKING-POWERUP-PLAN.docx` and F-51 §9's old 3-power-up list. |
+| Modifier / Power-Up system (scoring effects) | **F-57 — SHIPPED S267 (phases 1-4).** 6 new tables, 12 new RPCs, `src/modifiers.ts`. 44 of 59 effects live. 15 effects deferred (architectural blockers). See F-57 critical notes section below. |
 | QA / manual regression testing | **THE-MODERATOR-TEST-WALKTHROUGH.md** — repo only. Stale, needs full rewrite |
 
 ---
@@ -124,7 +124,7 @@
 
 ## Infrastructure Summary
 
-Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, ~212 server functions (186 S250 re-export + RPCs through S266 — re-export stale, do not audit without re-exporting first), sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Claude/Anthropic via ai-sparring Edge Function — two modes: debate response + 4-criteria scoring). AI Moderator live (Claude/Anthropic via ai-moderator Edge Function). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live — wager picker (1-500 tokens), refund-on-update with net charge (S227). Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7, 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210). Live debate feed schema complete (Session 178). app_config table: economy constants — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209). Cloudflare TURN server live (Session 221) — turn-credentials Edge Function fetches short-lived creds, client falls back to STUN. WebRTC ICE restart + 30s setup timeout (Sessions 221-222). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED then SCRATCHED (Sessions 195 / 248) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle, "float in the ether." **Auto-debate consumer-side system RETIRED S249 — `auto_debates` / `auto_debate_votes` / `auto_debate_stakes` tables dropped, 6 auto-debate RPCs dropped, `moderator-auto-debate.html` + `src/auto-debate.ts` deleted. See LM-211.** Security audit FULLY CLOSED (80 bugs across 18 files, Sessions 1-18 of audit). Full app recon complete (Sessions 212-214). All critical/high/medium/low bugs closed or dormant. RPC security audit complete (Sessions 226): 9 RPC hardening fixes deployed (token_balance CHECK, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). Group RPC audit complete (Session 226). TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files (inert, S248 scratch). Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205). All inline onclick handlers removed (Session 224) — CSP script-src unsafe-inline removable. Session 206: `/go` guest AI Sparring page live. 5 moderator discovery touchpoints deployed (F-50). `supabase-deployed-functions-export.sql` re-exported S250 (186 functions) — LM-210 resolved, file was source of truth at S250 but is now STALE (~212 live functions as of S266). Session 240: Language preference pipeline complete (2 columns, 1 BEFORE INSERT trigger, 11 RPCs updated, 6 TS interfaces, settings UI with 24-language dropdown, Deepgram wire). Spectator entry wiring complete (lobby direct + ?spectate= URL param + live redirect from old spectate page). Arena module split into 31 sub-files under src/arena/ with barrel re-export. **Session 254: Full source decomposition complete** — 14 large files split into domain sub-modules across src/ and src/pages/. Madge + Knip installed, 3-gate verification established. arena-lobby.ts converted to async-only dynamic chunk (Track B — Vite warning eliminated, main.js ~370KB → 362KB, circular deps 38→37). SQL reorganized into 10 domain files under supabase/functions/ (Track C). **Session 265: F-16/17/18 shipped** — Group Settings, Entry Requirements, Audition System. 1 new table (`group_auditions`), 3 new columns on `groups`, 1 new column on `arena_debates`, 9 new RPCs, 2 client files, 4 edited files. **Session 266: F-58 Sentiment Tipping + F-25 Rival Online Alerts both shipped.** F-58: `debate_watches` + `sentiment_tips` tables, 4 new RPCs, `settle_sentiment_tips` wired in `arena-room-end.ts`, dm_eligibility triggers on both new tables (closes F-23 eligibility gap from S262), tip strip CSS in `arena-css.ts`. F-25: `rivals-presence.ts` was already feature-complete — shipped by adding RLS policies for presence channel (`authenticated_presence_select` + `authenticated_presence_insert` on `realtime.messages` for extension='presence', topic='global-online') and cleaning a duplicate import.
+Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, ~212 server functions (186 S250 re-export + RPCs through S266 — re-export stale, do not audit without re-exporting first), sanitization, rate limits, 9 analytics views, 3 security views. Token system complete. Token staking + power-up systems complete (5 tables, 7 RPCs, tested end-to-end). Arena fully built (4 modes). AI Sparring live (Claude/Anthropic via ai-sparring Edge Function — two modes: debate response + 4-criteria scoring). AI Moderator live (Claude/Anthropic via ai-moderator Edge Function). Moderator UI built. Reference Arsenal live. Groups + GvG live. Predictions live — wager picker (1-500 tokens), refund-on-update with net charge (S227). Waiting room (F-01), match accept/decline (F-02), private lobby (F-46) all complete. F-47 Moderator Marketplace: fully complete — SQL Phases 1-3, Client Steps 1-7, 8 test cases passing. F-48 Mod-Initiated Debate: fully complete (Session 210). Live debate feed schema complete (Session 178). app_config table: economy constants — editable without deploy (Session 195). Amplified/Unplugged ruleset system complete (Session 209). Cloudflare TURN server live (Session 221) — turn-credentials Edge Function fetches short-lived creds, client falls back to STUN. WebRTC ICE restart + 30s setup timeout (Sessions 221-222). Vercel (themoderator.app): auto-deploys from GitHub, Vite build live (Session 130). BASE_URL env var set. Bot army QUARANTINED then SCRATCHED (Sessions 195 / 248) — VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) remains up, PM2 idle, "float in the ether." **Auto-debate consumer-side system RETIRED S249 — `auto_debates` / `auto_debate_votes` / `auto_debate_stakes` tables dropped, 6 auto-debate RPCs dropped, `moderator-auto-debate.html` + `src/auto-debate.ts` deleted. See LM-211.** Security audit FULLY CLOSED (80 bugs across 18 files, Sessions 1-18 of audit). Full app recon complete (Sessions 212-214). All critical/high/medium/low bugs closed or dormant. RPC security audit complete (Sessions 226): 9 RPC hardening fixes deployed (token_balance CHECK, race condition FOR UPDATE locks, auth checks on debit_tokens/finalize_debate, duplicate claim prevention). Group RPC audit complete (Session 226). TypeScript migration complete: 30+ .ts files in src/, 19 bot army .ts files (inert, S248 scratch). Vitest: 113 tests passing. Zero legacy script tags. Design token migration complete (Session 205). All inline onclick handlers removed (Session 224) — CSP script-src unsafe-inline removable. Session 206: `/go` guest AI Sparring page live. 5 moderator discovery touchpoints deployed (F-50). `supabase-deployed-functions-export.sql` re-exported S250 (186 functions) — LM-210 resolved, file was source of truth at S250 but is now STALE (~212 live functions as of S266). Session 240: Language preference pipeline complete (2 columns, 1 BEFORE INSERT trigger, 11 RPCs updated, 6 TS interfaces, settings UI with 24-language dropdown, Deepgram wire). Spectator entry wiring complete (lobby direct + ?spectate= URL param + live redirect from old spectate page). Arena module split into 31 sub-files under src/arena/ with barrel re-export. **Session 254: Full source decomposition complete** — 14 large files split into domain sub-modules across src/ and src/pages/. Madge + Knip installed, 3-gate verification established. arena-lobby.ts converted to async-only dynamic chunk (Track B — Vite warning eliminated, main.js ~370KB → 362KB, circular deps 38→37). SQL reorganized into 10 domain files under supabase/functions/ (Track C). **Session 265: F-16/17/18 shipped** — Group Settings, Entry Requirements, Audition System. 1 new table (`group_auditions`), 3 new columns on `groups`, 1 new column on `arena_debates`, 9 new RPCs, 2 client files, 4 edited files. **Session 266: F-58 Sentiment Tipping + F-25 Rival Online Alerts both shipped.** F-58: `debate_watches` + `sentiment_tips` tables, 4 new RPCs, `settle_sentiment_tips` wired in `arena-room-end.ts`, dm_eligibility triggers on both new tables (closes F-23 eligibility gap from S262), tip strip CSS in `arena-css.ts`. F-25: `rivals-presence.ts` was already feature-complete — shipped by adding RLS policies for presence channel (`authenticated_presence_select` + `authenticated_presence_insert` on `realtime.messages` for extension='presence', topic='global-online') and cleaning a duplicate import. **Session 267: F-57 Modifier & Power-Up System shipped (Phases 1-4).** 6 new tables (`modifier_effects` seeded with all 59 effects, `user_modifiers`, `user_powerups`, `reference_sockets`, `debate_powerup_loadout`, `debate_effect_state`), 12 new RPCs/helpers (`get_modifier_catalog`, `buy_modifier`, `buy_powerup`, `socket_modifier`, `equip_powerup_for_debate`, `get_user_modifier_inventory`, `_rarity_ordinal`, `_rarity_socket_count`, `_effect_initial_charges`, `_seed_debate_effect_state`, `_apply_in_debate_modifiers`, `apply_end_of_debate_modifiers`), `src/modifiers.ts` (catalog + buy + socket + equip + inventory). `score_debate_comment` rewritten to apply in-debate modifiers; `update_arena_debate` updated with elo_shield/elo_amplifier/xp_boost/trophy_hunter/streak_saver. `arena_debates.score_a`/`score_b` widened to NUMERIC. 44 of 59 effects live; 15 deferred (see F-57 critical notes section).
 
 ## Toolchain
 | Tool | Purpose |
@@ -155,7 +155,8 @@ Supabase (faomczmipsccwbhpivmp): 43+ tables, RLS hardened, ~212 server functions
 | `src/tokens.ts` | Token economy: milestones, streak freeze, daily login, gold coin fly-up animation |
 | `src/tiers.ts` | Tier utility: 6 tiers (Unranked to Legend), `getTier()`, `renderTierBadge()`, `renderTierProgress()` |
 | `src/staking.ts` | Token staking: `placeStake()`, `getPool()`, `settleStakes()`, parimutuel pool |
-| `src/powerups.ts` | Power-up system: buy, equip, shop, loadout, 4 power-ups (2x Multiplier, Silence, Shield, Reveal) |
+| `src/powerups.ts` | Power-up system: buy, equip, shop, loadout, 4 power-ups (2x Multiplier, Silence, Shield, Reveal). **Legacy — superseded by F-57. Retire after F-10 shop UI ships and old system confirmed unused.** |
+| `src/modifiers.ts` | **F-57 Modifier & Power-Up System (S267).** Catalog cache (`getModifierCatalog()`, 60-min TTL), buy (`buyModifier()`, `buyPowerup()`), socket (`socketModifier()`), equip (`equipPowerupForDebate()`), inventory (`getUserInventory()`), render helpers (`renderEffectCard()`, `renderModifierRow()`, `renderPowerupRow()`), buy flow helpers with toast feedback. |
 | `src/webrtc.ts` | WebRTC audio via Supabase Realtime channels |
 | `src/voicememo.ts` | Voice memo mode |
 | `src/analytics.ts` | Funnel analytics: visitor UUID, page_view, UTM. Uses raw fetch() — intentional, fires before auth init. |
@@ -287,7 +288,7 @@ Previous architecture (preserved for reference):
 - **All `log_event` calls MUST use named parameters** (LM-188). Every call: `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`. Full audit Session 151 — zero positional calls remain.
 - **`place_prediction` takes TEXT not UUID** for `p_predicted_winner` ('a'/'b'). S226 migration changed it to UUID, S227 reverted to TEXT with IN ('a','b') validation. All S226 security fixes preserved.
 - **Language preference pipeline (Session 240):** `profiles.preferred_language TEXT DEFAULT 'en'` + `arena_debates.language TEXT DEFAULT 'en'`. `stamp_debate_language` BEFORE INSERT trigger on arena_debates auto-stamps creator's language from profiles. `update_profile` RPC accepts `p_preferred_language` with BCP-47 validation. 6 read-path RPCs return `language`. Deepgram uses `debate.language ?? 'en'` in arena-feed-room.ts. See LM-200.
-- **`supabase-deployed-functions-export.sql` is STALE as of S266** — last re-exported S250 (186 functions), ~212 live as of S266. Re-export before any session that needs to audit the function list.
+- **`supabase-deployed-functions-export.sql` is STALE as of S267** — last re-exported S250 (186 functions), ~224 live as of S267. Re-export before any session that needs to audit the function list.
 
 ## Auth
 - **`navigator.locks` orphan bug** — noOpLock mock must load before Supabase CDN. Lives in `src/auth.ts`.
@@ -396,6 +397,52 @@ Previous architecture (preserved for reference):
 - **`rivals-presence.ts` was already fully feature-complete** — global-online Realtime presence channel, accepted rivals only, slide-in popup on rival join, CHALLENGE opens profile, LATER/auto-dismiss at 8s, re-alertable after leave+rejoin. Only the RLS policies were missing.
 - **Client:** duplicate `import type { RivalEntry }` removed.
 - **Needs live test:** 2 accounts with accepted rival relationship, one comes online, other gets popup.
+
+## F-57 — Modifier & Power-Up System (Session 267, Phases 1-4)
+
+### Architecture
+- **Two product forms per effect:** modifier (permanent, socketed into reference, expensive) and power-up (one-shot consumable, cheap). Same 59 effects, 118 shop SKUs.
+- **Two timing buckets:** end-of-debate (30 effects, apply at final score) and in-debate (29 effects, apply inline during scoring).
+- **Server-side only:** all modifier math happens in SQL. Client renders what server returns.
+- **Cap:** 3 power-ups max per debate per debater. Socketed modifiers are unlimited per debate.
+
+### New Tables
+| Table | Purpose |
+|---|---|
+| `modifier_effects` | Catalog — all 59 effects seeded. Public SELECT. |
+| `user_modifiers` | One row per owned modifier. `socketed_in IS NULL` = free inventory. |
+| `user_powerups` | Quantity-based stock. UNIQUE(user_id, effect_id). |
+| `reference_sockets` | Permanent socket assignments on `arsenal_references`. Never deleted. Public SELECT (leasers can see socket contents per F-55 spec). |
+| `debate_powerup_loadout` | Pre-debate staging. Quantity deducted at equip. No refund if debate nulls. `consumed = TRUE` set by trigger on status→'live'. |
+| `debate_effect_state` | Per-instance charge tracking for in-debate effects. Seeded by trigger on status→'live' from both loadout + sockets. `charges_remaining IS NULL` = unlimited (Group A + streak + spite); `> 0` = countdown; `0` = spent. |
+
+### New RPCs / Helpers
+`get_modifier_catalog()`, `buy_modifier(effect_id)`, `buy_powerup(effect_id, qty)`, `socket_modifier(ref_id, socket_index, modifier_id)`, `equip_powerup_for_debate(debate_id, effect_id)`, `get_user_modifier_inventory(debate_id?)`, `_rarity_ordinal(text)`, `_rarity_socket_count(text)`, `_effect_initial_charges(effect_id)`, `_seed_debate_effect_state()` trigger, `_apply_in_debate_modifiers(…, feed_event_id, debater_side)`, `apply_end_of_debate_modifiers(debate_id)`.
+
+### Modified RPCs
+- **`score_debate_comment`** — applies in-debate modifiers via `_apply_in_debate_modifiers`; scoreboard incremented by `final_contribution` (not `p_score`); `point_award` metadata now includes `base_score`, `in_debate_multiplier`, `in_debate_flat`, `final_contribution`.
+- **`update_arena_debate`** — integrates `elo_shield`, `elo_amplifier`, `xp_boost`, `trophy_hunter`, `streak_saver` from `debate_powerup_loadout` + `reference_sockets`.
+- **`arena_debates.score_a/score_b`** widened to NUMERIC (supports fractional contributions from flat modifiers).
+
+### Modified Client Files
+- **`arena-feed-events.ts`** — `point_award` handler: modifier-aware badge display (`+2 × 1.5 = 3`), scoreboard reads `score_a_after`/`score_b_after` from metadata instead of local increment, budget tracking stays on `base_score`.
+- **`arena-room-end.ts`** — calls `apply_end_of_debate_modifiers` before `update_arena_debate`; renders "after effects" breakdown via `renderAfterEffects()`.
+- **`arena-css.ts`** — `.arena-after-effects` card CSS added.
+
+### Implemented Effects (44 of 59)
+**In-debate:** rally, finisher, opening_gambit, banner, underdog_surge, streak, spite, amplify, surge, echo, boost, double_tap, comeback, overload, dampen, drain, choke, interrupt, static, citation_bonus, weaponize, mythic_echo, loadout_lock, counter_cite_idb, bait, backfire
+**End-of-debate:** point_surge, comeback_engine, last_word, underdog, counter_cite, point_siphon, pressure_cooker, mic_drop, closer
+**Elo/XP/streak:** elo_shield, elo_amplifier, xp_boost, trophy_hunter, streak_saver
+
+### Deferred Effects (15) — architectural blockers
+| Effect(s) | Blocker |
+|---|---|
+| `pressure`, `momentum`, `point_shield` | Need round-end trigger / per-round score history / modifier interaction layer |
+| `token_multiplier`, `token_boost`, `token_drain` | Need `claimDebate` RPC changes |
+| `tip_magnet`, `crowd_pleaser` | Need `settle_sentiment_tips` changes |
+| `mirror`, `burn_notice`, `parasite`, `chain_reaction` | Opponent inventory manipulation — separate session |
+
+
 
 
 - **Phase 1 (S234):** Core feed rendering, turn-taking UI, speech event flow.
