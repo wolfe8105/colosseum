@@ -90,25 +90,49 @@ export function appendFeedEvent(ev: FeedEvent): void {
     case 'point_award': {
       el.className = `feed-evt feed-evt-points feed-fireworks arena-fade-in`;
       const sideName = ev.side === 'a' ? debaterAName : debaterBName;
-      el.innerHTML = `<span class="feed-points-badge">+${Number(ev.score)} for ${escapeHTML(sideName)}</span>`;
+      // F-57: build modifier-aware badge label
+      // metadata.base_score / in_debate_multiplier / in_debate_flat / final_contribution
+      // present when F-57 is active. Fall back to ev.score for pre-F-57 events.
+      const meta          = ev.metadata as Record<string, unknown> | null | undefined;
+      const baseScore     = Number(meta?.base_score     ?? ev.score);
+      const multiplier    = Number(meta?.in_debate_multiplier ?? 1.0);
+      const flat          = Number(meta?.in_debate_flat  ?? 0);
+      const finalContrib  = Number(meta?.final_contribution ?? ev.score);
+      const hasModifier   = multiplier !== 1.0 || flat !== 0;
+      let badgeText: string;
+      if (!hasModifier) {
+        badgeText = `+${baseScore}`;
+      } else if (multiplier !== 1.0 && flat === 0) {
+        // Pure multiplier: +2 × 1.5 = 3
+        badgeText = `+${baseScore} × ${multiplier} = ${finalContrib}`;
+      } else if (multiplier === 1.0 && flat !== 0) {
+        // Pure flat: just show final
+        badgeText = `+${finalContrib}`;
+      } else {
+        // Both: +2 × 1.5 + 2 = 5
+        badgeText = `+${baseScore} × ${multiplier} + ${flat} = ${finalContrib}`;
+      }
+      el.innerHTML = `<span class="feed-points-badge">${badgeText} for ${escapeHTML(sideName)}</span>`;
       // Remove fireworks class after animation completes
       el.addEventListener('animationend', () => el.classList.remove('feed-fireworks'), { once: true });
       playSound('pointsAwarded');
       vibrate(80);
-      // Update scoreboard
+      // Update scoreboard from authoritative server totals in metadata.
+      // Falls back to local increment for pre-F-57 events without score_X_after.
       if (ev.side === 'a') {
-        set_scoreA(scoreA + (Number(ev.score) || 0));
+        const after = meta?.score_a_after != null ? Number(meta.score_a_after) : scoreA + finalContrib;
+        set_scoreA(after);
         const scoreEl = document.getElementById('feed-score-a');
         if (scoreEl) scoreEl.textContent = String(scoreA);
       } else if (ev.side === 'b') {
-        set_scoreB(scoreB + (Number(ev.score) || 0));
+        const after = meta?.score_b_after != null ? Number(meta.score_b_after) : scoreB + finalContrib;
+        set_scoreB(after);
         const scoreEl = document.getElementById('feed-score-b');
         if (scoreEl) scoreEl.textContent = String(scoreB);
       }
-      // Phase 2: Track budget usage
-      const pts = Number(ev.score) || 0;
+      // Budget tracking always uses base_score (1-5), never the modified contribution.
+      const pts = baseScore;
       if (pts >= 1 && pts <= 5) {
-        // Reset budget counter if round changed
         const evRound = ev.round || round;
         if (evRound !== budgetRound) {
           resetBudget(evRound);
