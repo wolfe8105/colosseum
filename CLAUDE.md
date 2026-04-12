@@ -64,29 +64,47 @@ Source lives in `src/`. Compiled output goes to `dist/`. Never edit `dist/` dire
 ## File Conventions
 
 ### TypeScript Modules (src/*.ts)
+
+Most large modules were decomposed into domain sub-files (Session 254). The barrel entry point is kept for import compatibility. Sub-files follow the pattern `src/<module>.<domain>.ts`.
+
 | File | Purpose |
 |------|---------|
 | `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
-| `src/auth.ts` | Auth, profile CRUD, follows, rivals, moderator RPCs, `safeRpc()`, `updateModCategories()` |
-| `src/payments.ts` | Stripe Checkout, token purchases |
-| `src/notifications.ts` | Notification center |
-| `src/async.ts` | Hot takes, predictions, rivals, react toggle, challenge modal |
-| `src/arena.ts` | Arena: lobby, 4 modes, matchmaking, debate room, AI sparring |
+| `src/auth.ts` | Barrel. Sub-files: `auth.core`, `auth.follows`, `auth.moderator`, `auth.ops`, `auth.profile`, `auth.rivals`, `auth.types`. `safeRpc()` lives in `auth.core`. `noOpLock` must load before Supabase CDN. |
+| `src/async.ts` | Barrel. Sub-files: `async.actions`, `async.fetch`, `async.render`, `async.rivals`, `async.state`, `async.types`, `async.utils`. Hot takes, predictions, rivals, react toggle, challenge modal. |
+| `src/arena.ts` | Barrel. 31 sub-files under `src/arena/`. See arena section below. |
+| `src/reference-arsenal.ts` | Barrel. Sub-files: `reference-arsenal.constants`, `.debate`, `.forge`, `.loadout`, `.render`, `.rpc`, `.types`, `.utils`. 5-step forge form, reference card renderer, arsenal list. |
+| `src/webrtc.ts` | Barrel. Sub-files: `webrtc.audio`, `.engine`, `.ice`, `.peer`, `.signaling`, `.state`, `.timer`, `.turn`, `.types`. ICE restart + 30s setup timeout live. |
 | `src/tokens.ts` | Token economy: milestones, streak freeze, daily login, gold coin animation |
 | `src/leaderboard.ts` | Elo/Wins/Streak tabs |
+| `src/powerups.ts` | Power-up inventory and activation |
 | `src/scoring.ts` | Elo, XP, leveling (SELECT reads only) |
 | `src/share.ts` | Web Share API, clipboard, referrals |
 | `src/cards.ts` | Canvas share card generator |
 | `src/analytics.ts` | Funnel analytics. **Uses raw `fetch()` — intentional, fires before auth init.** |
-| `src/navigation.ts` | Register/call pattern for page navigation. Zero `window.navigateTo` refs. (Session 163) |
+| `src/navigation.ts` | Register/call pattern for page navigation. Zero `window.navigateTo` refs. |
 | `src/paywall.ts` | Paywall gating logic |
 | `src/staking.ts` | Token staking system |
 | `src/tiers.ts` | Questionnaire tier lookup, badge rendering, progress calculation |
 | `src/nudge.ts` | Polite engagement toast engine. Suppression: once per session per ID, 24h cooldown, 3-per-session cap. |
-| `src/reference-arsenal.ts` | 5-step forge form, reference card renderer, arsenal list |
+| `src/notifications.ts` | Notification center |
+| `src/payments.ts` | Stripe Checkout, token purchases |
+| `src/rivals-presence.ts` | Rivals presence tracking |
+| `src/voicememo.ts` | Voice memo recording |
+| `src/terms.ts` | Terms of service logic |
+
+### Arena Sub-modules (src/arena/*.ts — 31 files)
+`arena-core` (init, popstate, `?spectate=` handler) · `arena-lobby` (card rendering, spectator click intercept — **async-only chunk, dynamically imported**) · `arena-state` · `arena-types` · `arena-queue` · `arena-match` · `arena-css` · `arena-sounds` · `arena-deepgram` · `arena-config-mode` · `arena-config-settings` · `arena-private-lobby` · `arena-private-picker` · `arena-room-setup` · `arena-room-live` · `arena-room-end` · `arena-room-ai` · `arena-room-voicememo` · `arena-mod-debate` · `arena-mod-queue` · `arena-mod-refs` · `arena-mod-scoring` · `arena-feed-room` · `arena-feed-realtime` · `arena-feed-machine` · `arena-feed-wiring` · `arena-feed-events` · `arena-feed-state` · `arena-feed-transcript` · `arena-feed-ui` · `arena-feed-references`
 
 ### Page Modules (src/pages/*.ts)
-`home.ts`, `login.ts`, `plinko.ts`, `settings.ts`, `profile-depth.ts`, `debate-landing.ts`, `auto-debate.ts`, `spectate.ts`, `groups.ts`, `terms.ts`
+Decomposed modules have sub-files following `<page>.<domain>.ts` pattern.
+
+| Module | Sub-files |
+|--------|-----------|
+| `home.ts` | `home.arsenal`, `home.depth`, `home.feed`, `home.nav`, `home.overlay`, `home.profile`, `home.state`, `home.types` |
+| `spectate.ts` | `spectate.chat`, `spectate.render`, `spectate.share`, `spectate.state`, `spectate.types`, `spectate.utils`, `spectate.vote` |
+| `groups.ts` | `groups.challenges`, `groups.feed`, `groups.members`, `groups.state`, `groups.types`, `groups.utils` |
+| `settings.ts`, `login.ts`, `plinko.ts`, `profile-depth.ts`, `debate-landing.ts`, `terms.ts`, `cosmetics.ts` | (monoliths) |
 
 ### HTML Pages (all at repo root)
 `index.html`, `moderator-login.html`, `moderator-plinko.html`, `moderator-settings.html`, `moderator-profile-depth.html`, `moderator-debate-landing.html`, `moderator-auto-debate.html`, `moderator-groups.html`, `moderator-spectate.html`, `moderator-terms.html`, `moderator-privacy.html`
@@ -95,7 +113,23 @@ Source lives in `src/`. Compiled output goes to `dist/`. Never edit `dist/` dire
 `api/profile.js` — public profile pages at `/u/username`, dynamic OG tags.
 
 ### SQL Migrations
-SQL migration files live at repo root (e.g. `moderator-schema-production.sql`, `moderator-analytics-migration.sql`). GitHub repo is NOT source of truth for live schema — always verify against Supabase directly.
+SQL migration files live at repo root (e.g. `moderator-schema-production.sql`). GitHub repo is NOT source of truth for live schema — always verify against Supabase directly.
+
+### SQL Domain Files (supabase/functions/*.sql)
+Deployed RPCs are split into 10 domain files (Session 254 Track C). Use the relevant domain file instead of loading all 11k lines.
+
+| File | Functions | Domain |
+|------|-----------|--------|
+| `supabase/functions/arena.sql` | 55 | Matchmaking, debates, scoring, queue |
+| `supabase/functions/auth.sql` | 33 | Auth, profiles, follows, rivals |
+| `supabase/functions/moderation.sql` | 22 | Mod marketplace, scoring, F-47/F-48 |
+| `supabase/functions/references.sql` | 20 | Reference arsenal, forge, citations |
+| `supabase/functions/groups.sql` | 17 | Groups, GvG, challenges |
+| `supabase/functions/tokens.sql` | 11 | Token economy, staking, power-ups |
+| `supabase/functions/predictions.sql` | 9 | Prediction staking, settlement |
+| `supabase/functions/hot-takes.sql` | 10 | Hot takes, reactions, async feed |
+| `supabase/functions/admin.sql` | 10 | Admin, analytics, app_config |
+| `supabase/functions/notifications.sql` | 4 | Notification RPCs |
 
 ## Key Patterns
 
@@ -115,21 +149,27 @@ TypeScript + Vite. Run `npm install` then `npm run build` to compile. Serve the 
 
 **GitHub workflow:** Upload files via GitHub web UI drag-and-drop. Vercel auto-deploys on every push.
 
-## VPS / Bot Army Notes
+### 3-Gate Verification (run after every decomposition or major refactor)
+```bash
+npm run build                                                         # Gate 1: types
+npx madge --circular --extensions ts --ts-config tsconfig.json src/  # Gate 2: cycles
+npx knip                                                              # Gate 3: dead exports
+```
+Notes: Knip may OOM on this repo (pre-existing oxc-parser issue) — manual grep if it crashes. 37 pre-existing circular deps in `src/arena/` — all known.
 
-- Bot TypeScript source is in repo. VPS compiles and runs from `dist/`.
-- PM2 manages bots. Entry point: `dist/bot-engine.js`
-- `.env` changes require `pm2 restart all`
-- Bot platform wiring requires THREE updates: config object + flags block in `bot-config.ts` + `formatFlags()` in `bot-engine.ts`. Missing any one = silent failure.
-- Always use `\cp` on VPS (bypasses `cp -i` alias). Verify with grep after copy.
-- Git repo root on VPS is `/opt/colosseum` (NOT the bot-army subdirectory)
+### Import Rules
+1. No barrel files — no `index.ts` re-exports. Direct imports only.
+2. `import type` for all type-only imports.
+3. Dependency direction: types → state → utils → features → orchestrator. Nothing imports "up".
+4. No circular deps — extract a shared primitive or use late-bound ref in state.
+
+## VPS
+VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) is up. PM2 idle. Bot army SCRATCHED (S248) — code is inert, no teardown plan. Ignore all bot army files.
 
 ## Design DNA
 
-- Palette: navy, red, white, GOLD
-- Fonts: Cinzel (display) + Barlow Condensed (body)
-- Background: diagonal gradient (`#1a2d4a` to `#3d5a80`)
-- Cards: dark frosted glass (`rgba(10,17,40,0.6)`) + `backdrop-filter: blur`
+- Palette: CSS variables via `--mod-*` tokens (migrated S205). No hardcoded hex colors anywhere except `src/cards.ts` Canvas API (intentional).
+- Fonts: `--mod-font-body`, `--mod-font-ui` tokens. Legacy Cinzel/Barlow refs are stale.
 - Mobile-forward: 44px touch targets, scroll-snap
 - Responsive: `@media (min-width: 768px)` — `.screen` max-width 640px, centered
 
