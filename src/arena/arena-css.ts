@@ -445,6 +445,7 @@ export function injectCSS(): void {
     .feed-turn-label { font-size:11px;font-weight:600;color:var(--mod-bar-secondary);letter-spacing:1px; }
     .feed-spectator-bar { text-align:center;font-size:11px;color:var(--mod-text-muted);margin-top:6px; }
     .feed-spectator-bar .eye { font-size:13px; }
+    .feed-audio-status { text-align:center;font-size:11px;padding:2px 0;color:var(--mod-text-muted);letter-spacing:1px;min-height:0; }
 
     /* Feed stream (center) */
     .feed-stream { flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px;display:flex;flex-direction:column;gap:6px;min-height:0; }

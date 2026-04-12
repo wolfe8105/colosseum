@@ -320,14 +320,26 @@ function showAdOverlay(durationSec: number): HTMLElement | null {
       <div class="feed-ad-label">COMMERCIAL BREAK</div>
       <div class="feed-ad-countdown">Resuming in ${durationSec}s</div>
       <div class="feed-ad-slot" id="feed-ad-slot">
-        <!-- AdSense placeholder — wired when Google Ads integration is built -->
-        <div class="feed-ad-placeholder">AD</div>
+        <!-- Replace PUBLISHER_ID with ca-pub-XXXXXXXXXXXXXXXX and AD_UNIT_ID with your slot ID -->
+        <ins class="adsbygoogle feed-ad-unit"
+             style="display:block"
+             data-ad-client="ca-pub-REPLACE_WITH_PUBLISHER_ID"
+             data-ad-slot="REPLACE_WITH_AD_UNIT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
       </div>
     </div>
   `;
 
   const feedRoom = document.querySelector('.feed-room');
   if (feedRoom) feedRoom.appendChild(overlay);
+
+  // Trigger AdSense to fill the slot
+  try {
+    (window as unknown as Record<string, unknown[]>).adsbygoogle =
+      (window as unknown as Record<string, unknown[]>).adsbygoogle || [];
+    ((window as unknown as Record<string, unknown[]>).adsbygoogle).push({});
+  } catch { /* AdSense not loaded — ad slot stays empty, debate continues */ }
 
   return overlay;
 }

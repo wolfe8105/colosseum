@@ -21,6 +21,7 @@
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
+import { joinDebate, leaveDebate, on as onWebRTC, off as offWebRTC } from '../webrtc.ts';
 import {
   getMyDebateLoadout,
 } from '../reference-arsenal.ts';
@@ -58,6 +59,52 @@ export { appendFeedEvent, addLocalSystem, writeFeedEvent } from './arena-feed-ev
 export { setDebaterInputEnabled } from './arena-feed-ui.ts';
 export { clearFeedTimer } from './arena-feed-machine.ts';
 export { clearInterimTranscript } from './arena-feed-transcript.ts';
+
+
+// ============================================================
+// INTERNAL — WebRTC audio bridge
+// ============================================================
+
+/**
+ * Establish the WebRTC peer connection for live audio.
+ * Spectators skip this — they have no audio role.
+ * Called fire-and-forget from enterFeedRoom after the DOM is ready.
+ *
+ * Deliberately does NOT call startLive() — the feed machine owns
+ * turn management. WebRTC is audio infrastructure only here.
+ */
+async function initFeedAudio(debate: CurrentDebate): Promise<void> {
+  if (debate.spectatorView) return;
+
+  // Show connection status in the existing turn-label area
+  const updateAudioStatus = (msg: string) => {
+    const el = document.getElementById('feed-audio-status');
+    if (el) el.textContent = msg;
+  };
+
+  onWebRTC('micReady', () => {
+    updateAudioStatus('');  // mic ready — clear status, Deepgram will take over
+  });
+
+  onWebRTC('connected', () => {
+    updateAudioStatus('');  // peer connected — clear
+  });
+
+  onWebRTC('disconnected', (data: unknown) => {
+    const { recovering } = data as { recovering?: boolean };
+    updateAudioStatus(recovering ? '🟡 Audio reconnecting...' : '🔴 Audio disconnected');
+  });
+
+  onWebRTC('connectionFailed', () => {
+    updateAudioStatus('🔴 Audio unavailable — text input active');
+  });
+
+  try {
+    await joinDebate(debate.id, debate.role, debate.totalRounds);
+  } catch {
+    updateAudioStatus('🎤 Mic access blocked — text input active');
+  }
+}
 
 
 // ============================================================
@@ -114,6 +161,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
         </div>
       </div>
       <div class="feed-spectator-bar"><span class="eye">\uD83D\uDC41\uFE0F</span> <span id="feed-spectator-count">0</span> watching</div>
+      <div class="feed-audio-status" id="feed-audio-status"></div>
       <div class="feed-sentiment-gauge" id="feed-sentiment-gauge">
         <div class="feed-sentiment-fill-a" id="feed-sentiment-a" style="width:50%"></div>
         <div class="feed-sentiment-fill-b" id="feed-sentiment-b" style="width:50%"></div>
@@ -143,6 +191,10 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   // Phase 5: Send goodbye on page unload for instant disconnect detection
   window.addEventListener('beforeunload', sendGoodbye);
   window.addEventListener('pagehide', sendGoodbye);
+
+  // WebRTC audio bridge — fire and forget, non-blocking
+  // Spectators skip. Debaters + mods get mic + peer connection.
+  void initFeedAudio(debate);
 
   // Start the pre-round countdown, then auto-transition to first speaker
   startPreRoundCountdown(debate);
@@ -216,4 +268,10 @@ export function cleanupFeedRoom(): void {
   document.getElementById('feed-disconnect-banner')?.remove();
   window.removeEventListener('beforeunload', sendGoodbye);
   window.removeEventListener('pagehide', sendGoodbye);
+  // WebRTC audio bridge teardown
+  offWebRTC('micReady');
+  offWebRTC('connected');
+  offWebRTC('disconnected');
+  offWebRTC('connectionFailed');
+  leaveDebate();
 }
