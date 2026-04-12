@@ -11,6 +11,7 @@ import { renderFeed } from './home.feed.ts';
 import { loadArsenalScreen } from './home.arsenal.ts';
 import { loadInviteScreen, cleanupInviteScreen } from './home.invite.ts';
 import { loadFollowCounts } from './home.profile.ts';
+import { loadDebateArchive } from '../profile-debate-archive.ts';
 import { state } from './home.state.ts';
 
 const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite'];
@@ -35,6 +36,8 @@ export function navigateTo(screenId: string) {
   if (screenId === 'profile') {
     ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed'));
     loadFollowCounts();
+    const archiveEl = document.getElementById('profile-debate-archive');
+    if (archiveEl) void loadDebateArchive(archiveEl, true);
   }
   if (screenId === 'arsenal') {
     loadArsenalScreen();
