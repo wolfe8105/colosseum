@@ -128,6 +128,36 @@ export async function endCurrentDebate(): Promise<void> {
   }
 
   let eloChangeMe = 0;
+  // F-57 Phase 3: Apply end-of-debate modifiers to final scores BEFORE update_arena_debate
+  // so the modified scores drive winner determination and Elo calculation.
+  // Only runs for real debates (not AI-local or placeholder).
+  let endOfDebateBreakdown: {
+    debater_a: { raw_score: number; adjustments: { effect_name: string; delta: number; source?: string }[]; final_score: number };
+    debater_b: { raw_score: number; adjustments: { effect_name: string; delta: number; source?: string }[]; final_score: number };
+  } | null = null;
+
+  if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && debate.mode !== 'ai') {
+    try {
+      const { data: eodData } = await safeRpc('apply_end_of_debate_modifiers', { p_debate_id: debate.id });
+      if (eodData) {
+        endOfDebateBreakdown = eodData as typeof endOfDebateBreakdown;
+        // Update local score vars so update_arena_debate gets modified totals
+        if (endOfDebateBreakdown) {
+          const myRole = debate.role;
+          if (myRole === 'a') {
+            scoreA = endOfDebateBreakdown.debater_a.final_score;
+            scoreB = endOfDebateBreakdown.debater_b.final_score;
+          } else if (myRole === 'b') {
+            scoreA = endOfDebateBreakdown.debater_a.final_score;
+            scoreB = endOfDebateBreakdown.debater_b.final_score;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Arena] apply_end_of_debate_modifiers failed (non-fatal):', err);
+    }
+  }
+
   if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-')) {
     try {
       const { data: result, error } = await safeRpc<UpdateDebateResult>('update_arena_debate', {
@@ -257,6 +287,7 @@ export async function endCurrentDebate(): Promise<void> {
       </div>
     </div>
     ${aiScores ? renderAIScorecard(myName, debate.opponentName, debate.role, aiScores) : ''}
+    ${renderAfterEffects(endOfDebateBreakdown, debate.role ?? 'a')}
     ${debate.opponentId && debate.mode !== 'ai' ? `
     <div class="arena-post-actions" style="margin-bottom:0">
       <button class="arena-post-btn secondary" id="arena-add-rival">\u2694\uFE0F ADD RIVAL</button>
@@ -368,4 +399,58 @@ export async function endCurrentDebate(): Promise<void> {
     });
     document.body.appendChild(transcriptOverlay);
   });
+}
+
+// ── F-57 Phase 3: "After Effects" breakdown renderer ──────────
+// Renders the end-of-debate modifier chain:
+// Raw: 47 → +2 Point Surge → -1 Point Siphon → Final: 48
+// Returns empty string if no adjustments fired.
+
+function renderAfterEffects(
+  breakdown: {
+    debater_a: { raw_score: number; adjustments: { effect_name: string; delta: number }[]; final_score: number };
+    debater_b: { raw_score: number; adjustments: { effect_name: string; delta: number }[]; final_score: number };
+  } | null,
+  myRole: string,
+): string {
+  if (!breakdown) return '';
+
+  const myData   = myRole === 'a' ? breakdown.debater_a : breakdown.debater_b;
+  const oppData  = myRole === 'a' ? breakdown.debater_b : breakdown.debater_a;
+
+  // Only render if at least one side had adjustments
+  const myAdj  = myData.adjustments  ?? [];
+  const oppAdj = oppData.adjustments ?? [];
+  if (myAdj.length === 0 && oppAdj.length === 0) return '';
+
+  function renderChain(d: typeof myData, label: string): string {
+    if (d.adjustments.length === 0) return '';
+    const steps = d.adjustments.map(adj => {
+      const sign  = adj.delta >= 0 ? '+' : '';
+      const cls   = adj.delta >= 0 ? 'positive' : 'negative';
+      return `<span class="ae-step ae-step--${cls}">${sign}${adj.delta} ${escapeHTML(adj.effect_name)}</span>`;
+    }).join('<span class="ae-arrow">→</span>');
+
+    return `
+      <div class="ae-row">
+        <span class="ae-label">${escapeHTML(label)}</span>
+        <span class="ae-raw">${d.raw_score}</span>
+        <span class="ae-arrow">→</span>
+        ${steps}
+        <span class="ae-arrow">→</span>
+        <span class="ae-final">${d.final_score}</span>
+      </div>`;
+  }
+
+  const myChain  = renderChain(myData,  'You');
+  const oppChain = renderChain(oppData, 'Opponent');
+
+  if (!myChain && !oppChain) return '';
+
+  return `
+    <div class="arena-after-effects">
+      <div class="arena-after-effects__title">⚡ AFTER EFFECTS</div>
+      ${myChain}
+      ${oppChain}
+    </div>`;
 }
