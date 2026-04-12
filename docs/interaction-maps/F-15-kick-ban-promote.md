@@ -89,36 +89,6 @@ sequenceDiagram
 - Elders have no assignable roles per `assignableRoles()` at `groups.ts:83` — they can kick and ban but cannot promote or demote. The promote section is hidden for them at `groups.ts:623`.
 - The leader transfer option is labeled "(transfer leadership)" in the dropdown at `groups.ts:627`.
 
-### 1a. Member actions modal dismiss handlers
-
-The member actions modal has two dismiss paths: the CANCEL button at `groups.ts:600` and a backdrop click at `groups.ts:601`. Both call `closeMemberActionsModal()` at `groups.ts:637`, which hides the modal and clears the `_mamMember` state.
-
-<!-- captured: src/pages/groups.ts:600 -->
-<!-- captured: src/pages/groups.ts:601 -->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant CancelBtn as mam-cancel-btn click<br/>groups.ts:600
-    participant Backdrop as modal backdrop click<br/>groups.ts:601
-    participant CloseFn as closeMemberActionsModal()<br/>groups.ts:637
-
-    alt User taps CANCEL
-        User->>CancelBtn: tap CANCEL
-        CancelBtn->>CloseFn: closeMemberActionsModal()
-    else User taps backdrop
-        User->>Backdrop: tap outside modal
-        Backdrop->>CloseFn: closeMemberActionsModal()
-    end
-    CloseFn->>CloseFn: hide modal, clear _mamMember
-    CloseFn->>User: modal closes
-```
-
-**Notes:**
-- captured: src/pages/groups.ts:600 — `#mam-cancel-btn` click wired to `closeMemberActionsModal()`.
-- captured: src/pages/groups.ts:601 — modal backdrop click handler with `e.target` guard: only direct clicks on the modal overlay (not clicks on modal content) trigger dismiss.
-- `closeMemberActionsModal()` at `groups.ts:637` sets `_mamMember = null` and hides the modal. The modal is not removed from DOM — it is reused on next MANAGE click.
-
 ---
 
 ## 2. Change a member's role

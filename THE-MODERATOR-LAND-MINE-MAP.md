@@ -2499,3 +2499,347 @@ RELATED: See Bot Army scratch note in THE-MODERATOR-FEATURE-SPECS-PENDING.md
 SESSION: 249 (S248 started the scratch, S249 completed the consumer-side rip).
 ```
 
+
+## LM-217: F-23 `dm_eligibility` backfill must run atomically with migration
+```
+DECISION (Session 253): The `dm_eligibility` table is the sole runtime
+  gate for `send_dm` in F-23 DM/Chat. Any gap between table creation and
+  backfill completion = users temporarily unable to DM people they should
+  structurally be able to DM (users they've co-occurred with in past
+  debates, votes, watches, tips). The F-23 build brief must require
+  CREATE TABLE + backfill INSERT + trigger creation inside a single
+  transaction. No staged migrations, no "backfill later" shortcuts.
+
+BACKFILL QUERY shape: UNION across four sources with canonical pair
+  ordering via LEAST(a,b)/GREATEST(a,b) for dedup, then
+  INSERT ... ON CONFLICT DO NOTHING into `dm_eligibility`:
+  1. `arena_debates` — all participant pairs (debater_a × debater_b)
+  2. `arena_votes` — voter × debater_a, voter × debater_b
+  3. `debate_watches` (F-58) — watcher × both debaters
+  4. `sentiment_tips` (F-58) — tipper × both debaters
+
+BITES YOU WHEN:
+  1. The F-23 build brief is written casually without an explicit
+     "atomic migration" requirement, and the builder splits backfill
+     into a follow-up script. Window between migration apply and
+     backfill run = users can't DM their last week of opponents.
+  2. A partial backfill crashes mid-run and is not retried. Some
+     eligibility pairs are inserted, others aren't — silent gap.
+
+SYMPTOM: User A tries to DM user B. B is someone A just debated. The
+  `send_dm` RPC returns "not eligible" because the eligibility row
+  doesn't exist yet. User-facing error looks like a bug. No log trail
+  because `send_dm` returns a structured error, not a crash.
+
+FIX: Build brief must include (a) single-transaction migration, (b)
+  post-migration row-count check against expected co-occurrence count
+  from pre-migration queries on a staging clone, (c) explicit abort-
+  and-rollback if the count mismatch exceeds a defined threshold.
+
+RELATED: LM-218 (trigger idempotency for the same table), LM-219
+  (silent-block realtime leak on the F-23 dm_blocks surface).
+
+SESSION: 253 (F-23 DM/Chat walk-close).
+```
+
+## LM-218: F-23 eligibility triggers must be idempotent
+```
+DECISION (Session 253): The four triggers that maintain `dm_eligibility`
+  fire on INSERT to `arena_debates` / `arena_votes` / `debate_watches` /
+  `sentiment_tips`. Each trigger inserts a row into `dm_eligibility`
+  with canonical pair ordering. Because the same voter will vote on
+  multiple debates by the same debater, and the same watcher will watch
+  multiple debates by the same streamer, duplicate inserts are the
+  normal case, not the exception. A non-idempotent trigger would throw
+  on PK violation, rolling back the source INSERT (the vote, the watch,
+  the tip) and breaking unrelated functionality.
+
+MITIGATION: Every eligibility trigger must use
+  `INSERT INTO dm_eligibility (...) VALUES (...) ON CONFLICT DO NOTHING;`
+  No exceptions. No UPSERT-with-update (we don't need to update any
+  field — the pair is either registered or it isn't). Also required for
+  replay safety if the triggers are ever rebuilt on existing data.
+
+BITES YOU WHEN:
+  1. A trigger gets written with a bare INSERT and hits a duplicate
+     pair. The source INSERT rolls back. Voter can't vote. Watcher
+     can't log a watch. User loses tokens on a tip that never lands.
+  2. A future refactor rebuilds the triggers on a live database and
+     doesn't preserve the ON CONFLICT clause.
+
+SYMPTOM: Random voting / watching / tipping failures on production
+  with "duplicate key value violates unique constraint
+  dm_eligibility_pkey" in the Postgres error log, traced back to a
+  trigger chain that includes the eligibility maintainer.
+
+FIX: Add `ON CONFLICT DO NOTHING` to every eligibility trigger.
+  Test: vote twice on two debates by the same debater. Second vote
+  must succeed without error. Check `dm_eligibility` row count — it
+  should be 1, not 2.
+
+RELATED: LM-217 (backfill atomicity), LM-219 (silent-block realtime).
+
+SESSION: 253 (F-23 DM/Chat walk-close).
+```
+
+## LM-219: F-23 silent-block realtime leak (CRITICAL)
+```
+DECISION (Session 253): F-23 uses a **silent block** model — the blocked
+  user's `send_dm` returns success, their UI shows the message as
+  delivered, but the blocker never receives it. This is the harassment-
+  reduction gold standard: no retaliation, no alt-account escalation,
+  no "you blocked me" drama. The entire design depends on the block
+  being invisible to the blocked user.
+
+SEVERITY: HIGH. A leak defeats the design entirely.
+
+FAILURE MODE: If `dm_messages` rows from blocked senders publish to the
+  blocker's Supabase Realtime channel, the block is not silent. The
+  blocker's thread view pops the message in real-time, the blocker
+  reacts (or a support ticket surfaces the leak), and the blocked user
+  learns they were "blocked-but-not-really." The leak is **invisible
+  at the RPC level** — `send_dm` returns success correctly, the DB
+  state is correct (row exists, block exists), only the realtime
+  subscriber sees the ghost message.
+
+MITIGATION OPTIONS (pick ONE at build time, document which):
+  1. RLS on realtime publication — add a row-level security policy on
+     `dm_messages` (or the realtime publication specifically) that
+     hides rows where `(sender_id, receiver_id)` exists in `dm_blocks`.
+     Requires verifying that Supabase Realtime respects RLS on the
+     publication — it does, as of Supabase's 2024 Realtime
+     Authorization update. PREFERRED.
+  2. Dual-write with `suppressed_for_receiver` flag — `send_dm` checks
+     `dm_blocks` before INSERT and writes the row with a suppression
+     flag; the realtime subscriber filters client-side. LESS SAFE —
+     client-side filtering is trivially bypassable with a modified
+     client. Use only if option 1 is blocked by infrastructure.
+
+BITES YOU WHEN:
+  1. The F-23 build brief is written without an explicit realtime
+     leak test, and the builder implements `send_dm` + `dm_blocks`
+     correctly but never verifies the realtime publication.
+  2. A future migration touches the realtime publication and silently
+     drops the RLS policy.
+  3. Supabase Realtime behavior changes in a future version and the
+     RLS-on-publication assumption breaks.
+
+SYMPTOM: User reports "I blocked X but I still get their messages in
+  real time, then they disappear when I refresh." The messages are
+  being written to the DB (blocked user sent them, silent block
+  allowed the write), the `get_inbox` / `get_thread` reads are
+  filtering them out correctly, but the realtime channel is leaking
+  the INSERT event.
+
+FIX: Re-apply the RLS policy on the realtime publication. Re-run the
+  build-time test: block user B from user A's POV, B sends via
+  `send_dm`, A's realtime subscriber receives ZERO events for that
+  message, A's `get_inbox` does not include the thread, B's
+  `get_thread` still shows the message from B's side.
+
+NON-NEGOTIABLE: The F-23 build brief MUST include this explicit
+  realtime test in the test checklist. F-23 does not ship without it.
+
+RELATED: LM-217 (eligibility backfill), LM-218 (trigger idempotency),
+  LM-223 (F-24 bidirectional block hide must also respect this block
+  surface without leaking across to search results).
+
+SESSION: 253 (F-23 DM/Chat walk-close).
+```
+
+## LM-220: F-24 `search_index` backfill must run atomically with trigger creation
+```
+DECISION (Session 253): The `search_index` table is the sole source of
+  truth for `search_all`. Any gap between table creation and backfill
+  completion means new entities are missing from search results until
+  the next nightly `refresh_search_engagement()` run — potentially
+  24 hours of invisible users, debates, and groups. F-24 build brief
+  must require CREATE TABLE + CREATE INDEXES + backfill INSERT +
+  CREATE TRIGGERS inside a single transaction.
+
+BACKFILL QUERY shape: UNION of three selects, `ON CONFLICT DO NOTHING`
+  on (entity_type, entity_id) unique constraint:
+  1. `profiles WHERE deleted_at IS NULL AND searchable = true`
+  2. `arena_debates WHERE status = 'complete'`
+  3. `groups`
+
+BITES YOU WHEN:
+  1. F-24 build brief splits "create table" and "populate table" into
+     separate migration steps. Window between step 1 and step 2 = any
+     search query returns empty for existing entities.
+  2. The backfill crashes mid-run and is not retried. Some entities
+     are indexed, others aren't — inconsistent search coverage.
+  3. Triggers are created before the backfill finishes, and a
+     concurrent INSERT on `profiles` during backfill causes an
+     ON CONFLICT DO NOTHING to silently skip a row that was mid-flight
+     in the backfill loop.
+
+SYMPTOM: User searches for a known entity, gets no result. Refreshing
+  the page, waiting, and retrying does not help. Only a manual
+  `refresh_search_engagement()` run or a direct `INSERT INTO
+  search_index` fixes the gap.
+
+FIX: Build brief specifies single-transaction migration. Post-migration
+  row-count check: `SELECT COUNT(*) FROM search_index` must equal
+  (user count where not deleted and searchable) + (completed debate
+  count) + (group count).
+
+RELATED: LM-221 (cron idempotency), LM-222 (soft-delete trigger atomicity).
+
+SESSION: 253 (F-24 Search walk-close).
+```
+
+## LM-221: F-24 `refresh_search_engagement()` must be idempotent and concurrent-safe
+```
+DECISION (Session 253): The `refresh_search_engagement()` cron rebuilds
+  engagement scores across all three F-24 entity types (users, debates,
+  groups) on a nightly schedule. Three failure modes must be prevented:
+  (a) overlapping runs — if a scheduled run takes longer than expected
+  and the next scheduled run fires before it completes, two concurrent
+  invocations update the same rows; (b) manual trigger overlap — Pat
+  manually runs the RPC for testing while cron also fires; (c) partial
+  failure — the function crashes partway through, leaving some entities
+  with fresh scores and others with stale.
+
+MITIGATION: Function must use `INSERT ... ON CONFLICT (entity_type,
+  entity_id) DO UPDATE SET engagement_score = EXCLUDED.engagement_score,
+  updated_at = now()` pattern — no read-then-write races, no ordering
+  dependencies between rows. Wrap the whole function body in a single
+  transaction so partial failure rolls back cleanly. No advisory locks
+  needed if the update pattern is idempotent — concurrent runs just
+  compute the same values and last-writer-wins.
+
+BITES YOU WHEN:
+  1. The cron RPC is written with a naive "SELECT current score, add
+     delta, UPDATE" pattern instead of "compute fresh, upsert." Two
+     concurrent runs double-count the delta.
+  2. The function is NOT wrapped in a transaction and a mid-run crash
+     leaves `search_index` with a mix of fresh and stale scores.
+  3. Pat manually invokes the RPC from the SQL Editor to test it at
+     the same moment the scheduled cron fires. Both runs complete but
+     race on the same rows.
+
+SYMPTOM: Search ranking looks wrong — top users by debate count in
+  `get_trending` don't match a direct `SELECT COUNT(*)` query. Scores
+  drift over multiple days of cron runs.
+
+FIX: Rewrite function to use `INSERT ... ON CONFLICT DO UPDATE` pattern.
+  Test by running the RPC twice in parallel from two SQL Editor tabs —
+  both must complete without error and final scores must match expected
+  values. Kill one mid-run — surviving row must be either old-value or
+  new-value, never corrupt.
+
+RELATED: LM-220 (backfill atomicity), LM-222 (soft-delete trigger),
+  LM-223 (bidirectional block hide).
+
+SESSION: 253 (F-24 Search walk-close).
+```
+
+## LM-222: F-24 soft-deleted user trigger must update user row AND authored entity rows atomically
+```
+DECISION (Session 253): When a user soft-deletes
+  (`profiles.deleted_at IS NOT NULL`), two things must happen in the
+  `search_index` within a single transaction:
+  1. The user's own row (`entity_type = 'user'`) is removed from the
+     index entirely.
+  2. Any debates they authored and groups they own must have their
+     `display_label` frozen to `[deleted user]`. The debate/group
+     itself stays searchable, but the creator's name is replaced.
+
+FAILURE MODE: Partial completion leaves ghost data. If (1) succeeds
+  but (2) fails, searching for the deleted user by name returns no
+  results BUT their debates and groups still show their old username
+  as creator/owner. If (2) succeeds but (1) fails, the user is still
+  searchable even though they're supposed to be gone, but their
+  content shows `[deleted user]`. Both states are bugs that surface
+  as "why is this user half-deleted" support tickets.
+
+MITIGATION: Single trigger function wrapping both operations in the
+  same transaction. Use `AFTER UPDATE` on `profiles` filtered by
+  `OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL`. Inside
+  the function: DELETE from search_index WHERE entity_type = 'user'
+  AND entity_id = NEW.id; then UPDATE search_index SET display_label
+  = '[deleted user]' WHERE entity_type IN ('debate','group') AND
+  entity_id IN (SELECT id FROM arena_debates WHERE creator_id = NEW.id
+  UNION SELECT id FROM groups WHERE owner_id = NEW.id).
+
+BITES YOU WHEN:
+  1. The trigger is split into two separate triggers (one for user
+     removal, one for label freeze) and one fires before the other,
+     leaving a window where the state is inconsistent.
+  2. The function uses subqueries that don't see uncommitted data
+     from earlier in the same transaction.
+  3. A future refactor adds a third entity type authored by users
+     (e.g., F-55 references if ever indexed) and forgets to update
+     the label-freeze list.
+
+SYMPTOM: Support ticket: "I deleted my account but my debates still
+  show my username." Or: "I searched for a user I know is deleted,
+  got no user result, but found their group with their old name."
+
+FIX: Consolidate into one trigger function. Test by creating a user,
+  forging a debate they own and a group they own, soft-deleting the
+  user, and verifying all three changes are reflected within the same
+  transaction (check via `pg_stat_xact_user_tables` or transaction log).
+
+RELATED: LM-220 (backfill atomicity), LM-221 (cron idempotency),
+  LM-223 (bidirectional block hide forward-compat).
+
+SESSION: 253 (F-24 Search walk-close).
+```
+
+## LM-223: F-24 bidirectional block hide must be forward-compat for future entity types
+```
+DECISION (Session 253): F-24 launches with bidirectional block hide on
+  user search only (`entity_type = 'user'`), because F-23 `dm_blocks`
+  is user-only. Groups and debates aren't currently block-ownable.
+  When full-user-block lands as a future feature (separate from F-23
+  DM-scoped block), blocking a user should also hide their authored
+  debates and groups from the blocker's search results. If the
+  `NOT EXISTS (dm_blocks ...)` clause in `search_all` is hard-coded
+  to only check user rows, future expansion either silently fails
+  (blocked user's content still surfaces) or requires rewriting the
+  RPC.
+
+MITIGATION: Write the block-hide clause as a generalized subquery
+  that checks whether the `search_index.entity_id` OR its `owner_id`
+  field intersects with the caller's `dm_blocks` set — not as a
+  type-specific `WHERE entity_type = 'user' AND ...` clause.
+
+  Alternative: add a nullable `owner_id` column to `search_index`
+  (nullable for types that don't have a single owner, though at launch
+  all three types do). The block-hide clause then checks
+  `search_index.owner_id NOT IN (caller's blocked set)
+  AND caller NOT IN (owner_id's blocked set)` uniformly across types.
+
+  Either approach must be documented in an RPC-level comment noting
+  that the clause is intended to apply to all future entity types
+  whose block ownership is established via `dm_blocks` (or a successor
+  blocks table).
+
+BITES YOU WHEN:
+  1. A future session adds a full-user-block feature and assumes
+     F-24's search-level block hide "just works." It doesn't — the
+     type-specific clause only filters users, and the blocked user's
+     debates + groups still surface.
+  2. A new entity type is added to `search_index` (e.g., references
+     if F-55 ever gets indexed) and the block-hide clause is not
+     extended to cover it.
+
+SYMPTOM: User A blocks user B (full block, not just DM block, once
+  that feature exists). User A searches for a topic. A debate created
+  by B appears in results even though B is blocked.
+
+FIX: Rewrite the block-hide clause generically at F-24 build time.
+  Post-F-23 verification: block a user and confirm none of their
+  authored debates or groups appear in the blocker's search results
+  (even though F-23 only blocks DM surface — F-24 has stricter block
+  semantics for search specifically). Re-verify when full-user-block
+  ships later — no RPC changes should be required.
+
+RELATED: LM-219 (F-23 silent-block realtime is the DM surface;
+  F-24 block hide is the search surface; both share `dm_blocks` as
+  the source of truth).
+
+SESSION: 253 (F-24 Search walk-close).
+```

@@ -88,9 +88,9 @@ sequenceDiagram
     StakingEl->>RenderFn: renderStakingPanel(debateId,<br/>sideALabel, sideBLabel,<br/>pool, questionsAnswered)
 
     alt user already staked
-        RenderFn->>User: "YOUR STAKE" display<br/>with amount + side + pool bar
-    else tier locked (< 10 questions)
-        RenderFn->>User: "TOKEN STAKING locked"<br/>with link to profile depth
+        RenderFn->>User: YOUR STAKE display<br/>with amount + side + pool bar
+    else tier locked (under 10 questions)
+        RenderFn->>User: TOKEN STAKING locked text<br/>with link to profile depth
     else staking active
         RenderFn->>User: side buttons (A vs B),<br/>amount input + quick buttons,<br/>CONFIRM button, pool bar
         StakingEl->>WireFn: wireStakingPanel(debateId)
@@ -127,10 +127,12 @@ sequenceDiagram
     participant StakesTbl as stakes table
     participant PoolTbl as stake_pools table
 
+    Note over SideBtn: ALWAYS VISIBLE when staking panel is in<br/>active state (tier unlocked, no existing stake).<br/>No disabled state — always tappable while visible.
+    Note over ConfirmBtn: ALWAYS VISIBLE when staking panel is in<br/>active state.<br/>DISABLED until a side is selected AND<br/>a positive amount is entered.<br/>Re-disabled while place_stake RPC in flight.
     User->>SideBtn: tap Side A or Side B
     SideBtn->>SideBtn: highlight selected,<br/>update confirm button text
     User->>AmountInput: enter amount (or tap quick btn)
-    AmountInput->>ConfirmBtn: enable + update text:<br/>"STAKE N ON SIDE X"
+    AmountInput->>ConfirmBtn: enable + update text:<br/>STAKE N ON SIDE X
 
     User->>ConfirmBtn: tap CONFIRM STAKE
     ConfirmBtn->>PlaceFn: placeStake(debateId, side, amount)
@@ -148,9 +150,9 @@ sequenceDiagram
         SQL->>PoolTbl: INSERT or UPDATE pool totals
         SQL-->>RPC: {success: true, tier, cap,<br/>new_balance, pool_totals}
         RPC-->>PlaceFn: success
-        PlaceFn-->>ConfirmBtn: "STAKE PLACED" (green)
+        PlaceFn-->>ConfirmBtn: STAKE PLACED (green)
     else validation fails
-        SQL-->>RPC: {success: false, error: "..."}
+        SQL-->>RPC: {success: false, error: ellipsis}
         RPC-->>PlaceFn: error
         PlaceFn-->>ConfirmBtn: re-enable + show error
     end
@@ -188,7 +190,7 @@ sequenceDiagram
     SQL->>PoolTbl: SELECT ... FOR UPDATE<br/>(lock pool row)
 
     alt pool already settled
-        SQL-->>RPC: {success, payout: cached}<br/>"Already settled"
+        SQL-->>RPC: {success, payout: cached}<br/>Already settled text
     else pool not settled
         SQL->>DebateTbl: SELECT winner FROM arena_debates
         SQL->>SQL: verify status = complete,<br/>winner is a/b/draw

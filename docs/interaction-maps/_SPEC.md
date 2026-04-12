@@ -1,5 +1,7 @@
 # Interaction Map Format Spec
-### Version: 1.0 (Session 255 draft)
+### Version: 1.2 (Session 256)
+### v1.2 changelog: ALWAYS ENABLED/VISIBLE rule made mandatory with blunter enforcement language; forbidden-character rule scope expanded to cover all text inside sequenceDiagram blocks (alt/else conditions, message labels, Note text, participant aliases). See bottom of file for amendment notes.
+### v1.1 changelog: special-character rule for Mermaid labels, ALWAYS ENABLED/VISIBLE note rule, nested alt blocks explicitly allowed.
 
 This document defines the machine-readable format for per-feature interaction maps in `docs/interaction-maps/`. Every file in that directory (except this spec and `README.md`) MUST conform. The format is designed to be:
 
@@ -137,16 +139,28 @@ Each `## <N>. <Action>` section contains exactly ONE `sequenceDiagram` block. Th
 - An `actor` for `User` on the left (for user-triggered actions). For auto-triggered actions (like F-49's verdict), start with the function that triggered it.
 - A `participant` for each distinct piece of code: UI element, client handler function, RPC, table, external API. Use `as` aliases with the file:line annotation in the alias text. Example: `participant CreateFn as "createModDebate()<br/>arena-mod-debate.ts:88"`.
 - Arrows `->>` for synchronous calls, `-->>` for responses or async returns.
-- A `Note over <Participant>: "..."` block for any button or element with non-trivial enable/disable logic. This is the "why is this greyed out" answer and it's the whole point of the format from the user's perspective.
-- `alt` / `else` blocks for branching logic that affects what the user sees (e.g. round < total vs round === total).
+- **MANDATORY BUTTON NOTE RULE (v1.2):** Every button, input, card, or other clickable/interactive element that appears as a participant in a sequenceDiagram MUST have an adjacent `Note over <Participant>: "..."` block. NO EXCEPTIONS. A missing Note is a spec violation, not a style choice. This rule applies whether or not the element has disabled-state logic:
+  - If the element HAS non-trivial enable/disable logic, the Note describes it. This is the "why is this greyed out" answer and it's the whole point of the format from the user's perspective.
+  - If the element has NO disabled-state logic, the Note still exists and explicitly states so — use `"ALWAYS ENABLED"`, `"ALWAYS VISIBLE"`, or `"NO DISABLED-STATE LOGIC"` as appropriate. The absence of complexity is itself a useful claim; readers must not have to wonder whether an omitted Note means "no logic" or "forgot to document."
+  - Self-check before writing each diagram: count every `participant` that represents a button/input/card. Count the `Note over` blocks targeting those participants. The two counts MUST be equal. If they aren't, the diagram is non-compliant.
+  - (Strengthened v1.2 after F-46 and F-01 bulk-run drafts both dropped the rule. v1.1's softer phrasing did not survive bulk-run context pressure.)
+- `alt` / `else` blocks for branching logic that affects what the user sees (e.g. round < total vs round === total). **Nested `alt` blocks are explicitly allowed and encouraged** for compound branching (e.g. an outer alt on "is anyone matched yet" with an inner alt on "am I the moderator or the debater"). The Mermaid parser handles nesting cleanly and the readability gain on complex branching is worth it. (Clarified v1.1.)
 - A `Note over` block on the final participant describing the user-visible outcome OR the next action's entry point.
 
-**Forbidden:**
+**Forbidden / escaped characters inside sequenceDiagram blocks (v1.2 expanded scope):**
 
-- Literal backticks inside Note text or participant labels (the Mermaid parser chokes — use plain words or HTML entities).
-- Code fence triple-backticks inside diagram text.
-- Participants without file:line annotations (except `User` and database tables).
-- Diagrams that combine multiple user actions into one mega-trace. Split them.
+The Mermaid sequence diagram parser (specifically the one used by the Figma MCP integration that renders these) is fragile around several characters. **These rules apply to ALL text inside a `sequenceDiagram` code block**, including: participant aliases, message labels (text after arrow colons), `alt` / `else` / `loop` / `opt` condition text, Note text, and any other string the parser encounters. Do not assume a rule scoped to "Note text" is safe in alt conditions — the parser has the same sensitivity everywhere inside the block. (Scope expanded v1.2 after F-01 surfaced violations in alt conditions and message labels that v1.1's "Note text" phrasing did not explicitly forbid.)
+
+- **Literal backticks** — NEVER use them in Note text, participant labels, or message text. The parser interprets them as code fences and crashes. Use plain words instead (e.g. "JSON string" not "`JSON`", "strip code fences" not "strip \`\`\`json\`\`\`").
+- **Ampersand `&`** — replace with the word "and" anywhere inside a sequenceDiagram block (participant labels, message text, Note text, alt conditions — all of it). Example: write `"CREATE and GET CODE button"` not `"CREATE & GET CODE button"`. The ampersand can be used freely in prose and markdown outside of diagram blocks.
+- **Angle brackets `<` and `>`** — only allowed as part of `<br/>` line breaks inside quoted label strings. Never as literal comparison operators anywhere inside a sequenceDiagram block — this includes alt conditions and message labels, not just Note text. Use the words "less than" / "greater than" / "not equal" / "at or over" / "at or under" instead. Examples: write `"status not matched"` not `"status !== matched"`; write `alt profile less than 25 percent` not `alt profile < 25%`; write `"queueSeconds at or over 180"` not `"queueSeconds >= 180"`. (Scope clarified v1.2 after F-01 draft used `<` in an alt condition and `>=` in a message label, both of which v1.1's "Note text"-scoped phrasing did not explicitly forbid.)
+- **Double quotes inside any diagram text** — avoid. This includes nested double quotes in participant alias labels (which are themselves wrapped in double quotes), empty-string literals like `""` in message text, and quoted strings inside alt conditions. If you must refer to a quoted string or an empty string, use single quotes, describe it in words, or rewrite the reference. Examples: write `"enterQueue(ai, empty topic)"` not `"enterQueue(ai, \"\")"`; write `"status is matched"` not `"status === \"matched\""`. (Scope clarified v1.2 after F-01 draft used `""` as an empty-string literal inside message text.)
+- **Triple backtick code fences** — NEVER inside diagram blocks. The diagram itself lives inside a code fence; a nested fence terminates it prematurely.
+- **Colons inside Note text** — generally safe, but avoid `::` sequences and avoid colons at the very start of a Note line, both of which the parser can misread as separator tokens.
+
+Participants without file:line annotations are forbidden except for `User` (always an `actor`) and database tables (which use the form `"<table_name> table"` with no line number).
+
+(Expanded v1.1 after F-48 exemplar run surfaced the `&` and `!==` cases. Scope expanded further in v1.2 after F-01 bulk-run draft surfaced `<` in alt conditions, `>=` in message labels, and `""` nested empty-string quotes in message text — all cases v1.1's "Note text"-scoped phrasing did not explicitly forbid.)
 
 **Participant label format:**
 
@@ -160,9 +174,13 @@ participant CreateFn as "createModDebate()<br/>arena-mod-debate.ts:88"
 participant Table as "arena_debates table"
 ```
 
-**Sizing target:**
+**Sizing and scope:**
 
-Each diagram should have **6-12 participants** and **10-25 message arrows**. If you're exceeding those counts, split the action. If you're below, the action is probably trivial and can be described in a Notes bullet of a larger diagram instead.
+- Each `## <N>. <Action>` section contains exactly ONE `sequenceDiagram` block.
+- Do NOT combine multiple user actions into one mega-trace. Split them into separate sections.
+- Sizing target per diagram: 6-12 participants and 10-25 message arrows.
+- Trivially short actions (e.g. "tap button → open picker") may have 3-5 participants and 3-8 arrows. That is fine as long as the action is genuinely standalone (a distinct user interaction worth documenting). Do NOT pad a trivial diagram to hit the 6-participant floor.
+- Oversized diagrams (more than 12 participants or more than 25 arrows) should be split into multiple actions.
 
 ---
 
@@ -183,15 +201,19 @@ If verification fails on any item, Claude Code should either (a) correct the ref
 
 ## Example files
 
-- `F-49-go-guest-sparring.md` — exists in this directory as of S255. Was hand-written by chat-Claude BEFORE this spec existed, so it does NOT have the YAML frontmatter. It's the "before" version and will be retrofitted to the spec later. Use it as a fidelity reference for the diagrams only.
+- **`F-48-mod-initiated-debate.md`** — the **original canonical exemplar**. Produced by Claude Code under the spec v1.0 prompt in session 255. Conforms to the full YAML frontmatter schema, has 5 diagrams at the target fidelity level, uses nested `alt` blocks, demonstrates the `ALWAYS ENABLED`/`ALWAYS VISIBLE` Note pattern, and surfaced 4 real code quirks in Known Quirks.
 
-- `F-48-mod-initiated-debate.md` — will be the FIRST spec-compliant file. Generated by Claude Code using the prompt in session 255. Serves as the canonical exemplar for all future feature maps.
+- **`F-47-moderator-marketplace.md`** — the **second canonical exemplar**. Produced by Claude Code under the spec v1.1 prompt in session 256. First feature mapped under v1.1 and first bulk-workflow-ready exemplar. Passed spec review on first draft with zero deviations. Demonstrates the format holding up under a different feature shape than F-48 (sprawling parent feature with 5 disparate actions, cross-ref handoffs to child features). **Use both F-48 and F-47 as references when producing new maps** — F-48 for tightly-scoped single-purpose features, F-47 for sprawling multi-action features.
+
+- `F-49-go-guest-sparring.md` — a pre-spec hand-written file by chat-Claude. Does NOT have the YAML frontmatter (predates the spec). Useful only as a secondary fidelity reference for the Mermaid diagrams themselves. Will be retrofitted to the spec in a later session.
+
+- `F-46-private-lobby.md` and `F-01-queue-matchmaking.md` — produced by Claude Code under the v1.1 bulk prompt in session 256. Both shipped with spec-compliance gaps (missing `ALWAYS ENABLED` Notes; F-01 additionally has forbidden-character violations in alt conditions and message labels). **Do NOT use as format references** — they are pending v1.2 compliance patches. The gaps they surfaced drove the v1.2 amendments in this spec.
 
 ---
 
-## Future: additional fields that may be added in v1.1+
+## Future: additional fields that may be added in v1.3+
 
-These are NOT required in v1.0 but are being flagged for consideration in future versions:
+These are NOT required in v1.2 but are being flagged for consideration in future versions:
 
 - `migration_files: []` — explicit list of `.sql` migration files vs general SQL files
 - `test_files: []` — paths to the feature's test files
@@ -199,4 +221,37 @@ These are NOT required in v1.0 but are being flagged for consideration in future
 - `build_sessions: []` — list of session numbers where significant work happened on this feature
 - `complexity_score` — integer 1-5 indicating how hard this feature is to modify safely
 
-Do not add these fields in v1.0. They're here as a note to future-self.
+Do not add these fields in v1.2. They're here as a note to future-self.
+
+---
+
+## v1.1 amendment notes (Session 255)
+
+After the F-48 exemplar run, three amendments were applied to v1.0:
+
+1. **Special character rule expanded.** The old "forbidden characters" bullet listed only backticks and code fences. F-48 surfaced that `&` breaks the parser inside participant labels, and `<`/`>` as comparison operators also break it. v1.1 lists all the affected characters explicitly with substitution guidance (`&` → `and`, `!==` → `not`, etc.).
+
+2. **ALWAYS ENABLED / ALWAYS VISIBLE Note rule added.** v1.0 required a Note over buttons with disabled-state logic but said nothing about buttons without it. Claude Code correctly inferred the right behavior on F-48 (adding explicit "ALWAYS ENABLED" notes on the CREATE & GET CODE button and the CANCEL button) but the spec should pin this down so future runs don't have to guess. The rule is now: if a button has no disabled-state logic, still add a Note saying so explicitly. Absence of complexity is itself a useful claim.
+
+3. **Nested `alt` blocks explicitly allowed.** v1.0 mentioned `alt`/`else` but said nothing about nesting. F-48's diagram 4 used a nested alt (outer: "is anyone matched yet", inner: "am I the moderator or the debater") and it rendered cleanly. v1.1 explicitly encourages this pattern for compound branching.
+
+Claude Code running under v1.1 on subsequent features should produce output that is format-identical to F-48 modulo genuine feature differences. If a v1.1 run produces something that differs *structurally* from F-48, that's a spec gap and should be flagged.
+
+---
+
+## v1.2 amendment notes (Session 256)
+
+After the S256 bulk run produced five files (F-47 single-run clean, then F-01 + F-46 + three CC-selected in a single bulk run), review surfaced two spec gaps that v1.1 did not adequately protect against under bulk-run context pressure. F-47 (mapped under v1.1 as a single-feature run) passed clean. F-46 and F-01 (mapped under v1.1 as part of the bulk run) both dropped rules that F-47 had followed cleanly. The gaps are not ambiguity in the spec — v1.1 technically covered both cases — but the phrasing was soft enough that CC deprioritized the rules when juggling 5 features in one context. v1.2 hardens the phrasing.
+
+1. **Mandatory Button Note rule strengthened.** v1.1 said buttons with no disabled-state logic "STILL include a Note stating this explicitly." That phrasing was followed by F-48 (the v1.0/v1.1 exemplar) and F-47 (the first v1.1 run) but dropped by F-46 and F-01 in the bulk run. v1.2 rewrites the rule as: "Every button, input, card, or other clickable/interactive element that appears as a participant in a sequenceDiagram MUST have an adjacent Note over block. NO EXCEPTIONS. A missing Note is a spec violation, not a style choice." Also adds an explicit self-check: count interactive-element participants, count Note over blocks targeting them, the counts must match. The blunter language and the self-check together should make the rule hard to drop under context pressure.
+
+2. **Forbidden-character rule scope expanded.** v1.1 phrased the rule as applying to "participant labels and Note text" and listed violations in terms of "Note text." F-01's draft used `<` as a comparison operator in an `alt` condition and `>=` in a message label, neither of which is strictly "Note text." The violations rendered incorrectly in Figma. v1.2 rewrites the rule's scope paragraph to explicitly cover: participant aliases, message labels (text after arrow colons), alt/else/loop/opt condition text, and Note text — in other words, ALL text inside a sequenceDiagram block. Individual character rules (backticks, `&`, `<`/`>`, nested double quotes) are updated to use the broader scope language. Example violations from F-01 are cited inline in the rule bullets so future CC runs can pattern-match against them.
+
+**Files requiring v1.2 compliance patches** (deferred from S256, queued for S257):
+
+- `F-46-private-lobby.md` — add ~5 missing `ALWAYS ENABLED` / `ALWAYS VISIBLE` Notes across diagrams 1, 2, 4, 5
+- `F-01-queue-matchmaking.md` — add `ALWAYS ENABLED` Notes across all 5 diagrams (~7 buttons affected); substitute forbidden characters in diagrams 1 (`profile < 25%`), 4 (`enterQueue(ai, "")`), and 5 (`queueSeconds >= 180`, `enterQueue(ai, "")`)
+
+F-47 and F-48 are v1.2-compliant as written — no retrofit needed. F-49 remains pre-spec and still awaits its full v1.1/v1.2 retrofit in a later session.
+
+**Expectation for v1.2 runs:** Claude Code running under v1.2 on subsequent features should produce output that is format-identical to F-47 or F-48 modulo genuine feature differences. If a v1.2 run produces something that differs structurally from either exemplar, or drops the Mandatory Button Note rule, that's a spec gap and should be flagged as a v1.3 candidate.

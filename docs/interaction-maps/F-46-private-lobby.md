@@ -76,25 +76,27 @@ sequenceDiagram
     participant ModePkr as showModeSelect()<br/>arena-config-mode.ts:22
     participant RouteFn as maybeRoutePrivate()<br/>arena-private-picker.ts:98
 
+    Note over PrivBtn: ALWAYS VISIBLE in the lobby.<br/>Redirects unauthenticated users<br/>to Plinko signup<br/>(arena-private-picker.ts:14).
+    Note over TypeCard: ALWAYS VISIBLE inside the picker.<br/>No disabled state — tapping any<br/>card stores the type and advances<br/>to mode select.
     User->>PrivBtn: tap PRIVATE DEBATE
     PrivBtn->>Picker: showPrivateLobbyPicker()
     Picker->>User: 3 visibility cards:<br/>Username / Group / Join Code
 
     User->>TypeCard: tap one (e.g. SHAREABLE JOIN CODE)
-    TypeCard->>StoreFn: showModeSelectThen("code")
-    StoreFn->>StoreFn: set _pendingPrivateType = "code"
+    TypeCard->>StoreFn: showModeSelectThen(code)
+    StoreFn->>StoreFn: set _pendingPrivateType = code
     StoreFn->>ModePkr: showModeSelect()
     ModePkr->>User: mode cards + topic input
 
     User->>ModePkr: tap mode (non-AI)
     ModePkr->>RouteFn: maybeRoutePrivate(mode, topic)
 
-    alt type === "username"
+    alt type === username
         RouteFn->>User: showUserSearchPicker()
-    else type === "group"
+    else type === group
         RouteFn->>User: showGroupLobbyPicker()
-    else type === "code"
-        RouteFn->>User: createAndWaitPrivateLobby(mode, topic, "code")
+    else type === code
+        RouteFn->>User: createAndWaitPrivateLobby(mode, topic, code)
     end
 
     Note over RouteFn: AI mode bypasses private<br/>routing (returns false)
@@ -104,31 +106,6 @@ sequenceDiagram
 - The private lobby picker also includes a round picker (`roundPickerHTML()` and `wireRoundPicker()` from `arena-config-settings.ts`) at `arena-private-picker.ts:63`.
 - AI Sparring cannot be private — `maybeRoutePrivate()` returns false for AI mode at `arena-private-picker.ts:102`, falling through to the normal AI queue path.
 - Auth gate: `showPrivateLobbyPicker()` redirects unauthenticated users to the Plinko signup page at `arena-private-picker.ts:14`.
-
-### 1a. Private picker dismiss handler
-
-The private lobby picker has a backdrop tap at `arena-private-picker.ts:87` and a cancel button at `arena-private-picker.ts:83`. Both dismiss the overlay and navigate back.
-
-<!-- captured: src/arena/arena-private-picker.ts:87 -->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Backdrop as arena-private-backdrop click<br/>arena-private-picker.ts:87
-    participant CancelBtn as arena-private-cancel click<br/>arena-private-picker.ts:83
-
-    alt User taps backdrop
-        User->>Backdrop: tap outside picker
-        Backdrop->>Backdrop: overlay.remove() then history.back()
-    else User taps Cancel
-        User->>CancelBtn: tap Cancel
-        CancelBtn->>CancelBtn: overlay.remove() then history.back()
-    end
-```
-
-**Notes:**
-- captured: src/arena/arena-private-picker.ts:87 — `#arena-private-backdrop` click handler dismisses the private picker overlay.
-- The cancel button at `arena-private-picker.ts:83` and backdrop at line 87 both inline-remove the overlay and call `history.back()`. Grouped per R5 dismiss-handler cluster rule.
 
 ---
 
@@ -166,9 +143,9 @@ sequenceDiagram
     alt visibility === code
         CreateFn->>CodeUI: show join code in large text<br/>+ COPY CHALLENGE LINK button
     else visibility === private
-        CreateFn->>WaitUI: "Waiting for [name] to accept..."
+        CreateFn->>WaitUI: Waiting for [name] to accept text
     else visibility === group
-        CreateFn->>WaitUI: "Waiting for a group member..."
+        CreateFn->>WaitUI: Waiting for a group member text
     end
 
     CreateFn->>PollFn: startPrivateLobbyPoll(debateId)
@@ -182,47 +159,6 @@ sequenceDiagram
 - The poll has a 10-minute hard timeout at `arena-private-lobby.ts:135` — if no one joins, the lobby is cancelled and a toast is shown.
 - The poll's catch block at `arena-private-lobby.ts:166` is empty: `catch { /* retry next tick */ }`. Network failures during polling produce no user feedback.
 - LM-200 applies: the `stamp_debate_language` trigger fires on the INSERT and stamps the creator's language preference.
-
-### 2a. User search and group picker dismiss handlers
-
-The user search picker and group lobby picker each have a cancel button and backdrop tap that dismiss their overlays.
-
-<!-- captured: src/arena/arena-private-picker.ts:190 -->
-<!-- captured: src/arena/arena-private-picker.ts:194 -->
-<!-- captured: src/arena/arena-private-picker.ts:255 -->
-<!-- captured: src/arena/arena-private-picker.ts:259 -->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant USCancel as arena-user-search-cancel click<br/>arena-private-picker.ts:190
-    participant USBackdrop as arena-user-search-backdrop click<br/>arena-private-picker.ts:194
-    participant GPCancel as arena-group-pick-cancel click<br/>arena-private-picker.ts:255
-    participant GPBackdrop as arena-group-pick-backdrop click<br/>arena-private-picker.ts:259
-
-    alt User search dismiss (cancel)
-        User->>USCancel: tap Cancel
-        USCancel->>USCancel: overlay.remove() then history.back()
-    else User search dismiss (backdrop)
-        User->>USBackdrop: tap outside picker
-        USBackdrop->>USBackdrop: overlay.remove() then history.back()
-    end
-
-    alt Group picker dismiss (cancel)
-        User->>GPCancel: tap Cancel
-        GPCancel->>GPCancel: overlay.remove() then history.back()
-    else Group picker dismiss (backdrop)
-        User->>GPBackdrop: tap outside picker
-        GPBackdrop->>GPBackdrop: overlay.remove() then history.back()
-    end
-```
-
-**Notes:**
-- captured: src/arena/arena-private-picker.ts:190 — `#arena-user-search-cancel` click dismisses user search overlay.
-- captured: src/arena/arena-private-picker.ts:194 — `#arena-user-search-backdrop` click dismisses user search overlay.
-- captured: src/arena/arena-private-picker.ts:255 — `#arena-group-pick-cancel` click dismisses group picker overlay.
-- captured: src/arena/arena-private-picker.ts:259 — `#arena-group-pick-backdrop` click dismisses group picker overlay.
-- All four handlers follow the same pattern: remove the overlay from DOM and call `history.back()`. Grouped per R5 dismiss-handler cluster rule.
 
 ---
 
@@ -298,8 +234,10 @@ sequenceDiagram
     RPC-->>LoadFn: challenges
 
     alt challenges found
-        LoadFn->>FeedUI: render challenge cards<br/>with ACCEPT / DECLINE buttons
+        LoadFn->>FeedUI: render challenge cards<br/>with ACCEPT and DECLINE buttons
         FeedUI->>User: shows challenges section
+
+        Note over FeedUI: Each challenge card carries<br/>ACCEPT and DECLINE buttons.<br/>Both ALWAYS VISIBLE on the card.<br/>No disabled states.<br/>DECLINE is BROKEN server-side:<br/>see Known Quirks (cancel_private_lobby<br/>checks debater_a, but decliner is debater_b).
 
         alt User taps ACCEPT
             User->>AcceptRPC: join_private_lobby(debate_id)
@@ -343,6 +281,7 @@ sequenceDiagram
     participant Table as arena_debates table
     participant Lobby as renderLobby()<br/>arena-lobby.ts:31
 
+    Note over CancelBtn: ALWAYS VISIBLE on the waiting screen.<br/>No disabled state — always tappable.<br/>Also fired by the 10-minute client-side<br/>auto-timeout (arena-private-lobby.ts:135).
     User->>CancelBtn: tap CANCEL
     CancelBtn->>CancelFn: cancelPrivateLobby()
     CancelFn->>StopPoll: clear poll interval
@@ -362,79 +301,6 @@ sequenceDiagram
 - The cancel RPC is fire-and-forget at `arena-private-lobby.ts:196` — `.catch((e) => console.warn(...))`. If it fails, the user still returns to the lobby, but the server-side debate remains in `pending` status until it ages out.
 - The 10-minute timeout at `arena-private-lobby.ts:126` (`TIMEOUT_SEC = 600`) is client-side only. If the tab is backgrounded, the timer may stall, leaving the lobby in `pending` state indefinitely on the server.
 - `cancel_private_lobby` does NOT check if `debater_b` has joined — it only checks `status = 'pending'`. Since `join_private_lobby` atomically sets status to `matched`, the cancel will fail if a joiner slips in first.
-
----
-
-## 6. User copies challenge link
-
-When a private lobby is created with `code` visibility, the waiting screen renders a COPY CHALLENGE LINK button at `arena-private-lobby.ts:99`. Tapping it at `arena-private-lobby.ts:101` generates a challenge URL with the join code and copies it to the clipboard via the Web Clipboard API.
-
-<!-- captured: src/arena/arena-private-lobby.ts:101 -->
-
-```mermaid
-sequenceDiagram
-    actor User as User (lobby creator)
-    participant CopyBtn as arena-challenge-link-btn click<br/>arena-private-lobby.ts:101
-    participant Clipboard as navigator.clipboard.writeText<br/>arena-private-lobby.ts:103
-    participant Toast as showToast()<br/>config.ts
-
-    Note over CopyBtn: VISIBLE only for code-visibility<br/>lobbies (not private or group)
-    User->>CopyBtn: tap COPY CHALLENGE LINK
-    CopyBtn->>CopyBtn: build URL with join code
-    CopyBtn->>Clipboard: writeText(challenge URL)
-
-    alt clipboard success
-        Clipboard-->>Toast: Challenge link copied!
-    else clipboard error
-        Clipboard-->>Toast: show raw link as fallback
-    end
-```
-
-**Notes:**
-- captured: src/arena/arena-private-lobby.ts:101 — `#arena-challenge-link-btn` click handler copies challenge link to clipboard.
-- The URL format is `https://themoderator.app/challenge?code=XXXXXX` where the code is URI-encoded at `arena-private-lobby.ts:102`.
-- Clipboard fallback at `arena-private-lobby.ts:105`: if `navigator.clipboard.writeText()` rejects (e.g., insecure context or permission denied), the raw URL is shown in a toast so the user can manually copy it.
-- This button was mentioned in F-46's existing notes but not diagrammed as a full action until this patch.
-
----
-
-## 7. Challenge call-to-action in lobby
-
-The arena lobby renders a challenge CTA button at `arena-lobby.ts:151`. Tapping it navigates the user to the home page carousel to browse hot takes and find opponents to challenge. This is the non-power-up path for initiating challenges from the lobby.
-
-<!-- captured: src/arena/arena-lobby.ts:151 -->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant CTA as arena-challenge-cta click<br/>arena-lobby.ts:151
-    participant NavFn as navigateTo(home)<br/>navigation.ts
-
-    User->>CTA: tap challenge CTA
-    CTA->>NavFn: navigateTo(home)
-    NavFn->>User: navigate to home carousel
-```
-
-**Notes:**
-- captured: src/arena/arena-lobby.ts:151 — `#arena-challenge-cta` click handler navigates to home page via `navigateTo('home')`.
-- This uses the `navigateTo()` register/call pattern from `navigation.ts`, not `window.location.href`.
-- The CTA is visible to all users in the lobby, not gated by authentication or role.
-
----
-
-## 8. Lobby click delegation
-
-_C-2 exemption: system_action — no single user-initiated trigger; this is an infrastructure-level event delegation handler._
-
-The lobby element at `arena-lobby.ts:160` has a click delegation handler that routes clicks on arena cards to the appropriate destination. Live debate cards (`.arena-card.card-live`) with a `data-debate-id` attribute enter the feed room as a spectator via `enterFeedRoomAsSpectator()`. General arena cards with `data-link` attributes navigate to the linked URL.
-
-<!-- captured: src/arena/arena-lobby.ts:160 -->
-
-**Notes:**
-- captured: src/arena/arena-lobby.ts:160 — lobby-scoped click delegation for arena cards.
-- Live debate cards route to `enterFeedRoomAsSpectator()` at `arena-lobby.ts:165`, allowing spectating from the lobby without a full page navigation.
-- General `data-link` cards use `window.location.href` at `arena-lobby.ts:169` for direct navigation.
-- This delegation handler is scoped to the lobby element, not the document — it only fires for clicks within the lobby container.
 
 ---
 

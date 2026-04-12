@@ -69,7 +69,7 @@ sequenceDiagram
 
     QueuePoll->>MatchFn: onMatchFound(MatchData)
     MatchFn->>ClearFn: stop queue poll + elapsed timers
-    MatchFn->>MatchFn: show "OPPONENT FOUND!" (1.2s delay)
+    MatchFn->>MatchFn: show OPPONENT FOUND text (1.2s delay)
     MatchFn->>BuildFn: build CurrentDebate from<br/>MatchData + selectedMode,<br/>selectedRanked, selectedRuleset
 
     alt AI mode or no opponent_id
@@ -112,6 +112,7 @@ sequenceDiagram
     participant ConfirmFn as onMatchConfirmed()<br/>arena-match.ts:165
     participant PreDebate as showPreDebate()<br/>arena-room-setup.ts:31
 
+    Note over AcceptBtn: ALWAYS VISIBLE while view=matchFound.<br/>Disabled after first tap until RPC resolves.<br/>Re-enabled on RPC error.
     User->>AcceptBtn: tap ACCEPT
     AcceptBtn->>AcceptFn: onMatchAccept()
     AcceptFn->>AcceptFn: stop countdown,<br/>disable both buttons
@@ -132,7 +133,7 @@ sequenceDiagram
 
     alt both ready
         Poll->>ConfirmFn: onMatchConfirmed()
-        ConfirmFn->>ConfirmFn: "Both ready - entering battle!"
+        ConfirmFn->>ConfirmFn: Both ready entering battle text
 
         alt selectedWantMod === true
             ConfirmFn->>ConfirmFn: request_mod_for_debate()<br/>(fire-and-forget)
@@ -140,7 +141,7 @@ sequenceDiagram
 
         ConfirmFn->>PreDebate: showPreDebate(debateData)<br/>(0.8s delay)
     else opponent declined or cancelled
-        Poll->>User: onOpponentDeclined()<br/>"Opponent declined"
+        Poll->>User: onOpponentDeclined()<br/>Opponent declined text
     else poll timeout (15s)
         Poll->>User: onOpponentDeclined()
     end
@@ -177,6 +178,8 @@ sequenceDiagram
     participant ReturnFn as returnToQueueAfterDecline()<br/>arena-match.ts:189
     participant QueueFn as enterQueue()<br/>arena-queue.ts:20
 
+    Note over DeclineBtn: ALWAYS VISIBLE while view=matchFound.<br/>Also auto-fires when the 12s countdown reaches 0.<br/>No disabled state.
+
     alt User taps DECLINE
         User->>DeclineBtn: tap DECLINE
     else Countdown reaches 0
@@ -193,7 +196,7 @@ sequenceDiagram
     ReturnFn->>ReturnFn: clear matchFoundDebate
 
     alt selectedMode still set
-        ReturnFn->>QueueFn: enterQueue(selectedMode, "")
+        ReturnFn->>QueueFn: enterQueue(selectedMode, empty topic)
         QueueFn->>User: back to queue search screen
     else no mode
         ReturnFn->>User: renderLobby()
@@ -205,38 +208,6 @@ sequenceDiagram
 - `onOpponentDeclined()` at `arena-match.ts:178` (triggered when the opponent declines first) disables both buttons, shows "Opponent declined — returning to queue...", then calls `returnToQueueAfterDecline()` after a 1.5-second delay.
 - The auto-return-to-queue behavior at `arena-match.ts:191` is a nice UX touch — declining doesn't dump the user back to the lobby, it puts them right back into the search.
 - LM-190 applies: the status guard `WHERE status = 'pending'` at `supabase-deployed-functions-export.sql:8728` means a cancel on an already-started debate is silently ignored.
-
----
-
-## 4. User enters the pre-debate room
-
-After both debaters accept (via action 2), `onMatchConfirmed()` shows the pre-debate room via `showPreDebate()` at `arena-room-setup.ts:31`. This screen renders the debate topic, power-up loadout, reference loadout picker, and an ENTER BATTLE button. Tapping ENTER BATTLE at `arena-room-setup.ts:121` disables the button, fetches the final power-up loadout via `getMyPowerUps()`, and calls `enterRoom(debateData)` to transition into the live debate room.
-
-<!-- captured: src/arena/arena-room-setup.ts:121 -->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant EnterBtn as pre-debate-enter-btn click<br/>arena-room-setup.ts:121
-    participant PowerRPC as getMyPowerUps()<br/>arena-room-setup.ts:125
-    participant StateFn as set_equippedForDebate()<br/>arena-room-setup.ts:126
-    participant RoomFn as enterRoom(debateData)<br/>arena-room-setup.ts:130
-
-    Note over EnterBtn: ENABLED after pre-debate<br/>screen fully renders
-    User->>EnterBtn: tap ENTER BATTLE
-    EnterBtn->>EnterBtn: disabled, text becomes ENTERING...
-    EnterBtn->>PowerRPC: getMyPowerUps(debateId)
-    PowerRPC-->>StateFn: equipped power-ups (or empty on error)
-    StateFn->>RoomFn: enterRoom(debateData)
-    RoomFn->>User: transition to live debate room
-```
-
-**Notes:**
-- captured: src/arena/arena-room-setup.ts:121 — `#pre-debate-enter-btn` click handler, the transition from room setup into the live debate.
-- The button disables itself immediately on click (`enterBtn.disabled = true`) and changes text to "ENTERING..." at `arena-room-setup.ts:123`. This prevents double-click.
-- If `getMyPowerUps()` fails, the catch block at `arena-room-setup.ts:128` sets `equippedForDebate` to an empty array — the user enters the debate without power-ups rather than being blocked.
-- This is the critical handoff between F-02 (match acceptance) and the live debate room. The ENTER BATTLE button is the last user-initiated step before the debate begins.
-- For AI mode, `showPreDebate()` still renders but the reference loadout picker is hidden at `arena-room-setup.ts:112`.
 
 ---
 

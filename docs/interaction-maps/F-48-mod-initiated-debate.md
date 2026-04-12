@@ -267,34 +267,6 @@ sequenceDiagram
 
 ---
 
-## 6. Debater leaves the waiting room
-
-The first debater to join a mod-initiated debate sees a "Waiting for Opponent" screen with a LEAVE button at `arena-mod-debate.ts:163`. Tapping LEAVE at `arena-mod-debate.ts:168` stops the `check_mod_debate` poll and returns to the lobby via `renderLobby()`. The debater's slot in `arena_debates` is NOT cleared server-side — only the client navigates away.
-
-<!-- captured: src/arena/arena-mod-debate.ts:168 -->
-
-```mermaid
-sequenceDiagram
-    actor Debater as Debater (role a)
-    participant LeaveBtn as mod-debate-debater-cancel-btn click<br/>arena-mod-debate.ts:168
-    participant StopPoll as stopModDebatePoll()<br/>arena-mod-debate.ts:202
-    participant Lobby as renderLobby()<br/>arena-lobby.ts:31
-
-    Note over LeaveBtn: VISIBLE on first-joiner<br/>waiting screen only
-    Debater->>LeaveBtn: tap LEAVE
-    LeaveBtn->>StopPoll: stopModDebatePoll()
-    LeaveBtn->>Lobby: renderLobby()
-    Lobby->>Debater: back to lobby
-```
-
-**Notes:**
-- captured: src/arena/arena-mod-debate.ts:168 — `#mod-debate-debater-cancel-btn` click handler for debater LEAVE.
-- The LEAVE button does NOT call `cancel_mod_debate` — only the moderator can cancel the debate. The debater's slot (`debater_a`) remains filled in the database after leaving.
-- If the debater leaves and another debater joins as `debater_b`, the debate becomes `matched` with the first debater absent. The moderator enters observer mode and the second debater sees the match-found screen, but the first debater is gone.
-- This is distinct from the moderator's CANCEL button (action 5), which calls `cancel_mod_debate` RPC and updates the database status.
-
----
-
 ## Cross-references
 
 - [F-46 Private Lobby](./F-46-private-lobby.md) — provides the `joinWithCode()` entry point that F-48 piggybacks on. The join-code input in the lobby, the `join_private_lobby` RPC, and the fallback-to-`join_mod_debate` path all live in `arena-private-lobby.ts`.

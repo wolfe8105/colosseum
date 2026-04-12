@@ -62,7 +62,7 @@ sequenceDiagram
     PostDebate->>AuthCheck: check logged in +<br/>is_moderator !== true
     AuthCheck-->>PostDebate: conditions met
 
-    PostDebate->>NudgeFn: nudge("become_moderator_post_debate",<br/>"Think you could call it better?<br/>Become a Moderator -> Settings")
+    PostDebate->>NudgeFn: nudge(become_moderator_post_debate,<br/>Think you could call it better?<br/>Become a Moderator text pointing to Settings)
     NudgeFn->>NudgeFn: check suppression:<br/>once/session, 24h cooldown,<br/>3/session cap
 
     alt nudge allowed
@@ -105,7 +105,7 @@ sequenceDiagram
     SQL-->>RPC: success
     RPC-->>ToggleFn: result
     ToggleFn-->>Handler: {success}
-    Handler->>Handler: showToast("You are now a Moderator!")
+    Handler->>Handler: showToast You are now a Moderator
     Handler->>Lobby: renderLobby()
     Lobby->>User: re-renders lobby<br/>banner gone, MOD QUEUE visible
 ```
@@ -132,18 +132,18 @@ sequenceDiagram
     participant ActionHandler as event delegation<br/>async.ts:504
     participant ToggleFn as toggleModerator(true)<br/>auth.ts:821
 
-    LoadFn->>LoadFn: check: !profile.is_moderator<br/>AND takes.length >= 2
+    LoadFn->>LoadFn: check: !profile.is_moderator<br/>AND takes.length at least 2
     LoadFn->>RenderFn: _renderModeratorCard(isGuest)
     RenderFn-->>LoadFn: card HTML
     LoadFn->>FeedEl: splice card at position 2<br/>in rendered takes array
 
     alt Logged-in user taps BECOME A MODERATOR
-        User->>ActionHandler: data-action="become-mod"
+        User->>ActionHandler: data-action become-mod
         ActionHandler->>ToggleFn: toggleModerator(true)
         ToggleFn-->>ActionHandler: success
         ActionHandler->>ActionHandler: showToast + reload feed
     else Guest taps SIGN UP TO MODERATE
-        User->>ActionHandler: data-action="mod-signup"
+        User->>ActionHandler: data-action mod-signup
         ActionHandler->>User: redirect to plinko.html
     end
 ```
@@ -170,12 +170,14 @@ sequenceDiagram
     participant SkipBtn as SKIP button<br/>plinko.ts:411
     participant Step5 as Step 5: Done
 
+    Note over EnableBtn: ALWAYS VISIBLE on Step 4.<br/>Disabled while toggle RPC in flight<br/>(shows ENABLING text).<br/>Silent catch at plinko.ts:407 means<br/>flow proceeds to Step 5 even on failure.
+    Note over SkipBtn: ALWAYS VISIBLE on Step 4.<br/>No disabled state.
     Step3->>Step4: goToStep(4)
-    Step4->>User: "Want to moderate debates?"<br/>ENABLE / SKIP buttons
+    Step4->>User: Want to moderate debates question<br/>ENABLE and SKIP buttons
 
     alt User taps ENABLE
         User->>EnableBtn: tap ENABLE MODERATOR MODE
-        EnableBtn->>EnableBtn: disabled=true, text="ENABLING..."
+        EnableBtn->>EnableBtn: disabled=true, text ENABLING ellipsis
         EnableBtn->>ToggleFn: toggleModerator(true)
         ToggleFn-->>EnableBtn: (success or silent fail)
         EnableBtn->>Step5: goToStep(5)
