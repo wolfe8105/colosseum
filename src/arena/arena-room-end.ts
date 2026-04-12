@@ -20,7 +20,6 @@ import {
 import type { CurrentDebate, AIScoreResult, UpdateDebateResult, DebateRole } from './arena-types.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.ts';
 import { enterQueue } from './arena-queue.ts';
-import { renderLobby } from './arena-lobby.ts';
 import { stopOpponentPoll } from './arena-room-live.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';
@@ -75,7 +74,7 @@ export async function endCurrentDebate(): Promise<void> {
       </div>
     `;
     screenEl?.appendChild(post);
-    document.getElementById('arena-back-to-lobby')?.addEventListener('click', renderLobby);
+    document.getElementById('arena-back-to-lobby')?.addEventListener('click', async () => { const { renderLobby } = await import('./arena-lobby.ts'); renderLobby(); });
     return;
   }
 
@@ -282,7 +281,7 @@ export async function endCurrentDebate(): Promise<void> {
     });
   });
 
-  document.getElementById('arena-back-to-lobby')?.addEventListener('click', renderLobby);
+  document.getElementById('arena-back-to-lobby')?.addEventListener('click', async () => { const { renderLobby } = await import('./arena-lobby.ts'); renderLobby(); });
 
   // Add as Rival
   document.getElementById('arena-add-rival')?.addEventListener('click', async () => {

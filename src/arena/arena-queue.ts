@@ -14,7 +14,6 @@ import {
 import type { ArenaView, DebateMode, ArenaFeedItem, MatchData } from './arena-types.ts';
 import { MODES, QUEUE_AI_PROMPT_SEC, QUEUE_HARD_TIMEOUT_SEC, QUEUE_CATEGORIES, AI_TOPICS } from './arena-types.ts';
 import { isPlaceholder, formatTimer, pushArenaState, randomFrom } from './arena-core.ts';
-import { renderArenaFeedCard, renderLobby } from './arena-lobby.ts';
 import { onMatchFound, startAIDebate } from './arena-match.ts';
 
 export function enterQueue(mode: DebateMode | string, topic: string): void {
@@ -78,6 +77,7 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
         const recent = items.filter((d: ArenaFeedItem) => d.status !== 'live').slice(0, 3);
         const cards = [...live, ...recent].slice(0, 4);
         if (cards.length > 0) {
+          const { renderArenaFeedCard } = await import('./arena-lobby.ts');
           feedEl.innerHTML = `<div class="arena-queue-feed-label">\uD83D\uDC41\uFE0F Live in the Arena</div>`
             + cards.map((d: ArenaFeedItem) => renderArenaFeedCard(d, d.status === 'live' ? 'live' : 'verdict')).join('');
         }
@@ -238,7 +238,7 @@ export function onQueueTimeout(): void {
     queueEl.appendChild(alt);
     document.getElementById('arena-try-ai')?.addEventListener('click', () => { enterQueue('ai', ''); });
     document.getElementById('arena-try-again')?.addEventListener('click', () => { enterQueue(selectedMode!, ''); });
-    document.getElementById('arena-back-lobby')?.addEventListener('click', renderLobby);
+    document.getElementById('arena-back-lobby')?.addEventListener('click', async () => { const { renderLobby } = await import('./arena-lobby.ts'); renderLobby(); });
   }
 
   if (!isPlaceholder()) {
@@ -251,7 +251,7 @@ export function leaveQueue(): void {
   if (!isPlaceholder()) {
     safeRpc('leave_debate_queue').catch((e) => console.warn('[Arena] leave_debate_queue failed:', e));
   }
-  renderLobby();
+  void import('./arena-lobby.ts').then(({ renderLobby }) => renderLobby());
 }
 
 export function clearQueueTimers(): void {

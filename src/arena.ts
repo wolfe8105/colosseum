@@ -56,7 +56,10 @@ export {
 export { init, destroy, getView, getCurrentDebate } from './arena/arena-core.ts';
 
 // --- Lobby ---
-export { showPowerUpShop, renderLobby } from './arena/arena-lobby.ts';
+export async function showPowerUpShop(): Promise<void> {
+  const { showPowerUpShop: fn } = await import('./arena/arena-lobby.ts');
+  fn();
+}
 
 // --- Config ---
 export {

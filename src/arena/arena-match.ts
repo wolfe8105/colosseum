@@ -16,7 +16,6 @@ import type { CurrentDebate, MatchData, MatchAcceptResponse, DebateRole } from '
 import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-types.ts';
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
 import { showPreDebate, enterRoom } from './arena-room-setup.ts';
-import { renderLobby } from './arena-lobby.ts';
 import { enterQueue } from './arena-queue.ts';
 
 function clearQueueTimersInline(): void {
@@ -191,7 +190,7 @@ export function returnToQueueAfterDecline(): void {
   if (selectedMode) {
     enterQueue(selectedMode, '');
   } else {
-    renderLobby();
+    void import('./arena-lobby.ts').then(({ renderLobby }) => renderLobby());
   }
 }
 

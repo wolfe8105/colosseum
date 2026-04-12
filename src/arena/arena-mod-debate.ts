@@ -6,7 +6,6 @@ import {
 } from './arena-state.ts';
 import type { ArenaView, CurrentDebate, DebateMode, DebateRole, ModDebateCheckResult } from './arena-types.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
-import { renderLobby } from './arena-lobby.ts';
 import { showModQueue } from './arena-mod-queue.ts';
 import { enterRoom } from './arena-room-setup.ts';
 import { showMatchFound } from './arena-match.ts';
@@ -165,8 +164,9 @@ export function showModDebateWaitingDebater(debateId: string, topic: string, mod
   `;
   screenEl?.appendChild(container);
 
-  document.getElementById('mod-debate-debater-cancel-btn')?.addEventListener('click', () => {
+  document.getElementById('mod-debate-debater-cancel-btn')?.addEventListener('click', async () => {
     stopModDebatePoll();
+    const { renderLobby } = await import('./arena-lobby.ts');
     renderLobby();
   });
 

@@ -15,7 +15,6 @@ import type {
 import { AI_TOPICS } from './arena-types.ts';
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
 import { showMatchFound } from './arena-match.ts';
-import { renderLobby } from './arena-lobby.ts';
 import { showModDebateWaitingDebater } from './arena-mod-debate.ts';
 
 export async function createAndWaitPrivateLobby(
@@ -116,6 +115,7 @@ export async function createAndWaitPrivateLobby(
   } catch (err) {
     console.error('[Arena] create_private_lobby error:', err);
     showToast(friendlyError(err) || 'Failed to create lobby');
+    const { renderLobby } = await import('./arena-lobby.ts');
     renderLobby();
   }
 }
@@ -161,6 +161,7 @@ export function startPrivateLobbyPoll(debateId: string, mode: string, topic: str
         clearInterval(privateLobbyPollTimer!);
         set_privateLobbyPollTimer(null);
         showToast('Lobby cancelled');
+        const { renderLobby } = await import('./arena-lobby.ts');
         renderLobby();
       }
     } catch { /* retry next tick */ }
@@ -196,6 +197,7 @@ export async function cancelPrivateLobby(): Promise<void> {
     safeRpc('cancel_private_lobby', { p_debate_id: privateLobbyDebateId }).catch((e) => console.warn('[Arena] cancel_private_lobby failed:', e));
   }
   set_privateLobbyDebateId(null);
+  const { renderLobby } = await import('./arena-lobby.ts');
   renderLobby();
 }
 

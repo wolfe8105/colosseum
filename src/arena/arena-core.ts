@@ -23,7 +23,7 @@ import { clearMatchAcceptTimers } from './arena-match.ts';
 import { stopOpponentPoll } from './arena-room-live.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';
-import { renderLobby, showPowerUpShop } from './arena-lobby.ts';
+
 import { joinWithCode } from './arena-private-lobby.ts';
 import { injectCSS } from './arena-css.ts';
 import { cleanupPendingRecording } from '../voicememo.ts';
@@ -85,7 +85,7 @@ export const _onPopState = () => {
   }
 
   // All back navigation returns to lobby
-  if (view !== 'lobby') renderLobby();
+  if (view !== 'lobby') void import('./arena-lobby.ts').then(({ renderLobby }) => renderLobby());
 };
 window.addEventListener('popstate', _onPopState);
 
@@ -101,11 +101,13 @@ export function init(): void {
     console.warn('[Arena] #screen-arena not found');
     return;
   }
-  renderLobby();
-  // Auto-open power-up shop if ?shop=1 in URL
-  if (new URLSearchParams(window.location.search).get('shop') === '1') {
-    showPowerUpShop();
-  }
+  void import('./arena-lobby.ts').then(({ renderLobby, showPowerUpShop }) => {
+    renderLobby();
+    // Auto-open power-up shop if ?shop=1 in URL
+    if (new URLSearchParams(window.location.search).get('shop') === '1') {
+      showPowerUpShop();
+    }
+  });
   // F-39: Auto-join via challenge link (?joinCode=XXXXXX)
   const challengeCode = new URLSearchParams(window.location.search).get('joinCode');
   if (challengeCode) {

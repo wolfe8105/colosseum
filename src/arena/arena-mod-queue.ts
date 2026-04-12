@@ -7,7 +7,6 @@ import {
   set_modRequestModalShown,
 } from './arena-state.ts';
 import type { ArenaView, ModQueueItem, ModStatusResult } from './arena-types.ts';
-import { renderLobby } from './arena-lobby.ts';
 import { showModDebatePicker } from './arena-mod-debate.ts';
 import { enterRoom } from './arena-room-setup.ts';
 
@@ -34,8 +33,9 @@ export function showModQueue(): void {
   `;
   screenEl?.appendChild(container);
 
-  document.getElementById('mod-queue-back')?.addEventListener('click', () => {
+  document.getElementById('mod-queue-back')?.addEventListener('click', async () => {
     stopModQueuePoll();
+    const { renderLobby } = await import('./arena-lobby.ts');
     renderLobby();
   });
 
