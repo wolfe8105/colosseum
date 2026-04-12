@@ -612,24 +612,47 @@ export function injectCSS(): void {
     }
 
     /* Phase 5 — Spectator vote controls */
-    .feed-spectator-controls { padding:12px 16px;text-align:center; }
-    .feed-vote-label {
-      font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;
-      color:var(--mod-text-muted);margin-bottom:8px;
+    /* F-58 — Sentiment Tip Strip */
+    .feed-spectator-controls { padding:10px 12px; }
+    .feed-tip-label {
+      font-family:var(--mod-font-display);font-size:11px;letter-spacing:2px;
+      color:var(--mod-text-muted);text-align:center;margin-bottom:8px;
     }
-    .feed-vote-row { display:flex;gap:12px;justify-content:center; }
-    .feed-vote-btn {
-      flex:1;max-width:160px;padding:14px 16px;border-radius:8px;
-      font-family:var(--mod-font-display);font-size:14px;letter-spacing:1px;
-      border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);
-      color:#fff;cursor:pointer;min-height:44px;
-      transition:opacity 0.2s, border-color 0.2s;
+    .feed-tip-row {
+      display:flex;align-items:center;gap:6px;margin-bottom:6px;
     }
-    .feed-vote-btn:disabled { opacity:0.4;cursor:default; }
-    .feed-vote-btn.feed-vote-a:not(:disabled):hover { border-color:var(--mod-accent-cyan); }
-    .feed-vote-btn.feed-vote-b:not(:disabled):hover { border-color:var(--mod-accent-magenta); }
-    .feed-vote-status {
-      font-size:12px;color:var(--mod-text-muted);margin-top:8px;letter-spacing:1px;
+    .feed-tip-side-label {
+      font-family:var(--mod-font-display);font-size:11px;letter-spacing:1px;
+      min-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      flex-shrink:0;
+    }
+    .feed-tip-label-a { color:var(--mod-accent-cyan); }
+    .feed-tip-label-b { color:var(--mod-accent-magenta); }
+    .feed-tip-btn {
+      flex:1;padding:10px 4px;border-radius:6px;
+      font-family:var(--mod-font-display);font-size:13px;font-weight:700;
+      border:1px solid transparent;cursor:pointer;min-height:44px;
+      transition:opacity 0.15s, transform 0.1s, background 0.15s;
+    }
+    .feed-tip-btn:disabled { opacity:0.35;cursor:default; }
+    .feed-tip-btn:not(:disabled):active { transform:scale(0.94); }
+    .feed-tip-btn-a {
+      background:rgba(0,224,255,0.12);color:var(--mod-accent-cyan);
+      border-color:rgba(0,224,255,0.25);
+    }
+    .feed-tip-btn-a:not(:disabled):hover {
+      background:rgba(0,224,255,0.22);border-color:var(--mod-accent-cyan);
+    }
+    .feed-tip-btn-b {
+      background:rgba(204,41,54,0.12);color:var(--mod-accent-magenta);
+      border-color:rgba(204,41,54,0.25);
+    }
+    .feed-tip-btn-b:not(:disabled):hover {
+      background:rgba(204,41,54,0.22);border-color:var(--mod-accent-magenta);
+    }
+    .feed-tip-status {
+      font-size:11px;color:var(--mod-text-muted);text-align:center;
+      margin-top:4px;letter-spacing:1px;min-height:16px;
     }
 
     /* Phase 5 — Vote gate overlay */
