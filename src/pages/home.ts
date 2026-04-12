@@ -21,6 +21,7 @@ import '../tiers.ts';
 import '../paywall.ts';
 import '../cards.ts';
 import '../analytics.ts';
+import { initDripCard } from '../onboarding-drip.ts';
 
 // --- Named imports ---
 import { ready, getCurrentUser, getIsPlaceholderMode, onChange } from '../auth.ts';
@@ -90,6 +91,10 @@ async function appInit() {
 
   loadFollowCounts();
   renderFeed().catch(e => console.error('renderFeed error:', e));
+
+  // F-36: Onboarding drip card (new users, first 14 days)
+  const homeEl = document.getElementById('screen-home');
+  if (homeEl) initDripCard(homeEl).catch(() => {});
 }
 
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => appInit().catch(e => console.error('appInit error:', e))); }

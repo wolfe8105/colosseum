@@ -78,6 +78,8 @@ async function startPolling(): Promise<void> {
         if (state.chatPollTimer) { clearInterval(state.chatPollTimer); state.chatPollTimer = null; }
         state.debateData = freshDebate;
         renderSpectateView(freshDebate, allMessages);
+        // F-36: Day 3 — watched a full debate
+        import('../onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(3)).catch(() => {});
       }
     } catch (err) {
       console.warn('[Spectate] Poll error:', err);

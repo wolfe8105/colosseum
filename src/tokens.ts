@@ -373,6 +373,8 @@ export async function claimHotTake(hotTakeId: string): Promise<ClaimResult | nul
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Hot take');
   void claimMilestone('first_hot_take');
+  // F-36: Day 4 — posted a hot take
+  import('./onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(4)).catch(() => {});
   return result;
 }
 
@@ -393,6 +395,8 @@ export async function claimVote(debateId: string): Promise<ClaimResult | null> {
   _updateBalanceDisplay(result.new_balance);
   _tokenToast(result.tokens_earned ?? 0, 'Vote');
   void claimMilestone('first_vote');
+  // F-36: Day 2 — first vote
+  import('./onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(2)).catch(() => {});
   return result;
 }
 
@@ -411,6 +415,11 @@ export async function claimDebate(debateId: string): Promise<ClaimResult | null>
   }
   _tokenToast(result.tokens_earned ?? 0, label);
   void claimMilestone('first_debate');
+  // F-36: Day 5 — completed a debate; Day 7 — won a debate
+  import('./onboarding-drip.ts').then(({ triggerDripDay }) => {
+    void triggerDripDay(5);
+    if (result.is_winner) void triggerDripDay(7);
+  }).catch(() => {});
   return result;
 }
 
@@ -440,6 +449,10 @@ export async function checkProfileMilestones(completedCount: number): Promise<vo
   if (completedCount >= 6)  void claimMilestone('profile_6_sections');
   if (completedCount >= 12) void claimMilestone('profile_12_sections');
   if (completedCount >= 3)  void claimMilestone('verified_gladiator');
+  // F-36: Day 6 — filled 3+ profile sections
+  if (completedCount >= 3) {
+    import('./onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(6)).catch(() => {});
+  }
 }
 
 export async function getSummary(): Promise<TokenSummary | null> {

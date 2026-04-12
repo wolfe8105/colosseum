@@ -431,6 +431,8 @@ document.getElementById('btn-create')?.addEventListener('click', async () => {
       const welcome = document.getElementById('welcome-text');
       if (welcome) welcome.textContent = 'Welcome to the arena, ' + displayName + '!';
       nudge('first_signup', '🎉 Welcome to the arena. Your journey starts now.', 'success');
+      // F-36: Day 1 — showed up
+      import('../onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(1)).catch(() => {});
       goToStep(4);
     } else {
       showMsg('step3-msg', 'Session expired. Please start over.', 'error');
