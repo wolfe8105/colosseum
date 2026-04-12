@@ -14,8 +14,8 @@
 |---|---|---------|--------|
 | 1 | F-60 | Saved Loadouts | ✅ S272 |
 | 2 | F-54 | Private Profile Toggle | ✅ S272 |
-| 3 | F-53 | Profile Debate Archive | ⏳ specced, not built |
-| 4 | F-33 | Verified Gladiator Badge | ⏳ specced, not built |
+| 3 | F-53 | Profile Debate Archive | ✅ S273 |
+| 4 | F-33 | Verified Gladiator Badge | ✅ S273 |
 | 5 | F-35.3 | Orange Dot Indicator | ⏳ not started |
 | 6 | F-39 | Embeddable Challenge Links | ⏳ specced, not built |
 | 7 | F-21 | Intro Music | ⏳ not started |
@@ -125,6 +125,27 @@
 **Docs**
 - THE-MODERATOR-AGENT-HANDOFF.md (new)
 
+### Session 273
+
+**Client — New**
+- src/badge.ts (new — vgBadge() utility, single source of truth for 🎖️ badge)
+- src/profile-debate-archive.ts (new — F-53 full archive module)
+
+**Client — Modified**
+- src/async.fetch.ts
+- src/async.render.ts
+- src/async.types.ts
+- src/auth.profile.ts
+- src/auth.types.ts
+- src/leaderboard.ts
+- src/pages/home.feed.ts
+- src/pages/home.nav.ts
+- index.html
+
+**Supabase SQL**
+- supabase/session-273-f53-debate-archive.sql
+- supabase/session-273-f33-verified-gladiator.sql
+
 ---
 
-*Last updated: Session 272*
+*Last updated: Session 273*
