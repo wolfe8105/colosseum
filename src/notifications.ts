@@ -21,6 +21,8 @@ export type NotificationType =
   | 'result'
   | 'rank_up'
   | 'follow'
+  | 'follow_online'
+  | 'follow_debate'
   | 'reaction'
   | 'system'
   | 'stake_won'
@@ -52,17 +54,19 @@ export type NotificationFilter = 'all' | 'challenge' | 'result' | 'reaction' | '
 // ============================================================
 
 export const TYPES: Readonly<Record<NotificationType, NotificationTypeInfo>> = {
-  challenge: { icon: '⚔️', label: 'Challenge' },
-  debate_start: { icon: '🔴', label: 'Debate Starting' },
-  result: { icon: '🏆', label: 'Result' },
-  rank_up: { icon: '📈', label: 'Rank Up' },
-  follow: { icon: '👤', label: 'New Follower' },
-  reaction: { icon: '🔥', label: 'Reaction' },
-  system: { icon: '📢', label: 'System' },
-  stake_won: { icon: '🪙', label: 'Stake Won' },
-  stake_lost: { icon: '💸', label: 'Stake Lost' },
-  power_up: { icon: '⚡', label: 'Power-Up' },
-  tier_up: { icon: '🏅', label: 'Tier Up' },
+  challenge:     { icon: '⚔️',  label: 'Challenge' },
+  debate_start:  { icon: '🔴',  label: 'Debate Starting' },
+  result:        { icon: '🏆',  label: 'Result' },
+  rank_up:       { icon: '📈',  label: 'Rank Up' },
+  follow:        { icon: '👤',  label: 'New Follower' },
+  follow_online: { icon: '🟢',  label: 'Online Now' },
+  follow_debate: { icon: '📋',  label: 'New Debate' },
+  reaction:      { icon: '🔥',  label: 'Reaction' },
+  system:        { icon: '📢',  label: 'System' },
+  stake_won:     { icon: '🪙',  label: 'Stake Won' },
+  stake_lost:    { icon: '💸',  label: 'Stake Lost' },
+  power_up:      { icon: '⚡',  label: 'Power-Up' },
+  tier_up:       { icon: '🏅',  label: 'Tier Up' },
 } as const;
 
 /** Economy filter matches these notification types (Session 120) */

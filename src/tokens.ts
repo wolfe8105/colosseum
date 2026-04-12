@@ -497,6 +497,8 @@ export function init(): void {
       updateOrangeDot();
       claimDailyLogin();
       _loadMilestones();
+      // F-26: Notify followers that this user is online
+      void _rpc('notify_followers_online', { p_user_id: user.id });
     } else {
       // Logged out — hide dot
       const dot = document.getElementById('token-dot');
