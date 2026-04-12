@@ -30,6 +30,8 @@ interface SettingsData {
   notif_debate: boolean;
   notif_follow: boolean;
   notif_reactions: boolean;
+  notif_rivals: boolean;
+  notif_economy: boolean;
   audio_sfx: boolean;
   audio_mute: boolean;
   privacy_public: boolean;
@@ -119,6 +121,8 @@ function loadSettings(): void {
   setChecked('set-notif-debate', saved.notif_debate !== false);
   setChecked('set-notif-follow', saved.notif_follow !== false);
   setChecked('set-notif-reactions', saved.notif_reactions !== false);
+  setChecked('set-notif-rivals', saved.notif_rivals !== false);
+  setChecked('set-notif-economy', saved.notif_economy !== false);
   setChecked('set-audio-sfx', saved.audio_sfx !== false);
   setChecked('set-audio-mute', saved.audio_mute === true);
   setChecked('set-privacy-public', saved.privacy_public !== false);
@@ -201,6 +205,8 @@ function saveSettings(): void {
     notif_debate: getChecked('set-notif-debate'),
     notif_follow: getChecked('set-notif-follow'),
     notif_reactions: getChecked('set-notif-reactions'),
+    notif_rivals: getChecked('set-notif-rivals'),
+    notif_economy: getChecked('set-notif-economy'),
     audio_sfx: getChecked('set-audio-sfx'),
     audio_mute: getChecked('set-audio-mute'),
     privacy_public: getChecked('set-privacy-public'),
@@ -226,6 +232,8 @@ function saveSettings(): void {
       p_notif_debate: settings.notif_debate,
       p_notif_follow: settings.notif_follow,
       p_notif_reactions: settings.notif_reactions,
+      p_notif_rivals: settings.notif_rivals,
+      p_notif_economy: settings.notif_economy,
       p_audio_sfx: settings.audio_sfx,
       p_audio_mute: settings.audio_mute,
       p_privacy_public: settings.privacy_public,
@@ -474,6 +482,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         'set-notif-debate': data.notif_debate,
         'set-notif-follow': data.notif_follow,
         'set-notif-reactions': data.notif_reactions,
+        'set-notif-rivals': data.notif_rivals,
+        'set-notif-economy': data.notif_economy,
         'set-audio-sfx': data.audio_sfx,
         'set-audio-mute': data.audio_mute,
         'set-privacy-public': data.privacy_public,
