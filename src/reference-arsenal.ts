@@ -20,6 +20,8 @@ export type {
   ReferenceCategory,
   Rarity,
   ChallengeStatus,
+  TrendingReference,
+  RefSocket,
 } from './reference-arsenal.types.ts';
 
 // Constants
@@ -29,7 +31,8 @@ export { SOURCE_TYPES, CATEGORIES, CATEGORY_LABELS, RARITY_COLORS, CHALLENGE_STA
 export { compositeScore, powerDisplay } from './reference-arsenal.utils.ts';
 
 // RPCs (arsenal management)
-export { forgeReference, editReference, deleteReference, secondReference, citeReference, challengeReference } from './reference-arsenal.rpc.ts';
+export { forgeReference, editReference, deleteReference, secondReference, citeReference, challengeReference, getTrendingReferences, getLibrary } from './reference-arsenal.rpc.ts';
+export type { LibraryFilters } from './reference-arsenal.rpc.ts';
 
 // RPCs (debate context)
 export { saveDebateLoadout, getMyDebateLoadout, citeDebateReference, fileReferenceChallenge } from './reference-arsenal.debate.ts';
@@ -38,7 +41,7 @@ export { saveDebateLoadout, getMyDebateLoadout, citeDebateReference, fileReferen
 export { showForgeForm } from './reference-arsenal.forge.ts';
 
 // Renderers
-export { renderReferenceCard, renderArsenal, renderLibrary } from './reference-arsenal.render.ts';
+export { renderReferenceCard, renderArsenal, renderArmory, renderLibrary } from './reference-arsenal.render.ts';
 
 // Loadout picker
 export { renderLoadoutPicker } from './reference-arsenal.loadout.ts';

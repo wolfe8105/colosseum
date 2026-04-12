@@ -201,6 +201,63 @@ html,body{height:100%;overflow:hidden}
 /* Reference card grid */
 .arsenal-grid,.library-grid{display:flex;flex-direction:column;gap:12px}
 
+/* ── F-27 Socket dots ─────────────────────────────────── */
+.ref-socket-dots{display:flex;gap:5px;margin-top:6px;padding-top:6px;border-top:1px solid var(--mod-border-subtle)}
+.ref-socket-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ref-socket-dot.filled{background:var(--mod-accent-secondary);box-shadow:0 0 4px var(--mod-accent-secondary)}
+.ref-socket-dot.empty{background:var(--mod-bg-card-active);border:1px solid var(--mod-border-primary)}
+.ref-card-forger{font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-muted);letter-spacing:0.5px;margin-top:2px}
+
+/* ── F-27 Armory search + filter ─────────────────────── */
+.armory-search-row{display:flex;gap:8px;padding:12px 16px 8px;position:sticky;top:0;background:var(--mod-bg-base);z-index:10}
+.armory-search-input{flex:1;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:14px;padding:10px 14px;outline:none}
+.armory-search-input:focus{border-color:var(--mod-accent-secondary)}
+.armory-sharpen-btn{flex-shrink:0;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;padding:10px 14px;border-radius:var(--mod-radius-md);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.armory-filter-badge{background:var(--mod-accent);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.armory-filter-drawer{padding:8px 16px 12px;border-bottom:1px solid var(--mod-border-subtle)}
+.armory-chip-section{margin-bottom:10px}
+.armory-chip-label{font-family:var(--mod-font-ui);font-size:9px;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:6px}
+.armory-chips-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-ms-overflow-style:none;scrollbar-width:none}
+.armory-chips-row::-webkit-scrollbar{display:none}
+.armory-chip{flex-shrink:0;background:var(--mod-bg-card);border:1px solid var(--chip-accent,var(--mod-border-primary));color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.armory-chip.active{background:var(--chip-accent,var(--mod-accent-secondary));border-color:var(--chip-accent,var(--mod-accent-secondary));color:#000}
+
+/* ── F-27 Trending shelf ─────────────────────────────── */
+.armory-shelf-label{font-family:var(--mod-font-ui);font-size:9px;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase;padding:12px 16px 6px}
+.armory-trending-shelf{display:flex;gap:10px;overflow-x:auto;padding:0 16px 12px;-ms-overflow-style:none;scrollbar-width:none}
+.armory-trending-shelf::-webkit-scrollbar{display:none}
+.armory-trending-card{flex-shrink:0;width:180px;background:var(--mod-bg-card);border-radius:var(--mod-radius-md);padding:12px;cursor:pointer;transition:transform 0.15s}
+.armory-trending-card:active{transform:scale(0.97)}
+.armory-trending-claim{font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-body);line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.armory-trending-meta{font-size:10px;color:var(--mod-text-muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.armory-trending-badge{font-family:var(--mod-font-ui);font-size:10px;font-weight:700;letter-spacing:0.5px}
+
+/* ── F-27 Bottom sheet ───────────────────────────────── */
+.armory-sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.armory-sheet-backdrop.open{opacity:1;pointer-events:auto}
+.armory-sheet{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;background:var(--mod-bg-card);border-radius:var(--mod-radius-lg) var(--mod-radius-lg) 0 0;z-index:201;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);max-height:85vh;display:flex;flex-direction:column}
+.armory-sheet.open{transform:translateY(0)}
+.armory-sheet-handle{width:36px;height:4px;background:var(--mod-border-primary);border-radius:2px;margin:12px auto 8px}
+.armory-sheet-body{flex:1;overflow-y:auto;padding:0 20px 12px}
+.armory-sheet-actions{display:flex;gap:8px;padding:12px 20px;border-top:1px solid var(--mod-border-subtle);padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.sheet-rarity{font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:2px;margin-bottom:8px}
+.sheet-claim{font-family:var(--mod-font-ui);font-size:15px;font-style:italic;color:var(--mod-text-heading);line-height:1.5;margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.03);border-left:3px solid var(--mod-accent-secondary);border-radius:0 var(--mod-radius-sm) var(--mod-radius-sm) 0}
+.sheet-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.sheet-table td{padding:5px 0;vertical-align:top}
+.sheet-table td:first-child{color:var(--mod-text-muted);width:72px;font-family:var(--mod-font-ui);font-size:11px;letter-spacing:0.5px}
+.sheet-table td:last-child{color:var(--mod-text-body)}
+.sheet-link{display:inline-block;font-size:12px;color:var(--mod-accent-secondary);margin-bottom:8px}
+.sheet-btn{flex:1;padding:12px 8px;font-family:var(--mod-font-ui);font-size:13px;font-weight:600;border-radius:var(--mod-radius-md);cursor:pointer;border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-body);transition:all 0.15s}
+.sheet-btn:active{background:var(--mod-bg-card-active)}
+.sheet-close-btn{color:var(--mod-text-muted)}
+.sheet-challenge-form{margin-top:12px;padding-top:12px;border-top:1px solid var(--mod-border-subtle)}
+.sheet-challenge-label{display:block;font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);margin-bottom:6px}
+.sheet-challenge-ta{width:100%;background:var(--mod-bg-card-active);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-sm);color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:13px;padding:10px;resize:none;outline:none;box-sizing:border-box}
+.sheet-challenge-hint{font-size:11px;color:var(--mod-text-muted);margin-top:4px}
+
+/* ── Desktop grid reflow ─────────────────────────────── */
+@media(min-width:768px){.library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}}
+
 /* Reference card */
 .ref-card{background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:14px;border-left:3px solid;transition:border-color 0.2s}
 .ref-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -494,7 +551,8 @@ html,body{height:100%;overflow:hidden}
   </div>
   <div class="arsenal-tabs" id="arsenal-tabs">
     <div class="arsenal-tab active" data-arsenal-tab="my-arsenal">My Arsenal</div>
-    <div class="arsenal-tab" data-arsenal-tab="library">Library</div>
+    <div class="arsenal-tab" data-arsenal-tab="armory">The Armory</div>
+    <div class="arsenal-tab" data-arsenal-tab="forge">Forge</div>
     <div class="arsenal-tab" data-arsenal-tab="shop">Shop</div>
   </div>
   <div id="arsenal-content"></div>

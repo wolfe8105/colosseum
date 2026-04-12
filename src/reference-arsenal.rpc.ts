@@ -13,7 +13,19 @@ import type {
   SecondResult,
   ChallengeResult,
   ReferenceCategory,
+  ArsenalReference,
+  TrendingReference,
 } from './reference-arsenal.types.ts';
+
+export interface LibraryFilters {
+  search?: string;
+  category?: string;
+  rarity?: string;
+  sourceType?: string;
+  graduated?: boolean;
+  challengeStatus?: string;
+  sort?: 'power' | 'strikes' | 'seconds' | 'newest' | 'oldest' | 'alpha';
+}
 
 // ============================================================
 // RPC 1: FORGE REFERENCE
@@ -118,4 +130,33 @@ export async function challengeReference(
 
   if (error) throw new Error(error.message || 'Failed to process challenge');
   return data as ChallengeResult;
+}
+
+// ============================================================
+// RPC 7: GET TRENDING REFERENCES
+// ============================================================
+
+export async function getTrendingReferences(): Promise<TrendingReference[]> {
+  const { data, error } = await safeRpc<TrendingReference[]>('get_trending_references', {});
+  if (error) return [];
+  return (data || []) as TrendingReference[];
+}
+
+// ============================================================
+// RPC 8: GET LIBRARY WITH FILTERS
+// ============================================================
+
+export async function getLibrary(filters: LibraryFilters = {}): Promise<ArsenalReference[]> {
+  const params: Record<string, unknown> = {};
+  if (filters.search)          params['p_search']           = filters.search;
+  if (filters.category)        params['p_category']         = filters.category;
+  if (filters.rarity)          params['p_rarity']           = filters.rarity;
+  if (filters.sourceType)      params['p_source_type']      = filters.sourceType;
+  if (filters.graduated != null) params['p_graduated']      = filters.graduated;
+  if (filters.challengeStatus) params['p_challenge_status'] = filters.challengeStatus;
+  if (filters.sort)            params['p_sort']             = filters.sort;
+
+  const { data, error } = await safeRpc<ArsenalReference[]>('get_reference_library', params);
+  if (error) throw new Error(error.message || 'Failed to load library');
+  return (data || []) as ArsenalReference[];
 }

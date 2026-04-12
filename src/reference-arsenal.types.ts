@@ -5,6 +5,11 @@
  * F-55 schema types.
  */
 
+export interface RefSocket {
+  socket_index: number;
+  effect_id: string;
+}
+
 export interface ArsenalReference {
   id: string;
   user_id: string;
@@ -23,8 +28,27 @@ export interface ArsenalReference {
   graduated: boolean;
   challenge_status: ChallengeStatus;
   created_at: string;
-  // Joined field from library query
+  // Joined fields
   owner_username?: string;
+  sockets?: RefSocket[];  // F-57 socket visualization (from get_my_arsenal)
+}
+
+export interface TrendingReference {
+  id: string;
+  user_id: string;
+  source_title: string;
+  source_author: string;
+  claim_text: string;
+  rarity: Rarity;
+  current_power: number;
+  seconds: number;
+  strikes: number;
+  category: ReferenceCategory;
+  graduated: boolean;
+  challenge_status: ChallengeStatus;
+  source_type: SourceType;
+  owner_username: string;
+  cite_count: number;
 }
 
 export interface ForgeParams {
