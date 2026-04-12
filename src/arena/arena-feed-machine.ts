@@ -324,7 +324,7 @@ function showAdOverlay(durationSec: number): HTMLElement | null {
         <ins class="adsbygoogle feed-ad-unit"
              style="display:block"
              data-ad-client="ca-pub-1800696416995461"
-             data-ad-slot="REPLACE_WITH_AD_UNIT_ID"
+             data-ad-slot="8647716209"
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>
       </div>
