@@ -16,7 +16,10 @@
       "Bash(npx vitest:*)",
       "Bash(node_modules/.bin/vite build:*)",
       "Bash(npm install:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(cp \"C:/Users/wolfe/Downloads/_SPEC.md\" \"C:/Users/wolfe/colosseum/docs/interaction-maps/_SPEC.md\")",
+      "Bash(cp \"C:/Users/wolfe/Downloads/F-49-go-guest-sparring.md\" \"C:/Users/wolfe/colosseum/docs/interaction-maps/F-49-go-guest-sparring.md\")",
+      "Bash(grep -v '^[0-9]*:```')"
     ]
   }
 }

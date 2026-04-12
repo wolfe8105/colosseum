@@ -1,0 +1,74 @@
+/**
+ * Home — Screen navigation and data-action click dispatch
+ */
+import { destroy as destroyArena, showPowerUpShop } from '../arena.ts';
+import { registerNavigate } from '../navigation.ts';
+import { shareProfile, inviteFriend } from '../share.ts';
+import { subscribe } from '../payments.ts';
+import { getCurrentProfile, getCurrentUser } from '../auth.ts';
+import { ModeratorAsync } from '../async.ts';
+import { renderFeed } from './home.feed.ts';
+import { loadArsenalScreen } from './home.arsenal.ts';
+import { loadFollowCounts } from './home.profile.ts';
+import { state } from './home.state.ts';
+
+const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal'];
+
+export function navigateTo(screenId: string) {
+  if (!VALID_SCREENS.includes(screenId)) screenId = 'home';
+
+  // Clean up previous screen's resources
+  if (state.currentScreen === 'arena' && screenId !== 'arena') {
+    destroyArena();
+  }
+  state.currentScreen = screenId;
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  const screen = document.getElementById('screen-' + screenId); if (screen) screen.classList.add('active');
+  const btn = document.querySelector(`.bottom-nav-btn[data-screen="${screenId}"]`); if (btn) btn.classList.add('active');
+
+  if (screenId === 'home') {
+    renderFeed().catch(e => console.error('renderFeed error:', e));
+  }
+  if (screenId === 'profile') {
+    ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed'));
+    loadFollowCounts();
+  }
+  if (screenId === 'arsenal') {
+    loadArsenalScreen();
+  }
+}
+
+// Bottom nav wiring
+document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => navigateTo((btn as HTMLElement).dataset.screen!));
+});
+registerNavigate(navigateTo);
+
+// data-action wiring
+document.addEventListener('click', (e: Event) => {
+  const el = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action === 'powerup-shop') {
+    navigateTo('arena');
+    setTimeout(() => showPowerUpShop(), 300);
+  } else if (action === 'share-profile') {
+    const p = getCurrentProfile();
+    const u = getCurrentUser();
+    shareProfile({ userId: u?.id, username: p?.username, displayName: p?.display_name, elo: p?.elo_rating, wins: p?.wins, losses: p?.losses, streak: p?.current_streak });
+  } else if (action === 'invite-friend') {
+    inviteFriend();
+  } else if (action === 'subscribe') {
+    const tier = el.dataset.tier;
+    if (tier) subscribe(tier);
+  } else if (action === 'arsenal') {
+    navigateTo('arsenal');
+  } else if (action === 'spectate-live') {
+    const debateId = el.dataset.debateId;
+    if (debateId) {
+      window.location.href = `moderator-spectate.html?id=${encodeURIComponent(debateId)}`;
+    }
+  }
+});
