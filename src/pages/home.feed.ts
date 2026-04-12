@@ -12,7 +12,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
   try {
     const { data, error } = await (sb as any)
       .from('arena_debates')
-      .select('id, topic, category, status, mode, spectator_count, current_round, max_rounds, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username)')
+      .select('id, topic, category, status, mode, spectator_count, current_round, max_rounds, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username, verified_gladiator), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username, verified_gladiator)')
       .in('status', ['live', 'round_break', 'voting'])
       .order('created_at', { ascending: false })
       .limit(5);

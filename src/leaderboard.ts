@@ -11,6 +11,7 @@
  */
 
 import { escapeHTML, FEATURES } from './config.ts';
+import { vgBadge } from './badge.ts';
 import {
   safeRpc,
   getCurrentUser,
@@ -41,6 +42,7 @@ export interface LeaderboardEntry {
   level: number;
   tier: LeaderboardTier | string;
   debates?: number;
+  verified_gladiator?: boolean;
 }
 
 interface LeaderboardRpcRow {
@@ -54,6 +56,7 @@ interface LeaderboardRpcRow {
   level: number;
   subscription_tier: string | null;
   debates_completed: number;
+  verified_gladiator?: boolean;
 }
 
 // ============================================================
@@ -131,6 +134,7 @@ async function fetchLeaderboard(append = false): Promise<void> {
         level: Number(p.level) || 1,
         tier: p.subscription_tier ?? 'free',
         debates: Number(p.debates_completed) || 0,
+        verified_gladiator: p.verified_gladiator ?? false,
       }));
 
       hasMore = rows.length === PAGE_SIZE;
@@ -312,7 +316,7 @@ function renderList(): string {
             font-weight:700;color:var(--mod-text-heading);font-size:13px;
           ">${escHtml(p.user[0] ?? '')}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}</div>
+            <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}${vgBadge(p.verified_gladiator)}</div>
             <div style="font-size:11px;color:#6a7a90;">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
           </div>
           <div style="text-align:right;">

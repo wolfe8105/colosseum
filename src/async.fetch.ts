@@ -39,7 +39,7 @@ export async function fetchTakes(section?: string): Promise<void> {
     )
       .from('hot_takes')
       .select(
-        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating)'
+        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, display_name, elo_rating, verified_gladiator)'
       )
       .order('created_at', { ascending: false })
       .limit(30);
@@ -63,6 +63,7 @@ export async function fetchTakes(section?: string): Promise<void> {
           username: (profiles?.['username'] as string) || '',
           user: ((profiles?.['username'] as string) || 'ANON').toUpperCase(),
           elo: (profiles?.['elo_rating'] as number) || 1200,
+          verified_gladiator: (profiles?.['verified_gladiator'] as boolean) || false,
           tokens: 0,
           text: t['content'] as string,
           section: t['section'] as string,

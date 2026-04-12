@@ -18,6 +18,7 @@ export interface HotTake {
   challenges: number;
   time: string;
   userReacted: boolean;
+  verified_gladiator?: boolean;
 }
 
 export interface Prediction {

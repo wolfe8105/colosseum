@@ -78,6 +78,7 @@ export interface PublicProfile {
   subscription_tier: string;
   created_at: string;
   is_private?: boolean;
+  verified_gladiator?: boolean;
   error?: string;
 }
 
