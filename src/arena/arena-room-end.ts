@@ -131,9 +131,17 @@ export async function endCurrentDebate(): Promise<void> {
   // F-57 Phase 3: Apply end-of-debate modifiers to final scores BEFORE update_arena_debate
   // so the modified scores drive winner determination and Elo calculation.
   // Only runs for real debates (not AI-local or placeholder).
+  // InventoryEffect: one entry per fired inventory effect (mirror/burn_notice/parasite/chain_reaction)
+  type InventoryEffect =
+    | { effect: 'mirror';         copied_effect_id: string;      from_ref_id: string; new_modifier_id: string }
+    | { effect: 'burn_notice';    burned_effect_id: string;      from_ref_id: string }
+    | { effect: 'parasite';       stolen_effect_id: string;      source: 'free_inventory' | 'socketed'; modifier_id: string; from_ref_id?: string }
+    | { effect: 'chain_reaction'; regenerated_effect: string;    new_powerup_qty: number };
+
   let endOfDebateBreakdown: {
     debater_a: { raw_score: number; adjustments: { effect_name: string; delta: number; source?: string }[]; final_score: number };
     debater_b: { raw_score: number; adjustments: { effect_name: string; delta: number; source?: string }[]; final_score: number };
+    inventory_effects?: InventoryEffect[];
   } | null = null;
 
   if (!debate.modView && !isPlaceholder() && !debate.id.startsWith('ai-local-') && !debate.id.startsWith('placeholder-') && debate.mode !== 'ai') {
@@ -428,6 +436,7 @@ function renderAfterEffects(
   breakdown: {
     debater_a: { raw_score: number; adjustments: { effect_name: string; delta: number }[]; final_score: number };
     debater_b: { raw_score: number; adjustments: { effect_name: string; delta: number }[]; final_score: number };
+    inventory_effects?: Array<Record<string, unknown>>;
   } | null,
   myRole: string,
 ): string {
@@ -436,10 +445,11 @@ function renderAfterEffects(
   const myData   = myRole === 'a' ? breakdown.debater_a : breakdown.debater_b;
   const oppData  = myRole === 'a' ? breakdown.debater_b : breakdown.debater_a;
 
-  // Only render if at least one side had adjustments
   const myAdj  = myData.adjustments  ?? [];
   const oppAdj = oppData.adjustments ?? [];
-  if (myAdj.length === 0 && oppAdj.length === 0) return '';
+  const invEffects = breakdown.inventory_effects ?? [];
+
+  if (myAdj.length === 0 && oppAdj.length === 0 && invEffects.length === 0) return '';
 
   function renderChain(d: typeof myData, label: string): string {
     if (d.adjustments.length === 0) return '';
@@ -460,15 +470,60 @@ function renderAfterEffects(
       </div>`;
   }
 
-  const myChain  = renderChain(myData,  'You');
-  const oppChain = renderChain(oppData, 'Opponent');
+  // Render a single inventory effect event as a human-readable pill row
+  function renderInventoryEvent(ev: Record<string, unknown>): string {
+    const EFFECT_LABELS: Record<string, string> = {
+      mirror:         '🪞 Mirror',
+      burn_notice:    '🔥 Burn Notice',
+      parasite:       '🦠 Parasite',
+      chain_reaction: '⛓ Chain Reaction',
+    };
+    const effectKey  = ev['effect'] as string;
+    const label      = EFFECT_LABELS[effectKey] ?? escapeHTML(effectKey);
 
-  if (!myChain && !oppChain) return '';
+    let detail = '';
+    switch (effectKey) {
+      case 'mirror':
+        detail = `Copied <strong>${escapeHTML(String(ev['copied_effect_id']))}</strong> from opponent's ref`;
+        break;
+      case 'burn_notice':
+        detail = `Destroyed opponent's <strong>${escapeHTML(String(ev['burned_effect_id']))}</strong>`;
+        break;
+      case 'parasite': {
+        const src = ev['source'] === 'socketed' ? 'ripped from their ref' : 'taken from inventory';
+        detail = `Stole <strong>${escapeHTML(String(ev['stolen_effect_id']))}</strong> (${src})`;
+        break;
+      }
+      case 'chain_reaction':
+        detail = `<strong>${escapeHTML(String(ev['regenerated_effect']))}</strong> power-up ×${ev['new_powerup_qty']} added to inventory`;
+        break;
+      default:
+        detail = escapeHTML(JSON.stringify(ev));
+    }
+
+    return `
+      <div class="ae-inv-row">
+        <span class="ae-inv-label">${label}</span>
+        <span class="ae-inv-detail">${detail}</span>
+      </div>`;
+  }
+
+  const myChain    = renderChain(myData,  'You');
+  const oppChain   = renderChain(oppData, 'Opponent');
+  const invSection = invEffects.length > 0
+    ? `<div class="ae-inv-section">
+         <div class="ae-inv-header">🎒 INVENTORY</div>
+         ${invEffects.map(renderInventoryEvent).join('')}
+       </div>`
+    : '';
+
+  if (!myChain && !oppChain && !invSection) return '';
 
   return `
     <div class="arena-after-effects">
       <div class="arena-after-effects__title">⚡ AFTER EFFECTS</div>
       ${myChain}
       ${oppChain}
+      ${invSection}
     </div>`;
 }

@@ -355,6 +355,11 @@ export function injectCSS(): void {
     .ae-step--positive { color:var(--mod-status-open);background:rgba(0,255,170,0.08); }
     .ae-step--negative { color:var(--mod-accent);background:rgba(255,0,128,0.08); }
     .ae-final { font-family:var(--mod-font-ui);font-size:15px;font-weight:700;color:var(--mod-text-heading); }
+    .ae-inv-section { border-top:1px solid var(--mod-border-subtle);margin-top:8px;padding-top:8px; }
+    .ae-inv-header { font-family:var(--mod-font-ui);font-size:9px;font-weight:600;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:6px; }
+    .ae-inv-row { display:flex;align-items:baseline;gap:8px;padding:4px 0;font-size:12px; }
+    .ae-inv-label { font-family:var(--mod-font-ui);font-size:11px;font-weight:700;color:var(--mod-accent-secondary);white-space:nowrap; }
+    .ae-inv-detail { font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-body);line-height:1.4; }
 
     /* Moderator assignment picker */
     .mod-picker-section { margin-top:12px;padding-top:12px;border-top:1px solid var(--mod-border-subtle); }
