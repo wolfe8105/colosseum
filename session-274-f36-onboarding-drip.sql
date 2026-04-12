@@ -31,6 +31,13 @@ CREATE POLICY "drip_owner_all" ON public.onboarding_drip_log
   WITH CHECK (user_id = auth.uid());
 
 -- ── 2. Seed 7 onboarding cosmetic rewards ───────────────────
+-- Widen the unlock_type check constraint to include 'onboarding'
+ALTER TABLE public.cosmetic_items
+  DROP CONSTRAINT IF EXISTS cosmetic_items_unlock_type_check;
+
+ALTER TABLE public.cosmetic_items
+  ADD CONSTRAINT cosmetic_items_unlock_type_check
+  CHECK (unlock_type IN ('free','auto','depth','token','onboarding'));
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
