@@ -220,6 +220,12 @@ export async function endCurrentDebate(): Promise<void> {
         await safeRpc('settle_sentiment_tips', { p_debate_id: debate.id });
       } catch (err) { console.error('[Arena] settle_sentiment_tips failed:', err); }
 
+      // F-55: pay reference royalties to forgers (batched per-forger, silent in feed)
+      try {
+        const { safeRpc: _safeRpc } = await import('../auth.ts');
+        await _safeRpc('pay_reference_royalties', { p_debate_id: debate.id });
+      } catch (err) { console.error('[Arena] pay_reference_royalties failed (non-fatal):', err); }
+
       // F-18: resolve audition pass/fail if this was an audition debate
       try {
         const { getSupabaseClient } = await import('../auth.ts');
