@@ -15,6 +15,7 @@ import type { ArsenalReference } from './reference-arsenal.types.ts';
 export async function renderLoadoutPicker(
   container: HTMLElement,
   debateId: string,
+  initialRefs: string[] = [],
 ): Promise<void> {
   container.innerHTML = '<p style="color:var(--mod-text-muted);text-align:center;font-size:13px;">Loading arsenal...</p>';
 
@@ -41,7 +42,9 @@ export async function renderLoadoutPicker(
 
   arsenal.sort((a, b) => b.current_power - a.current_power || Date.parse(b.created_at) - Date.parse(a.created_at));
 
-  const selected = new Set<string>();
+  const selected = new Set<string>(
+    initialRefs.filter(id => arsenal.some(r => r.id === id)).slice(0, 5)
+  );
 
   function render(): void {
     let html = `<div class="ref-loadout-header">

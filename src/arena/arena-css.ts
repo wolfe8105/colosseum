@@ -531,6 +531,20 @@ export function injectCSS(): void {
     .ref-loadout-domain { font-size:11px;color:var(--mod-text-muted); }
     .ref-loadout-check { position:absolute;top:6px;right:8px;font-size:14px; }
 
+    /* ========== F-60: Saved Loadout Presets ========== */
+    .preset-bar { display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:8px;flex-wrap:wrap; }
+    .preset-bar-empty { justify-content:space-between; }
+    .preset-bar-label { font-family:var(--mod-font-ui);font-size:10px;font-weight:700;color:var(--mod-text-muted);letter-spacing:1px;white-space:nowrap; }
+    .preset-empty-label { font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted); }
+    .preset-chip-row { display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none; }
+    .preset-chip-row::-webkit-scrollbar { display:none; }
+    .preset-chip { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;cursor:pointer;transition:background 0.15s,border-color 0.15s;white-space:nowrap;user-select:none; }
+    .preset-chip:active, .preset-chip-active { background:rgba(226,116,42,0.18);border-color:var(--mod-bar-accent); }
+    .preset-chip-name { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;color:var(--mod-text-primary); }
+    .preset-save-btn { background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;font-family:var(--mod-font-ui);font-size:11px;font-weight:700;color:var(--mod-bar-accent);cursor:pointer;white-space:nowrap;transition:background 0.15s; }
+    .preset-save-btn:hover { background:rgba(226,116,42,0.1); }
+    .preset-save-btn:disabled { opacity:0.4;pointer-events:none; }
+
     /* ========== Phase 3: Cite/Challenge Buttons ========== */
     .feed-cite-btn { background:var(--mod-bg-glass);color:var(--mod-text-secondary);border:1px solid rgba(255,255,255,0.12); }
     .feed-cite-btn:not(:disabled):active { background:rgba(74,144,217,0.2); }

@@ -27,6 +27,7 @@ import { addReferenceButton, assignSelectedMod, startReferencePoll } from './are
 import { startModStatusPoll } from './arena-mod-queue.ts';
 import { enterFeedRoom } from './arena-feed-room.ts';
 import { renderLoadoutPicker } from '../reference-arsenal.ts';
+import { renderPresetBar } from './arena-loadout-presets.ts';
 
 export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   set_view('room');
@@ -66,6 +67,7 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
         </div>
       </div>
     </div>
+    <div id="pre-debate-presets" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-staking" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-loadout" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-refs" style="width:100%;max-width:360px;"></div>
@@ -115,6 +117,12 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
     } catch (e) {
       console.warn('[Arena] Reference loadout error:', e);
     }
+  }
+
+  // F-60: Render saved loadout preset bar (after refs so apply can refresh them)
+  const presetsEl = document.getElementById('pre-debate-presets');
+  if (presetsEl && debateData.mode !== 'ai') {
+    void renderPresetBar(presetsEl, debateData, refsEl, loadoutEl);
   }
 
   // Wire enter button
