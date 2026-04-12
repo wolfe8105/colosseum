@@ -47,6 +47,7 @@ import {
 } from './groups.challenges.ts';
 import { ready, getCurrentUser, getSupabaseClient, safeRpc } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
+import { renderGroupBanner } from './group-banner.ts';
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
 // Current group detail data — used by settings modal and audition modal
@@ -171,6 +172,12 @@ async function openGroup(groupId: string) {
     document.getElementById('detail-desc').textContent     = g.description || '';
     document.getElementById('detail-members').textContent  = g.member_count;
     document.getElementById('detail-elo').textContent      = g.elo_rating;
+
+    // F-19: Render group banner
+    const bannerEl = document.getElementById('detail-banner');
+    if (bannerEl) {
+      renderGroupBanner(bannerEl, g as GroupDetail, g.my_role === 'leader' || g.my_role === 'co_leader');
+    }
 
     setIsMember(g.is_member);
     setCallerRole(g.my_role ?? null); // F-14: must be set before loadGroupMembers renders action buttons
@@ -417,5 +424,14 @@ document.addEventListener('click', (e) => {
       handleAuditionAction(id, act);
       break;
     }
+  }
+});
+
+
+// F-19: Reload banner when upload completes
+window.addEventListener('group-banner-updated', (e: Event) => {
+  const groupId = (e as CustomEvent<{ groupId: string }>).detail?.groupId;
+  if (groupId && groupId === currentGroupId) {
+    openGroup(groupId);
   }
 });

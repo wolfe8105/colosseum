@@ -40,6 +40,12 @@ export interface GroupDetail extends GroupListItem {
     locked_ruleset?: string | null;
     locked_total_rounds?: number | null;
   } | null;
+  // F-19: Banner progression
+  gvg_wins?: number;
+  gvg_losses?: number;
+  banner_tier?: 1 | 2 | 3;
+  banner_static_url?: string | null;
+  banner_animated_url?: string | null;
 }
 
 /** Member row as returned by get_group_members RPC */
