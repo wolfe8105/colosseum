@@ -13,7 +13,7 @@
 | Order | # | Feature | Status |
 |---|---|---------|--------|
 | 1 | F-60 | Saved Loadouts | ✅ S272 |
-| 2 | F-54 | Private Profile Toggle | ⏳ specced, not built |
+| 2 | F-54 | Private Profile Toggle | ✅ S272 |
 | 3 | F-53 | Profile Debate Archive | ⏳ specced, not built |
 | 4 | F-33 | Verified Gladiator Badge | ⏳ specced, not built |
 | 5 | F-35.3 | Orange Dot Indicator | ⏳ not started |
@@ -110,11 +110,17 @@
 - src/arena/arena-room-setup.ts
 - src/arena/arena-css.ts
 
-**Client — Other**
+**Client — Auth**
+- src/auth.types.ts
+- src/auth.profile.ts
+
+**Client — Pages**
+- src/pages/settings.ts
 - src/reference-arsenal.loadout.ts
 
 **Supabase SQL**
 - supabase/session-272-f60-saved-loadouts.sql
+- supabase/session-272-f54-private-profile.sql
 
 **Docs**
 - THE-MODERATOR-AGENT-HANDOFF.md (new)
