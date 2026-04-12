@@ -72,6 +72,7 @@ const milestoneClaimed = new Set<string>();
 let dailyLoginClaimed = false;
 let _dailyLoginInFlight = false;
 let _bc: BroadcastChannel | null = null;
+let unreadNotifCount = 0;
 
 // ============================================================
 // MILESTONE DEFINITIONS
@@ -233,12 +234,25 @@ export function updateBalance(newBalance: number): void {
 // ORANGE DOT (F-35.3)
 // ============================================================
 
+/**
+ * Recomputes and applies the orange dot visibility.
+ * Shows when ANY of:
+ *   (a) daily login token not yet claimed this session
+ *   (b) unread notifications exist (pushed from notifications.ts)
+ */
 function updateOrangeDot(): void {
-  const profile = getCurrentProfile();
-  const hasFreezes = (profile?.streak_freezes ?? 0) > 0;
-  const show = !dailyLoginClaimed || hasFreezes;
+  const show = !dailyLoginClaimed || unreadNotifCount > 0;
   const dot = document.getElementById('token-dot');
   if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
+/**
+ * Called by notifications.ts whenever its unread count changes.
+ * Avoids a circular import — notifications pushes count into tokens.
+ */
+export function setOrangeDotUnread(count: number): void {
+  unreadNotifCount = count;
+  updateOrangeDot();
 }
 
 // ============================================================

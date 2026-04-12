@@ -9,6 +9,7 @@
 
 import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, ready } from './auth.ts';
 import { escapeHTML, FEATURES } from './config.ts';
+import { setOrangeDotUnread } from './tokens.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -312,6 +313,7 @@ export function markAllRead(): void {
 function updateBadge(): void {
   const dot = document.getElementById('notif-dot');
   if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
+  setOrangeDotUnread(unreadCount);
 }
 
 // ============================================================
@@ -334,6 +336,7 @@ export function destroy(): void {
   unreadCount = 0;
   panelOpen = false;
   updateBadge();
+  setOrangeDotUnread(0);
 }
 
 async function fetchNotifications(): Promise<void> {
