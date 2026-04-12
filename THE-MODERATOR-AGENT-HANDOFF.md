@@ -18,13 +18,13 @@
 | 4 | F-33 | Verified Gladiator Badge | ✅ S273 |
 | 5 | F-35.3 | Orange Dot Indicator | ✅ S274 |
 | 6 | F-39 | Embeddable Challenge Links | ✅ S274 |
-| 7 | F-21 | Intro Music | ⏳ not started |
-| 8 | F-03 | Entrance Sequence / Battle Animations | 🔶 concept only — blocked on F-21 |
-| 9 | F-19 | Three-Tier Banner Progression | ⏳ not started |
-| 10 | F-20 | Shared Fate Mechanic | ⏳ not started |
-| 11 | F-26 | Follow Notifications | ⏳ unblocked (F-35 ✅) |
-| 12 | F-37 | Granular Notification Preferences | ⏳ unblocked (F-35 ✅) |
-| 13 | F-36 | 7-Day Onboarding Drip | ⏳ unblocked (F-35 ✅ + F-31 ✅) |
+| 7 | F-21 | Intro Music | ✅ S274 |
+| 8 | F-03 | Entrance Sequence / Battle Animations | ✅ S274 |
+| 9 | F-19 | Three-Tier Banner Progression | ✅ S274 |
+| 10 | F-20 | Shared Fate Mechanic | ✅ S274 |
+| 11 | F-26 | Follow Notifications | ✅ S274 |
+| 12 | F-37 | Granular Notification Preferences | ✅ S274 |
+| 13 | F-36 | 7-Day Onboarding Drip | ✅ S274 |
 | 14 | F-28 | Bounty Board | ⏳ specced, not built |
 | 15 | F-29 | Source Meta Report | ⏳ specced, not built |
 | 16 | F-43 | Google Ads in Structural Slots | ⏳ not started |
