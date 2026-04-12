@@ -18,7 +18,15 @@
  * F-14 / F-15 client: Session 181 — role-aware member actions (promote/kick/ban modal)
  * Decomposition: Session 192 — 1,128 lines → 7 files
  */
-import type { GroupListItem } from './groups.types.ts';
+import type { GroupListItem, GroupDetail } from './groups.types.ts';
+import {
+  openGroupSettings, closeGroupSettings, onJoinModeChange,
+  submitGroupSettings, showDeleteConfirm, submitDeleteGroup, selectSettingsEmoji,
+} from './groups.settings.ts';
+import {
+  openAuditionModal, closeAuditionModal, submitAuditionRequest,
+  loadPendingAuditions, handleAuditionAction,
+} from './groups.auditions.ts';
 import {
   activeTab, activeDetailTab, activeCategory, selectedEmoji,
   currentGroupId, isMember, callerRole, currentUser,
@@ -41,6 +49,9 @@ import { ready, getCurrentUser, getSupabaseClient, safeRpc } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
+// Current group detail data — used by settings modal and audition modal
+let currentGroupData: GroupDetail | null = null;
+
 ready.then(() => {
   setSb(getSupabaseClient());
   setCurrentUser(getCurrentUser());
@@ -67,12 +78,17 @@ function switchTab(tab: string) {
 
 function switchDetailTab(tab: string) {
   setActiveDetailTab(tab);
+  const tabs = ['hot-takes','challenges','members','auditions'];
   document.querySelectorAll('#detail-tabs .tab-btn').forEach((b, i) => {
-    b.classList.toggle('active', ['hot-takes','challenges','members'][i] === tab);
+    b.classList.toggle('active', tabs[i] === tab);
   });
-  document.getElementById('detail-hot-takes').style.display     = tab === 'hot-takes'  ? 'block' : 'none';
-  document.getElementById('detail-challenges').style.display    = tab === 'challenges' ? 'block' : 'none';
-  document.getElementById('detail-members-list').style.display  = tab === 'members'    ? 'block' : 'none';
+  document.getElementById('detail-hot-takes').style.display    = tab === 'hot-takes'  ? 'block' : 'none';
+  document.getElementById('detail-challenges').style.display   = tab === 'challenges' ? 'block' : 'none';
+  document.getElementById('detail-members-list').style.display = tab === 'members'    ? 'block' : 'none';
+  document.getElementById('detail-auditions').style.display    = tab === 'auditions'  ? 'block' : 'none';
+  if (tab === 'auditions' && currentGroupId) {
+    loadPendingAuditions(currentGroupId, callerRole);
+  }
 }
 
 // ── CATEGORY FILTER ───────────────────────────────────────────────────────────
@@ -158,9 +174,20 @@ async function openGroup(groupId: string) {
 
     setIsMember(g.is_member);
     setCallerRole(g.my_role ?? null); // F-14: must be set before loadGroupMembers renders action buttons
+    currentGroupData = g as GroupDetail;
 
-    updateJoinBtn(g);
+    updateJoinBtn(g as GroupDetail);
     document.getElementById('gvg-challenge-btn').style.display = g.is_member ? 'block' : 'none';
+
+    // F-16: Show gear icon for leader only
+    const gearBtn = document.getElementById('detail-gear-btn');
+    if (gearBtn) gearBtn.style.display = g.my_role === 'leader' ? 'flex' : 'none';
+
+    // F-18: Show auditions tab only when group uses audition join_mode
+    const audTab = document.getElementById('detail-auditions-tab');
+    if (audTab) {
+      audTab.style.display = (g as GroupDetail).join_mode === 'audition' ? 'inline-block' : 'none';
+    }
   } catch (e) {
     document.getElementById('detail-name').textContent = 'Error loading group';
   }
@@ -170,23 +197,32 @@ async function openGroup(groupId: string) {
   loadGroupMembers(groupId);
 }
 
-function updateJoinBtn(g: GroupListItem) {
+function updateJoinBtn(g: GroupDetail) {
   const btn = document.getElementById('join-btn') as HTMLButtonElement;
   if (!currentUser) {
-    btn.textContent = 'SIGN IN TO JOIN';
-    btn.className   = 'join-btn join';
+    btn.textContent  = 'SIGN IN TO JOIN';
+    btn.className    = 'join-btn join';
+    btn.style.display = 'block';
+    btn.disabled     = false;
     return;
   }
   if (g.is_member) {
-    // F-14 fix: was 'owner', now 'leader'
-    btn.textContent = g.my_role === 'leader' ? 'YOU OWN THIS GROUP' : 'LEAVE GROUP';
-    btn.className   = 'join-btn leave';
-    btn.disabled    = g.my_role === 'leader';
-  } else {
-    btn.textContent = 'JOIN GROUP';
-    btn.className   = 'join-btn join';
-    btn.disabled    = false;
+    btn.textContent   = g.my_role === 'leader' ? 'YOU OWN THIS GROUP' : 'LEAVE GROUP';
+    btn.className     = 'join-btn leave';
+    btn.disabled      = g.my_role === 'leader';
+    btn.style.display = 'block';
+    return;
   }
+  // Non-member — branch on join_mode (F-17 / F-18)
+  const mode = g.join_mode ?? 'open';
+  if (mode === 'invite_only') {
+    btn.style.display = 'none'; // hidden entirely per spec
+    return;
+  }
+  btn.style.display = 'block';
+  btn.disabled      = false;
+  btn.className     = 'join-btn join';
+  btn.textContent   = mode === 'audition' ? 'REQUEST AUDITION' : 'JOIN GROUP';
 }
 
 // ── JOIN / LEAVE ──────────────────────────────────────────────────────────────
@@ -336,5 +372,50 @@ document.addEventListener('click', (e) => {
     case 'clear-gvg-opponent':
       clearGvGOpponent();
       break;
+
+    // ── F-16 Settings ───────────────────────────────────────────────────────
+    case 'open-group-settings':
+      if (currentGroupData) {
+        openGroupSettings(currentGroupData, {
+          onSaved:   () => currentGroupId && openGroup(currentGroupId),
+          onDeleted: () => showLobby(),
+        });
+      }
+      break;
+    case 'close-group-settings':
+      closeGroupSettings();
+      break;
+    case 'settings-join-mode-change':
+      onJoinModeChange((actionEl as HTMLInputElement).value);
+      break;
+    case 'save-group-settings':
+      submitGroupSettings();
+      break;
+    case 'show-delete-confirm':
+      showDeleteConfirm();
+      break;
+    case 'submit-delete-group':
+      submitDeleteGroup();
+      break;
+    case 'select-settings-emoji':
+      selectSettingsEmoji(actionEl);
+      break;
+
+    // ── F-18 Auditions ──────────────────────────────────────────────────────
+    case 'close-audition-modal':
+      closeAuditionModal();
+      break;
+    case 'audition-modal-backdrop':
+      if (e.target === actionEl) closeAuditionModal();
+      break;
+    case 'submit-audition-request':
+      submitAuditionRequest();
+      break;
+    case 'audition-action': {
+      const id  = actionEl.dataset.auditionId!;
+      const act = actionEl.dataset.auditionAction as 'accept'|'approve'|'deny'|'withdraw';
+      handleAuditionAction(id, act);
+      break;
+    }
   }
 });

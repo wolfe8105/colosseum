@@ -242,6 +242,117 @@ body {
 }
 .join-btn:active { opacity: 0.75; }
 
+/* ── GEAR ICON ── */
+.gear-btn {
+  width: 36px; height: 36px;
+  background: var(--mod-bg-elevated);
+  border: 1px solid var(--mod-border-primary);
+  border-radius: 50%; display: none; /* JS shows for leader */
+  align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+  color: var(--mod-text-muted);
+}
+
+/* ── SETTINGS VIEW ── */
+#view-settings {
+  display: none; flex-direction: column; min-height: 100dvh;
+}
+.settings-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--mod-border-primary);
+}
+.settings-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--mod-text-muted); text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.settings-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0;
+}
+.settings-toggle-label { font-size: 15px; color: var(--mod-text-primary); }
+.settings-toggle-sub   { font-size: 12px; color: var(--mod-text-muted); margin-top: 2px; }
+.settings-toggle input[type="checkbox"] {
+  width: 44px; height: 26px; accent-color: var(--mod-text-heading);
+}
+.join-mode-options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.join-mode-option  {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--mod-bg-elevated);
+  border: 1px solid var(--mod-border-primary); border-radius: 10px;
+  padding: 12px; cursor: pointer;
+}
+.join-mode-option input[type="radio"] { margin-top: 2px; accent-color: var(--mod-text-heading); }
+.join-mode-label { font-size: 14px; font-weight: 700; color: var(--mod-text-primary); }
+.join-mode-sub   { font-size: 12px; color: var(--mod-text-muted); margin-top: 2px; }
+.settings-sub-section {
+  background: var(--mod-bg-elevated);
+  border: 1px solid var(--mod-border-primary); border-radius: 10px;
+  padding: 14px; margin-top: 12px;
+}
+.danger-zone { border-color: color-mix(in srgb, var(--mod-accent) 40%, transparent); }
+.danger-zone .settings-section-title { color: var(--mod-accent); }
+.danger-btn {
+  width: 100%; padding: 14px; border-radius: 10px;
+  background: transparent; border: 1px solid var(--mod-accent);
+  color: var(--mod-accent); font-family: var(--mod-font-ui);
+  font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+}
+.danger-btn:active { opacity: 0.75; }
+.settings-save-bar {
+  position: sticky; bottom: 56px; /* above tab bar */
+  padding: 12px 16px; background: var(--mod-bg-overlay);
+  border-top: 1px solid var(--mod-border-primary);
+}
+.settings-emoji-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.settings-emoji-opt {
+  width: 40px; height: 40px; display: flex; align-items: center;
+  justify-content: center; border-radius: 8px; font-size: 22px; cursor: pointer;
+  background: var(--mod-bg-elevated); border: 2px solid transparent;
+}
+.settings-emoji-opt.selected { border-color: var(--mod-text-heading); }
+
+/* ── AUDITION MODAL ── */
+#audition-modal .modal-sheet { max-height: 85dvh; overflow-y: auto; }
+.audition-rule-box {
+  background: var(--mod-bg-elevated);
+  border: 1px solid var(--mod-border-primary); border-radius: 10px;
+  padding: 12px; margin-bottom: 16px;
+  font-size: 14px; color: var(--mod-text-primary); line-height: 1.4;
+}
+.field-locked { opacity: 0.55; }
+
+/* ── AUDITION LIST ── */
+.audition-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--mod-border-primary);
+}
+.audition-row-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.audition-candidate { font-weight: 700; font-size: 15px; color: var(--mod-text-primary); }
+.audition-status {
+  font-size: 11px; letter-spacing: 1px; font-weight: 700;
+  color: var(--mod-text-muted);
+}
+.audition-rule  { font-size: 12px; color: var(--mod-text-muted); margin-bottom: 4px; }
+.audition-topic { font-size: 13px; color: var(--mod-text-secondary); font-style: italic; margin-bottom: 8px; }
+.audition-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.audition-action-btn {
+  flex: 1; min-width: 100px; padding: 10px 12px; border-radius: 8px;
+  background: var(--mod-bg-control); border: 1px solid var(--mod-border-primary);
+  color: var(--mod-text-primary); font-family: var(--mod-font-ui);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+}
+.audition-action-btn.danger {
+  border-color: color-mix(in srgb, var(--mod-accent) 50%, transparent);
+  color: var(--mod-accent); background: transparent;
+}
+
 .detail-tabs { top: 64px; } /* sticky offset for detail view */
 
 /* ── MEMBER ROW ── */
@@ -513,7 +624,8 @@ body {
   <div class="top-bar">
     <div class="back-btn" data-action="show-lobby">←</div>
     <div class="top-bar-title" id="detail-top-name">GROUP</div>
-    <div style="width:36px;"></div>
+    <button class="gear-btn" id="detail-gear-btn"
+      data-action="open-group-settings" aria-label="Group settings">⚙</button>
   </div>
 
   <div class="detail-header">
@@ -541,6 +653,8 @@ body {
     <button class="tab-btn active" data-action="switch-detail-tab" data-tab="hot-takes">Hot Takes</button>
     <button class="tab-btn" data-action="switch-detail-tab" data-tab="challenges">Challenges</button>
     <button class="tab-btn" data-action="switch-detail-tab" data-tab="members">Members</button>
+    <button class="tab-btn" id="detail-auditions-tab" style="display:none;"
+      data-action="switch-detail-tab" data-tab="auditions">Auditions</button>
   </div>
 
   <div class="content">
@@ -553,9 +667,218 @@ body {
     <div id="detail-members-list" style="display:none;">
       <div class="loading-state">Loading members…</div>
     </div>
+    <div id="detail-auditions" style="display:none;">
+      <div class="loading-state">Loading auditions…</div>
+    </div>
   </div>
 
 </div>
+
+
+<!-- ══ SETTINGS VIEW (F-16) ════════════════════════════════ -->
+<div id="view-settings">
+
+  <div class="top-bar">
+    <div class="back-btn" data-action="close-group-settings">←</div>
+    <div class="top-bar-title">GROUP SETTINGS</div>
+    <button id="settings-save-btn" data-action="save-group-settings"
+      style="background:var(--mod-text-heading);color:var(--mod-bg-base);
+             border:none;border-radius:8px;padding:8px 14px;font-family:var(--mod-font-ui);
+             font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;">SAVE</button>
+  </div>
+
+  <div style="overflow-y:auto;flex:1;padding-bottom:80px;">
+
+    <!-- General -->
+    <div class="settings-section">
+      <div class="settings-section-title">General</div>
+
+      <div class="form-field">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="settings-desc" placeholder="What does this group debate about?" maxlength="300"></textarea>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="settings-category">
+          <option value="general">General</option>
+          <option value="politics">🏛️ Politics</option>
+          <option value="sports">🏆 Sports</option>
+          <option value="entertainment">🎬 Entertainment</option>
+          <option value="music">🎵 Music</option>
+          <option value="couples_court">💔 Couples Court</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Group Emoji</label>
+        <div class="settings-emoji-row">
+          <div id="settings-emoji-selected" style="font-size:32px;min-width:40px;" data-emoji="⚔️">⚔️</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <div class="settings-emoji-opt selected" data-emoji="⚔️" data-action="select-settings-emoji">⚔️</div>
+            <div class="settings-emoji-opt" data-emoji="🔥" data-action="select-settings-emoji">🔥</div>
+            <div class="settings-emoji-opt" data-emoji="🏆" data-action="select-settings-emoji">🏆</div>
+            <div class="settings-emoji-opt" data-emoji="🎯" data-action="select-settings-emoji">🎯</div>
+            <div class="settings-emoji-opt" data-emoji="👑" data-action="select-settings-emoji">👑</div>
+            <div class="settings-emoji-opt" data-emoji="⚡" data-action="select-settings-emoji">⚡</div>
+            <div class="settings-emoji-opt" data-emoji="🐺" data-action="select-settings-emoji">🐺</div>
+            <div class="settings-emoji-opt" data-emoji="💀" data-action="select-settings-emoji">💀</div>
+            <div class="settings-emoji-opt" data-emoji="🦁" data-action="select-settings-emoji">🦁</div>
+            <div class="settings-emoji-opt" data-emoji="🗡️" data-action="select-settings-emoji">🗡️</div>
+            <div class="settings-emoji-opt" data-emoji="🧠" data-action="select-settings-emoji">🧠</div>
+            <div class="settings-emoji-opt" data-emoji="💔" data-action="select-settings-emoji">💔</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-toggle-row">
+        <div>
+          <div class="settings-toggle-label">Public Group</div>
+          <div class="settings-toggle-sub">Appears in discover &amp; search</div>
+        </div>
+        <div class="settings-toggle">
+          <input type="checkbox" id="settings-is-public" checked>
+        </div>
+      </div>
+    </div>
+
+    <!-- Join Mode (F-17 / F-18) -->
+    <div class="settings-section">
+      <div class="settings-section-title">Who Can Join</div>
+      <div class="join-mode-options">
+        <label class="join-mode-option">
+          <input type="radio" name="join-mode" value="open"
+            data-action="settings-join-mode-change">
+          <div>
+            <div class="join-mode-label">Open</div>
+            <div class="join-mode-sub">Anyone can join immediately</div>
+          </div>
+        </label>
+        <label class="join-mode-option">
+          <input type="radio" name="join-mode" value="requirements"
+            data-action="settings-join-mode-change">
+          <div>
+            <div class="join-mode-label">Requirements</div>
+            <div class="join-mode-sub">Must meet Elo, tier, or profile gates</div>
+          </div>
+        </label>
+        <label class="join-mode-option">
+          <input type="radio" name="join-mode" value="audition"
+            data-action="settings-join-mode-change">
+          <div>
+            <div class="join-mode-label">Audition</div>
+            <div class="join-mode-sub">Must debate their way in</div>
+          </div>
+        </label>
+        <label class="join-mode-option">
+          <input type="radio" name="join-mode" value="invite_only"
+            data-action="settings-join-mode-change">
+          <div>
+            <div class="join-mode-label">Invite Only</div>
+            <div class="join-mode-sub">No public join button shown</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Requirements sub-section (F-17) -->
+      <div class="settings-sub-section" id="settings-requirements-section" style="display:none;">
+        <div class="settings-section-title">Entry Gates</div>
+        <div class="form-field">
+          <label class="form-label">Minimum Elo (leave blank to skip)</label>
+          <input class="form-input" type="number" id="settings-min-elo" min="0" max="5000" placeholder="e.g. 1200">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Minimum Staking Tier</label>
+          <select class="form-select" id="settings-min-tier">
+            <option value="">No minimum</option>
+            <option value="spectator_plus">Spectator+</option>
+            <option value="contender">Contender</option>
+            <option value="gladiator">Gladiator</option>
+            <option value="champion">Champion</option>
+            <option value="legend">Legend</option>
+          </select>
+        </div>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-label">Require complete profile</div>
+          <div class="settings-toggle">
+            <input type="checkbox" id="settings-req-profile">
+          </div>
+        </div>
+      </div>
+
+      <!-- Audition sub-section (F-18) -->
+      <div class="settings-sub-section" id="settings-audition-section" style="display:none;">
+        <div class="settings-section-title">Audition Rule</div>
+        <div class="form-field">
+          <select class="form-select" id="settings-aud-rule">
+            <option value="allowed_by_leader">Leader approval — no debate</option>
+            <option value="debate_leader_any">Complete a debate vs. leader</option>
+            <option value="debate_member_any">Complete a debate vs. any member</option>
+            <option value="debate_leader_win">Win a debate vs. leader</option>
+            <option value="debate_member_win">Win a debate vs. any member</option>
+          </select>
+        </div>
+        <div class="settings-section-title" style="margin-top:12px;">Lock Debate Parameters</div>
+        <div style="font-size:12px;color:var(--mod-text-muted);margin-bottom:10px;">
+          Leave blank to let the candidate choose. Fill in to lock the field.
+        </div>
+        <div class="form-field">
+          <label class="form-label">Topic (optional lock)</label>
+          <input class="form-input" type="text" id="settings-aud-topic" placeholder="Leave blank — candidate picks" maxlength="200">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Category (optional lock)</label>
+          <select class="form-select" id="settings-aud-category">
+            <option value="">Candidate picks</option>
+            <option value="general">General</option>
+            <option value="politics">Politics</option>
+            <option value="sports">Sports</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="music">Music</option>
+            <option value="couples_court">Couples Court</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Ruleset (optional lock)</label>
+          <select class="form-select" id="settings-aud-ruleset">
+            <option value="">Candidate picks</option>
+            <option value="amplified">Amplified</option>
+            <option value="unplugged">Unplugged</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Rounds (optional lock)</label>
+          <select class="form-select" id="settings-aud-rounds">
+            <option value="">Candidate picks</option>
+            <option value="4">4 rounds</option>
+            <option value="6">6 rounds</option>
+            <option value="8">8 rounds</option>
+            <option value="10">10 rounds</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section danger-zone">
+      <div class="settings-section-title">Danger Zone</div>
+      <button class="danger-btn" data-action="show-delete-confirm">DELETE GROUP</button>
+      <div id="settings-delete-confirm" style="display:none;margin-top:16px;">
+        <p style="font-size:13px;color:var(--mod-text-muted);margin-bottom:10px;line-height:1.5;">
+          This is permanent. GvG debate history is preserved but all members,
+          challenges, and auditions will be deleted. Type the group name to confirm.
+        </p>
+        <input class="form-input" type="text" id="settings-delete-name-input"
+          placeholder="Type group name exactly…" style="margin-bottom:10px;">
+        <button class="danger-btn" id="settings-delete-submit-btn"
+          data-action="submit-delete-group">DELETE FOREVER</button>
+      </div>
+    </div>
+
+  </div><!-- /scroll area -->
+
+</div><!-- /view-settings -->
+
 
 
 <!-- ══ CREATE MODAL ════════════════════════════════════════ -->
@@ -607,6 +930,65 @@ body {
     <button class="submit-btn" id="create-submit-btn" data-action="submit-create-group">CREATE GROUP</button>
   </div>
 </div>
+
+
+<!-- ══ AUDITION REQUEST MODAL (F-18) ══════════════════════ -->
+<div class="modal-overlay" id="audition-modal" data-action="audition-modal-backdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">REQUEST AUDITION</div>
+
+    <div class="audition-rule-box" id="audition-rule-desc">Loading…</div>
+
+    <div id="audition-debate-params">
+      <div class="form-field" id="audition-topic-row">
+        <label class="form-label">Topic</label>
+        <input class="form-input" type="text" id="audition-topic"
+          placeholder="What will you debate?" maxlength="200">
+      </div>
+      <div class="form-field" id="audition-category-row">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="audition-category">
+          <option value="">Select…</option>
+          <option value="general">General</option>
+          <option value="politics">Politics</option>
+          <option value="sports">Sports</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="music">Music</option>
+          <option value="couples_court">Couples Court</option>
+        </select>
+      </div>
+      <div class="form-field" id="audition-ruleset-row">
+        <label class="form-label">Ruleset</label>
+        <select class="form-select" id="audition-ruleset">
+          <option value="amplified">Amplified</option>
+          <option value="unplugged">Unplugged</option>
+        </select>
+      </div>
+      <div class="form-field" id="audition-rounds-row">
+        <label class="form-label">Rounds</label>
+        <select class="form-select" id="audition-rounds">
+          <option value="4">4 rounds</option>
+          <option value="6">6 rounds</option>
+          <option value="8">8 rounds</option>
+          <option value="10">10 rounds</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="audition-error"
+      style="display:none;color:var(--mod-accent);font-size:13px;margin-bottom:10px;"></div>
+
+    <button class="submit-btn" id="audition-submit-btn"
+      data-action="submit-audition-request">REQUEST AUDITION</button>
+    <button data-action="close-audition-modal"
+      style="width:100%;margin-top:10px;padding:12px;background:none;border:none;
+             color:var(--mod-text-muted);font-family:var(--mod-font-ui);font-size:14px;cursor:pointer;">
+      Cancel
+    </button>
+  </div>
+</div>
+
 
 
 <!-- ══ GVG CHALLENGE MODAL ══════════════════════════════════ -->

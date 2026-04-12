@@ -183,6 +183,13 @@ export async function endCurrentDebate(): Promise<void> {
         const stakeResult = await settleStakes(debate.id);
         debate._stakingResult = stakeResult;
       } catch (err) { console.error('[Arena] settleStakes failed:', err); }
+
+      // F-18: resolve audition pass/fail if this was an audition debate
+      try {
+        const { getSupabaseClient } = await import('../auth.ts');
+        const _sb = getSupabaseClient();
+        await _sb.rpc('resolve_audition_from_debate', { p_debate_id: debate.id });
+      } catch (err) { console.error('[Arena] resolve_audition_from_debate failed:', err); }
     }
   }
 

@@ -21,6 +21,27 @@ export interface GroupListItem {
   my_role?: string | null;
 }
 
+/** Extended group detail returned by get_group_details (F-16/17/18 additions) */
+export interface GroupDetail extends GroupListItem {
+  slug?: string | null;
+  owner_id?: string | null;
+  is_public?: boolean;
+  created_at?: string | null;
+  join_mode?: 'open' | 'requirements' | 'audition' | 'invite_only';
+  entry_requirements?: {
+    min_elo?: number;
+    min_tier?: string;
+    require_profile_complete?: boolean;
+  } | null;
+  audition_config?: {
+    rule?: string;
+    locked_topic?: string | null;
+    locked_category?: string | null;
+    locked_ruleset?: string | null;
+    locked_total_rounds?: number | null;
+  } | null;
+}
+
 /** Member row as returned by get_group_members RPC */
 export interface GroupMember {
   user_id: string;
