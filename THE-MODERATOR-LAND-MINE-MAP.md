@@ -1,6 +1,6 @@
 # THE MODERATOR — LAND MINE MAP
 ### The Anti-Friendly-Fire Document — Read Before Touching Anything
-### Last Updated: Session 249 (April 9, 2026) — LM-210 added (`supabase-deployed-functions-export.sql` is stale — last re-synced S227, NT line 127 claim of sync is false, discovered during F-09 audit when the deployed `settle_stakes` signature mismatch surfaced). LM-211 added (Auto-debate consumer-side system RETIRED — tables/RPCs/page/TS module dropped in S249 as an extension of the S248 bot army scratch; distinct disposition from the bot army carcass since auto-debate gets a full rip while the bot army floats in the ether). 16 sections, 120 entries. | Prior: S248 — LM-209 added (profiles.is_bot column missing, F-55 build blocker); Session 43 Groq-model-kill lesson scratched, LM-005/LM-066 protection rationales rewritten off bot-army-funnel framing, LM-207 WHAT clause rewritten to drop "F-06 bot army" wrong-F-number reference, B2B secrecy LM "bot army posts" reference removed. | Prior: S247 — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement).
+### Last Updated: Session 254 (April 12, 2026) — LM-224 added (stale `src/settings.ts` root-level duplicate deleted). LM-225 added (`arena-lobby.ts` is async-only — never statically import). 16 sections, 122 entries. | Prior: Session 249 (April 9, 2026) — LM-210 added (`supabase-deployed-functions-export.sql` is stale — last re-synced S227, NT line 127 claim of sync is false, discovered during F-09 audit when the deployed `settle_stakes` signature mismatch surfaced). LM-211 added (Auto-debate consumer-side system RETIRED — tables/RPCs/page/TS module dropped in S249 as an extension of the S248 bot army scratch; distinct disposition from the bot army carcass since auto-debate gets a full rip while the bot army floats in the ether). 16 sections, 120 entries. | Prior: S248 — LM-209 added (profiles.is_bot column missing, F-55 build blocker); Session 43 Groq-model-kill lesson scratched, LM-005/LM-066 protection rationales rewritten off bot-army-funnel framing, LM-207 WHAT clause rewritten to drop "F-06 bot army" wrong-F-number reference, B2B secrecy LM "bot army posts" reference removed. | Prior: S247 — LM-202 through LM-205 added in S246 (mirror deprecation, S182 design stranding, F-10 stale docx pointer, Epic→Legendary rename). LM-206 through LM-208 added in S247 (source_type locked-at-creation exception, bot/AI cite block, asymmetric `general` category enforcement).
 
 > **Purpose:** Every decision we've made has a consequence if you step on it wrong.
 > This document maps cause → effect → what bites you → how to fix it.
@@ -2871,4 +2871,37 @@ RELATED: LM-SETTINGS-DUP-001 (original handoff ID). Session 254 TypeScript
   refactor — source decomposition complete.
 
 SESSION: 254 (TypeScript Refactor — Track A complete).
+```
+
+---
+
+## LM-225: `arena-lobby.ts` is an async-only dynamic chunk — never statically import it
+```
+DECISION (Session 254 / Track B): arena-lobby.ts was statically imported by
+  8 files, causing Vite to include it in both the static bundle and the async
+  chunk produced by arena-feed-realtime.ts. All 8 static imports were converted
+  to dynamic await import() / void import().then() / async arrow wrappers.
+  arena-lobby.ts is now a standalone async chunk (arena-lobby-CE-BUsds.js,
+  11.73 kB). main.js shrank from ~370 kB to 362 kB. Vite warning eliminated.
+
+BITES YOU WHEN:
+  A future session adds a new file that statically imports from arena-lobby.ts
+  (e.g. `import { renderLobby } from './arena-lobby.ts'`). This silently
+  re-introduces the Vite warning and re-merges arena-lobby back into main.js,
+  undoing the bundle split.
+
+SYMPTOM: Vite build output shows the warning:
+  "arena-lobby.ts is dynamically imported by arena-feed-realtime.ts
+   but also statically imported by: <your new file>"
+  main.js grows back to ~370 kB.
+
+FIX: Always import arena-lobby.ts dynamically:
+  - In async functions: `const { renderLobby } = await import('./arena-lobby.ts');`
+  - In sync functions: `void import('./arena-lobby.ts').then(({ renderLobby }) => renderLobby());`
+  - For event listeners: `async () => { const { renderLobby } = await import('./arena-lobby.ts'); renderLobby(); }`
+
+RELATED: LM-201 (spectator entry — click handler in arena-lobby.ts).
+  If you touch arena-lobby.ts, still import it dynamically.
+
+SESSION: 254 (Track B — bundle fix).
 ```
