@@ -343,6 +343,18 @@ export function injectCSS(): void {
     .arena-staking-result-amount.lost { color:var(--mod-accent); }
     .arena-staking-result-amount.none { color:var(--mod-text-muted); }
     .arena-staking-result-detail { font-size:11px;color:var(--mod-text-muted);margin-top:4px; }
+    /* F-57 Phase 3: After Effects breakdown */
+    .arena-after-effects { width:100%;max-width:380px;margin:0 auto 20px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:14px 16px; }
+    .arena-after-effects__title { font-family:var(--mod-font-ui);font-size:9px;font-weight:600;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:10px;text-align:center; }
+    .ae-row { display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:12px;padding:6px 0;border-top:1px solid var(--mod-border-subtle); }
+    .ae-row:first-of-type { border-top:none; }
+    .ae-label { font-family:var(--mod-font-ui);font-size:10px;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;min-width:60px; }
+    .ae-raw { font-family:var(--mod-font-ui);font-size:13px;font-weight:600;color:var(--mod-text-body); }
+    .ae-arrow { color:var(--mod-text-muted);font-size:11px;padding:0 2px; }
+    .ae-step { font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:0.5px;padding:2px 6px;border-radius:var(--mod-radius-sm); }
+    .ae-step--positive { color:var(--mod-status-open);background:rgba(0,255,170,0.08); }
+    .ae-step--negative { color:var(--mod-accent);background:rgba(255,0,128,0.08); }
+    .ae-final { font-family:var(--mod-font-ui);font-size:15px;font-weight:700;color:var(--mod-text-heading); }
 
     /* Moderator assignment picker */
     .mod-picker-section { margin-top:12px;padding-top:12px;border-top:1px solid var(--mod-border-subtle); }
