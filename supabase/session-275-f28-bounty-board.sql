@@ -42,6 +42,7 @@ ALTER TABLE bounties ENABLE ROW LEVEL SECURITY;
 -- Poster can read their own outgoing bounties.
 -- Target can read incoming bounties on them.
 -- No direct writes — all via SECURITY DEFINER RPCs.
+DROP POLICY IF EXISTS "bounties_poster_read" ON bounties;
 CREATE POLICY "bounties_poster_read"
   ON bounties FOR SELECT TO authenticated
   USING (poster_id = auth.uid() OR target_id = auth.uid());
@@ -72,6 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_bounty_attempts_debate  ON bounty_attempts(debate
 
 ALTER TABLE bounty_attempts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "bounty_attempts_hunter_read" ON bounty_attempts;
 CREATE POLICY "bounty_attempts_hunter_read"
   ON bounty_attempts FOR SELECT TO authenticated
   USING (hunter_id = auth.uid());
