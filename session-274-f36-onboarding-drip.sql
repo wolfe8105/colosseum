@@ -31,48 +31,43 @@ CREATE POLICY "drip_owner_all" ON public.onboarding_drip_log
   WITH CHECK (user_id = auth.uid());
 
 -- ── 2. Seed 7 onboarding cosmetic rewards ───────────────────
--- Widen the unlock_type check constraint to include 'onboarding'
-ALTER TABLE public.cosmetic_items
-  DROP CONSTRAINT IF EXISTS cosmetic_items_unlock_type_check;
-
-ALTER TABLE public.cosmetic_items
-  ADD CONSTRAINT cosmetic_items_unlock_type_check
-  CHECK (unlock_type IN ('free','auto','depth','token','onboarding'));
+-- unlock_type='auto' = automatically granted (no purchase/depth gate)
+-- tier max is 3 per constraint
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Newcomer',  'badge', 1, 'onboarding', 0, 'onboarding_day_1', 100
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Newcomer' AND unlock_type = 'onboarding');
+SELECT 'Newcomer',  'badge', 1, 'auto', 0, 'onboarding_day_1', 100
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Newcomer' AND unlock_condition = 'onboarding_day_1');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Voter',     'badge', 1, 'onboarding', 0, 'onboarding_day_2', 101
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Voter' AND unlock_type = 'onboarding');
+SELECT 'Voter',     'badge', 1, 'auto', 0, 'onboarding_day_2', 101
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Voter' AND unlock_condition = 'onboarding_day_2');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Spectator', 'badge', 1, 'onboarding', 0, 'onboarding_day_3', 102
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Spectator' AND unlock_type = 'onboarding');
+SELECT 'Spectator', 'badge', 1, 'auto', 0, 'onboarding_day_3', 102
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Spectator' AND unlock_condition = 'onboarding_day_3');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Hothead',   'badge', 2, 'onboarding', 0, 'onboarding_day_4', 103
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Hothead' AND unlock_type = 'onboarding');
+SELECT 'Hothead',   'badge', 1, 'auto', 0, 'onboarding_day_4', 103
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Hothead' AND unlock_condition = 'onboarding_day_4');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Rookie',    'title', 2, 'onboarding', 0, 'onboarding_day_5', 104
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Rookie' AND unlock_type = 'onboarding');
+SELECT 'Rookie',    'title', 2, 'auto', 0, 'onboarding_day_5', 104
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Rookie' AND unlock_condition = 'onboarding_day_5');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Regular',   'title', 3, 'onboarding', 0, 'onboarding_day_6', 105
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Regular' AND unlock_type = 'onboarding');
+SELECT 'Regular',   'title', 2, 'auto', 0, 'onboarding_day_6', 105
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Regular' AND unlock_condition = 'onboarding_day_6');
 
 INSERT INTO public.cosmetic_items
   (name, category, tier, unlock_type, token_cost, unlock_condition, sort_order)
-SELECT 'Gladiator', 'title', 4, 'onboarding', 0, 'onboarding_day_7', 106
-WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Gladiator' AND unlock_type = 'onboarding');
+SELECT 'Gladiator', 'title', 3, 'auto', 0, 'onboarding_day_7', 106
+WHERE NOT EXISTS (SELECT 1 FROM cosmetic_items WHERE name = 'Gladiator' AND unlock_condition = 'onboarding_day_7');
 
 -- ── 3. get_onboarding_progress RPC ──────────────────────────
 
@@ -146,7 +141,7 @@ BEGIN
   -- Grant cosmetic reward
   SELECT id, name INTO v_cosmetic_id, v_cosmetic_name
   FROM cosmetic_items
-  WHERE unlock_condition = v_condition AND unlock_type = 'onboarding'
+  WHERE unlock_condition = v_condition AND unlock_type = 'auto'
   LIMIT 1;
 
   IF v_cosmetic_id IS NOT NULL THEN
