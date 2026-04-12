@@ -12,7 +12,7 @@
 
 | Order | # | Feature | Status |
 |---|---|---------|--------|
-| 1 | F-60 | Saved Loadouts | ⏳ not started |
+| 1 | F-60 | Saved Loadouts | ✅ S272 |
 | 2 | F-54 | Private Profile Toggle | ⏳ specced, not built |
 | 3 | F-53 | Profile Debate Archive | ⏳ specced, not built |
 | 4 | F-33 | Verified Gladiator Badge | ⏳ specced, not built |
@@ -102,6 +102,22 @@
 - supabase/session-270-f57-round-end-cluster.sql
 - supabase/session-270-h08-rls-fix.sql
 - supabase/session-270-h08-rls-fix-final.sql
+
+### Session 272
+
+**Client — Arena**
+- src/arena/arena-loadout-presets.ts (new)
+- src/arena/arena-room-setup.ts
+- src/arena/arena-css.ts
+
+**Client — Other**
+- src/reference-arsenal.loadout.ts
+
+**Supabase SQL**
+- supabase/session-272-f60-saved-loadouts.sql
+
+**Docs**
+- THE-MODERATOR-AGENT-HANDOFF.md (new)
 
 ---
 
