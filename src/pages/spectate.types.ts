@@ -2,6 +2,9 @@
  * THE MODERATOR — Spectator View Types
  *
  * All interfaces for the spectate module. No imports from other spectate files.
+ * F-05 (S277): Added ReplayPointAward, ReplaySpeechEvent, PointAwardMeta.
+ *              Updated ReplayData (point_awards + speech_events buckets).
+ *              Updated TimelineEntry ('speech' + 'score' entry types).
  */
 
 /** Debate shape returned by get_arena_debate_spectator RPC or direct query */
@@ -88,20 +91,74 @@ export interface ReplayModScore {
   scorer_name: string;
 }
 
-/** Combined replay enrichment data */
+/**
+ * F-05: Modifier math carried in a point_award event's metadata.
+ * Written by score_debate_comment (S267 F-57 Phase 2).
+ * scored_event_id links to the debate_feed_events.id of the speech event scored.
+ */
+export interface PointAwardMeta {
+  scored_event_id: string;
+  score_a_after: number;
+  score_b_after: number;
+  base_score: number;
+  in_debate_multiplier: number;
+  in_debate_flat: number;
+  final_contribution: number;
+}
+
+/**
+ * F-05: Point award event from get_debate_replay_data point_awards bucket.
+ * Represents a moderator scoring a specific speech event during the debate.
+ */
+export interface ReplayPointAward {
+  id: string;
+  created_at: string;
+  round: number | null;
+  side: string;
+  base_score: number;
+  metadata: PointAwardMeta;
+}
+
+/**
+ * F-05: Speech event from get_debate_replay_data speech_events bucket.
+ * F-51 live moderated debates store dialogue in debate_feed_events (type='speech'),
+ * not in debate_messages. This interface matches those rows for replay rendering.
+ */
+export interface ReplaySpeechEvent {
+  id: string;
+  created_at: string;
+  round: number | null;
+  side: string;
+  content: string | null;
+  user_id: string | null;
+  debater_name: string;
+}
+
+/** Combined replay enrichment data (all 5 buckets from get_debate_replay_data) */
 export interface ReplayData {
   power_ups: ReplayPowerUp[];
   references: ReplayReference[];
   mod_scores: ReplayModScore[];
+  /** F-05: mod-scored point award events with modifier math in metadata */
+  point_awards: ReplayPointAward[];
+  /** F-05: debater speech events for F-51 debates (empty for older AI/private debates) */
+  speech_events: ReplaySpeechEvent[];
 }
 
-/** Unified timeline entry for rendering */
+/**
+ * Unified timeline entry for rendering.
+ * 'message'  — from debate_messages (older AI sparring / private lobby debates)
+ * 'speech'   — from debate_feed_events type=speech (F-51 live moderated debates)
+ * 'power_up' — activated power-up event
+ * 'reference'— reference citation with ruling
+ * 'score'    — standalone point award (older debates without speech event linkage)
+ */
 export interface TimelineEntry {
-  type: 'message' | 'power_up' | 'reference';
+  type: 'message' | 'speech' | 'power_up' | 'reference' | 'score';
   timestamp: string;
   round: number | null;
   side: string | null;
-  data: DebateMessage | ReplayPowerUp | ReplayReference;
+  data: DebateMessage | ReplaySpeechEvent | ReplayPowerUp | ReplayReference | ReplayPointAward;
 }
 
 /** Single debate message (argument in a round) */

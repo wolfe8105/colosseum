@@ -176,6 +176,21 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .msg.side-b .msg-name{color:var(--side-b);}
 .msg .msg-text{font-size:14px;color:var(--mod-text-primary);line-height:1.4;}
 .msg .msg-round{font-size:10px;color:var(--mod-text-muted);margin-top:4px;}
+/* F-05: Inline point award badge on scored speech events */
+.msg .msg-score-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;letter-spacing:0.5px;
+  padding:2px 7px;border-radius:20px;margin-top:5px;
+  font-family:var(--mod-font-ui);
+}
+.msg .msg-score-badge.award-side-a{
+  background:rgba(136,144,168,0.15);
+  color:var(--side-a);border:1px solid rgba(136,144,168,0.3);
+}
+.msg .msg-score-badge.award-side-b{
+  background:rgba(231,68,42,0.12);
+  color:var(--side-b);border:1px solid rgba(231,68,42,0.25);
+}
 .msg-empty{text-align:center;color:var(--mod-text-muted);font-size:13px;padding:24px 0;}
 
 .round-divider{
@@ -324,6 +339,10 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 
 .reference-event{background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);flex-direction:column;gap:4px;}
 .reference-event .timeline-text{display:flex;align-items:center;gap:6px;}
+/* F-05: Standalone point award entry (older debates / orphan awards) */
+.score-event{background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.18);}
+.score-event.side-a{border-left:3px solid rgba(136,144,168,0.5);}
+.score-event.side-b{border-right:3px solid rgba(231,68,42,0.4);}
 .ref-desc{font-size:12px;color:var(--mod-text-secondary);padding-left:26px;font-style:italic;}
 .ref-url{font-size:11px;color:var(--mod-bar-secondary);padding-left:26px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 .ref-ruling{font-size:12px;padding-left:26px;color:var(--mod-text-secondary);margin-top:2px;}
