@@ -2,9 +2,11 @@
 
 This is a revision of `THE-MODERATOR-AUDIT-METHOD-V2.md`. The only change from v2 is the batch-size ceiling: **5 files per run instead of 15.** Everything else — stages, prompts, manifest schema, resume semantics — is unchanged.
 
+> **Revision 2026-04-13 (post-Batch-3):** Stages 1, 2, and 3 now dispatch **5 parallel agents instead of 11.** Stage 1.5 is structurally unchanged (still 2 arbiter runs + reconciliation), but its prompt text was updated to refer to 5 stage-1 inputs instead of 11. Rationale: Batch 3 hit Claude Code context compaction mid-run on the 11-agent config; Stage 1.5 arbiter runs reported zero disagreements across all 10 files in Batches 1 and 2, meaning the 11-agent parallelism was spending tokens to push detection from "four nines" to "ten nines" on tasks where Sonnet is already consistent enough that disagreement does not materialize. 5 is the structural minimum for robust 3-2 majority voting with one slack agent. Estimated token savings: ~55% with no loss of robustness where it matters. Do NOT downgrade the model — Sonnet has been catching Stage 2 hallucinations cleanly in Stage 3; Haiku's failure mode is "verifier agrees with Stage 2 mistakes more often," which would silently erode the whole method.
+
 The changes from v1 (carried forward from v2):
 
-1. **Step 1.5 — Anchor Verification.** An arbiter agent runs twice, independently, to produce the locked anchor list from Stage 1's eleven outputs. If the two runs agree, done. If they disagree, a third reconciliation pass resolves the specific contested items against the source. Items still unresolved after reconciliation are flagged to a human-review file and the pipeline continues with them included as union-with-provenance entries.
+1. **Step 1.5 — Anchor Verification.** An arbiter agent runs twice, independently, to produce the locked anchor list from Stage 1's five outputs. If the two runs agree, done. If they disagree, a third reconciliation pass resolves the specific contested items against the source. Items still unresolved after reconciliation are flagged to a human-review file and the pipeline continues with them included as union-with-provenance entries.
 2. **5-file batch orchestration with manifest tracking.** One run processes up to 5 files through stages 1 → 1.5 → 2 → 3. A JSON manifest on disk records per-file, per-stage status, so the run is resumable and inspectable.
 3. **File-first order.** Each file is walked through all four stages before the next file starts. Interruption leaves N completed audits and one partial, not 5 partials.
 
@@ -116,22 +118,22 @@ dispatch.
 
 ## Stage 1 — Primitive Inventory
 
-**Unchanged from v1.** Eleven agents dispatch in parallel. Each receives the same prompt. When all return, write verbatim to `stage1.md` and update manifest.
+**Revised from v1.** Five agents dispatch in parallel. Each receives the same prompt. When all return, write verbatim to `stage1.md` and update manifest.
 
 ```
 Before dispatching: set manifest.files[i].stage1.status = "in_progress"
 and write manifest back to disk.
 
-In a single assistant message, emit 11 Task tool_use blocks simultaneously.
+In a single assistant message, emit 5 Task tool_use blocks simultaneously.
 Do not reason between spawns. Do not wait for any agent to return before
-spawning the next. All 11 dispatch in one batch, run concurrently, and
+spawning the next. All 5 dispatch in one batch, run concurrently, and
 return independently.
 
-Each of the 11 Task calls uses the exact same prompt below, verbatim. No
+Each of the 5 Task calls uses the exact same prompt below, verbatim. No
 agent is told about the others. No agent receives a different instruction.
 No agent is given an index or a role.
 
-When all 11 have returned, write their outputs verbatim to disk at
+When all 5 have returned, write their outputs verbatim to disk at
 [STAGE1_OUTPUT_PATH], formatted as:
 
     # Stage 1 Outputs — [filename]
@@ -142,14 +144,14 @@ When all 11 have returned, write their outputs verbatim to disk at
     ## Agent 02
     [verbatim output]
 
-    ...through Agent 11.
+    ...through Agent 05.
 
 Do NOT extract the anchor list in this stage. Anchor extraction is Stage 1.5.
 
 After writing: set manifest.files[i].stage1.status = "done" and write
 manifest back to disk. Proceed to Stage 1.5 for this file.
 
-PROMPT FOR EACH AGENT (identical across all 11)
+PROMPT FOR EACH AGENT (identical across all 5)
 ================================================
 
 Read the file at [SOURCE_FILE_PATH].
@@ -183,7 +185,7 @@ the file ends.
 
 ## Stage 1.5 — Anchor Verification
 
-**Purpose:** Take the eleven Stage 1 outputs and produce a single locked anchor list of function definitions to be walked in Stage 2. Disagreements between the eleven agents are resolved by reading the source, not by vote.
+**Purpose:** Take the five Stage 1 outputs and produce a single locked anchor list of function definitions to be walked in Stage 2. Disagreements between the five agents are resolved by reading the source, not by vote.
 
 **Mechanism:** Two independent arbiter runs. If they agree, the locked anchor list is written and the stage is done. If they disagree, a third reconciliation pass adjudicates the specific contested items against the source. If any items remain unresolved after reconciliation, they are included in the anchor list as union-with-provenance entries (so Stage 2 walks them, and Stage 3 will classify them as REAL or PHANTOM), and the file's entry is flagged to `needs-human-review.md`. The pipeline continues.
 
@@ -266,7 +268,7 @@ ARBITER PROMPT
 Read the source file at [SOURCE_FILE_PATH].
 Read the stage 1 outputs at [STAGE1_OUTPUT_PATH].
 
-The stage 1 outputs contain eleven independent primitive-language
+The stage 1 outputs contain five independent primitive-language
 inventories of the same source file. Your job is to produce the
 authoritative anchor list of function definitions that will be walked
 in stage 2.
@@ -282,7 +284,7 @@ the source file. Specifically:
 
 Exclude:
 - methods inside class bodies (the class itself is one entry if the
-  eleven agents consistently identified it as a function; otherwise
+  five agents consistently identified it as a function; otherwise
   it is not a function and does not belong here)
 - inner helper functions defined inside other functions
 - callbacks passed inline to .map, .forEach, addEventListener, etc.
@@ -299,11 +301,11 @@ Process:
 2. For each candidate, read the source file and confirm whether it meets
    the definition above. Do not rely on how many agents listed it — a
    candidate listed by one agent is just as valid as one listed by
-   eleven, if the source confirms it. A candidate listed by all eleven
+   five, if the source confirms it. A candidate listed by all five
    is invalid if the source contradicts them.
 
 3. Also scan the source file directly for function definitions that no
-   agent listed, in case all eleven missed one. Add any you find to
+   agent listed, in case all five missed one. Add any you find to
    the candidate list and verify them the same way.
 
 4. Produce the final anchor list in source order, numbered. Format:
@@ -438,11 +440,11 @@ and write manifest back to disk.
 Read [STAGE1_5_ANCHOR_PATH] to get the anchor list. Substitute it into
 the marked slot in the agent prompt below.
 
-Dispatch eleven Task tool_use blocks simultaneously in a single assistant
+Dispatch five Task tool_use blocks simultaneously in a single assistant
 message. Each agent receives the exact same prompt below, verbatim. Wait
-for all eleven to return.
+for all five to return.
 
-When all eleven return, write their outputs verbatim to [STAGE2_OUTPUT_PATH].
+When all five return, write their outputs verbatim to [STAGE2_OUTPUT_PATH].
 
 Set manifest.files[i].stage2.status = "done" and write manifest.
 Proceed to Stage 3.
@@ -537,12 +539,12 @@ Output formatting and disk write format match v1.
 Before dispatching: set manifest.files[i].stage3.status = "in_progress"
 and write manifest back to disk.
 
-Dispatch eleven Task tool_use blocks simultaneously in a single assistant
+Dispatch five Task tool_use blocks simultaneously in a single assistant
 message. Each agent receives the exact same prompt from the v1 document's
 Stage 3 section, verbatim, with [SOURCE_FILE_PATH] and [STAGE2_OUTPUT_PATH]
 substituted.
 
-When all eleven return, write their outputs verbatim to [STAGE3_OUTPUT_PATH].
+When all five return, write their outputs verbatim to [STAGE3_OUTPUT_PATH].
 
 Set manifest.files[i].stage3.status = "done" and write manifest.
 
@@ -565,7 +567,7 @@ On any re-invocation of this orchestration prompt with the same audit directory 
 5. If that stage is `pending`, start it.
 6. Continue from there through the rest of the pipeline.
 
-Never trust partial stage outputs. A stage is either complete (all eleven agent outputs written, manifest updated) or it starts over.
+Never trust partial stage outputs. A stage is either complete (all five agent outputs written, manifest updated) or it starts over.
 
 ---
 
@@ -577,6 +579,6 @@ The headline finding on a file tends to be stable across repeated runs. Subtler 
 
 ## Why fresh sessions per stage (unchanged from v1)
 
-Each Stage 1 / 2 / 3 eleven-agent wave must run as a fresh parallel dispatch with no shared state between agents. The independence of the agents is the method's load-bearing assumption. Within the orchestration prompt, this is achieved by dispatching eleven Task blocks in a single assistant message — Claude Code's parallel Task mechanism gives each its own context.
+Each Stage 1 / 2 / 3 five-agent wave must run as a fresh parallel dispatch with no shared state between agents. The independence of the agents is the method's load-bearing assumption. Within the orchestration prompt, this is achieved by dispatching five Task blocks in a single assistant message — Claude Code's parallel Task mechanism gives each its own context.
 
 Stage 1.5's arbiter runs must also be dispatched as fresh Task agents (not inline reasoning in the orchestration session), for the same reason: run 2 must not see run 1's output until the comparison step.
