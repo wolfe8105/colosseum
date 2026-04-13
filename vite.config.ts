@@ -17,6 +17,7 @@ const htmlEntries = {
   privacy:      resolve(__dirname, 'moderator-privacy.html'),
   cosmetics:    resolve(__dirname, 'moderator-cosmetics.html'),
   go:           resolve(__dirname, 'moderator-go.html'),
+  sourceReport: resolve(__dirname, 'moderator-source-report.html'),
 };
 
 export default defineConfig({
