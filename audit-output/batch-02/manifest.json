@@ -1,0 +1,47 @@
+{
+  "run_id": "audit-run-20260413-000000",
+  "batch": 2,
+  "created_at": "2026-04-13T00:00:00.000Z",
+  "files": [
+    {
+      "path": "src/arena/arena-feed-wiring.ts",
+      "sanitized": "src__arena__arena-feed-wiring.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__arena__arena-feed-wiring.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__arena__arena-feed-wiring.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__arena__arena-feed-wiring.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__arena__arena-feed-wiring.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-room-end.ts",
+      "sanitized": "src__arena__arena-room-end.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__arena__arena-room-end.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__arena__arena-room-end.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__arena__arena-room-end.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__arena__arena-room-end.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-room-live.ts",
+      "sanitized": "src__arena__arena-room-live.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__arena__arena-room-live.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__arena__arena-room-live.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__arena__arena-room-live.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__arena__arena-room-live.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-types.ts",
+      "sanitized": "src__arena__arena-types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__arena__arena-types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__arena__arena-types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__arena__arena-types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__arena__arena-types.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/groups.ts",
+      "sanitized": "src__pages__groups.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__pages__groups.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__pages__groups.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__pages__groups.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__pages__groups.ts/stage3.md"}
+    }
+  ]
+}
