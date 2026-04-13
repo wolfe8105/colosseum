@@ -12,18 +12,18 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 
 ## HIGH severity — needs answer or fix before more auditing
 
-### H-A2. `arena-room-end.ts` — `apply_end_of_debate_modifiers` non-idempotent (CONFIRMED, worse than described)
-**Batch 2. SQL inspected 2026-04-13.** The function has **zero idempotency protection** — no status check, no flag, no row lock, no short-circuit. Every call runs the full effect loop and mutates `arena_debates.score_a`/`score_b` based on the *current stored values*, so second and subsequent calls compound:
+### ~~H-A2. `arena-room-end.ts` — `apply_end_of_debate_modifiers` non-idempotent~~ — **FIXED 2026-04-13**
+**Batch 2. SQL inspected and fix applied 2026-04-13.** Original finding confirmed: zero idempotency protection, every call reads current stored scores and compounds adjustments on top, `_apply_inventory_effects` called unconditionally.
 
-- Call 1: raw scores 7 / 5. `point_surge` adds +1 to A. Writes `score_a = 8, score_b = 5`.
-- Call 2: reads `score_a = 8` as the raw. Adds another +1. Writes `score_a = 9, score_b = 5`.
-- Scores drift upward by the full adjustment amount on every additional call.
+**Fix applied in production** via `supabase/fix-apply-end-of-debate-modifiers-idempotency.sql`:
+- Added `arena_debates.modifiers_applied BOOLEAN NOT NULL DEFAULT FALSE`
+- Backfilled `TRUE` for existing complete debates (1 row)
+- Replaced function with idempotent version — early-return guard after participant check returns `already_applied: true` with stored scores and empty adjustment arrays; `modifiers_applied = TRUE` set in the same UPDATE that writes the final scores
+- Verified: column exists, backfill correct, function body contains guard
 
-Affected effects: `point_surge`, `comeback_engine`, `last_word`, `underdog`, `counter_cite`, `momentum`, `point_siphon`, `pressure_cooker`, `point_shield`. Also `_apply_inventory_effects` is called unconditionally whenever there's a winner — if that grants tokens, items, or streak bonuses, they double-apply as well.
+Historical damage scope: exactly 1 complete debate existed in production at fix time, so real-world rating inflation was minimal. Going forward, all new PvP debates are protected.
 
-Since both PvP clients call this RPC independently at end-of-debate, **this has been double-applying on every PvP debate since launch.** Any debater with an end-of-debate modifier equipped has been getting double the effect.
-
-**Fix:** see `supabase/fix-apply-end-of-debate-modifiers-idempotency.sql` (idempotency flag on `arena_debates`). Launch-critical — run before any more auditing or shipping.
+*(No HIGH findings currently open.)*
 
 ---
 
@@ -159,4 +159,4 @@ These are not individual findings but families that recur across files. Worth a 
 | 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 6 | 7 |
 | 4–12 | 42 | pending | — | — | — |
 
-**15 of 57 files audited. 1 High, 14 Medium, 19 Low. Zero findings fixed. SQL inspection 2026-04-13: H-A1 downgraded to L-A12 (PvP `FOR UPDATE` + already-finalized guard makes the race a non-issue); H-A2 confirmed as real launch-critical bug, fix SQL written.**
+**15 of 57 files audited. 0 High, 14 Medium, 19 Low. 1 finding FIXED (H-A2). SQL inspection 2026-04-13: H-A1 downgraded to L-A12 (PvP `FOR UPDATE` + already-finalized guard makes the race a non-issue); H-A2 confirmed and fixed in production via idempotency flag.**
