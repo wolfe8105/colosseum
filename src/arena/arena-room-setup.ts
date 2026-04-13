@@ -29,6 +29,7 @@ import { enterFeedRoom } from './arena-feed-room.ts';
 import { renderLoadoutPicker } from '../reference-arsenal.ts';
 import { renderPresetBar } from './arena-loadout-presets.ts';
 import { renderBountyClaimDropdown, resetBountyClaim } from './arena-bounty-claim.ts';
+import { bountyDot } from '../bounties.ts';
 
 export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   set_view('room');
@@ -63,7 +64,7 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
       <div class="arena-debater right">
         <div class="arena-debater-avatar">${(debateData.opponentName[0] || '?').toUpperCase()}</div>
         <div class="arena-debater-info" style="text-align:right;">
-          <div class="arena-debater-name">${escapeHTML(debateData.opponentName)}</div>
+          <div class="arena-debater-name">${escapeHTML(debateData.opponentName)}${bountyDot(debateData.opponentId)}</div>
           <div class="arena-debater-elo">${Number(debateData.opponentElo)} ELO</div>
         </div>
       </div>
@@ -243,7 +244,7 @@ function _renderRoom(debate: CurrentDebate): void {
       <div class="arena-debater right">
         <div class="arena-debater-avatar ${isAI ? 'ai-avatar' : ''}">${isAI ? '\uD83E\uDD16' : oppInitial}</div>
         <div class="arena-debater-info" style="text-align:right;">
-          <div class="arena-debater-name">${escapeHTML(oppName)}</div>
+          <div class="arena-debater-name">${escapeHTML(oppName)}${bountyDot(debate.opponentId)}</div>
           ${isUnplugged ? '' : `<div class="arena-debater-elo">${isModView ? '' : `${Number(debate.opponentElo)} ELO`}</div>`}
         </div>
       </div>

@@ -30,6 +30,7 @@ import type { User } from '@supabase/supabase-js';
 import { init as initRivalsPresence, destroy as destroyRivalsPresence } from '../rivals-presence.ts';
 import { showToast } from '../config.ts';
 import { renderFeed } from './home.feed.ts';
+import { loadBountyDotSet } from '../bounties.ts';
 import { openCategory, initPullToRefresh } from './home.overlay.ts';
 import { navigateTo } from './home.nav.ts';
 import { updateUIFromProfile, loadFollowCounts } from './home.profile.ts';
@@ -91,6 +92,7 @@ async function appInit() {
 
   loadFollowCounts();
   renderFeed().catch(e => console.error('renderFeed error:', e));
+  loadBountyDotSet().catch(e => console.warn('loadBountyDotSet error:', e));
 
   // F-36: Onboarding drip card (new users, first 14 days)
   const homeEl = document.getElementById('screen-home');

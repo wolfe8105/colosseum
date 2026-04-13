@@ -17,6 +17,8 @@ export interface LiveDebate {
   spectator_count: number;
   current_round: number;
   max_rounds: number;
+  debater_a_id?: string | null;
+  debater_b_id?: string | null;
   debater_a_name?: string;
   debater_b_name?: string;
 }

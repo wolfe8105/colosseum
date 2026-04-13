@@ -8,7 +8,7 @@ import { vgBadge } from './badge.ts';
 import { followUser, unfollowUser } from './auth.follows.ts';
 import { declareRival } from './auth.rivals.ts';
 import type { AuthResult, PublicProfile, ProfileUpdate } from './auth.types.ts';
-import { renderProfileBountySection, bountySlotLimit } from './bounties.ts';
+import { renderProfileBountySection, bountySlotLimit, bountyDot, renderMyBountiesSection } from './bounties.ts';
 
 export async function updateProfile(updates: ProfileUpdate): Promise<AuthResult> {
   const currentProfile = getCurrentProfile();
@@ -138,7 +138,7 @@ export async function showUserProfile(userId: string): Promise<void> {
   modalInner.innerHTML += `
     <div style="text-align:center;margin-bottom:16px;">
       <div style="width:64px;height:64px;border-radius:50%;border:3px solid var(--mod-accent);background:rgb(10,17,40);color:var(--mod-accent);font-family:var(--mod-font-display);font-size:${avatarFontSize};font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">${initial}</div>
-      <div style="font-family:var(--mod-font-display);font-size:18px;letter-spacing:2px;color:var(--mod-text-heading);">${safeName}${vgBadge(profile.verified_gladiator)}</div>
+      <div style="font-family:var(--mod-font-display);font-size:18px;letter-spacing:2px;color:var(--mod-text-heading);">${safeName}${vgBadge(profile.verified_gladiator)}${bountyDot(profile.id)}</div>
       <div style="font-size:11px;color:var(--mod-accent);letter-spacing:2px;margin-top:4px;">${tierLabel}</div>
       ${safeBio ? `<div style="font-size:13px;color:var(--mod-text-sub);margin-top:8px;line-height:1.4;">${safeBio}</div>` : ''}
       ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--mod-accent);text-decoration:none;">View full profile →</a>` : ''}
@@ -221,8 +221,6 @@ export async function showUserProfile(userId: string): Promise<void> {
   });
 
   // F-28: Bounty section — only shown to authenticated users viewing another user's profile
-  const currentUser = getCurrentUser();
-  const currentProfile = getCurrentProfile();
   if (currentUser && currentProfile && userId !== currentUser.id) {
     const bountyContainer = document.createElement('div');
     bountyContainer.id = 'upm-bounty-section';
@@ -244,5 +242,13 @@ export async function showUserProfile(userId: string): Promise<void> {
         0, // open count fetched inside renderProfileBountySection via getMyBounties
       );
     }
+  }
+
+  // F-28: My Bounties section — shown when viewing own profile
+  if (currentUser && userId === currentUser.id) {
+    const myBountiesContainer = document.createElement('div');
+    myBountiesContainer.id = 'upm-my-bounties-section';
+    modalInner.appendChild(myBountiesContainer);
+    void renderMyBountiesSection(myBountiesContainer);
   }
 }

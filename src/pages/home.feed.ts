@@ -3,6 +3,7 @@
  */
 import { getSupabaseClient, getIsPlaceholderMode } from '../auth.ts';
 import { escapeHTML } from '../config.ts';
+import { bountyDot } from '../bounties.ts';
 import { ModeratorAsync } from '../async.ts';
 import type { LiveDebate } from './home.types.ts';
 
@@ -12,7 +13,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
   try {
     const { data, error } = await (sb as any)
       .from('arena_debates')
-      .select('id, topic, category, status, mode, spectator_count, current_round, max_rounds, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username, verified_gladiator), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username, verified_gladiator)')
+      .select('id, topic, category, status, mode, spectator_count, current_round, max_rounds, debater_a, debater_b, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username, verified_gladiator), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username, verified_gladiator)')
       .in('status', ['live', 'round_break', 'voting'])
       .order('created_at', { ascending: false })
       .limit(5);
@@ -26,6 +27,8 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
       spectator_count: d.spectator_count || 0,
       current_round: d.current_round || 1,
       max_rounds: d.max_rounds || 5,
+      debater_a_id: d.debater_a ?? null,
+      debater_b_id: d.debater_b ?? null,
       debater_a_name: d.debater_a_profile?.display_name || d.debater_a_profile?.username || 'Debater A',
       debater_b_name: d.debater_b_profile?.display_name || d.debater_b_profile?.username || 'Debater B',
     }));
@@ -61,9 +64,9 @@ export async function renderFeed(): Promise<void> {
         <span class="mod-live-badge">LIVE</span>
         <div class="mod-card-category">${escapeHTML(catLabel)}</div>
         <div class="mod-card-vs">
-          <span class="mod-debater">${escapeHTML(d.debater_a_name || 'Debater A')}</span>
+          <span class="mod-debater">${escapeHTML(d.debater_a_name || 'Debater A')}${bountyDot(d.debater_a_id)}</span>
           <span class="mod-vs-text">VS</span>
-          <span class="mod-debater">${escapeHTML(d.debater_b_name || 'Debater B')}</span>
+          <span class="mod-debater">${escapeHTML(d.debater_b_name || 'Debater B')}${bountyDot(d.debater_b_id)}</span>
         </div>
         <div class="mod-card-text" style="text-transform:none;">${escapeHTML(d.topic || 'Live Debate')}</div>
         <div class="mod-card-meta">${d.spectator_count || 0} watching · Round ${d.current_round || 1} of ${d.max_rounds || 5}</div>

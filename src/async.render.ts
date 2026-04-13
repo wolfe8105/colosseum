@@ -14,6 +14,7 @@ import type {
 } from './async.types.ts';
 import { escapeHTML, FEATURES } from './config.ts';
 import { vgBadge } from './badge.ts';
+import { bountyDot } from './bounties.ts';
 import { getCurrentUser, getCurrentProfile } from './auth.ts';
 
 const esc = escapeHTML;
@@ -95,7 +96,7 @@ function _renderTake(t: HotTake): string {
           ${safeInitial}
         </div>
         <div>
-          <span ${profileAttr} style="font-weight:700;font-size:13px;color:var(--mod-text-heading);${userClickable ? 'cursor:pointer;' : ''}">${safeUser}${vgBadge(t.verified_gladiator)}</span>
+          <span ${profileAttr} style="font-weight:700;font-size:13px;color:var(--mod-text-heading);${userClickable ? 'cursor:pointer;' : ''}">${safeUser}${vgBadge(t.verified_gladiator)}${bountyDot(t.user_id)}</span>
         </div>
         <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
       </div>
