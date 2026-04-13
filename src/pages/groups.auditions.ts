@@ -160,7 +160,13 @@ export async function handleAuditionAction(
     } as const;
     showToast(messages[action as keyof typeof messages] ?? 'Done');
 
-    await loadPendingAuditions(currentGroupId!, callerRole);
+    // L-C8 fix: withdraw is the candidate-side action — the candidate is
+    // looking at the audition modal (currentAuditionGroupId is set) but
+    // may not have a group detail page open (currentGroupId may be null
+    // or stale). For all other actions (approve/deny) the leader IS on
+    // their group's detail page, so currentGroupId is correct.
+    const refreshGroupId = action === 'withdraw' ? currentAuditionGroupId : currentGroupId;
+    await loadPendingAuditions(refreshGroupId!, callerRole);
   } catch (e) {
     showToast((e as Error).message || 'Action failed');
   }

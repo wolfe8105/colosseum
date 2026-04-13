@@ -59,9 +59,6 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-C2. `groups.settings.ts` — `submitDeleteGroup` button never re-enabled on success
 **Batch 3.** Try/catch with **no finally**. Success path hides `view-settings` and fires `onGroupDeleted?.()` but never resets `btn.disabled` or `btn.textContent`. If the callback doesn't navigate away or unmount, the delete button is permanently stuck in `'DELETING…'`. Inconsistent with `submitGroupSettings`, which has a proper finally. Trivial fix.
 
-### M-C3. `groups.auditions.ts` — `handleAuditionAction` uses `currentGroupId`, not `currentAuditionGroupId`
-**Batch 3.** Two module-level group-ID variables exist in this file. `submitAuditionRequest` and `openAuditionModal` use `currentAuditionGroupId`; `handleAuditionAction` uses `currentGroupId` (and `callerRole`) when refreshing the list after non-accept actions. If those two variables ever drift, the post-action refresh loads auditions for the wrong group. Hidden coupling. **Pat is checking `groups.state.ts` to confirm whether they can drift.**
-
 ### M-C4. `home.ts` — `appInit` 6-second auth race silently demotes to plinko
 **Batch 3.** `Promise.race([authReady, setTimeout(6000)])`. If auth is slow (flaky network, cold Supabase), the race resolves with timeout, `getCurrentUser()` returns null, the `!getCurrentUser() && !getIsPlaceholderMode()` check trips, user is redirected to `moderator-plinko.html` with no error, no toast, no log. A logged-in user on a slow connection gets silently bumped to a placeholder screen.
 
@@ -134,6 +131,13 @@ The residual concern: in PvP the server still writes `score_a = COALESCE(p_score
 ### L-C7. `groups.auditions.ts` — non-leader members get no action buttons in `_renderAuditionsList` else branch
 **Batch 3. INTENTIONAL per Pat.** Logged here so future audits don't re-flag it.
 
+### ~~L-C8. `groups.auditions.ts` — `handleAuditionAction` withdraw branch uses wrong group ID~~ — **FIXED 2026-04-13**
+**Batch 3 (originally filed as M-C3, downgraded and fixed same session).** Two module-level group-ID variables exist for legitimate reasons: `currentGroupId` tracks "the group whose detail page is open" (leader/member view), while `currentAuditionGroupId` tracks "the group whose audition modal was opened" (candidate view). `submitAuditionRequest` and `openAuditionModal` correctly use `currentAuditionGroupId`; `handleAuditionAction` correctly uses `currentGroupId` for `approve`/`deny` (leader actions from a group detail page). However, the same line also runs for `withdraw` — a **candidate-side** action where the user may be in the audition modal without having a group detail page open, so `currentGroupId` may be null or stale.
+
+Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-null assertion and the catch shows "Action failed" on a successful withdrawal; withdraw with `currentGroupId` pointing at a previously-browsed group refreshes the wrong group's audition list.
+
+**Fix applied:** one-line conditional at `handleAuditionAction` — `const refreshGroupId = action === 'withdraw' ? currentAuditionGroupId : currentGroupId;` then pass `refreshGroupId!` to `loadPendingAuditions`.
+
 ---
 
 ## Cross-cutting patterns
@@ -146,7 +150,6 @@ These are not individual findings but families that recur across files. Worth a 
 4. **Try/catch missing finally on disable-button patterns** — M-C2. Disable button → do work → finally re-enable. When finally is missing, success path can leave the button stuck.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
-7. **Module-level state with overlapping purpose** — M-C3 (two group ID variables). Suggests a module-state refactor target after auditing finishes.
 
 ---
 
@@ -156,7 +159,7 @@ These are not individual findings but families that recur across files. Worth a 
 |---|---|---|---|---|---|
 | 1 | 5 (`arena-css`, `arena-feed-events`, `arena-feed-machine`, `arena-feed-room`, `arena-feed-ui`) | done | 0 | 1 | 5 |
 | 2 | 5 (`arena-feed-wiring`, `arena-room-end`, `arena-room-live`, `arena-types`, `groups`) | done | 1 | 7 | 7 |
-| 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 6 | 7 |
+| 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 5 | 8 |
 | 4–12 | 42 | pending | — | — | — |
 
-**15 of 57 files audited. 0 High, 14 Medium, 19 Low. 1 finding FIXED (H-A2). SQL inspection 2026-04-13: H-A1 downgraded to L-A12 (PvP `FOR UPDATE` + already-finalized guard makes the race a non-issue); H-A2 confirmed and fixed in production via idempotency flag.**
+**15 of 57 files audited. 0 High, 13 Medium, 20 Low. 2 findings FIXED (H-A2, L-C8). 2026-04-13 actions: H-A1 downgraded to L-A12 (no race); H-A2 confirmed and fixed in prod (idempotency flag migration); M-C3 investigated, reclassified as L-C8 (not a general drift bug, only the withdraw branch is wrong) and fixed in one line.**
