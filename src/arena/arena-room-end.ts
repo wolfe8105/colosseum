@@ -26,6 +26,7 @@ import { stopModStatusPoll } from './arena-mod-queue.ts';
 import { renderModScoring } from './arena-mod-scoring.ts';
 import { requestAIScoring, sumSideScore, renderAIScorecard } from './arena-room-ai.ts';
 import { cleanupFeedRoom } from './arena-feed-room.ts';
+import { injectAdSlot } from './arena-ads.ts';
 
 export async function endCurrentDebate(): Promise<void> {
   set_view('postDebate');
@@ -335,6 +336,9 @@ export async function endCurrentDebate(): Promise<void> {
   `;
   screenEl?.appendChild(post);
 
+  // F-43 Slot 1: Final score reveal ad
+  injectAdSlot(post);
+
   // FIX 1: Post-debate moderator recruitment nudge
   if (getCurrentUser() && getCurrentProfile()?.is_moderator !== true) {
     nudge('become_moderator_post_debate', '\uD83E\uDDD1\u200D\u2696\uFE0F Think you could call it better? Become a Moderator \u2192 Settings');
@@ -344,6 +348,9 @@ export async function endCurrentDebate(): Promise<void> {
   if (debate.moderatorId && debate.moderatorName) {
     renderModScoring(debate, post);
   }
+
+  // F-43 Slot 2: Debater scorecard / post-verdict ad
+  injectAdSlot(post, { marginTop: '8px' });
 
   document.getElementById('arena-rematch')?.addEventListener('click', () => {
     set_selectedRanked(debate.ranked || false);

@@ -1,6 +1,7 @@
 import { getCurrentProfile, scoreModerator } from '../auth.ts';
 import { escapeHTML, friendlyError } from '../config.ts';
 import type { CurrentDebate } from './arena-types.ts';
+import { injectAdSlot } from './arena-ads.ts';
 
 export function renderModScoring(debate: CurrentDebate, container: HTMLElement): void {
   if (!debate.moderatorId || !debate.moderatorName) return;
@@ -42,6 +43,9 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
   }
 
   container.appendChild(section);
+
+  // F-43 Slot 3: Moderator's verdict ad
+  injectAdSlot(container);
 
   // Wire debater buttons
   section.querySelectorAll('.mod-score-btn').forEach((btn) => {

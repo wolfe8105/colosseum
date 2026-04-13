@@ -8,6 +8,7 @@
  */
 
 import { getCurrentUser, safeRpc } from './auth.core.ts';
+import { showAdInterstitial } from './arena/arena-ads.ts';
 import { escapeHTML, showToast } from './config.ts';
 
 // --------------------------------------------------------------------------
@@ -290,13 +291,13 @@ function _wireTable(container: HTMLElement): void {
     });
   });
 
-  // Row click → archive link
+  // Row click → archive link (F-43 Slot 5: replay entry interstitial)
   container.querySelectorAll<HTMLElement>('.dba-row').forEach(row => {
     row.addEventListener('click', (e) => {
       // Don't navigate if an action button was clicked
       if ((e.target as HTMLElement).closest('.dba-actions')) return;
       const url = row.dataset.url;
-      if (url) window.open(url, '_blank');
+      if (url) showAdInterstitial(() => window.open(url, '_blank'));
     });
   });
 

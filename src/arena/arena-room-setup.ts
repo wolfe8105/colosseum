@@ -80,6 +80,9 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
   `;
   screenEl?.appendChild(pre);
 
+  // F-43 Slot 4: Pre-debate lobby ad
+  injectAdSlot(pre, { margin: '8px 0 4px' });
+
   // Render staking panel
   const stakingEl = document.getElementById('pre-debate-staking');
   if (stakingEl) {
