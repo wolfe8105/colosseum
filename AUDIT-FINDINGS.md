@@ -12,11 +12,18 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 
 ## HIGH severity — needs answer or fix before more auditing
 
-### H-A1. `arena-room-end.ts` — `update_arena_debate` double-call race
-**Batch 2.** Both debaters' clients independently call this RPC at end-of-debate. Human PvP is safe (both send `winner = null`, server decides). **AI debates are deterministically broken** — each client computes random fallback scores locally, last write wins, final scores are nondeterministic. Not contingent on server behavior. Resolvable in ~5 minutes by inspecting the RPC SQL definition in Supabase. **Pat: still pending as of end of Batch 3.**
+### H-A2. `arena-room-end.ts` — `apply_end_of_debate_modifiers` non-idempotent (CONFIRMED, worse than described)
+**Batch 2. SQL inspected 2026-04-13.** The function has **zero idempotency protection** — no status check, no flag, no row lock, no short-circuit. Every call runs the full effect loop and mutates `arena_debates.score_a`/`score_b` based on the *current stored values*, so second and subsequent calls compound:
 
-### H-A2. `arena-room-end.ts` — `apply_end_of_debate_modifiers` double-call
-**Batch 2.** Both debaters call this RPC. If the server-side function isn't idempotent, rating modifiers apply twice. **Needs SQL inspection to confirm** — UPSERT or idempotency key → fine; blind INSERT/UPDATE → latent rating-inflation bug since launch. **Pat: still pending as of end of Batch 3.**
+- Call 1: raw scores 7 / 5. `point_surge` adds +1 to A. Writes `score_a = 8, score_b = 5`.
+- Call 2: reads `score_a = 8` as the raw. Adds another +1. Writes `score_a = 9, score_b = 5`.
+- Scores drift upward by the full adjustment amount on every additional call.
+
+Affected effects: `point_surge`, `comeback_engine`, `last_word`, `underdog`, `counter_cite`, `momentum`, `point_siphon`, `pressure_cooker`, `point_shield`. Also `_apply_inventory_effects` is called unconditionally whenever there's a winner — if that grants tokens, items, or streak bonuses, they double-apply as well.
+
+Since both PvP clients call this RPC independently at end-of-debate, **this has been double-applying on every PvP debate since launch.** Any debater with an end-of-debate modifier equipped has been getting double the effect.
+
+**Fix:** see `supabase/fix-apply-end-of-debate-modifiers-idempotency.sql` (idempotency flag on `arena_debates`). Launch-critical — run before any more auditing or shipping.
 
 ---
 
@@ -67,6 +74,11 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 ---
 
 ## LOW severity — defensive coding gaps, dead code, smells
+
+### L-A12. `arena-room-end.ts` — `update_arena_debate` accepts client-provided scores in PvP (downgraded from H-A1)
+**Batch 2. SQL inspected 2026-04-13.** The original HIGH finding claimed AI debates were deterministically broken by a last-write-wins race. **SQL inspection overturned this.** The function uses `SELECT ... FOR UPDATE` to serialize concurrent calls and short-circuits on a second call via `IF v_debate.status = 'complete' AND p_status = 'complete' THEN ... 'already_finalized'`, so there is no race. In PvP the server computes the winner from `vote_count_a`/`vote_count_b` and ignores client-provided `p_winner`. In AI mode there is only one client, so no race is possible.
+
+The residual concern: in PvP the server still writes `score_a = COALESCE(p_score_a, score_a)` and `score_b = COALESCE(p_score_b, score_b)` — whichever debater's client call lands first wins the `FOR UPDATE` race and commits its locally-computed scores, and the second call is rejected by the already-finalized branch. Scores are therefore deterministic per network state but depend on which client reaches the DB first. This is surprising, not broken. If scores were intended to be server-computed for PvP, this is a minor design gap worth closing; if client-computed scores are intentional, no action.
 
 ### L-A1. `arena-feed-wiring.ts` — challenge button count label set once via innerHTML, never updated
 **Batch 2.**
@@ -143,8 +155,8 @@ These are not individual findings but families that recur across files. Worth a 
 | Batch | Files | Status | High | Med | Low |
 |---|---|---|---|---|---|
 | 1 | 5 (`arena-css`, `arena-feed-events`, `arena-feed-machine`, `arena-feed-room`, `arena-feed-ui`) | done | 0 | 1 | 5 |
-| 2 | 5 (`arena-feed-wiring`, `arena-room-end`, `arena-room-live`, `arena-types`, `groups`) | done | 2 | 7 | 6 |
+| 2 | 5 (`arena-feed-wiring`, `arena-room-end`, `arena-room-live`, `arena-types`, `groups`) | done | 1 | 7 | 7 |
 | 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 6 | 7 |
 | 4–12 | 42 | pending | — | — | — |
 
-**15 of 57 files audited. 2 High, 14 Medium, 18 Low. Zero findings fixed.**
+**15 of 57 files audited. 1 High, 14 Medium, 19 Low. Zero findings fixed. SQL inspection 2026-04-13: H-A1 downgraded to L-A12 (PvP `FOR UPDATE` + already-finalized guard makes the race a non-issue); H-A2 confirmed as real launch-critical bug, fix SQL written.**
