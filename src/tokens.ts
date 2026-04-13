@@ -74,7 +74,6 @@ const milestoneClaimed = new Set<string>();
 let dailyLoginClaimed = false;
 let _dailyLoginInFlight = false;
 let _bc: BroadcastChannel | null = null;
-let unreadNotifCount = 0;
 
 // ============================================================
 // MILESTONE DEFINITIONS
@@ -112,11 +111,6 @@ function _injectCSS(): void {
       60%  { opacity:1; transform:translateX(-50%) translateY(-60px) scale(1.2); }
       100% { opacity:0; transform:translateX(-50%) translateY(-100px) scale(0.8); }
     }
-    @keyframes tokenFlash {
-      0%   { box-shadow:0 0 0 0 rgba(212,168,67,0); }
-      30%  { box-shadow:0 0 20px 8px var(--mod-accent-border); }
-      100% { box-shadow:0 0 0 0 rgba(212,168,67,0); }
-    }
     @keyframes milestoneSlide {
       0%   { opacity:0; transform:translateX(-50%) translateY(20px) scale(0.9); }
       20%  { opacity:1; transform:translateX(-50%) translateY(0) scale(1.05); }
@@ -133,7 +127,7 @@ function _injectCSS(): void {
       background:linear-gradient(135deg, var(--mod-accent) 0%, #b8942e 100%);
       color:var(--mod-bg-base); font-family:var(--mod-font-display); font-weight:700;
       padding:10px 20px; border-radius:8px; z-index:99999; font-size:15px;
-      white-space:nowrap; animation: tokenFlash 0.6s ease-out;
+      white-space:nowrap;
       box-shadow: 0 4px 12px var(--mod-accent-border);
     }
     .milestone-toast {
@@ -213,13 +207,6 @@ function _updateBalanceDisplay(newBalance: number | null | undefined, broadcast 
   });
   const balEl = document.getElementById('token-balance');
   if (balEl) balEl.textContent = newBalance.toLocaleString();
-  const countEl = document.getElementById('token-count');
-  if (countEl) countEl.textContent = newBalance.toLocaleString();
-  const bar = document.getElementById('token-display');
-  if (bar) {
-    bar.style.animation = 'tokenFlash 0.6s ease-out';
-    setTimeout(() => { bar.style.animation = ''; }, 700);
-  }
   if (broadcast && _bc) {
     try { _bc.postMessage(newBalance); } catch { /* ignore */ }
   }
@@ -230,31 +217,6 @@ export function updateBalance(newBalance: number): void {
   _updateBalanceDisplay(newBalance);
   const profile = getCurrentProfile();
   if (profile) (profile as Record<string, unknown>).token_balance = newBalance;
-}
-
-// ============================================================
-// ORANGE DOT (F-35.3)
-// ============================================================
-
-/**
- * Recomputes and applies the orange dot visibility.
- * Shows when ANY of:
- *   (a) daily login token not yet claimed this session
- *   (b) unread notifications exist (pushed from notifications.ts)
- */
-function updateOrangeDot(): void {
-  const show = !dailyLoginClaimed || unreadNotifCount > 0;
-  const dot = document.getElementById('token-dot');
-  if (dot) dot.style.display = show ? 'block' : 'none';
-}
-
-/**
- * Called by notifications.ts whenever its unread count changes.
- * Avoids a circular import — notifications pushes count into tokens.
- */
-export function setOrangeDotUnread(count: number): void {
-  unreadNotifCount = count;
-  updateOrangeDot();
 }
 
 // ============================================================
@@ -342,13 +304,10 @@ export async function claimDailyLogin(): Promise<ClaimResult | null> {
       if (result.error !== 'Already claimed today') {
         console.warn('[Tokens] Daily login:', result.error);
       }
-      // Daily already claimed — mark and update dot regardless
       dailyLoginClaimed = true;
-      updateOrangeDot();
       return null;
     }
     dailyLoginClaimed = true;
-    updateOrangeDot();
     _updateBalanceDisplay(result.new_balance);
     let label = 'Daily login';
     if (result.freeze_used) {
@@ -505,17 +464,11 @@ export function init(): void {
       if (profile.token_balance != null) {
         _updateBalanceDisplay(profile.token_balance);
       }
-      // Reset daily state on each auth cycle, show dot optimistically
       dailyLoginClaimed = false;
-      updateOrangeDot();
       claimDailyLogin();
       _loadMilestones();
       // F-26: Notify followers that this user is online
       void _rpc('notify_followers_online', { p_user_id: user.id });
-    } else {
-      // Logged out — hide dot
-      const dot = document.getElementById('token-dot');
-      if (dot) dot.style.display = 'none';
     }
   });
 }
