@@ -1,8 +1,6 @@
 # Audit Run Prompt
 
-Reusable Claude Code prompt for running the v3 audit method against `FIRST-RUN-FILES.md`, one batch at a time.
-
-**Usage:** Paste the prompt below into a fresh Claude Code session with the repo checked out. Replace `[N]` with the batch number (1 through 12). Everything else stays identical across runs.
+Reusable prompt for running the v3 audit method on one batch at a time. Paste into a fresh Claude Code session with the repo cloned. Change the batch number on line 1 between runs (1 through 12).
 
 ---
 
@@ -61,7 +59,7 @@ Do not advance to Batch [N+1] on your own. Stop after Batch [N] and wait.
 
 ## Notes
 
-- **No v3 paste-in needed.** CC reads the method from the repo directly. Single source of truth — if v3 is edited later, the next batch picks up the change automatically.
-- **Batch number is the only variable.** Run this 12 times, swapping `[N]` from 1 to 12. Everything else stays identical.
-- **Manifest archiving between batches.** v3's "verify the file list matches" check protects in-progress runs but would block a clean start on Batch 2 if Batch 1's manifest were still present. The rename step sidesteps that cleanly and leaves a per-batch manifest trail you can inspect later.
-- **Stops between batches by design.** Keeps the feedback loop tight — read Stage 3 output between batches and catch method issues before committing to the next 5 files.
+- **No v3 paste-in required.** CC reads the method from the repo. Single source of truth. If v3 is edited later, the next batch picks up the change automatically.
+- **Batch number is the only variable.** Run this 12 times, swapping `[N]` from 1 to 12.
+- **Manifest archiving.** v3's "file list must match" check is designed to protect an in-progress run. Between batches, that check would make CC refuse to start Batch 2 because the old Batch 1 manifest is still there. The rename step sidesteps that cleanly and leaves a trail of per-batch manifests for later inspection.
+- **Stop after each batch.** Keeps the feedback loop tight — read Stage 3 output between batches and catch method issues before committing to the next 5 files.
