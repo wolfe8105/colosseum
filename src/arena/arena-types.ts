@@ -57,6 +57,7 @@ export interface CurrentDebate {
   _nulled?: boolean;
   _nullReason?: string;
   language?: string;
+  tournament_match_id?: string | null;
 }
 
 export interface SelectedModerator {

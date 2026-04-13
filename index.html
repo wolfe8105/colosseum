@@ -410,6 +410,34 @@ html,body{height:100%;overflow:hidden}
 .invite-ladder-reward{color:var(--mod-text-heading)}
 .invite-claim-grid{display:flex;flex-direction:column;gap:10px;margin-top:8px;max-height:50vh;overflow-y:auto}
 
+/* ============================================================
+   F-08 TOURNAMENT STYLES
+   ============================================================ */
+.tournament-room-banner{display:flex;justify-content:space-between;align-items:center;background:rgba(192,168,75,0.12);border:1px solid rgba(192,168,75,0.35);border-radius:8px;padding:8px 14px;margin-bottom:10px}
+.trb-left{display:flex;align-items:center;gap:8px}
+.trb-badge{background:#c0a84b;color:#1a1400;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px}
+.trb-title{font-size:12px;font-weight:600;color:var(--mod-text-heading)}
+.trb-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.trb-round{font-size:11px;color:var(--mod-text-muted);font-family:var(--mod-font-ui);letter-spacing:0.5px;text-transform:uppercase}
+.trb-prize{font-size:12px;font-weight:700;color:#c0a84b}
+.tournament-card{background:var(--mod-bg-card);border:1px solid rgba(192,168,75,0.3);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.tournament-card--entered{border-color:rgba(192,168,75,0.7)}
+.tc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tc-badge{font-size:10px;font-weight:700;color:#c0a84b;letter-spacing:0.5px}
+.tc-status{font-size:10px;color:var(--mod-text-muted);font-family:var(--mod-font-ui)}
+.tc-title{font-size:16px;font-weight:700;color:var(--mod-text-heading);font-family:var(--mod-font-ui);margin-bottom:6px;line-height:1.3}
+.tc-meta{display:flex;gap:12px;margin-bottom:6px}
+.tc-category{font-size:11px;color:var(--mod-text-muted);background:var(--mod-bg-base);padding:2px 8px;border-radius:20px;border:1px solid var(--mod-border-primary)}
+.tc-fee{font-size:11px;color:var(--mod-text-muted)}
+.tc-pool{font-size:12px;color:var(--mod-text-primary);margin-bottom:8px}
+.tc-pool strong{color:#c0a84b}
+.tc-fill-bar{height:4px;background:var(--mod-bg-base);border-radius:2px;margin-bottom:4px;overflow:hidden}
+.tc-fill-inner{height:100%;background:linear-gradient(90deg,#c0a84b,#e8c96a);border-radius:2px;transition:width 0.4s ease}
+.tc-fill-label{font-size:10px;color:var(--mod-text-muted);margin-bottom:10px}
+.tc-join-btn{width:100%;padding:10px;background:#c0a84b;color:#1a1400;border:none;border-radius:8px;font-family:var(--mod-font-ui);font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer}
+.tc-join-btn:active{opacity:0.85}
+.tc-entered-label{text-align:center;font-size:12px;color:#c0a84b;font-weight:600;padding:8px 0}
+
 </style>
 <link rel="stylesheet" href="/src/moderator-tokens.css">
 <link rel="stylesheet" href="/src/lcars-shell.css">

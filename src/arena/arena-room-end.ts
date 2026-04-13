@@ -10,6 +10,7 @@ import { removeShieldIndicator } from '../powerups.ts';
 import { leaveDebate } from '../webrtc.ts';
 import { shareResult } from '../share.ts';
 import { nudge } from '../nudge.ts';
+import { resolveTournamentMatch } from '../tournaments.ts';
 import {
   view, currentDebate, roundTimer, silenceTimer, shieldActive,
   activatedPowerUps, equippedForDebate, screenEl,
@@ -207,6 +208,17 @@ export async function endCurrentDebate(): Promise<void> {
         p_debate_id: debate.id,
         p_winner_id: winner,
       }).catch((e) => console.warn('[Arena] resolve_bounty_attempt failed (non-fatal):', e));
+    }
+
+    // F-08: Resolve tournament match if this debate is part of one
+    if (debate.tournament_match_id && winner) {
+      resolveTournamentMatch(debate.tournament_match_id, winner)
+        .then((result) => {
+          if (result.tournament_complete) {
+            showToast('🏆 Tournament complete! Prizes have been distributed.', 'success');
+          }
+        })
+        .catch((e) => console.warn('[Arena] resolve_tournament_match failed (non-fatal):', e));
     }
 
     // Session 234: Persist AI scorecard for replay
