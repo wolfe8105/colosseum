@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.themoderator.twa",
+    "sha256_cert_fingerprints": [
+      "3A:DA:4B:6A:A3:FF:FE:1F:58:77:FD:42:D4:C0:8F:13:4E:C4:B5:A0:AD:72:B2:2D:30:D7:6B:19:04:71:DA:F5"
+    ]
+  }
+}]
