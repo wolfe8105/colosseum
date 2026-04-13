@@ -49,6 +49,7 @@ import {
 } from './arena-feed-realtime.ts';
 import { updateCiteButtonState } from './arena-feed-ui.ts';
 import { renderControls } from './arena-feed-wiring.ts';
+import { initSpecChat, cleanupSpecChat } from './arena-feed-spec-chat.ts';
 import { startPreRoundCountdown, clearFeedTimer } from './arena-feed-machine.ts';
 
 // ============================================================
@@ -169,6 +170,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
     </div>
     <div class="feed-stream" id="feed-stream"></div>
     <div class="feed-controls" id="feed-controls"></div>
+    ${isSpectator ? '<div class="feed-spec-chat-panel" id="feed-spec-chat-panel"></div>' : ''}
   `;
   screenEl?.appendChild(room);
 
@@ -187,6 +189,11 @@ export function enterFeedRoom(debate: CurrentDebate): void {
 
   // Render initial controls based on role
   renderControls(debate, isModView);
+
+  // F-07: Spectator chat panel — spectators only, hidden from debaters/mods
+  if (isSpectator) {
+    initSpecChat(debate.id);
+  }
 
   // Phase 5: Send goodbye on page unload for instant disconnect detection
   window.addEventListener('beforeunload', sendGoodbye);
@@ -274,4 +281,6 @@ export function cleanupFeedRoom(): void {
   offWebRTC('disconnected');
   offWebRTC('connectionFailed');
   leaveDebate();
+  // F-07: Spectator chat cleanup
+  cleanupSpecChat();
 }

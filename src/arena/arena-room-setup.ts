@@ -74,6 +74,12 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
     <div id="pre-debate-loadout" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-refs" style="width:100%;max-width:360px;"></div>
     <div id="pre-debate-bounty" style="width:100%;max-width:360px;"></div>
+    <div class="pre-debate-share-row">
+      <button class="pre-debate-share-btn" id="pre-debate-share-btn" data-debate-id="${escapeHTML(debateData.id)}">
+        📋 SHARE TO WATCH LIVE
+      </button>
+      <span class="pre-debate-share-confirm" id="pre-debate-share-confirm" style="display:none;">Copied!</span>
+    </div>
     <button class="arena-pre-debate-enter" id="pre-debate-enter-btn">
       <span class="btn-pulse"></span> ENTER BATTLE
     </button>
@@ -149,6 +155,33 @@ export async function showPreDebate(debateData: CurrentDebate): Promise<void> {
       set_equippedForDebate([]);
     }
     enterRoom(debateData);
+  });
+
+  // F-07: Wire spectator share link copy button
+  document.getElementById('pre-debate-share-btn')?.addEventListener('click', () => {
+    const url = `${window.location.origin}/?spectate=${encodeURIComponent(debateData.id)}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const confirm = document.getElementById('pre-debate-share-confirm');
+      if (confirm) {
+        confirm.style.display = 'inline';
+        setTimeout(() => { confirm.style.display = 'none'; }, 2000);
+      }
+    }).catch(() => {
+      // Fallback for browsers without clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const confirm = document.getElementById('pre-debate-share-confirm');
+      if (confirm) {
+        confirm.style.display = 'inline';
+        setTimeout(() => { confirm.style.display = 'none'; }, 2000);
+      }
+    });
   });
 }
 
