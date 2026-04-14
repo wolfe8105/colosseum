@@ -1,8 +1,8 @@
 # First Run Files
 
 **Total unique files:** 57
-**Batch size:** 5 for Batches 1–6, 4 for Batch 7R onward.
-**Batches:** 14 total after restructure.
+**Batch size:** 5 for Batches 1–6, variable from 7R onward (2–4 files, size-limited).
+**Batches:** 16 total after full restructure (8Ra/8Rb split added 2026-04-14 after large-file audit).
 
 Feed these batches one at a time into the v3 audit method orchestration prompt. All paths verified present in the repo.
 
@@ -34,14 +34,12 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 4. src/pages/home.ts
 5. src/pages/home.nav.ts
 
-## Batch 4 (PENDING — never successfully run)
+## Batch 4 (DONE — 2026-04-14)
 
 1. src/pages/home.arsenal.ts
 2. src/pages/home.arsenal-shop.ts
 3. src/pages/home.invite.ts
 4. src/pages/plinko.ts
-
-**Note:** original Batch 4 had 5 files (plus `src/pages/spectate.ts`). `spectate.ts` has been moved to Batch 7R to honor the new 4-file ceiling. When you run Batch 4, use this 4-file list.
 
 ## Batch 5 (DONE)
 
@@ -68,50 +66,56 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 3. src/auth.types.ts
 4. src/auth.profile.ts
 
-## Batch 8R
+## Batch 8Ra (PENDING)
 
-1. src/pages/settings.ts
-2. src/reference-arsenal.loadout.ts
-3. src/badge.ts
-4. src/profile-debate-archive.ts
+**Note:** Original Batch 8R split into 8Ra and 8Rb (2026-04-14). `settings.ts` and `profile-debate-archive.ts` are both 500+ lines — putting them in the same batch is a compaction risk. Split keeps each batch under 730 lines total.
 
-## Batch 9R
+1. src/pages/settings.ts (518 lines)
+2. src/reference-arsenal.loadout.ts (94 lines)
+3. src/badge.ts (16 lines)
+4. vite.config.ts (50 lines)
 
-1. src/async.fetch.ts
-2. src/async.render.ts
-3. src/async.types.ts
-4. src/leaderboard.ts
+## Batch 8Rb (PENDING)
 
-## Batch 10R
+1. src/profile-debate-archive.ts (521 lines)
+2. src/async.types.ts (80 lines)
+3. src/pages/home.feed.ts (80 lines)
+4. src/pages/home.types.ts (24 lines)
 
-1. src/pages/home.feed.ts
-2. src/intro-music.ts
-3. src/arena/arena-entrance.ts
-4. src/pages/group-banner.ts
+## Batch 9R (PENDING)
 
-## Batch 11R
+1. src/leaderboard.ts (521 lines)
+2. src/arena/arena-ads.ts (115 lines)
+3. src/arena/arena-mod-scoring.ts (85 lines)
 
-1. src/arena/arena-sounds.ts
-2. src/arena/arena-core.ts
-3. src/tokens.ts
-4. src/notifications.ts
+## Batch 10R (PENDING)
 
-## Batch 12R
+1. src/tokens.ts (510 lines)
+2. src/arena/arena-core.ts (173 lines)
+3. src/arena/arena-bounty-claim.ts (150 lines)
 
-1. src/bounties.ts
-2. src/arena/arena-bounty-claim.ts
-3. vite.config.ts
-4. src/pages/home.types.ts
+## Batch 11R (PENDING)
 
-## Batch 13R
+1. src/arena/arena-entrance.ts (496 lines)
+2. src/async.fetch.ts (187 lines)
+3. src/pages/spectate.types.ts (179 lines)
 
-1. src/arena/arena-mod-scoring.ts
-2. src/arena/arena-ads.ts
-3. src/arena/arena-feed-spec-chat.ts
-4. src/pages/spectate.types.ts
+## Batch 12R (PENDING)
 
-## Batch 14R
+1. src/pages/spectate.render.ts (490 lines)
+2. src/arena/arena-feed-spec-chat.ts (223 lines)
 
-1. src/pages/spectate.render.ts
+## Batch 13R (PENDING)
 
-**Note:** Batch 14R has only 1 file (the leftover after the 4-per-batch restructure). You could roll it into Batch 13R instead if you'd rather have one less batch, though with 5 files in that combined batch there's a small compaction risk on oversized files.
+1. src/pages/group-banner.ts (459 lines)
+2. src/async.render.ts (329 lines)
+
+## Batch 14R (PENDING)
+
+1. src/bounties.ts (433 lines)
+2. src/arena/arena-sounds.ts (346 lines)
+
+## Batch 15R (PENDING)
+
+1. src/notifications.ts (424 lines)
+2. src/intro-music.ts (409 lines)

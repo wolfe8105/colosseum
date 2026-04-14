@@ -1,13 +1,13 @@
-# Batch 8R Audit Prompt
+# Batch 8Rb Audit Prompt
 
 Paste the fenced block below into a fresh Claude Code session with the
 colosseum repo checked out. No substitutions needed — this prompt is
-pre-filled for Batch 8R.
+pre-filled for Batch 8Rb.
 
 ---
 
 ```
-Run audit Batch 8R from THE MODERATOR repo.
+Run audit Batch 8Rb from THE MODERATOR repo.
 
 The repo you are in contains two documents that fully define this task:
 
@@ -17,15 +17,15 @@ The repo you are in contains two documents that fully define this task:
    Follow it exactly. Do not summarize it to yourself and skip steps.
 
 2. FIRST-RUN-FILES.md
-   The file list. For this run, use Batch 8R only. Ignore the other
-   batches. The file list is under the "## Batch 8R" heading.
+   The file list. For this run, use Batch 8Rb only. Ignore the other
+   batches. The file list is under the "## Batch 8Rb" heading.
 
 BEFORE STARTING
 ===============
 
 1. Read THE-MODERATOR-AUDIT-METHOD-V3.md in full.
 2. Read FIRST-RUN-FILES.md and extract exactly the file paths listed
-   under "## Batch 8R".
+   under "## Batch 8Rb".
 3. Treat that list as your [FILE_LIST] for the v3 orchestration prompt.
    The repo root is your current working directory. The audit directory
    is ./audit (create it if it does not exist).
@@ -41,11 +41,10 @@ overwrite it blindly. v3 specifies: verify the file list in the
 manifest matches the file list for this batch; if they differ, STOP
 and report the mismatch.
 
-Each batch run gets its own manifest. Before starting Batch 8R,
-if an old manifest from a previous batch is present at
-audit/manifest.json, archive it by renaming to
-audit/manifest.batch07R.json, then create the fresh manifest
-for Batch 8R.
+Each batch run gets its own manifest. Before starting Batch 8Rb,
+if an old manifest from Batch 8Ra is present at audit/manifest.json,
+archive it by renaming to audit/manifest.batch08Ra.json, then create
+the fresh manifest for Batch 8Rb.
 
 WHEN DONE
 =========
@@ -56,6 +55,6 @@ Report:
 - Path to audit/needs-human-review.md if it is not empty
 - Any files where a stage errored or produced unusable output
 
-Do not advance to the next batch on your own. Stop after Batch 8R
+Do not advance to the next batch on your own. Stop after Batch 8Rb
 and wait.
 ```
