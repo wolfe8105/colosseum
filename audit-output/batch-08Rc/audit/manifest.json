@@ -1,0 +1,35 @@
+{
+  "run_id": "audit-run-20260414-batch08Rc",
+  "created_at": "2026-04-14T00:00:00Z",
+  "batch": "8Rc",
+  "files": [
+    {
+      "path": "vite.config.ts",
+      "stage1":   {"status": "done", "output_path": "audit/vite.config.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/vite.config.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/vite.config.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/vite.config.ts/stage3.md"}
+    },
+    {
+      "path": "src/async.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__async.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__async.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__async.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__async.types.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.feed.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__pages__home.feed.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__pages__home.feed.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__pages__home.feed.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__pages__home.feed.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__pages__home.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__pages__home.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__pages__home.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__pages__home.types.ts/stage3.md"}
+    }
+  ]
+}

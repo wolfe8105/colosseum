@@ -1,12 +1,14 @@
 # First Run Files
 
 **Total unique files:** 57
-**Batch size:** 5 for Batches 1–6, 4 for Batch 7R onward.
-**Batches:** 14 total after restructure.
+**Batch size:** Variable — sized by byte total, not file count.
+**Byte budget:** ≤ 40,000 bytes per batch (empirical ceiling: 46,789 bytes worked, 49,048 bytes failed).
+**Batches:** 16 total after full restructure.
 
 Feed these batches one at a time into the v3 audit method orchestration prompt. All paths verified present in the repo.
 
-**2026-04-13 restructure:** Batch 6 at 5 files hit Claude Code context compaction on file 5 of 5. Remaining batches cut to 4 files each for headroom. The 5th Batch 6 file (`arena-room-setup.ts`) is first in Batch 7R ("R" = restructured). All Batch 7+ numbers have been re-flowed to account for the smaller batch size.
+**2026-04-13 restructure:** Batch 6 at 5 files hit Claude Code context compaction on file 5. Remaining batches sized by byte total. Batch 7R+ use ≤ 40KB budget.
+**2026-04-14 byte audit:** Batch 8R (original, 4 files, 49,048 bytes) hit compaction on file 2. Split into 8Ra (26,196 bytes) and 8Rb (30,209 bytes). All byte totals confirmed below 40KB ceiling.
 
 ---
 
@@ -34,14 +36,12 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 4. src/pages/home.ts
 5. src/pages/home.nav.ts
 
-## Batch 4 (PENDING — never successfully run)
+## Batch 4 (DONE — 2026-04-14)
 
 1. src/pages/home.arsenal.ts
 2. src/pages/home.arsenal-shop.ts
 3. src/pages/home.invite.ts
 4. src/pages/plinko.ts
-
-**Note:** original Batch 4 had 5 files (plus `src/pages/spectate.ts`). `spectate.ts` has been moved to Batch 7R to honor the new 4-file ceiling. When you run Batch 4, use this 4-file list.
 
 ## Batch 5 (DONE)
 
@@ -68,50 +68,65 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 3. src/auth.types.ts
 4. src/auth.profile.ts
 
-## Batch 8R
+## Batch 8Ra (DONE — covered by old Batch 8R run 2026-04-14)
 
-1. src/pages/settings.ts
-2. src/reference-arsenal.loadout.ts
-3. src/badge.ts
-4. src/profile-debate-archive.ts
+**Note:** Original Batch 8R split into 8Ra and 8Rb (2026-04-14). `settings.ts` and `profile-debate-archive.ts` are both 20KB+ — together they exceed the 40KB byte budget. Split keeps each batch well under the ceiling.
 
-## Batch 9R
+1. src/pages/settings.ts (19,979 bytes)
+2. src/reference-arsenal.loadout.ts (3,553 bytes)
+3. src/badge.ts (766 bytes)
+4. vite.config.ts (1,898 bytes)
 
-1. src/async.fetch.ts
-2. src/async.render.ts
-3. src/async.types.ts
-4. src/leaderboard.ts
+## Batch 8Rb (PARTIALLY DONE — profile-debate-archive.ts covered by old Batch 8R)
 
-## Batch 10R
+1. src/profile-debate-archive.ts (24,750 bytes)
+2. src/async.types.ts (1,523 bytes)
+3. src/pages/home.feed.ts (3,445 bytes)
+4. src/pages/home.types.ts (491 bytes)
 
-1. src/pages/home.feed.ts
-2. src/intro-music.ts
-3. src/arena/arena-entrance.ts
-4. src/pages/group-banner.ts
+## Batch 9R (PENDING) — 29,246 bytes
 
-## Batch 11R
+1. src/leaderboard.ts (21,195 bytes)
+2. src/arena/arena-ads.ts (3,954 bytes)
+3. src/arena/arena-mod-scoring.ts (4,097 bytes)
 
-1. src/arena/arena-sounds.ts
-2. src/arena/arena-core.ts
-3. src/tokens.ts
-4. src/notifications.ts
+## Batch 10R (PENDING) — 31,471 bytes
 
-## Batch 12R
+1. src/tokens.ts (18,998 bytes)
+2. src/arena/arena-core.ts (6,262 bytes)
+3. src/arena/arena-bounty-claim.ts (6,211 bytes)
 
-1. src/bounties.ts
-2. src/arena/arena-bounty-claim.ts
-3. vite.config.ts
-4. src/pages/home.types.ts
+## Batch 11R (PENDING) — 28,861 bytes
 
-## Batch 13R
+1. src/arena/arena-entrance.ts (17,896 bytes)
+2. src/async.fetch.ts (5,858 bytes)
+3. src/pages/spectate.types.ts (5,107 bytes)
 
-1. src/arena/arena-mod-scoring.ts
-2. src/arena/arena-ads.ts
-3. src/arena/arena-feed-spec-chat.ts
-4. src/pages/spectate.types.ts
+## Batch 12R (PENDING) — 30,806 bytes
 
-## Batch 14R
+1. src/pages/spectate.render.ts (22,974 bytes)
+2. src/arena/arena-feed-spec-chat.ts (7,832 bytes)
 
-1. src/pages/spectate.render.ts
+## Batch 13R (PENDING) — 33,959 bytes
 
-**Note:** Batch 14R has only 1 file (the leftover after the 4-per-batch restructure). You could roll it into Batch 13R instead if you'd rather have one less batch, though with 5 files in that combined batch there's a small compaction risk on oversized files.
+1. src/pages/group-banner.ts (15,084 bytes)
+2. src/async.render.ts (18,875 bytes)
+
+## Batch 14R (PENDING) — 30,677 bytes
+
+1. src/bounties.ts (18,281 bytes)
+2. src/arena/arena-sounds.ts (12,396 bytes)
+
+## Batch 15R (PENDING) — 29,914 bytes
+
+1. src/notifications.ts (16,057 bytes)
+2. src/intro-music.ts (13,857 bytes)
+
+## Batch 8Rc (PENDING) — 7,357 bytes
+
+**Note:** Created 2026-04-14. The old Batch 8R run covered settings.ts, reference-arsenal.loadout.ts, badge.ts, and profile-debate-archive.ts — overlapping 8Ra and 8Rb entirely except for these 4 small files. Combined into one mini-batch.
+
+1. vite.config.ts (1,898 bytes)
+2. src/async.types.ts (1,523 bytes)
+3. src/pages/home.feed.ts (3,445 bytes)
+4. src/pages/home.types.ts (491 bytes)
