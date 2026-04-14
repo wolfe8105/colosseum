@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 28 of 57 files audited (Batches 1–6 partial, Batch 4 now complete).
-**Last updated:** 2026-04-14, end of Batch 4.
+**Coverage:** 35 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R; 7R pending push).
+**Last updated:** 2026-04-14, end of Batch 9R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -115,6 +115,15 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 
 ### M-H2. `profile-debate-archive.ts:352` — `d.winner` not in `RecentDebate` interface; W/L badge permanently blank
 **Batch 8R.** `_showAddPicker` computes `const result = d.winner === undefined ? '' : (d.is_win ? '✅ W' : '❌ L')` at line 352. The `RecentDebate` interface (lines 39–50) has no `winner` field — `d.winner` is a TypeScript property-not-exist error. At runtime `d.winner` is always `undefined`, so `result` is always `''` and the W/L indicator is never displayed in the add-debate picker. **All 5 Stage 3 agents confirmed.** Fix: add `winner: string | null` to `RecentDebate` and change the check to `d.winner === null`, or replace the ternary with `d.is_win ? '✅ W' : '❌ L'` directly.
+
+### M-I1. `arena-ads.ts` — `showAdInterstitial` double-fire bug: skip click doesn't `clearInterval(tick)`
+**Batch 9R.** Skip button handler calls `dismiss()` which removes the overlay but does not clear the 1-second countdown interval `tick`. Interval keeps running; when `remaining <= 0`, `dismiss()` fires again and `onDone()` is invoked a second time. `overlay.remove()` on the second call is a DOM no-op, but duplicate `onDone()` is a real functional bug — whatever the caller does on ad completion runs twice. **All 5 Stage 3 agents confirmed.** Structural note: `tick` is declared `const` after the skip listener is attached, so `dismiss()` can't reference it in its current position — fix requires moving `let tick` declaration above `dismiss()`.
+
+### M-I2. `arena-ads.ts` — no `destroy()` exposed; `setInterval` tick has no external cancellation path
+**Batch 9R.** `showAdInterstitial` starts a 1-second countdown `setInterval` but exposes no way to cancel it from outside. If the caller context is torn down before the countdown completes (navigation, component unmount, error recovery), the interval continues firing against stale DOM/state. **Direct CLAUDE.md rule violation** — the project convention is that any module owning a `setInterval` must export a `destroy()` that clears it. Same family as the cleanup gaps in `rivals-presence.ts` (M-E6).
+
+### M-I3. `leaderboard.ts` — `renderList` mutates shared rank objects in `liveData` / `PLACEHOLDER_DATA`
+**Batch 9R.** Line 269 does `[...data]` which creates a shallow copy of the array, but the objects inside are the same references as in `liveData` (or `PLACEHOLDER_DATA`). The `forEach` at line 276 runs `item.rank = i + 1`, which writes back to the original `LeaderboardEntry` objects. For `liveData`, this means ranks are silently rewritten on every render call. For `PLACEHOLDER_DATA` — a module-level `const` — repeated renders in placeholder mode mutate the constant's objects' `rank` fields, which means the "constant" isn't actually constant across calls. **All 5 Stage 2 agents missed this in unison; Stage 3 caught it.** Second case of unanimous Stage 2 misdescription (after M-E5). Fix: `data.map(row => ({ ...row }))` instead of `[...data]` to deep-copy each entry before rank assignment.
 
 ### M-F4. `plinko.ts` — `getAge` silently overflows invalid day inputs, could mis-gate 13-year-old check
 **Batch 4.** `new Date(year, month - 1, day)` silently overflows out-of-range days (e.g. Feb 31 → March 2/3). Day dropdown is populated 1-31 for all months with no dynamic adjustment. In edge cases around a user's birthday this could cause `getAge` to return an off-by-days result that incorrectly passes or fails the 13-year-old age gate. Fix: clamp `day` to the actual last day of the selected month before constructing the `Date`.
@@ -249,6 +258,24 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-H1. `profile-debate-archive.ts` — `getCurrentUser` dead import
 **Batch 8R.** `getCurrentUser` is imported at line 10 but never called anywhere in the module. Likely a vestige of a planned ownership-verification flow that was replaced by the `isOwner` parameter pattern. All 5 agents confirmed. Remove the import.
 
+### L-I1. `arena-ads.ts` — `showAdInterstitial` no guard against concurrent calls; duplicate IDs
+**Batch 9R.** If `showAdInterstitial` is called while an overlay already exists, a second overlay is appended with the same `id="structural-ad-interstitial"`. Duplicate IDs break `document.getElementById` lookups and leave stacked overlays in the DOM. Fix: early-return if `#structural-ad-interstitial` already exists, or replace the existing overlay.
+
+### L-I2. `arena-ads.ts` — `injectAdSlot` and `showAdInterstitial` share the same `SLOT_ID`
+**Batch 9R.** Both functions use identical `data-ad-slot="8647716209"` even though they serve different ad formats (responsive banner vs 320×250 rectangle interstitial). AdSense policy generally requires distinct slot IDs per distinct ad unit format; sharing one slot ID across two formats may cause one or both to fail to serve, or violate AdSense terms. Worth verifying against the AdSense dashboard.
+
+### L-I3. `leaderboard.ts` — `currentTime` is a dead-write state variable
+**Batch 9R.** `setTime` writes `currentTime` and resets offset/hasMore, then calls `render()`. But `currentTime` is never read by any fetch path — `fetchLeaderboard` passes no time parameter to the `get_leaderboard` RPC. The time-filter tab in the UI is non-functional (in-code comment on line 446–448 acknowledges this). Either wire the parameter through to the RPC or remove the state variable and the UI control.
+
+### L-I4. `leaderboard.ts` — `setTab` first `render()` call shows error div, not shimmer
+**Batch 9R.** `setTab` resets `liveData = null` and then calls `render()` synchronously **before** `fetchLeaderboard()` sets `isLoading = true`. At that moment `renderList()` hits its early-return error path (`liveData === null && !isLoading`) and outputs the "Couldn't load rankings" error div. The user sees a brief error flash on every tab switch before the fetch completes and the real data arrives. UX issue, not data corruption. Fix: either set `isLoading = true` before the first `render()` call, or skip the pre-fetch render entirely.
+
+### L-I5. `arena-mod-scoring.ts` — async handlers use global `document.getElementById` instead of scoped queries
+**Batch 9R.** Lines 56, 66–67, 73, 76: the button click and submit handlers look up `#mod-scored`, `#mod-score-submit`, `.mod-score-slider-row`, and related elements via `document.getElementById` rather than `section.querySelector`. Works fine in a single-render lifecycle. In a multi-render scenario (re-render or two simultaneous mod scoring sections in DOM), handlers silently target whichever element has the ID first. Latent ID-collision fragility. Fix: scope queries to the `section` root passed in.
+
+### L-I6. `arena-ads.ts` missing from CLAUDE.md's arena sub-modules list (documentation gap)
+**Batch 9R.** The CLAUDE.md project file lists 31 arena sub-module files under its arena section but omits `arena-ads.ts`. File exists and is now audited; listing is stale. Doc-only gap, no code impact. Fix: add the file to the CLAUDE.md table.
+
 ### L-F12. `plinko.ts` — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -270,8 +297,8 @@ These are not individual findings but families that recur across files. Worth si
 4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button), M-E1 (`handleSave` preset), **M-F1 (`openBottomSheet` in arsenal-shop), M-F3 (`openClaimSheet` in invite)**. **SIX confirmed instances across SIX different files. Definitive systemic issue.** Disable button → do work → success or error path forgets to re-enable. **Recommend immediate grep-sweep PR**: search for `btn.disabled = true`, verify each match has a matching re-enable on every code path including catch and early-return branches. Pat has acknowledged but not yet acted.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
-7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
-8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path). First case in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong.
+7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**, **M-I2 (`setInterval` with no `destroy()` in `arena-ads.ts`), M-I3 (`renderList` rank mutation on shared objects — all 5 Stage 2 agents missed it)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
+8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path), **M-I3** (`renderList` rank mutation on shared `liveData`/`PLACEHOLDER_DATA` objects). Two cases in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong — in both cases the intuitive read is "shallow copy, no shared mutation" or "await failure, clear state" and the actual behavior inverts that.
 
 ---
 
@@ -287,9 +314,11 @@ These are not individual findings but families that recur across files. Worth si
 | 6 | 4 of 5 (`rivals-presence`, `share`, `invite`, `arena-loadout-presets`; `arena-room-setup` deferred) | **partial** | 0 | 9 | 6 |
 | 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | output pending push from night computer | — | — | — |
 | 8R | 4 (`settings`, `reference-arsenal.loadout`, `badge`, `profile-debate-archive`) | done | 0 | 2 | 1 |
+| 8Rc | 4 (`vite.config`, `async.types`, `home.feed`, `home.types`) | done | 0 | 0 | 0 |
+| 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
 
-**32 of 57 files audited (Batches 1–6 partial, 4, 8R confirmed; Batch 7R output pending push from night computer). 0 High, 31 Medium, 42 Low. 2 findings FIXED (H-A2, L-C8).**
+**35 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R confirmed; Batch 7R output pending push from night computer). 0 High, 34 Medium, 48 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 8R notes:** `settings.ts` and `badge.ts` completely clean — zero code bugs. `reference-arsenal.loadout.ts` had one Medium (empty-state ordering bug, all 5 agents unanimous). `profile-debate-archive.ts` had one Medium (TypeScript property-not-exist on `d.winner`, permanently blanks W/L in add picker) and one Low (dead import). Stage 3 also caught Stage 2 Agent 04 using wrong RPC parameter names (`p_name`/`p_desc` vs actual `p_custom_name`/`p_custom_desc`). G series reserved for Batch 7R when pushed.
+**Batch 9R notes:** `leaderboard.ts` (10 anchors) had 1 Medium and 3 Lows — the headline is M-I3, the shared-object rank mutation that all 5 Stage 2 agents missed in unison (second case after M-E5). `arena-ads.ts` (3 anchors) had 2 Mediums and 2 Lows — the double-fire bug (M-I1) was unanimous across agents, and the missing `destroy()` (M-I2) is a direct CLAUDE.md rule violation. `arena-mod-scoring.ts` (1 anchor) had 1 Low (ID-collision risk from global `getElementById` in async handlers) and 1 doc-gap Low (`arena-ads.ts` missing from CLAUDE.md's arena sub-modules list). No Highs this batch; Stage 3 again caught things all 5 Stage 2 agents missed. G series still reserved for Batch 7R when pushed.
 
-**Last updated:** 2026-04-14, end of Batch 8R.
+**Last updated:** 2026-04-14, end of Batch 9R.
