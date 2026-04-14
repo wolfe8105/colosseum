@@ -70,12 +70,27 @@ Prompts are in `refactor-prompts/` — one file per target.
 
 ---
 
+## IMPORTANT — Read this first
+
+The GitHub repo at `wolfe8105/colosseum` shows an old flat JavaScript version of the project. **Do not browse GitHub.** Clone the repo using the command below to get the correct TypeScript codebase.
+
+**Clone command (run this in bash first):**
+```bash
+git clone https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git /home/claude/colosseum
+cd /home/claude/colosseum
+```
+
+Get the token from a recent past chat — search for "github token colosseum ghp" in past conversations.
+
+After cloning you will see `src/`, `src/arena/`, `src/pages/`, `refactor-prompts/` etc. If you see only flat `.js` files, you did not clone correctly.
+
+---
+
 ## How to start the next session
 
-Open a fresh claude.ai chat and paste:
+Open a fresh claude.ai chat and paste exactly this:
 
 ```
-Read REFACTOR-HANDOFF.md from https://github.com/wolfe8105/colosseum.
-We are refactoring the 13 audited files that are over 300 lines.
-The prompts are in refactor-prompts/. Start with arena-css.ts.
+Search past chats for "github token colosseum ghp" to get the token. Then clone https://TOKEN@github.com/wolfe8105/colosseum.git into /home/claude/colosseum using bash_tool. Then read REFACTOR-HANDOFF.md from the cloned repo. We are refactoring the 13 audited TypeScript files that are over 300 lines. The individual CC prompts are in refactor-prompts/. Start by reading src/arena/arena-css.ts in full, then propose a split map.
 ```
+
