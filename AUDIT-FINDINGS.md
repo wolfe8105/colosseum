@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 15 of 57 files audited (Batches 1–3 of 12).
-**Last updated:** 2026-04-13, end of Batch 3.
+**Coverage:** 28 of 57 files audited (Batches 1–6 partial, Batch 4 now complete).
+**Last updated:** 2026-04-14, end of Batch 4.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -101,6 +101,18 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-E8. `api/invite.js` — IP spoofing via `x-forwarded-for[0]`
 **Batch 6.** The handler records `x-forwarded-for[0].trim()` (leftmost) as the client IP. On Vercel, the platform *appends* the real client IP to the right of whatever chain came in, so `[0]` is attacker-controlled. Any attacker can forge arbitrary IPs in click-record entries. Recognized anti-pattern. Scope is limited to click-record poisoning (not auth/access control), but still: **fix by using `req.headers['x-real-ip']` or taking the rightmost entry of `x-forwarded-for`**.
 
+### M-F1. `home.arsenal-shop.ts` — `openBottomSheet` confirm handler no try/catch, button stuck on rejection
+**Batch 4.** The confirm button handler sets `confirmBtn.disabled = true` before calling `handleBuyModifier`/`handleBuyPowerup`. On rejection, `close()` is never reached — sheet stays open, button permanently stuck in disabled 'Purchasing…' state. **Fifth confirmed instance of the disable-button-no-finally pattern** (M-B5, M-C2, M-D1, M-E1, M-F1). Fix: wrap handler in try/finally.
+
+### M-F2. `home.invite.ts` — `rewardTypeLabel` returns `undefined`, `openClaimSheet` calls `.toUpperCase()` on it → TypeError
+**Batch 4.** `rewardTypeLabel(reward_type)` returns `undefined` for any unrecognized type. `openClaimSheet` calls `rewardTypeLabel(rewardType).toUpperCase()` at the call site — throws `TypeError` at runtime on any unknown `reward_type`. Fix: `rewardTypeLabel(rewardType)?.toUpperCase() ?? 'REWARD'`.
+
+### M-F3. `home.invite.ts` — `openClaimSheet` rejection leaves sheet stuck, button permanently disabled
+**Batch 4.** On rejection in the `.mod-buy-btn` handler, `close()` is not called. Sheet stays open, confirm button stuck in disabled 'Claiming…' state. **Sixth confirmed instance of the disable-button-no-finally pattern** (M-B5, M-C2, M-D1, M-E1, M-F1, M-F3). Fix: try/finally.
+
+### M-F4. `plinko.ts` — `getAge` silently overflows invalid day inputs, could mis-gate 13-year-old check
+**Batch 4.** `new Date(year, month - 1, day)` silently overflows out-of-range days (e.g. Feb 31 → March 2/3). Day dropdown is populated 1-31 for all months with no dynamic adjustment. In edge cases around a user's birthday this could cause `getAge` to return an off-by-days result that incorrectly passes or fails the 13-year-old age gate. Fix: clamp `day` to the actual last day of the selected month before constructing the `Date`.
+
 ### M-E9. `api/invite.js` — misleading `await` on "non-blocking" RPC
 **Batch 6.** Comment at line 37 says "Non-blocking — click recording failure should not break the invite flow" but the code does `await supabase.rpc(...)`, which blocks the redirect on the full Supabase round-trip. Every invite click pays the latency tax. Comment describes failure-tolerance, not execution semantics. Fix: either remove the `await` (true fire-and-forget via `void supabase.rpc(...)`) or update the comment to match what the code actually does.
 
@@ -195,6 +207,42 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-E4. `api/invite.js` — regex hardcodes invite code format
 **Batch 6.** `/^[a-z0-9]{5}$/` requires lowercase, exactly 5 chars. If the generator ever produces uppercase or a different length, valid invites silently fall through to bare plinko (losing referral credit). Worth confirming the generator matches.
 
+### L-F1. `home.arsenal-shop.ts` — `loadShopScreen` dead ternary; `getUserInventory()` result never used
+**Batch 4.** Both branches of `inventory?.powerup_stock != null ? _readTokenBalance() : _readTokenBalance()` call the same function. `getUserInventory()` is awaited and the result assigned to `inventory`, but `inventory` is never read. Likely an incomplete implementation where one branch was meant to use `inventory.powerup_stock` directly.
+
+### L-F2. `home.arsenal-shop.ts` — `.mod-buy-btn` comment factually wrong
+**Batch 4.** Source comment says "Buy button (direct tap, bypasses sheet)" but the implementation calls `openBottomSheet(effect)` — identical behavior to a card tap. Fix: correct the comment.
+
+### L-F3. `home.arsenal-shop.ts` — `showToast` dead import
+**Batch 4.** `showToast` is imported from `config.ts` but never called anywhere in the file.
+
+### L-F4. `home.arsenal-shop.ts` — `async` keyword on `.mod-buy-btn` handler is dead
+**Batch 4.** The handler never `await`s anything. `openBottomSheet` is synchronous. Dead `async` keyword.
+
+### L-F5. `home.arsenal-shop.ts` — `cost` interpolated into innerHTML without `Number()` cast
+**Batch 4.** `cost` (from `effect.mod_cost`/`effect.pu_cost`) is interpolated directly into `innerHTML`. CLAUDE.md requires `Number()` cast before innerHTML interpolation of numeric values. Fix: `Number(effect.mod_cost)`.
+
+### L-F6. `home.arsenal-shop.ts` — `_state` not reset by `cleanupShopScreen`, persists across tab nav
+**Batch 4.** Module-level `_state` (productType, categoryFilter, rarityFilter, timingFilter, affordableOnly) is never cleared by `cleanupShopScreen`. Filter selections from a previous visit persist when the shop tab is revisited. May be intentional but is undocumented.
+
+### L-F7. `home.invite.ts` — `render()` missing `Number()` casts before innerHTML
+**Batch 4.** `stats.converts`, `stats.total_signups`, `stats.total_clicks` are interpolated into `innerHTML` without `Number()` casts. CLAUDE.md rule violation. Same family as M-D2, L-F5.
+
+### L-F8. `home.invite.ts` — `!grid` guard (line 274) is dead code
+**Batch 4.** `overlay.querySelector('#claim-picker-grid')` queries the in-memory JS object. `overlay.remove()` does not nullify the reference — `querySelector` still succeeds. The guard only fires if the HTML template is malformed. Should be removed or replaced with a meaningful check.
+
+### L-F9. `home.invite.ts` — claim button handler calls `openClaimSheet()` with no `.catch()`
+**Batch 4.** `openClaimSheet(container, rewardType)` is called fire-and-forget in the `wireInviteScreen` click handler. Any rejection is silently swallowed. Same family as M-C5, L-C6.
+
+### L-F10. `plinko.ts` — `document.execCommand('copy')` deprecated in clipboard fallback
+**Batch 4.** The clipboard fallback path in `injectInviteNudge` uses the deprecated `execCommand('copy')` API. Not a security issue; forward-compatibility concern for future browser versions.
+
+### L-F11. `plinko.ts` — `void injectInviteNudge()` has no `.catch()`
+**Batch 4.** Called fire-and-forget from `goToStep`. If `injectInviteNudge` throws outside its internal try/catch (e.g. in DOM manipulation), produces an unhandled promise rejection. Currently safe but fragile. Same family as M-C5.
+
+### L-F12. `plinko.ts` — `checkHIBP` fail-open on network error undocumented
+**Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
+
 ### L-E5. `share.ts` — `_cachedRefCode` set but never read in this file
 **Batch 6.** `getStableInviteUrl` writes to `_cachedRefCode` on success but no function in the file reads it back. Either consumed externally (check other files) or vestigial dead state. Only Agent 05 caught the downstream consumption question.
 
@@ -210,10 +258,10 @@ These are not individual findings but families that recur across files. Worth si
 1. **Unawaited promises with no `.catch`** — M-C5, L-C6, M-B3, L-E1. Promises started bare; throws become unhandled rejections. Pattern: bare `someAsync()` instead of `someAsync().catch(e => console.error(...))`.
 2. **Silent catch blocks** — M-B3, M-C6, M-E9 (misleading comment). `catch { /* warned */ }` or `catch(() => {})`. Loses diagnostic signal.
 3. **Asymmetric null guards** — L-C1, plus several Batch 1 findings. Some DOM reads in a function are guarded, others are not, with no clear reason. Either guard all or none.
-4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button), **M-E1 (`handleSave` preset)**. **FOUR confirmed instances across FOUR different files. Definitive pattern.** Disable button → do work → success or error path forgets to re-enable. This is no longer an observation, it's a file-wide systemic issue. **Recommend immediate grep-sweep PR**: search for `btn.disabled = true`, verify each match has a matching re-enable on every code path including catch and early-return branches.
+4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button), M-E1 (`handleSave` preset), **M-F1 (`openBottomSheet` in arsenal-shop), M-F3 (`openClaimSheet` in invite)**. **SIX confirmed instances across SIX different files. Definitive systemic issue.** Disable button → do work → success or error path forgets to re-enable. **Recommend immediate grep-sweep PR**: search for `btn.disabled = true`, verify each match has a matching re-enable on every code path including catch and early-return branches. Pat has acknowledged but not yet acted.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
-7. **CLAUDE.md rule violations not caught by Stage 2, surfaced by Stage 3 verifier** — M-D2 (missing `Number()` cast), **M-E4 (missing `escapeHTML()`)**. Two confirmed instances now. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
+7. **CLAUDE.md rule violations not caught by Stage 2, surfaced by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), **L-F5 (`cost` in arsenal-shop), L-F7 (stats in invite)**. Four confirmed `Number()`/`escapeHTML()` misses now across four files. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
 8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path). First case in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong.
 
 ---
@@ -225,11 +273,11 @@ These are not individual findings but families that recur across files. Worth si
 | 1 | 5 (`arena-css`, `arena-feed-events`, `arena-feed-machine`, `arena-feed-room`, `arena-feed-ui`) | done | 0 | 1 | 5 |
 | 2 | 5 (`arena-feed-wiring`, `arena-room-end`, `arena-room-live`, `arena-types`, `groups`) | done | 1 | 7 | 7 |
 | 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 5 | 8 |
-| 4 | 4 (restructured from 5; TBD) | pending — never successfully run | — | — | — |
+| 4 | 4 (`home.arsenal`, `home.arsenal-shop`, `home.invite`, `plinko`) | done | 0 | 4 | 12 |
 | 5 | 5 (`modifiers`, `reference-arsenal`, `reference-arsenal.types`, `reference-arsenal.rpc`, `reference-arsenal.render`) | done | 0 | 3 | 3 |
 | 6 | 4 of 5 (`rivals-presence`, `share`, `invite`, `arena-loadout-presets`; `arena-room-setup` deferred) | **partial** | 0 | 9 | 6 |
 | 7R–14R | 29 | pending (restructured to 4-file batches) | — | — | — |
 
-**24 of 57 files audited (Batches 1–3, 5, partial 6; Batch 4 still pending, `arena-room-setup.ts` in Batch 7R). 0 High, 25 Medium, 29 Low. 2 findings FIXED (H-A2, L-C8).**
+**28 of 57 files audited (Batches 1–6 partial, Batch 4 complete; Batch 7R pending tonight). 0 High, 29 Medium, 41 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 6 notes:** hit CC context compaction on file 5 of 5 at 5-agent/5-file config. Disable-button-no-finally pattern hit instance #4 across 4 different files — now definitive. Stage 3 verifier caught another CLAUDE.md rule violation (missing `escapeHTML` in rivals-presence) plus the first unanimous Stage 2 misdescription in the audit's history (`_buildRivalSet` stale set on error). Remaining batches cut to 4 files for compaction headroom.
+**Batch 4 notes:** `home.arsenal.ts` came out clean — zero code defects, all PASS/PARTIAL on minor description gaps only. `home.arsenal-shop.ts` and `home.invite.ts` each added a new instance of the disable-button-no-finally pattern, bringing the total to **6 instances across 6 files** — the grep-sweep PR is now overdue. `plinko.ts` has a Medium age-gate bug worth fixing before launch (Feb 31 overflow). CLAUDE.md Number() cast violations now confirmed in 4 files (M-D2, L-F5, L-F7 plus the escapeHTML miss M-E4).
