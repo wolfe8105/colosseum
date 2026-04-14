@@ -68,6 +68,15 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-C6. `home.ts` — `appInit` drip card silent error handler
 **Batch 3.** Error handler is bare `() => {}` — no logging, no telemetry. If drip card init breaks, you'll never know. Same family as M-B3.
 
+### M-D1. `reference-arsenal.render.ts` — `renderArmory` Second button stays permanently disabled after success
+**Batch 5.** In the "Second a reference" handler, the button is disabled on click. Error path re-enables; success path updates `btn.textContent = '✓ Seconded'` but never resets `btn.disabled`. User cannot un-second even if that's a valid action, and the button visually remains in its disabled state forever. **Third confirmed instance of the disable-button-no-finally pattern** (see M-B5 `wireModControls` score button, M-C2 `submitDeleteGroup`). Worth a file-wide grep sweep.
+
+### M-D2. `modifiers.ts` — `renderPowerupRow` injects numeric `pu.quantity` into innerHTML without `Number()` cast
+**Batch 5.** Line 363: `×${pu.quantity}` written directly into innerHTML. CLAUDE.md explicitly requires any numeric value displayed via innerHTML to be cast with `Number()` first. **Direct project-rule violation.** No Stage 2 agent flagged this; Stage 3 Agent 01's needs_review section caught it — exactly the kind of hole the verifier pass exists for. Fix: `×${Number(pu.quantity)}`.
+
+### M-D3. `modifiers.ts` — `handleEquip` toast shows `"slot undefined/3"` on missing `res.slots_used`
+**Batch 5.** Line 409: `` `${effectName} equipped (slot ${res.slots_used}/3)` `` with no null guard. If the server response omits `slots_used` for any reason (RPC error, shape drift, older function version), user sees literal "undefined" text. Fix: `slot ${res.slots_used ?? '?'}/3`.
+
 ---
 
 ## LOW severity — defensive coding gaps, dead code, smells
@@ -138,6 +147,15 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 
 **Fix applied:** one-line conditional at `handleAuditionAction` — `const refreshGroupId = action === 'withdraw' ? currentAuditionGroupId : currentGroupId;` then pass `refreshGroupId!` to `loadPendingAuditions`.
 
+### L-D1. `reference-arsenal.render.ts` — `renderArmory` bottom sheet singleton check uses inner div ID, not host ID
+**Batch 5.** Singleton guard reads `document.getElementById('armory-sheet')` but the host element has `id="armory-sheet-host"`. Works today because the inner `armory-sheet` div is always inside the host, but if the sheet internals are ever restructured the singleton check silently fails and duplicate sheets get created. Brittle ID coupling.
+
+### L-D2. `reference-arsenal.rpc.ts` — `citeReference` suspected server-side no-op under F-55
+**Batch 5.** Multiple Stage 2 agents independently noted that `citeReference` forwards `_outcome` (underscore prefix indicates intentionally-unused) and flagged the RPC as "may be a no-op server-side under F-55." Not verifiable from client code alone. **Worth an SQL check** — if the server function is a no-op the whole client path is dead weight.
+
+### L-D3. `reference-arsenal.render.ts` — `renderReferenceCard` potential TypeError on missing `SOURCE_TYPES` key
+**Batch 5.** If `ref.source_type` isn't in the `SOURCE_TYPES` constant map, the lookup returns undefined and any subsequent `.label`/`.icon` access throws. Depends on upstream data integrity. Low unless you've seen it happen.
+
 ---
 
 ## Cross-cutting patterns
@@ -147,9 +165,10 @@ These are not individual findings but families that recur across files. Worth a 
 1. **Unawaited promises with no `.catch`** — M-C5, L-C6, M-B3. Promises started bare; throws become unhandled rejections. Pattern: bare `someAsync()` instead of `someAsync().catch(e => console.error(...))`.
 2. **Silent catch blocks** — M-B3, M-C6. `catch { /* warned */ }` or `catch(() => {})`. Loses diagnostic signal.
 3. **Asymmetric null guards** — L-C1, plus several Batch 1 findings. Some DOM reads in a function are guarded, others are not, with no clear reason. Either guard all or none.
-4. **Try/catch missing finally on disable-button patterns** — M-C2. Disable button → do work → finally re-enable. When finally is missing, success path can leave the button stuck.
+4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score button), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button). **Three confirmed instances across three different files.** High-confidence pattern. Disable button → do work → success path forgets to re-enable. Worth a single grep-sweep PR: look for `btn.disabled = true` without a matching re-enable on the success path.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
+7. **CLAUDE.md rule violations not caught by Stage 2, surfaced by Stage 3 verifier** — M-D2 (`Number()` cast rule). The Stage 3 verifier pass is catching real rule-violations the Stage 2 descriptions miss. Proof that the 4-stage pipeline is doing work that a simpler single-pass audit would miss.
 
 ---
 
@@ -160,6 +179,8 @@ These are not individual findings but families that recur across files. Worth a 
 | 1 | 5 (`arena-css`, `arena-feed-events`, `arena-feed-machine`, `arena-feed-room`, `arena-feed-ui`) | done | 0 | 1 | 5 |
 | 2 | 5 (`arena-feed-wiring`, `arena-room-end`, `arena-room-live`, `arena-types`, `groups`) | done | 1 | 7 | 7 |
 | 3 | 5 (`groups.types`, `groups.settings`, `groups.auditions`, `home`, `home.nav`) | done | 0 | 5 | 8 |
-| 4–12 | 42 | pending | — | — | — |
+| 4 | 5 (TBD) | pending — never successfully run | — | — | — |
+| 5 | 5 (`modifiers`, `reference-arsenal`, `reference-arsenal.types`, `reference-arsenal.rpc`, `reference-arsenal.render`) | done | 0 | 3 | 3 |
+| 6–12 | 37 | pending | — | — | — |
 
-**15 of 57 files audited. 0 High, 13 Medium, 20 Low. 2 findings FIXED (H-A2, L-C8). 2026-04-13 actions: H-A1 downgraded to L-A12 (no race); H-A2 confirmed and fixed in prod (idempotency flag migration); M-C3 investigated, reclassified as L-C8 (not a general drift bug, only the withdraw branch is wrong) and fixed in one line.**
+**20 of 57 files audited (Batches 1–3 + 5; Batch 4 still pending). 0 High, 16 Medium, 23 Low. 2 findings FIXED (H-A2, L-C8). Batch 5 notes: Stage 3 verifier caught 2 real source bugs (M-D2 rule violation, M-D3 undefined toast) that no Stage 2 agent flagged — first direct validation on post-5-agent runs that the verifier pass earns its keep. Disable-button-no-finally pattern confirmed to 3 instances across 3 files, now high-confidence cross-cutting issue.**
