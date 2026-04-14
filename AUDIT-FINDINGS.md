@@ -116,6 +116,21 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-H2. `profile-debate-archive.ts:352` — `d.winner` not in `RecentDebate` interface; W/L badge permanently blank
 **Batch 8R.** `_showAddPicker` computes `const result = d.winner === undefined ? '' : (d.is_win ? '✅ W' : '❌ L')` at line 352. The `RecentDebate` interface (lines 39–50) has no `winner` field — `d.winner` is a TypeScript property-not-exist error. At runtime `d.winner` is always `undefined`, so `result` is always `''` and the W/L indicator is never displayed in the add-debate picker. **All 5 Stage 3 agents confirmed.** Fix: add `winner: string | null` to `RecentDebate` and change the check to `d.winner === null`, or replace the ternary with `d.is_win ? '✅ W' : '❌ L'` directly.
 
+### M-J1. `arena-core.ts` — `init()` co-executes `joinCode` and `spectate` paths with no `else` guard
+**Batch 10R.** If both `?joinCode=X` and `?spectate=Y` are present in the URL, both `joinWithCode` and `enterFeedRoomAsSpectator` fire — no `else` branch separates them. Both execute, `window.history.replaceState` is called twice, arena state collides. Flagged by 4/5 Stage 3 agents. Fix: add `else if` before the spectate block.
+
+### M-J2. `arena-core.ts` — `_onPopState` registered at module load regardless of `FEATURES.arena` flag
+**Batch 10R.** `window.addEventListener('popstate', _onPopState)` runs at module parse time, not inside `init()`. Active even when `FEATURES.arena` is false or `init()` was never called — accesses `view`/`currentDebate` state that may be uninitialized. Fix: move registration inside `init()`.
+
+### M-J3. `arena-bounty-claim.ts` — `selectBountyClaim` rejection leaves button permanently disabled
+**Batch 10R.** `await selectBountyClaim(...)` in the lock-button handler has no try/catch. A thrown rejection leaves the button stuck in disabled spinner state with no recovery path. **Seventh confirmed instance of the disable-button-no-finally pattern** (M-B5, M-C2, M-D1, M-E1, M-F1, M-F3, M-J3). Fix: wrap in try/finally.
+
+### M-J4. `arena-bounty-claim.ts` — XSS on bounty option content; `escapeHTML` missing
+**Batch 10R.** `b.bounty_id`, `b.amount`, `b.attempt_fee` interpolated into `innerHTML` without `escapeHTML`. Values come from Supabase RPC so practical risk is low, but violates CLAUDE.md rule. All 5 agents confirmed. Fix: `escapeHTML()` or `Number()` cast as appropriate.
+
+### M-J5. `arena-bounty-claim.ts` — `_attemptFeePaid` singleton not reset between renders
+**Batch 10R.** Module-level `_attemptFeePaid` persists across calls to `renderBountyClaimDropdown`. If caller doesn't invoke `resetBountyClaim()` between renders (e.g. switching opponents), lock button silently no-ops with no feedback. Fix: reset `_attemptFeePaid = false` at top of `renderBountyClaimDropdown`.
+
 ### M-I1. `arena-ads.ts` — `showAdInterstitial` double-fire bug: skip click doesn't `clearInterval(tick)`
 **Batch 9R.** Skip button handler calls `dismiss()` which removes the overlay but does not clear the 1-second countdown interval `tick`. Interval keeps running; when `remaining <= 0`, `dismiss()` fires again and `onDone()` is invoked a second time. `overlay.remove()` on the second call is a DOM no-op, but duplicate `onDone()` is a real functional bug — whatever the caller does on ad completion runs twice. **All 5 Stage 3 agents confirmed.** Structural note: `tick` is declared `const` after the skip listener is attached, so `dismiss()` can't reference it in its current position — fix requires moving `let tick` declaration above `dismiss()`.
 
@@ -276,7 +291,28 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-I6. `arena-ads.ts` missing from CLAUDE.md's arena sub-modules list (documentation gap)
 **Batch 9R.** The CLAUDE.md project file lists 31 arena sub-module files under its arena section but omits `arena-ads.ts`. File exists and is now audited; listing is stale. Doc-only gap, no code impact. Fix: add the file to the CLAUDE.md table.
 
-### L-F12. `plinko.ts` — `checkHIBP` fail-open on network error undocumented
+### L-J1. `arena-core.ts` — `_onPopState` double-clears `_rulingCountdownTimer`
+**Batch 10R.** Timer cleared once conditionally inside `if (rulingOverlay)` and again unconditionally in the `view === 'room'` branch. `clearInterval` is idempotent so no functional bug, but undocumented duplication could mask a timer-reuse bug in future. 5/5 agents flagged.
+
+### L-J2. `arena-core.ts` — `formatTimer` produces decimal output on float input
+**Batch 10R.** `sec % 60` is not floored — fractional input (e.g. `90.5`) produces `"1:30.5"` instead of `"1:30"`. 5/5 agents confirmed. No current caller passes a float, but fragile. Fix: `Math.floor(sec % 60)`.
+
+### L-J3. `arena-core.ts` — `injectCSS()` fires before `#screen-arena` null guard in `init()`
+**Batch 10R.** CSS is injected even when the arena element is absent, potentially polluting non-arena pages. Fix: move `injectCSS()` to after the null guard.
+
+### L-J4. `arena-core.ts` — `destroy()` listener removal depends on `_onPopState` reference identity
+**Batch 10R.** `removeEventListener('popstate', _onPopState)` only works because `_onPopState` is the same exported const reference. If anything wraps or rebinds it, removal silently fails and handler leaks. 2 agents flagged.
+
+### L-J5. `arena-core.ts` — `ready.catch(() => init())` swallows auth error reason
+**Batch 10R.** Auth rejection still triggers `init()`, losing diagnostic information on auth failure. Intentional per CLAUDE.md guest-access design but undocumented.
+
+### L-J6. `arena-bounty-claim.ts` — error div not cleared when user changes selection after failed attempt
+**Batch 10R.** `#bounty-claim-error` is not hidden or cleared in the `change` listener. After a failed lock attempt, stale error message persists while user selects a different bounty. All 5 agents confirmed.
+
+### L-J7. `arena-bounty-claim.ts` — hardcoded hex colors `#F5A623` / `#0A1128`
+**Batch 10R.** Two hex values assigned directly to `style.background` / `style.color`. Violates CLAUDE.md design DNA rule. Same family as L-A3, L-A7.
+
+ — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
 ### L-E5. `share.ts` — `_cachedRefCode` set but never read in this file
@@ -294,7 +330,7 @@ These are not individual findings but families that recur across files. Worth si
 1. **Unawaited promises with no `.catch`** — M-C5, L-C6, M-B3, L-E1. Promises started bare; throws become unhandled rejections. Pattern: bare `someAsync()` instead of `someAsync().catch(e => console.error(...))`.
 2. **Silent catch blocks** — M-B3, M-C6, M-E9 (misleading comment). `catch { /* warned */ }` or `catch(() => {})`. Loses diagnostic signal.
 3. **Asymmetric null guards** — L-C1, plus several Batch 1 findings. Some DOM reads in a function are guarded, others are not, with no clear reason. Either guard all or none.
-4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button), M-E1 (`handleSave` preset), **M-F1 (`openBottomSheet` in arsenal-shop), M-F3 (`openClaimSheet` in invite)**. **SIX confirmed instances across SIX different files. Definitive systemic issue.** Disable button → do work → success or error path forgets to re-enable. **Recommend immediate grep-sweep PR**: search for `btn.disabled = true`, verify each match has a matching re-enable on every code path including catch and early-return branches. Pat has acknowledged but not yet acted.
+4. **Disable-button-no-finally pattern** — M-B5, M-C2, M-D1, M-E1, M-F1, M-F3, **M-J3 (`selectBountyClaim` in arena-bounty-claim)**. **SEVEN confirmed instances across SEVEN different files.** Disable button → do work → rejection path never re-enables. Grep-sweep PR is overdue.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
 7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**, **M-I2 (`setInterval` with no `destroy()` in `arena-ads.ts`), M-I3 (`renderList` rank mutation on shared objects — all 5 Stage 2 agents missed it)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
@@ -315,10 +351,13 @@ These are not individual findings but families that recur across files. Worth si
 | 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | output pending push from night computer | — | — | — |
 | 8R | 4 (`settings`, `reference-arsenal.loadout`, `badge`, `profile-debate-archive`) | done | 0 | 2 | 1 |
 | 8Rc | 4 (`vite.config`, `async.types`, `home.feed`, `home.types`) | done | 0 | 0 | 0 |
+| 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
+
 | 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
+| 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 
-**35 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R confirmed; Batch 7R output pending push from night computer). 0 High, 34 Medium, 48 Low. 2 findings FIXED (H-A2, L-C8).**
+**38 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R, 10R confirmed; Batch 7R output pending push from night computer). 0 High, 39 Medium, 55 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 9R notes:** `leaderboard.ts` (10 anchors) had 1 Medium and 3 Lows — the headline is M-I3, the shared-object rank mutation that all 5 Stage 2 agents missed in unison (second case after M-E5). `arena-ads.ts` (3 anchors) had 2 Mediums and 2 Lows — the double-fire bug (M-I1) was unanimous across agents, and the missing `destroy()` (M-I2) is a direct CLAUDE.md rule violation. `arena-mod-scoring.ts` (1 anchor) had 1 Low (ID-collision risk from global `getElementById` in async handlers) and 1 doc-gap Low (`arena-ads.ts` missing from CLAUDE.md's arena sub-modules list). No Highs this batch; Stage 3 again caught things all 5 Stage 2 agents missed. G series still reserved for Batch 7R when pushed.
+**Batch 10R notes:** `tokens.ts` (13 anchors) came out completely clean — zero code bugs. `arena-core.ts` (9 anchors) had 2 Mediums and 5 Lows — the headline is M-J1 (joinCode/spectate co-execution, no else branch) and M-J2 (popstate registered at module load regardless of feature flag). `arena-bounty-claim.ts` (6 anchors) had 3 Mediums and 2 Lows including the 7th instance of the disable-button-no-finally pattern (M-J3) and an XSS surface (M-J4). The grep-sweep PR for disable-button is now 7 instances overdue. G series still reserved for Batch 7R.
 
-**Last updated:** 2026-04-14, end of Batch 9R.
+**Last updated:** 2026-04-14, end of Batch 10R.
