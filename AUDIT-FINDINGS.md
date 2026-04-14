@@ -110,6 +110,9 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-F3. `home.invite.ts` — `openClaimSheet` rejection leaves sheet stuck, button permanently disabled
 **Batch 4.** On rejection in the `.mod-buy-btn` handler, `close()` is not called. Sheet stays open, confirm button stuck in disabled 'Claiming…' state. **Sixth confirmed instance of the disable-button-no-finally pattern** (M-B5, M-C2, M-D1, M-E1, M-F1, M-F3). Fix: try/finally.
 
+### M-G1. `auth.profile.ts` — `currentProfile` undeclared inside `showUserProfile`; bounty section may receive `undefined`
+**Batch 7R.** `showUserProfile` calls `getCurrentUser()` at line 91 but never calls `getCurrentProfile()`. At lines 224 and 232 it passes `currentProfile` to `renderProfileBountySection(profileId, currentProfile)` and `renderMyBountiesSection(currentProfile)` — but `currentProfile` has no local declaration inside the function. All 5 Stage 3 agents flagged this. At runtime `currentProfile` either resolves to a module-scope variable (undocumented external-state dependency) or is `undefined`, causing the bounty render functions to receive `undefined` as their profile argument. Fix: add `const currentProfile = getCurrentProfile()` inside `showUserProfile`, or verify the module-scope binding is intentional and document it.
+
 ### M-H1. `reference-arsenal.loadout.ts` — empty-state message never shown when all entries are frozen
 **Batch 8R.** The `arsenal.length === 0` guard (line 31) runs before the frozen-entry filter (line 41). If the RPC returns a non-empty array that is entirely composed of frozen references, the early-return path is skipped. After line 41 filters them all out, `render()` is called on an empty array — producing a header row and empty grid, not the intended "no references forged" empty-state message. **All 5 Stage 3 agents flagged this unanimously.** Fix: move the `arsenal.length === 0` check to after the frozen filter, or add a second check post-filter.
 
@@ -270,6 +273,21 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-F11. `plinko.ts` — `void injectInviteNudge()` has no `.catch()`
 **Batch 4.** Called fire-and-forget from `goToStep`. If `injectInviteNudge` throws outside its internal try/catch (e.g. in DOM manipulation), produces an unhandled promise rejection. Currently safe but fragile. Same family as M-C5.
 
+### L-G1. `arena-room-setup.ts` — `injectAdSlot` called but not imported; potential runtime ReferenceError
+**Batch 7R.** All Stage 3 agents flagged that `injectAdSlot` is used in the file but not in the import list. If the bundler doesn't catch this, it's a runtime `ReferenceError` when the ad slot is injected. Verify the import exists or add it.
+
+### L-G2. `arena-room-setup.ts` — dead imports (`removeShieldIndicator`, possibly `TEXT_MAX_CHARS`)
+**Batch 7R.** `removeShieldIndicator` is imported but never called in this file. `TEXT_MAX_CHARS` may also be unused here. Same family as L-A6.
+
+### L-G3. `spectate.ts` — `startPolling` fallback query missing `{ ascending: true }` option
+**Batch 7R.** The `debate_messages` fallback inside `startPolling` (line 56) calls `.order('round').order('created_at')` with no ascending option, while the same fallback in `loadDebate` (lines 175–176) explicitly passes `{ ascending: true }`. Could produce different message ordering between initial load and polling updates.
+
+### L-G4. `spectate.ts` — live-redirect in `loadDebate` silently skips RPCs
+**Batch 7R.** When `debate.status === 'live'`, `loadDebate` redirects and returns immediately — skipping `bump_spectator_count`, `log_debate_watch`, and `log_event` RPCs. All agents described the redirect correctly but none called out the skipped RPCs. May be intentional but is undocumented.
+
+### L-G5. `auth.profile.ts` — `profile.error` check against `PublicProfile` which has no `.error` field
+**Batch 7R.** Stage 2 described a `profile.error` check in `showUserProfile`, but `PublicProfile` (defined in `auth.types.ts`) has no `.error` field. This branch may be dead code or a type mismatch. Flagged by agents 03 and 05.
+
 ### L-H1. `profile-debate-archive.ts` — `getCurrentUser` dead import
 **Batch 8R.** `getCurrentUser` is imported at line 10 but never called anywhere in the module. Likely a vestige of a planned ownership-verification flow that was replaced by the `isOwner` parameter pattern. All 5 agents confirmed. Remove the import.
 
@@ -348,7 +366,7 @@ These are not individual findings but families that recur across files. Worth si
 | 4 | 4 (`home.arsenal`, `home.arsenal-shop`, `home.invite`, `plinko`) | done | 0 | 4 | 12 |
 | 5 | 5 (`modifiers`, `reference-arsenal`, `reference-arsenal.types`, `reference-arsenal.rpc`, `reference-arsenal.render`) | done | 0 | 3 | 3 |
 | 6 | 4 of 5 (`rivals-presence`, `share`, `invite`, `arena-loadout-presets`; `arena-room-setup` deferred) | **partial** | 0 | 9 | 6 |
-| 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | output pending push from night computer | — | — | — |
+| 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | done | 0 | 1 | 5 |
 | 8R | 4 (`settings`, `reference-arsenal.loadout`, `badge`, `profile-debate-archive`) | done | 0 | 2 | 1 |
 | 8Rc | 4 (`vite.config`, `async.types`, `home.feed`, `home.types`) | done | 0 | 0 | 0 |
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
@@ -356,8 +374,8 @@ These are not individual findings but families that recur across files. Worth si
 | 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 
-**38 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R, 10R confirmed; Batch 7R output pending push from night computer). 0 High, 39 Medium, 55 Low. 2 findings FIXED (H-A2, L-C8).**
+**42 of 57 files audited (all batches through 10R confirmed; 11R–15R pending). 0 High, 40 Medium, 60 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 10R notes:** `tokens.ts` (13 anchors) came out completely clean — zero code bugs. `arena-core.ts` (9 anchors) had 2 Mediums and 5 Lows — the headline is M-J1 (joinCode/spectate co-execution, no else branch) and M-J2 (popstate registered at module load regardless of feature flag). `arena-bounty-claim.ts` (6 anchors) had 3 Mediums and 2 Lows including the 7th instance of the disable-button-no-finally pattern (M-J3) and an XSS surface (M-J4). The grep-sweep PR for disable-button is now 7 instances overdue. G series still reserved for Batch 7R.
+**Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime. Note: batch-07R folder contains a stale Batch 11R manifest.json from an aborted run — CC will archive it automatically when 11R runs.
 
-**Last updated:** 2026-04-14, end of Batch 10R.
+**Last updated:** 2026-04-14, end of Batch 7R synthesis.
