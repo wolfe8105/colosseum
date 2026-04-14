@@ -4,6 +4,8 @@ This is a revision of `THE-MODERATOR-AUDIT-METHOD-V2.md`. The only change from v
 
 > **Revision 2026-04-13 (post-Batch-3):** Stages 1, 2, and 3 now dispatch **5 parallel agents instead of 11.** Stage 1.5 is structurally unchanged (still 2 arbiter runs + reconciliation), but its prompt text was updated to refer to 5 stage-1 inputs instead of 11. Rationale: Batch 3 hit Claude Code context compaction mid-run on the 11-agent config; Stage 1.5 arbiter runs reported zero disagreements across all 10 files in Batches 1 and 2, meaning the 11-agent parallelism was spending tokens to push detection from "four nines" to "ten nines" on tasks where Sonnet is already consistent enough that disagreement does not materialize. 5 is the structural minimum for robust 3-2 majority voting with one slack agent. Estimated token savings: ~55% with no loss of robustness where it matters. Do NOT downgrade the model — Sonnet has been catching Stage 2 hallucinations cleanly in Stage 3; Haiku's failure mode is "verifier agrees with Stage 2 mistakes more often," which would silently erode the whole method.
 
+> **Revision 2026-04-13 (Batch 5 attempt):** The Stage 3 section previously said "use the Stage 3 prompt from the v1 document, verbatim." v1 and v2 are not in this repo, so CC wasted ~1 hour on Batch 5 file 1 hunting through git history for a file that never existed before we killed the session. The full Stage 3 agent prompt is now inlined in the Stage 3 section below, reverse-engineered from the Stage 3 outputs of Batches 1–3 which were clearly all produced by the same prompt shape. Batches 1–3 worked because CC had the earlier batches' output as reference; a fresh CC on a new machine with no prior audit/ directory didn't.
+
 The changes from v1 (carried forward from v2):
 
 1. **Step 1.5 — Anchor Verification.** An arbiter agent runs twice, independently, to produce the locked anchor list from Stage 1's five outputs. If the two runs agree, done. If they disagree, a third reconciliation pass resolves the specific contested items against the source. Items still unresolved after reconciliation are flagged to a human-review file and the pipeline continues with them included as union-with-provenance entries.
@@ -533,18 +535,29 @@ Output formatting and disk write format match v1.
 
 ## Stage 3 — Verification
 
-**Unchanged from v1 except manifest updates.**
+**Revised to be self-contained.** v3 previously said "use the Stage 3 prompt from the v1 document" — v1 and v2 are not in this repo, so the full Stage 3 agent prompt is now inlined below.
 
 ```
 Before dispatching: set manifest.files[i].stage3.status = "in_progress"
 and write manifest back to disk.
 
 Dispatch five Task tool_use blocks simultaneously in a single assistant
-message. Each agent receives the exact same prompt from the v1 document's
-Stage 3 section, verbatim, with [SOURCE_FILE_PATH] and [STAGE2_OUTPUT_PATH]
-substituted.
+message. Each agent receives the exact same prompt below, verbatim, with
+[SOURCE_FILE_PATH] and [STAGE2_OUTPUT_PATH] substituted. Wait for all
+five to return.
 
-When all five return, write their outputs verbatim to [STAGE3_OUTPUT_PATH].
+When all five return, write their outputs verbatim to [STAGE3_OUTPUT_PATH],
+formatted as:
+
+    # Stage 3 Outputs — [filename]
+
+    ## Agent 01
+    [verbatim output]
+
+    ## Agent 02
+    [verbatim output]
+
+    ...through Agent 05.
 
 Set manifest.files[i].stage3.status = "done" and write manifest.
 
@@ -552,6 +565,93 @@ If this was not the last file in the manifest, proceed to Stage 1 of
 the next file. If this was the last file, STOP. Report a summary to the
 user: how many files were completed, how many hit needs_review at
 stage 1.5, and the path to audit/needs-human-review.md if it is not empty.
+
+PROMPT FOR EACH STAGE 3 AGENT (identical across all 5)
+======================================================
+
+Read the source file at [SOURCE_FILE_PATH].
+Read the Stage 2 output at [STAGE2_OUTPUT_PATH].
+
+Stage 2 contains runtime descriptions of the functions in this file,
+produced by five independent agents. Your job is verification: for every
+function Stage 2 describes, check the descriptions against the actual
+source and produce a verdict.
+
+You are not rewriting Stage 2. You are not adding new findings of your
+own unrelated to Stage 2's claims. You are checking Stage 2's claims
+against the source, function by function, and saying whether they are
+accurate, partially accurate, or wrong.
+
+Process:
+
+1. For each function that appears in Stage 2, extract the specific
+   claims Stage 2 makes about its runtime behavior — what it reads,
+   what it writes, what it calls, its control flow, its error handling,
+   whether it is async, what it returns.
+
+2. For each claim, read the corresponding lines of the source file and
+   determine one of three verdicts:
+
+   - PASS: the source confirms the claim exactly as stated.
+   - PARTIAL: the claim is mostly accurate but incomplete or slightly
+     misleading — for example, Stage 2 says "calls X" but omits that
+     the call is conditional on a branch; or Stage 2 describes a
+     structural detail that is functionally equivalent but doesn't
+     match the actual code shape. Describe the gap explicitly.
+   - FAIL: the claim is contradicted by the source — Stage 2 says
+     the function reads four elements but it actually reads five;
+     Stage 2 says the function uses a helper but it uses raw DOM;
+     Stage 2 misidentifies the control flow. Quote the source line(s)
+     or identifier(s) that contradict the claim.
+
+3. If multiple Stage 2 agents made different claims about the same
+   function, note the disagreement and verdict each version. A function
+   can have mixed verdicts across different claims.
+
+4. If the source contains runtime behavior that no Stage 2 agent
+   described — missing functions, missing error paths, missing branches,
+   unhandled edge cases — you MAY flag them under a "needs_review"
+   section at the end of your output. This is optional and should be
+   reserved for substantive omissions, not for every line Stage 2
+   didn't mention.
+
+Rules:
+
+- Anchor every verdict to the source. Quote the relevant line,
+  identifier, or structural element. Do not verdict from memory of
+  Stage 2 alone.
+- Do not speculate about intent or design. If Stage 2 says "the function
+  silently swallows errors" and the source shows an empty catch, that
+  is PASS regardless of whether silent swallowing is a good idea.
+- Do not re-describe the function. Your output is a list of verdicts
+  on Stage 2's specific claims, not a fresh runtime walk.
+- If Stage 2 made a claim you cannot verify from the source file alone
+  (for example, a claim about what a helper function in another file
+  does), mark it "unverifiable" and say what would be needed to verify.
+  Do not guess.
+- If a Stage 2 claim is ambiguous enough that you cannot tell what it
+  is asserting, say so and move on. Do not charitable-read it into a
+  claim it didn't make.
+
+Format:
+
+### functionName (line N)
+**Verification**: PASS | PARTIAL | FAIL
+**Findings**: [bulleted list of specific claim verdicts with evidence,
+or "None. All claims confirmed." if PASS with no issues]
+**Unverifiable claims**: [list, or "None"]
+
+### nextFunctionName (line N)
+...
+
+At the end, include a "Cross-Agent Consensus Summary" section that
+counts PASS / PARTIAL / FAIL results across all functions and notes
+any findings where Stage 2 agents disagreed with each other.
+
+If you have "needs_review" items (source behavior Stage 2 missed
+entirely), list them in a "needs_review" section at the very end.
+
+END STAGE 3 AGENT PROMPT.
 ```
 
 ---
