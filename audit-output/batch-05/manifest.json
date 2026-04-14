@@ -1,0 +1,41 @@
+{
+  "run_id": "audit-run-20260413-batch05",
+  "created_at": "2026-04-13T00:00:00Z",
+  "files": [
+    {
+      "path": "src/modifiers.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__modifiers.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__modifiers.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__modifiers.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__modifiers.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__reference-arsenal.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__reference-arsenal.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__reference-arsenal.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__reference-arsenal.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__reference-arsenal.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__reference-arsenal.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__reference-arsenal.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__reference-arsenal.types.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.rpc.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__reference-arsenal.rpc.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__reference-arsenal.rpc.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__reference-arsenal.rpc.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__reference-arsenal.rpc.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/src__reference-arsenal.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/src__reference-arsenal.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/src__reference-arsenal.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/src__reference-arsenal.render.ts/stage3.md"}
+    }
+  ]
+}
