@@ -110,6 +110,12 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### M-F3. `home.invite.ts` — `openClaimSheet` rejection leaves sheet stuck, button permanently disabled
 **Batch 4.** On rejection in the `.mod-buy-btn` handler, `close()` is not called. Sheet stays open, confirm button stuck in disabled 'Claiming…' state. **Sixth confirmed instance of the disable-button-no-finally pattern** (M-B5, M-C2, M-D1, M-E1, M-F1, M-F3). Fix: try/finally.
 
+### M-H1. `reference-arsenal.loadout.ts` — empty-state message never shown when all entries are frozen
+**Batch 8R.** The `arsenal.length === 0` guard (line 31) runs before the frozen-entry filter (line 41). If the RPC returns a non-empty array that is entirely composed of frozen references, the early-return path is skipped. After line 41 filters them all out, `render()` is called on an empty array — producing a header row and empty grid, not the intended "no references forged" empty-state message. **All 5 Stage 3 agents flagged this unanimously.** Fix: move the `arsenal.length === 0` check to after the frozen filter, or add a second check post-filter.
+
+### M-H2. `profile-debate-archive.ts:352` — `d.winner` not in `RecentDebate` interface; W/L badge permanently blank
+**Batch 8R.** `_showAddPicker` computes `const result = d.winner === undefined ? '' : (d.is_win ? '✅ W' : '❌ L')` at line 352. The `RecentDebate` interface (lines 39–50) has no `winner` field — `d.winner` is a TypeScript property-not-exist error. At runtime `d.winner` is always `undefined`, so `result` is always `''` and the W/L indicator is never displayed in the add-debate picker. **All 5 Stage 3 agents confirmed.** Fix: add `winner: string | null` to `RecentDebate` and change the check to `d.winner === null`, or replace the ternary with `d.is_win ? '✅ W' : '❌ L'` directly.
+
 ### M-F4. `plinko.ts` — `getAge` silently overflows invalid day inputs, could mis-gate 13-year-old check
 **Batch 4.** `new Date(year, month - 1, day)` silently overflows out-of-range days (e.g. Feb 31 → March 2/3). Day dropdown is populated 1-31 for all months with no dynamic adjustment. In edge cases around a user's birthday this could cause `getAge` to return an off-by-days result that incorrectly passes or fails the 13-year-old age gate. Fix: clamp `day` to the actual last day of the selected month before constructing the `Date`.
 
@@ -240,6 +246,9 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-F11. `plinko.ts` — `void injectInviteNudge()` has no `.catch()`
 **Batch 4.** Called fire-and-forget from `goToStep`. If `injectInviteNudge` throws outside its internal try/catch (e.g. in DOM manipulation), produces an unhandled promise rejection. Currently safe but fragile. Same family as M-C5.
 
+### L-H1. `profile-debate-archive.ts` — `getCurrentUser` dead import
+**Batch 8R.** `getCurrentUser` is imported at line 10 but never called anywhere in the module. Likely a vestige of a planned ownership-verification flow that was replaced by the `isOwner` parameter pattern. All 5 agents confirmed. Remove the import.
+
 ### L-F12. `plinko.ts` — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -261,7 +270,7 @@ These are not individual findings but families that recur across files. Worth si
 4. **Disable-button-no-finally pattern** — M-B5 (`wireModControls` score), M-C2 (`submitDeleteGroup`), M-D1 (`renderArmory` second button), M-E1 (`handleSave` preset), **M-F1 (`openBottomSheet` in arsenal-shop), M-F3 (`openClaimSheet` in invite)**. **SIX confirmed instances across SIX different files. Definitive systemic issue.** Disable button → do work → success or error path forgets to re-enable. **Recommend immediate grep-sweep PR**: search for `btn.disabled = true`, verify each match has a matching re-enable on every code path including catch and early-return branches. Pat has acknowledged but not yet acted.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
-7. **CLAUDE.md rule violations not caught by Stage 2, surfaced by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), **L-F5 (`cost` in arsenal-shop), L-F7 (stats in invite)**. Four confirmed `Number()`/`escapeHTML()` misses now across four files. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
+7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
 8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path). First case in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong.
 
 ---
@@ -276,8 +285,11 @@ These are not individual findings but families that recur across files. Worth si
 | 4 | 4 (`home.arsenal`, `home.arsenal-shop`, `home.invite`, `plinko`) | done | 0 | 4 | 12 |
 | 5 | 5 (`modifiers`, `reference-arsenal`, `reference-arsenal.types`, `reference-arsenal.rpc`, `reference-arsenal.render`) | done | 0 | 3 | 3 |
 | 6 | 4 of 5 (`rivals-presence`, `share`, `invite`, `arena-loadout-presets`; `arena-room-setup` deferred) | **partial** | 0 | 9 | 6 |
-| 7R–14R | 29 | pending (restructured to 4-file batches) | — | — | — |
+| 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | output pending push from night computer | — | — | — |
+| 8R | 4 (`settings`, `reference-arsenal.loadout`, `badge`, `profile-debate-archive`) | done | 0 | 2 | 1 |
 
-**28 of 57 files audited (Batches 1–6 partial, Batch 4 complete; Batch 7R pending tonight). 0 High, 29 Medium, 41 Low. 2 findings FIXED (H-A2, L-C8).**
+**32 of 57 files audited (Batches 1–6 partial, 4, 8R confirmed; Batch 7R output pending push from night computer). 0 High, 31 Medium, 42 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 4 notes:** `home.arsenal.ts` came out clean — zero code defects, all PASS/PARTIAL on minor description gaps only. `home.arsenal-shop.ts` and `home.invite.ts` each added a new instance of the disable-button-no-finally pattern, bringing the total to **6 instances across 6 files** — the grep-sweep PR is now overdue. `plinko.ts` has a Medium age-gate bug worth fixing before launch (Feb 31 overflow). CLAUDE.md Number() cast violations now confirmed in 4 files (M-D2, L-F5, L-F7 plus the escapeHTML miss M-E4).
+**Batch 8R notes:** `settings.ts` and `badge.ts` completely clean — zero code bugs. `reference-arsenal.loadout.ts` had one Medium (empty-state ordering bug, all 5 agents unanimous). `profile-debate-archive.ts` had one Medium (TypeScript property-not-exist on `d.winner`, permanently blanks W/L in add picker) and one Low (dead import). Stage 3 also caught Stage 2 Agent 04 using wrong RPC parameter names (`p_name`/`p_desc` vs actual `p_custom_name`/`p_custom_desc`). G series reserved for Batch 7R when pushed.
+
+**Last updated:** 2026-04-14, end of Batch 8R.
