@@ -84,6 +84,15 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 3. src/pages/home.feed.ts (3,445 bytes)
 4. src/pages/home.types.ts (491 bytes)
 
+## Batch 8Rc (PENDING) — 7,357 bytes
+
+**Note:** Files carried over from 8Ra and 8Rb that were not in the original Batch 8R audit (which covered settings.ts, reference-arsenal.loadout.ts, badge.ts, profile-debate-archive.ts). These 4 files were added during the 2026-04-14 restructure and were not included in the batch-08R audit output.
+
+1. vite.config.ts (1,898 bytes)
+2. src/async.types.ts (1,523 bytes)
+3. src/pages/home.feed.ts (3,445 bytes)
+4. src/pages/home.types.ts (491 bytes)
+
 ## Batch 9R (PENDING) — 29,246 bytes
 
 1. src/leaderboard.ts (21,195 bytes)
