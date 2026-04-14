@@ -68,7 +68,7 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 3. src/auth.types.ts
 4. src/auth.profile.ts
 
-## Batch 8Ra (PENDING) — 26,196 bytes
+## Batch 8Ra (DONE — covered by old Batch 8R run 2026-04-14)
 
 **Note:** Original Batch 8R split into 8Ra and 8Rb (2026-04-14). `settings.ts` and `profile-debate-archive.ts` are both 20KB+ — together they exceed the 40KB byte budget. Split keeps each batch well under the ceiling.
 
@@ -77,7 +77,7 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 3. src/badge.ts (766 bytes)
 4. vite.config.ts (1,898 bytes)
 
-## Batch 8Rb (PENDING) — 30,209 bytes
+## Batch 8Rb (PARTIALLY DONE — profile-debate-archive.ts covered by old Batch 8R)
 
 1. src/profile-debate-archive.ts (24,750 bytes)
 2. src/async.types.ts (1,523 bytes)
@@ -121,3 +121,12 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 
 1. src/notifications.ts (16,057 bytes)
 2. src/intro-music.ts (13,857 bytes)
+
+## Batch 8Rc (PENDING) — 7,357 bytes
+
+**Note:** Created 2026-04-14. The old Batch 8R run covered settings.ts, reference-arsenal.loadout.ts, badge.ts, and profile-debate-archive.ts — overlapping 8Ra and 8Rb entirely except for these 4 small files. Combined into one mini-batch.
+
+1. vite.config.ts (1,898 bytes)
+2. src/async.types.ts (1,523 bytes)
+3. src/pages/home.feed.ts (3,445 bytes)
+4. src/pages/home.types.ts (491 bytes)
