@@ -142,11 +142,19 @@ async function loadMessages(): Promise<void> {
     const msgs = (data as SpecChatMessage[]);
     if (!msgs.length) return;
 
-    const newest = msgs[msgs.length - 1].created_at;
-    if (newest === lastMessageTime) return; // nothing new
-    lastMessageTime = newest;
+    // Find the actual maximum created_at across all rows — do not trust array
+    // position, since server sort order is not guaranteed and two messages can
+    // share a 1-second-resolution timestamp.
+    const maxTime = msgs.reduce(
+      (acc, m) => (m.created_at > acc ? m.created_at : acc),
+      msgs[0].created_at,
+    );
+    if (maxTime === lastMessageTime) return; // nothing new
+    lastMessageTime = maxTime;
 
-    renderMessages(msgs);
+    // Sort ascending so display order is correct regardless of server sort.
+    const sorted = [...msgs].sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
+    renderMessages(sorted);
   } catch {
     // non-fatal
   }
