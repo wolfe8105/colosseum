@@ -24,7 +24,7 @@ import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';
 
-import { joinWithCode } from './arena-private-lobby.ts';
+import { joinWithCode } from './arena-private-lobby.join.ts';
 import { injectCSS } from './arena-css.ts';
 import { cleanupPendingRecording } from '../voicememo.ts';
 import { cleanupFeedRoom, enterFeedRoomAsSpectator } from './arena-feed-room.ts';
