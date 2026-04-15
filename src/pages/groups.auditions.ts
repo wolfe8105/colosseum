@@ -48,6 +48,12 @@ export function openAuditionModal(g: GroupDetail): void {
   currentAuditionGroupId = g.id;
   currentAuditionConfig  = g.audition_config ?? {};
 
+  // Reset all form fields to defaults before populating for the new group
+  (document.getElementById('audition-topic') as HTMLInputElement).value = '';
+  (document.getElementById('audition-category') as HTMLSelectElement).value = '';
+  (document.getElementById('audition-ruleset') as HTMLSelectElement).value = 'amplified';
+  (document.getElementById('audition-rounds') as HTMLSelectElement).value = '4';
+
   const rule      = (currentAuditionConfig.rule as string) ?? 'allowed_by_leader';
   const ruleLabel = RULE_LABELS[rule] ?? rule;
 

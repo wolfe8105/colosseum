@@ -43,11 +43,14 @@ export async function loadShopScreen(container: HTMLElement): Promise<void> {
   _rerender(container);
 }
 
-// LANDMINE [LM-SHOP-004]: _state filter fields not reset on cleanupShopScreen.
-// Filter selections from a previous visit persist on tab re-entry. May be intentional; undocumented. (L-F6)
 export function cleanupShopScreen(): void {
   if (_sheetCleanup) { _sheetCleanup(); _sheetCleanup = null; }
   _container = null;
+  _state.productType    = 'powerup';
+  _state.categoryFilter = 'all';
+  _state.rarityFilter   = 'all';
+  _state.timingFilter   = 'all';
+  _state.affordableOnly = false;
 }
 
 // ── Internal helpers ───────────────────────────────────────────────────────

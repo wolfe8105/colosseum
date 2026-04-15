@@ -33,6 +33,7 @@ export async function renderBountyClaimDropdown(
   opponentId: string,
   opponentName: string,
 ): Promise<void> {
+  _attemptFeePaid = false;
   container.innerHTML = `
     <div style="width:100%;max-width:360px;margin-bottom:12px;">
       <div style="font-family:var(--mod-font-display);font-size:11px;letter-spacing:2px;color:var(--mod-text-sub);margin-bottom:6px;">

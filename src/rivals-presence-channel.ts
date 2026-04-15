@@ -31,13 +31,11 @@ export interface ChannelState {
 // ============================================================
 
 export async function buildRivalSet(rivalSet: Set<string>): Promise<void> {
-  // LANDMINE [LM-RIVALS-002]: rivalSet.clear() runs AFTER the await. If getMyRivals()
-  // rejects, clear() never runs and stale IDs from a prior init cycle persist silently.
-  // Invisible on fresh page load (empty set) but breaks on destroy()+init() or reconnect.
-  // Fix: move rivalSet.clear() before the await, or into a finally block. (catalogued M-E5)
+  // Clear before the await so stale IDs never persist if getMyRivals() rejects.
+  // Previously cleared after the await (LANDMINE LM-RIVALS-002 / M-E5).
+  rivalSet.clear();
   try {
     const rivals = (await getMyRivals()) as unknown as RivalEntry[];
-    rivalSet.clear();
     for (const r of rivals) {
       // Only alert for accepted/active rivals — skip pending
       if (r.status !== 'pending' && r.rival_id) {

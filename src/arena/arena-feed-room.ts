@@ -250,6 +250,7 @@ export function cleanupFeedRoom(): void {
   // tab navigation, debate end, etc.) before the channel is torn down. Without
   // this, opponent waits 30s for the heartbeat-stale check.
   sendGoodbye();
+  set_currentDebate(null);
   clearFeedTimer();
   unsubscribeRealtime();
   // Phase 4: Deepgram cleanup
