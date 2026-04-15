@@ -62,13 +62,13 @@ export function renderEffectCard(effect: ModifierEffect, opts: {
 
   const modBtn = opts.showModButton
     ? `<button class="mod-buy-btn mod-buy-btn--modifier" data-effect-id="${escapeHTML(effect.id)}">
-         ${escapeHTML(opts.modButtonLabel ?? `Buy Modifier · ${effect.mod_cost} tokens`)}
+         ${escapeHTML(opts.modButtonLabel ?? `Buy Modifier · ${Number(effect.mod_cost)} tokens`)}
        </button>`
     : '';
 
   const puBtn = opts.showPuButton
     ? `<button class="mod-buy-btn mod-buy-btn--powerup" data-effect-id="${escapeHTML(effect.id)}">
-         ${escapeHTML(opts.puButtonLabel ?? `Buy Power-Up · ${effect.pu_cost} tokens`)}
+         ${escapeHTML(opts.puButtonLabel ?? `Buy Power-Up · ${Number(effect.pu_cost)} tokens`)}
        </button>`
     : '';
 
@@ -142,7 +142,7 @@ export function renderPowerupRow(pu: PowerUpStock, opts: {
     <div class="mod-powerup-row" data-effect-id="${escapeHTML(pu.effect_id)}">
       <div class="mod-powerup-row__info">
         <span class="mod-powerup-row__name">${escapeHTML(pu.name)}</span>
-        <span class="mod-powerup-row__qty">×${pu.quantity}</span>
+        <span class="mod-powerup-row__qty">×${Number(pu.quantity)}</span>
         <span class="mod-timing-badge mod-timing-badge--${pu.timing === 'in_debate' ? 'live' : 'post'}">
           ${timingLabel(pu.timing)}
         </span>

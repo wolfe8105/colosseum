@@ -64,8 +64,8 @@ export async function renderBountyClaimDropdown(
     const daysLeft = Math.max(0, Math.ceil(
       (new Date(b.expires_at).getTime() - Date.now()) / 86_400_000
     ));
-    return `<option value="${b.bounty_id}" data-fee="${b.attempt_fee}" data-amount="${b.amount}">
-      ${b.amount} tokens — ${daysLeft}d left (5% fee: ${b.attempt_fee} tokens)
+    return `<option value="${escapeHTML(b.bounty_id)}" data-fee="${escapeHTML(String(b.attempt_fee))}" data-amount="${escapeHTML(String(b.amount))}">
+      ${Number(b.amount)} tokens — ${daysLeft}d left (5% fee: ${Number(b.attempt_fee)} tokens)
     </option>`;
   }).join('');
 

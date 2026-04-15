@@ -238,7 +238,7 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
     <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">COMMUNITY</span>
-        <span style="font-size:11px;color:#6a7a90;">${total} picks · by ${creator}</span>
+        <span style="font-size:11px;color:#6a7a90;">${Number(total)} picks · by ${creator}</span>
       </div>
       <div style="font-family:var(--mod-font-display);font-size:14px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -261,8 +261,8 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
       <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
         <div style="position:absolute;left:0;top:0;height:100%;width:${pctA}%;background:linear-gradient(90deg,var(--mod-accent-border),var(--mod-accent-muted));border-radius:12px 0 0 12px;transition:width 0.5s ease;"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;font-weight:700;">
-          <span style="color:var(--mod-accent);">${pctA}%</span>
-          <span style="color:var(--mod-text-sub);">${pctB}%</span>
+          <span style="color:var(--mod-accent);">${Number(pctA)}%</span>
+          <span style="color:var(--mod-text-sub);">${Number(pctB)}%</span>
         </div>
       </div>
     </div>`;

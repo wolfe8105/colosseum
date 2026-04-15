@@ -7,6 +7,7 @@
  */
 
 import { injectRivalsPresenceCSS } from './rivals-presence-css.ts';
+import { escapeHTML } from './config.ts';
 
 // Redeclared locally to avoid importing up to orchestrator (structural typing keeps them compatible).
 interface PresencePayload {
@@ -55,10 +56,7 @@ export function showNext(state: PopupState): void {
   if (existing) existing.remove();
 
   const displayName = payload.display_name ?? payload.username ?? 'YOUR RIVAL';
-  // LANDMINE [LM-RIVALS-001]: safeName strips < and > but does NOT escape ", ', or &.
-  // Interpolated directly into innerHTML — real XSS surface, violates CLAUDE.md escapeHTML()
-  // rule. Fix: replace regex strip with escapeHTML() from config.ts. (catalogued M-E4)
-  const safeName = displayName.toUpperCase().replace(/[<>]/g, '');
+  const safeName = escapeHTML(displayName.toUpperCase());
 
   const popup = document.createElement('div');
   popup.id = 'rival-alert-popup';
