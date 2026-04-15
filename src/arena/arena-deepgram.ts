@@ -12,31 +12,14 @@
  * Only the speaking debater's client transcribes — others receive
  * speech events via Supabase Realtime.
  *
- * Session 238.
+ * Session 238. Refactored Session 254 (types → arena-deepgram.types.ts,
+ * token → arena-deepgram.token.ts).
  */
 
-import { getSupabaseClient } from '../auth.ts';
-import { SUPABASE_URL } from '../config.ts';
+import type { TranscriptCallback, StatusCallback, DeepgramStatus, DeepgramResult } from './arena-deepgram.types.ts';
+import { fetchDeepgramToken } from './arena-deepgram.token.ts';
 
-// ============================================================
-// TYPES
-// ============================================================
-
-export type TranscriptCallback = (text: string) => void;
-export type StatusCallback = (status: DeepgramStatus) => void;
-export type DeepgramStatus = 'connecting' | 'live' | 'paused' | 'stopped' | 'error';
-
-interface DeepgramResult {
-  type: 'Results';
-  is_final: boolean;
-  speech_final: boolean;
-  channel: {
-    alternatives: Array<{
-      transcript: string;
-      confidence: number;
-    }>;
-  };
-}
+export type { TranscriptCallback, StatusCallback, DeepgramStatus } from './arena-deepgram.types.ts';
 
 // ============================================================
 // MODULE STATE
@@ -316,45 +299,6 @@ function tryReconnectLoop(): void {
       tryReconnectLoop();
     }
   }, 10000);
-}
-
-// ============================================================
-// DEEPGRAM TOKEN
-// ============================================================
-
-async function fetchDeepgramToken(): Promise<string | null> {
-  try {
-    const supabase = getSupabaseClient();
-    if (!supabase) return null;
-
-    const { data } = await supabase.auth.getSession();
-    const jwt = data?.session?.access_token;
-    if (!jwt) return null;
-
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/deepgram-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwt}`,
-      },
-    });
-
-    if (!res.ok) {
-      console.warn(`[Deepgram] Token fetch failed: ${res.status}`);
-      return null;
-    }
-
-    const body = await res.json();
-    if (!body.token) {
-      console.warn('[Deepgram] Token response missing token field');
-      return null;
-    }
-
-    return body.token as string;
-  } catch (err) {
-    console.warn('[Deepgram] Token fetch error:', err);
-    return null;
-  }
 }
 
 // ============================================================
