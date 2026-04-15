@@ -1,27 +1,17 @@
 # CC Bug Fix Prompts — Execute in Order
 
-Run each prompt in a fresh CC session. Wait for push confirmation before starting the next.
+Each prompt is fully self-contained. Paste the whole block into a fresh CC session.
 Reference: `BUG-FIX-PATTERNS.md` for full context on each finding.
 
 ---
 
-## SETUP — Run once before anything else
+## Prompt 1 of 6 — Sweep B: XSS fixes (Number() + escapeHTML())
 
 ```
-Set the git remote to: https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
-(token is in your chat history — search "ghp_" to find it)
-Configure git user: name "Claude Code" email "cc@colosseum.app"
-Confirm you can pull and push before proceeding.
-```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
 
----
-
-## Sweep B — XSS fixes: Number() + escapeHTML() [~20 min]
-
-**Priority: highest. Real XSS surfaces.**
-
-```
-Fix two related CLAUDE.md violations across these files:
+Then fix two related CLAUDE.md violations across these files:
 modifiers.ts, home.arsenal-shop-render.ts, home.invite-html.ts,
 async.render.ts, rivals-presence-popup.ts, arena-bounty-claim.ts
 
@@ -46,10 +36,11 @@ Push to main.
 
 ---
 
-## Sweep A — try/finally + .catch() [~20 min]
+## Prompt 2 of 6 — Sweep A: try/finally + .catch()
 
 ```
-Two related defensive coding fixes:
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
 
 Fix 1 — disable-button-no-finally (7 files):
 - arena-feed-wiring.ts — wireModControls score button
@@ -83,9 +74,12 @@ Push to main.
 
 ---
 
-## Sweep D — Hardcoded hex colors [~15 min]
+## Prompt 3 of 6 — Sweep D: Hardcoded hex colors
 
 ```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
 Grep the entire codebase for hardcoded hex color values matching
 /#[0-9a-fA-F]{3,6}\b/ in .ts and .js files.
 
@@ -104,12 +98,13 @@ Push to main.
 
 ---
 
-## Sweep C — Dead imports + dead code [~20 min]
+## Prompt 4 of 6 — Sweep C: Dead imports + dead code
 
 ```
-Remove dead imports and obvious dead code.
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
 
-Dead imports:
+Dead imports to remove:
 - arena-types.ts, groups.ts — remove any import never referenced in the file body
   (known: view, equippedForDebate, pauseFeed)
 - home.arsenal-shop.ts — remove unused showToast import
@@ -117,7 +112,7 @@ Dead imports:
 - profile-debate-archive.ts — remove unused getCurrentUser import
 - arena-loadout-presets.ts — remove redundant dynamic import of auth.ts
 
-Dead code:
+Dead code to remove:
 - home.arsenal-shop.ts — getUserInventory() result fetched but never used: remove call
   and dead ternary; remove dead async keyword on the affected function;
   fix wrong comment on buy button
@@ -134,14 +129,17 @@ Push to main.
 
 ---
 
-## Pattern 7 — Timer/cleanup gaps [~25 min]
+## Prompt 5 of 6 — Pattern 7: Timer/cleanup gaps
 
 ```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
 Fix async resource leaks where timers or handlers are created but not stored
 or cancelled on cleanup.
 
 - arena-room-live-audio.ts: onWebRTC handlers stack with no deregistration.
-  Store handler references in module state; deregister them in the destroy/cleanup function.
+  Store handler references in module state; deregister them in destroy/cleanup.
 
 - rivals-presence-popup.ts: 300ms and 600ms setTimeout handles are anonymous.
   Store them in variables; cancel in cleanup.
@@ -164,9 +162,12 @@ Push to main.
 
 ---
 
-## Pattern 8 — Stale module state [~25 min]
+## Prompt 6 of 6 — Pattern 8: Stale module state
 
 ```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
 Fix module-level state that is not properly reset between UI transitions.
 
 - groups.auditions.ts: modal input fields not cleared between groups.
@@ -190,7 +191,7 @@ Push to main.
 
 ---
 
-## Do NOT touch today — save for night computer
+## Save for tonight — do NOT rush these
 
 Pattern 10 (race conditions): M-A1, M-B7, M-C4, M-J1, M-K1, L-N1
 These need real reasoning. Rushing them introduces new bugs.
