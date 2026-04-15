@@ -8,7 +8,8 @@ import type { CurrentDebate, DebateMessage, DebateRole } from './arena-types.ts'
 import type { SideScores, AIScoreResult, CriterionScore } from './arena-types-ai-scoring.ts';
 import { AI_RESPONSES, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom } from './arena-core.ts';
-import { addMessage, advanceRound } from './arena-room-live.ts';
+import { addMessage } from './arena-room-live-messages.ts';
+import { advanceRound } from './arena-room-live-poll.ts';
 
 export async function handleAIResponse(debate: CurrentDebate, userText: string): Promise<void> {
   if (!FEATURES.aiSparring) return;

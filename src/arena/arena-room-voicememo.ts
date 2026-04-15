@@ -9,7 +9,8 @@ import {
 } from './arena-state.ts';
 import type { DebateRole } from './arena-types.ts';
 import { isPlaceholder, formatTimer } from './arena-core.ts';
-import { addMessage, addSystemMessage, startOpponentPoll, advanceRound } from './arena-room-live.ts';
+import { addMessage, addSystemMessage } from './arena-room-live-messages.ts';
+import { startOpponentPoll, advanceRound } from './arena-room-live-poll.ts';
 
 export function wireVoiceMemoControls(): void {
   document.getElementById('arena-record-btn')?.addEventListener('click', () => {
