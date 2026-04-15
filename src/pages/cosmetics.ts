@@ -358,7 +358,7 @@ function openConfirmModal(cosmeticId: string): void {
     afterEl.style.color = '';
   } else {
     afterEl.textContent = `Need ${(cost - tokenBalance).toLocaleString()} more tokens`;
-    afterEl.style.color = '#e74c3c';
+    afterEl.style.color = '#e74c3c'; // TODO: needs CSS var token
   }
 
   const confirmBtn = document.getElementById('modal-confirm') as HTMLButtonElement;

@@ -26,6 +26,7 @@ export const CATEGORY_LABELS: Record<ReferenceCategory, string> = {
   'couples_court': 'Couples Court',
 };
 
+// TODO: needs CSS var token — all RARITY_COLORS values are hardcoded
 export const RARITY_COLORS: Record<Rarity, string> = {
   common:    '#9ca3af',
   uncommon:  '#3b82f6',

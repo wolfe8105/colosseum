@@ -124,7 +124,7 @@ function _injectCSS(): void {
     }
     .token-earn-toast {
       position:fixed; top:20px; left:50%; transform:translateX(-50%);
-      background:linear-gradient(135deg, var(--mod-accent) 0%, #b8942e 100%);
+      background:linear-gradient(135deg, var(--mod-accent) 0%, #b8942e /* TODO: needs CSS var token */ 100%);
       color:var(--mod-bg-base); font-family:var(--mod-font-display); font-weight:700;
       padding:10px 20px; border-radius:8px; z-index:99999; font-size:15px;
       white-space:nowrap;
@@ -132,7 +132,7 @@ function _injectCSS(): void {
     }
     .milestone-toast {
       position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
-      background:linear-gradient(135deg, var(--mod-bg-card) 0%, #2d5a8e 100%);
+      background:linear-gradient(135deg, var(--mod-bg-card) 0%, #2d5a8e /* TODO: needs CSS var token */ 100%);
       border:2px solid var(--mod-accent); color:var(--mod-text-heading);
       font-family:var(--mod-font-ui); font-weight:600;
       padding:14px 24px; border-radius:12px; z-index:99999; font-size:15px;

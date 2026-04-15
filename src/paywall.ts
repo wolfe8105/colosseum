@@ -123,7 +123,7 @@ export function show(variant: PaywallVariant = 'general'): void {
 
   modal.innerHTML = `
     <div id="paywall-sheet" style="
-      background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);
+      background:linear-gradient(180deg,#132240 /* TODO: needs CSS var token */ 0%,var(--mod-bg-base) 100%);
       border-top-left-radius:20px;border-top-right-radius:20px;
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       transform:translateY(100%);transition:transform 0.3s ease;
@@ -149,7 +149,7 @@ export function show(variant: PaywallVariant = 'general'): void {
         </div>
       </div>
       <button id="paywall-cta-btn" style="
-        width:100%;padding:14px;background:var(--mod-magenta);color:#fff;border:none;border-radius:10px;
+        width:100%;padding:14px;background:var(--mod-magenta);color:var(--mod-text-on-accent);border:none;border-radius:10px;
         font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;
         margin-bottom:8px;
       ">${escapeHTML(v.cta)}</button>

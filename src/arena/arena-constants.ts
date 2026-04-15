@@ -11,10 +11,10 @@ export interface QueueCategory {
 }
 
 export const MODES: Readonly<Record<DebateMode, ModeInfo>> = {
-  live: { id: 'live', icon: '⚖️', name: 'MODERATED LIVE', desc: 'Turn-based moderated debate. Text feed with scoring.', available: 'Opponent + Moderator needed', color: '#E7442A' },
-  voicememo: { id: 'voicememo', icon: '🎤', name: 'VOICE MEMO', desc: 'Record & send. Debate on your schedule.', available: 'Async — anytime', color: '#8890A8' },
-  text: { id: 'text', icon: '⌨️', name: 'TEXT BATTLE', desc: 'Written arguments. Think before you speak.', available: 'Async — anytime', color: '#555E78' },
-  ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#5DCAA5' },
+  live: { id: 'live', icon: '⚖️', name: 'MODERATED LIVE', desc: 'Turn-based moderated debate. Text feed with scoring.', available: 'Opponent + Moderator needed', color: '#E7442A' }, // TODO: needs CSS var token
+  voicememo: { id: 'voicememo', icon: '🎤', name: 'VOICE MEMO', desc: 'Record & send. Debate on your schedule.', available: 'Async — anytime', color: '#8890A8' }, // TODO: needs CSS var token
+  text: { id: 'text', icon: '⌨️', name: 'TEXT BATTLE', desc: 'Written arguments. Think before you speak.', available: 'Async — anytime', color: '#555E78' }, // TODO: needs CSS var token
+  ai: { id: 'ai', icon: '🤖', name: 'AI SPARRING', desc: 'Practice against AI. Instant start.', available: '✅ Always ready', color: '#5DCAA5' }, // TODO: needs CSS var token
 } as const;
 
 export const QUEUE_AI_PROMPT_SEC: Readonly<Record<DebateMode, number>> = { live: 60, voicememo: 60, text: 60, ai: 0 };

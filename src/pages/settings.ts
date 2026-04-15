@@ -258,6 +258,7 @@ getEl<HTMLInputElement>('set-dark-mode')?.addEventListener('change', (e: Event) 
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
   const meta = document.getElementById('meta-theme-color');
+  // TODO: needs CSS var token — meta theme-color requires literal hex; CSS vars not supported here
   if (meta) meta.setAttribute('content', isDark ? '#000000' : '#eaeef2');
 });
 

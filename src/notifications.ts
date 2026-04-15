@@ -141,7 +141,7 @@ function createPanel(): void {
   panel.innerHTML = `
     <div id="notif-backdrop" style="position:absolute;inset:0;background:var(--mod-bg-overlay);"></div>
     <div id="notif-drawer" style="
-      position:relative;z-index:1;background:#132240;
+      position:relative;z-index:1;background:#132240; /* TODO: needs CSS var token */
       border-bottom-left-radius:16px;border-bottom-right-radius:16px;
       max-height:70vh;display:flex;flex-direction:column;
       transform:translateY(-100%);transition:transform 0.3s ease;
@@ -233,7 +233,7 @@ function renderList(filter: NotificationFilter = 'all'): void {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);margin-bottom:2px;">${escapeHTML(n.title)}</div>
           <div style="font-size:12px;color:var(--mod-text-sub);line-height:1.4;">${escapeHTML(n.body)}</div>
-          <div style="font-size:11px;color:#6a7a90;margin-top:4px;">${escapeHTML(displayTime)}</div>
+          <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */margin-top:4px;">${escapeHTML(displayTime)}</div>
         </div>
         ${unreadDot}
       </div>`;

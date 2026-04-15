@@ -118,7 +118,7 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
     display:flex;align-items:center;justify-content:center;padding:20px;
   `;
   modal.innerHTML = `
-    <div style="background:#132240;border:1px solid var(--mod-accent-border);border-radius:12px;max-width:360px;width:100%;padding:24px;text-align:center;">
+    <div style="background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-accent-border);border-radius:12px;max-width:360px;width:100%;padding:24px;text-align:center;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--mod-accent);margin-bottom:8px;">${escapeHTML(title)}</div>
       <div style="color:var(--mod-text-sub);font-size:14px;line-height:1.5;margin-bottom:20px;">${escapeHTML(body)}</div>
       <div style="background:rgba(204,41,54,0.1);border:1px solid rgba(204,41,54,0.3);border-radius:8px;padding:12px;margin-bottom:20px;">

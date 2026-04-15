@@ -75,7 +75,7 @@ function _injectGoldDotCSS(): void {
       left: -4px;
       width: 8px;
       height: 8px;
-      background: #c0a84b;
+      background: #c0a84b; /* TODO: needs CSS var token */
       border-radius: 50%;
       animation: tournamentBlink 0.8s ease-in-out infinite;
       pointer-events: none;

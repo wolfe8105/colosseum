@@ -69,7 +69,7 @@ export function showAdInterstitial(
   ].join('');
 
   overlay.innerHTML = `
-    <div style="font-size:11px;letter-spacing:2px;color:#6a7a90;margin-bottom:12px;">ADVERTISEMENT</div>
+    <div style="font-size:11px;letter-spacing:2px;color:#6a7a90; /* TODO: needs CSS var token */ margin-bottom:12px;">ADVERTISEMENT</div>
     <ins class="adsbygoogle structural-ad-slot"
          style="display:block;width:320px;min-height:250px;"
          data-ad-client="${PUB_ID}"
@@ -77,10 +77,10 @@ export function showAdInterstitial(
          data-ad-format="rectangle"
          data-full-width-responsive="false"></ins>
     <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
-      <span id="sad-countdown" style="font-size:12px;color:#6a7a90;">${totalSec}s</span>
+      <span id="sad-countdown" style="font-size:12px;color:#6a7a90; /* TODO: needs CSS var token */">${totalSec}s</span>
       <button id="sad-skip" style="
         display:none;padding:8px 20px;
-        background:var(--mod-accent,#d4a843);color:#000;
+        background:var(--mod-accent,#d4a843);color:var(--mod-bg-base);
         border:none;border-radius:8px;font-size:13px;font-weight:700;
         cursor:pointer;letter-spacing:1px;
       ">SKIP →</button>

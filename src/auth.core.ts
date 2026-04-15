@@ -262,13 +262,13 @@ export function requireAuth(actionLabel?: string): boolean {
   modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
   const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
   modal.innerHTML = `
-    <div style="background:#12122A;border:1px solid var(--mod-accent-border);border-radius:12px;padding:28px 24px;max-width:340px;width:90%;text-align:center;">
+    <div style="background:#12122A; /* TODO: needs CSS var token */ border:1px solid var(--mod-accent-border);border-radius:12px;padding:28px 24px;max-width:340px;width:90%;text-align:center;">
       <div style="font-size:32px;margin-bottom:12px;">⚔️</div>
       <div style="font-family:var(--mod-font-display);font-size:20px;font-weight:700;color:var(--mod-accent);margin-bottom:8px;">JOIN THE ARENA</div>
-      <div style="font-size:14px;color:#ccc;margin-bottom:20px;">Sign in to ${safeLabel}</div>
+      <div style="font-size:14px;color:#ccc; /* TODO: needs CSS var token */ margin-bottom:20px;">Sign in to ${safeLabel}</div>
       <a href="moderator-plinko.html?returnTo=${returnTo}" style="display:block;background:var(--mod-accent);color:var(--mod-bg-base);font-family:var(--mod-font-display);font-weight:700;font-size:16px;padding:12px;border-radius:8px;text-decoration:none;margin-bottom:10px;">SIGN UP FREE</a>
       <a href="moderator-login.html?returnTo=${returnTo}" style="display:block;color:var(--mod-accent);font-size:14px;text-decoration:none;">Already have an account? Log in</a>
-      <button id="auth-gate-close-btn" style="margin-top:14px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;">Maybe later</button>
+      <button id="auth-gate-close-btn" style="margin-top:14px;background:none;border:none;color:#666; /* TODO: needs CSS var token */ font-size:13px;cursor:pointer;">Maybe later</button>
     </div>
   `;
   document.body.appendChild(modal);

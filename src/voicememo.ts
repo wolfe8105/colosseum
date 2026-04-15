@@ -480,7 +480,7 @@ export function renderPlayer(voiceUrl: string, duration: number): string {
   return `
     <div class="vm-inline-player" data-player-id="${id}" style="
       display:flex;align-items:center;gap:10px;
-      background:#132240;border:1px solid var(--mod-accent-muted);
+      background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-accent-muted);
       border-radius:10px;padding:10px 12px;margin-top:8px;
     ">
       <button data-action="play-inline" data-player="${id}" style="

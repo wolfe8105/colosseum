@@ -88,7 +88,7 @@ function _renderTake(t: HotTake): string {
 
   return `
     <div class="hot-take-card" data-id="${safeId}" style="
-      background:#132240;border:1px solid var(--mod-border-secondary);border-radius:12px;
+      background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-border-secondary);border-radius:12px;
       padding:14px;margin-bottom:10px;
     ">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -98,7 +98,7 @@ function _renderTake(t: HotTake): string {
         <div>
           <span ${profileAttr} style="font-weight:700;font-size:13px;color:var(--mod-text-heading);${userClickable ? 'cursor:pointer;' : ''}">${safeUser}${vgBadge(t.verified_gladiator)}${bountyDot(t.user_id)}</span>
         </div>
-        <div style="margin-left:auto;font-size:11px;color:#6a7a90;">${esc(t.time)}</div>
+        <div style="margin-left:auto;font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">${esc(t.time)}</div>
       </div>
       <div data-action="expand" data-id="${safeId}" style="font-size:14px;line-height:1.5;color:var(--mod-text-heading);margin-bottom:12px;cursor:pointer;${t.text.length > 150 ? 'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;' : ''}">${safeText}</div>${t.text.length > 150 ? '<div data-action="expand" data-id="' + safeId + '" style="font-size:12px;color:var(--mod-accent);cursor:pointer;margin-top:-8px;margin-bottom:12px;">tap to read more</div>' : ''}
       <div style="display:flex;align-items:center;gap:12px;">
@@ -129,7 +129,7 @@ function _renderModeratorCard(isGuest = false): string {
   const btnAction = isGuest ? 'mod-signup' : 'become-mod';
   return `
     <div class="hot-take-card" style="
-      background:#132240;border:1px solid var(--mod-cyan);border-left:3px solid var(--mod-cyan);
+      background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-cyan);border-left:3px solid var(--mod-cyan);
       border-radius:12px;padding:14px;margin-bottom:10px;
     ">
       <div style="font-family:var(--mod-font-display);font-size:15px;color:var(--mod-cyan);letter-spacing:1px;margin-bottom:6px;">MODERATORS WANTED</div>
@@ -162,7 +162,7 @@ export function renderPredictions(container: HTMLElement): void {
   if (!hasDebatePreds && !hasStandalone) {
     container.innerHTML = `
       <div style="text-align:center;padding:20px;">
-        <div style="color:#6a7a90;font-size:13px;margin-bottom:12px;">No active predictions yet.</div>
+        <div style="color:#6a7a90; /* TODO: needs CSS var token */font-size:13px;margin-bottom:12px;">No active predictions yet.</div>
         <button data-action="create-prediction" style="padding:10px 20px;border-radius:20px;border:1px solid var(--mod-accent-border);background:var(--mod-accent-muted);color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">➕ CREATE PREDICTION</button>
       </div>`;
     return;
@@ -185,10 +185,10 @@ function _renderPredictionCard(p: Prediction): string {
   const isLive = p.status === 'live' || p.status === 'in_progress';
 
   return `
-    <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         ${isLive ? '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mod-magenta);font-weight:600;letter-spacing:1px;"><span style="width:6px;height:6px;background:var(--mod-magenta);border-radius:50%;animation:livePulse 1.5s ease-in-out infinite;"></span>LIVE</span>' : '<span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">UPCOMING</span>'}
-        <span style="font-size:11px;color:#6a7a90;">${Number(p.total)} predictions</span>
+        <span style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">${Number(p.total)} predictions</span>
       </div>
       <div style="font-family:var(--mod-font-display);font-size:14px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -198,7 +198,7 @@ function _renderPredictionCard(p: Prediction): string {
           border:1px solid ${p.user_pick === 'a' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeP1}</div>
-          <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p1_elo)}</div>
+          <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">ELO ${Number(p.p1_elo)}</div>
         </button>
         <div style="display:flex;align-items:center;font-family:var(--mod-font-display);font-size:12px;color:var(--mod-magenta);letter-spacing:1px;">VS</div>
         <button data-action="predict" data-id="${safeDebateId}" data-pick="b" style="
@@ -207,7 +207,7 @@ function _renderPredictionCard(p: Prediction): string {
           border:1px solid ${p.user_pick === 'b' ? 'var(--mod-accent-border)' : 'var(--mod-border-secondary)'};
         ">
           <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);">${safeP2}</div>
-          <div style="font-size:11px;color:#6a7a90;">ELO ${Number(p.p2_elo)}</div>
+          <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">ELO ${Number(p.p2_elo)}</div>
         </button>
       </div>
       <div style="position:relative;height:24px;background:var(--mod-bg-subtle);border-radius:12px;overflow:hidden;border:1px solid var(--mod-border-secondary);">
@@ -235,10 +235,10 @@ function _renderStandaloneCard(q: StandaloneQuestion): string {
   const userPick = q._userPick ?? null;
 
   return `
-    <div style="background:#132240;border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="background:#132240; /* TODO: needs CSS var token */border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:11px;color:var(--mod-accent);letter-spacing:1px;">COMMUNITY</span>
-        <span style="font-size:11px;color:#6a7a90;">${Number(total)} picks · by ${creator}</span>
+        <span style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">${Number(total)} picks · by ${creator}</span>
       </div>
       <div style="font-family:var(--mod-font-display);font-size:14px;color:var(--mod-text-heading);margin-bottom:12px;line-height:1.3;">${safeTopic}</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">

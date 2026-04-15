@@ -34,7 +34,7 @@ export async function loadGroupHotTakes(groupId: string) {
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;">
           <span style="font-size:11px;color:var(--mod-text-sub);" id="group-take-count">0/280</span>
           <button id="group-take-post" style="
-            background:var(--mod-magenta);color:#fff;border:none;border-radius:8px;
+            background:var(--mod-magenta);color:var(--mod-text-on-accent);border:none;border-radius:8px;
             padding:8px 20px;font-family:'Bebas Neue',sans-serif;font-size:14px;
             letter-spacing:1px;cursor:pointer;
           ">POST</button>

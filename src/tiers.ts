@@ -52,6 +52,7 @@ export const TIER_THRESHOLDS: readonly TierThreshold[] = [
   { min: 0,   tier: 0, name: 'Unranked',   icon: '🔒', maxStake: 0,       slots: 0 },
 ] as const;
 
+// TODO: needs CSS var token — all TIER_COLORS values are hardcoded
 export const TIER_COLORS: Readonly<Record<TierLevel, string>> = {
   0: '#6b7280',
   1: '#9ca3af',

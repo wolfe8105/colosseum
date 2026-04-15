@@ -194,7 +194,7 @@ export function showEloExplainer(): void {
 
   modal.innerHTML = `
     <div style="
-      background:linear-gradient(180deg,#12122A 0%,var(--mod-bg-card) 100%);
+      background:linear-gradient(180deg,#12122A /* TODO: needs CSS var token */ 0%,var(--mod-bg-card) 100%);
       border:1px solid var(--mod-accent-border);border-radius:16px 16px 0 0;
       padding:24px 20px 32px;max-width:420px;width:100%;
       max-height:70vh;overflow-y:auto;
@@ -206,7 +206,7 @@ export function showEloExplainer(): void {
           background:none;border:none;color:var(--mod-text-sub);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;
         ">&times;</button>
       </div>
-      <div style="color:#e0e4ec;font-family:var(--mod-font-ui);font-size:15px;line-height:1.6;">
+      <div style="color:#e0e4ec; /* TODO: needs CSS var token */ font-family:var(--mod-font-ui);font-size:15px;line-height:1.6;">
         <p style="margin-bottom:14px;">
           Your Elo is a <strong style="color:var(--mod-accent);">skill number</strong> that goes up when you win and down when you lose.
           Everyone starts at <strong style="color:var(--mod-accent);">1200</strong>.
@@ -215,11 +215,11 @@ export function showEloExplainer(): void {
           <div style="font-weight:700;color:var(--mod-accent);margin-bottom:8px;font-size:13px;letter-spacing:1px;">HOW IT MOVES</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#4caf50;font-size:18px;">▲</span>
-              <span>Beat someone ranked <em>higher</em> than you = <strong style="color:#4caf50;">big gain</strong></span>
+              <span style="color:#4caf50; /* TODO: needs CSS var token */font-size:18px;">▲</span>
+              <span>Beat someone ranked <em>higher</em> than you = <strong style="color:#4caf50; /* TODO: needs CSS var token */">big gain</strong></span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#4caf50;font-size:18px;">▲</span>
+              <span style="color:#4caf50; /* TODO: needs CSS var token */font-size:18px;">▲</span>
               <span>Beat someone ranked <em>lower</em> than you = <strong style="color:var(--mod-text-sub);">small gain</strong></span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -236,13 +236,13 @@ export function showEloExplainer(): void {
           <div style="font-weight:700;color:var(--mod-accent);margin-bottom:8px;font-size:13px;letter-spacing:1px;">WHAT THE NUMBERS MEAN</div>
           <div style="display:flex;flex-direction:column;gap:4px;font-size:14px;">
             <div><span style="color:var(--mod-text-sub);">1000–1199</span> — Getting started</div>
-            <div><span style="color:#4caf50;">1200–1399</span> — Solid debater</div>
-            <div><span style="color:#2a5aab;">1400–1599</span> — Sharp mind</div>
+            <div><span style="color:#4caf50; /* TODO: needs CSS var token */">1200–1399</span> — Solid debater</div>
+            <div><span style="color:#2a5aab; /* TODO: needs CSS var token */">1400–1599</span> — Sharp mind</div>
             <div><span style="color:var(--mod-magenta);">1600–1799</span> — Heavy hitter</div>
             <div><span style="color:var(--mod-accent);">1800+</span> — Gladiator elite</div>
           </div>
         </div>
-        <p style="color:#6a7a90;font-size:13px;">
+        <p style="color:#6a7a90; /* TODO: needs CSS var token */font-size:13px;">
           Elo only moves in <strong>Ranked</strong> debates. Casual mode keeps your rating safe.
         </p>
       </div>
@@ -288,13 +288,13 @@ function renderList(): string {
         currentTab === 'wins' ? 'WINS' :
         '🔥';
 
-      const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: '#a8a8a8', 3: '#b87333' };
-      const rankColor = medalColors[p.rank] ?? '#6a7a90';
+      const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: '#a8a8a8', 3: '#b87333' }; // TODO: needs CSS var token — #a8a8a8 (silver), #b87333 (bronze)
+      const rankColor = medalColors[p.rank] ?? '#6a7a90'; // TODO: needs CSS var token — #6a7a90 (fallback)
 
       const tierBorderMap: Record<string, string> = {
         creator: 'var(--mod-accent)',
         champion: 'var(--mod-magenta)',
-        contender: '#2a5aab',
+        contender: '#2a5aab', // TODO: needs CSS var token
         free: 'var(--mod-border-primary)',
       };
       const tierBorder = tierBorderMap[p.tier] ?? 'var(--mod-border-primary)';
@@ -318,11 +318,11 @@ function renderList(): string {
           ">${escHtml(p.user[0] ?? '')}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}${vgBadge(p.verified_gladiator)}${bountyDot(p.id)}</div>
-            <div style="font-size:11px;color:#6a7a90;">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
+            <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
           </div>
           <div style="text-align:right;">
             <div style="font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:${currentTab === 'streak' && p.streak >= 5 ? 'var(--mod-magenta)' : 'var(--mod-accent)'};">${Number(stat) || 0}</div>
-            <div style="font-size:9px;color:#6a7a90;letter-spacing:1px;">${statLabel}</div>
+            <div style="font-size:9px;color:#6a7a90; /* TODO: needs CSS var token */letter-spacing:1px;">${statLabel}</div>
           </div>
         </div>`;
     })
@@ -375,7 +375,7 @@ export function render(): void {
         </div>
         <div style="text-align:right;">
           <div style="font-family:var(--mod-font-display);font-size:20px;color:var(--mod-accent);font-weight:700;">${rankDisplay}</div>
-          <div style="font-size:10px;color:#6a7a90;">YOUR RANK</div>
+          <div style="font-size:10px;color:#6a7a90; /* TODO: needs CSS var token */">YOUR RANK</div>
         </div>
       </div>
 

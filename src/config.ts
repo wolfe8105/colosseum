@@ -296,7 +296,7 @@ export function showToast(msg: string, type: ToastType = 'info'): void {
 
   const colors: Record<ToastType, { bg: string; text: string }> = {
     success: { bg: 'var(--mod-accent)', text: 'var(--mod-bg-base)' },
-    error:   { bg: 'var(--mod-magenta)', text: '#ffffff' },
+    error:   { bg: 'var(--mod-magenta)', text: 'var(--mod-text-on-accent)' },
     info:    { bg: 'rgba(26,45,74,0.95)', text: 'var(--mod-text-heading)' },
   };
   const c = colors[type];

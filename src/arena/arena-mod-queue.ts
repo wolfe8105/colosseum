@@ -84,7 +84,7 @@ export async function loadModQueue(): Promise<void> {
         <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${row.category} · ${row.mode}</div>
         <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px;">${row.topic}</div>
         <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">${nameA} vs ${nameB} · waiting ${waitStr}</div>
-        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.debate_id}" style="width:100%;background:var(--mod-accent-primary);color:#fff;border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
+        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.debate_id}" style="width:100%;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
       </div>
     `;
   }).join('');
@@ -184,7 +184,7 @@ export function showModRequestModal(modName: string, modId: string, debateId: st
       <div id="mod-req-countdown" style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);margin-bottom:20px;">Auto-declining in ${secondsLeft}s</div>
       <div style="display:flex;gap:10px;">
         <button id="mod-req-decline" style="flex:1;padding:12px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:transparent;color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">DECLINE</button>
-        <button id="mod-req-accept" style="flex:1;padding:12px;border-radius:var(--mod-radius-pill);border:none;background:var(--mod-accent-primary);color:#fff;font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
+        <button id="mod-req-accept" style="flex:1;padding:12px;border-radius:var(--mod-radius-pill);border:none;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);font-family:var(--mod-font-ui);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;">ACCEPT</button>
       </div>
     </div>
   `;

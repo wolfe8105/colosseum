@@ -84,8 +84,8 @@ export function injectReferencesPhase3CSS(): void {
     .feed-ruling-reason { width:100%;border:1px solid var(--mod-border-subtle);border-radius:8px;background:var(--mod-bg-glass);color:var(--mod-text-primary);font-family:var(--mod-font-body);font-size:14px;padding:8px;resize:none; }
     .feed-ruling-btns { display:flex;gap:10px;margin-top:10px; }
     .feed-ruling-accept,.feed-ruling-reject { flex:1;padding:12px;border:none;border-radius:8px;font-family:var(--mod-font-ui);font-size:14px;font-weight:700;cursor:pointer; }
-    .feed-ruling-accept { background:rgba(93,202,165,0.2);color:#5DCAA5; }
-    .feed-ruling-reject { background:rgba(231,68,42,0.2);color:#E7442A; }
+    .feed-ruling-accept { background:rgba(93,202,165,0.2);color:#5DCAA5; /* TODO: needs CSS var token */ }
+    .feed-ruling-reject { background:rgba(231,68,42,0.2);color:#E7442A; /* TODO: needs CSS var token */ }
 
     .feed-ref-popup { position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center; }
     .feed-ref-popup-inner { background:var(--mod-bg-card);border:1px solid var(--mod-border-subtle);border-radius:12px;padding:16px;width:90%;max-width:340px;position:relative; }

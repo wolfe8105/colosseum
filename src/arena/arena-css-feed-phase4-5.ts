@@ -115,7 +115,7 @@ export function injectFeedPhase4_5CSS(): void {
 
     /* Phase 5 — Disconnect banner */
     .feed-disconnect-banner {
-      background:#b71c1c;color:#fff;text-align:center;padding:10px 16px;
+      background:#b71c1c; /* TODO: needs CSS var token */ color:var(--mod-text-on-accent);text-align:center;padding:10px 16px;
       font-size:14px;font-weight:600;letter-spacing:0.5px;
       animation:feedDisconnectPulse 1.5s ease-in-out infinite;
     }
@@ -125,9 +125,9 @@ export function injectFeedPhase4_5CSS(): void {
 
     /* Phase 5 — Disconnect feed event */
     .feed-evt-disconnect {
-      background:rgba(183,28,28,0.15);border-left:3px solid #b71c1c;
+      background:rgba(183,28,28,0.15);border-left:3px solid #b71c1c; /* TODO: needs CSS var token */
       padding:8px 12px;margin:4px 0;border-radius:4px;
-      color:#ef9a9a;font-size:13px;
+      color:#ef9a9a; /* TODO: needs CSS var token */ font-size:13px;
     }
     .feed-disconnect-icon { margin-right:6px; }
 
@@ -136,12 +136,12 @@ export function injectFeedPhase4_5CSS(): void {
       display:flex;gap:8px;margin-top:8px;justify-content:flex-end;
     }
     .feed-mod-action-btn {
-      background:transparent;border:1px solid rgba(183,28,28,0.5);color:#ef9a9a;
+      background:transparent;border:1px solid rgba(183,28,28,0.5);color:#ef9a9a; /* TODO: needs CSS var token */
       font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;
       text-transform:uppercase;letter-spacing:0.5px;
       transition:background 0.2s,border-color 0.2s;
     }
-    .feed-mod-action-btn:hover { background:rgba(183,28,28,0.2);border-color:#b71c1c; }
+    .feed-mod-action-btn:hover { background:rgba(183,28,28,0.2);border-color:#b71c1c; /* TODO: needs CSS var token */ }
     .feed-mod-action-btn:active { background:rgba(183,28,28,0.35); }
 
     /* Phase 5 — Nulled post-debate screen */

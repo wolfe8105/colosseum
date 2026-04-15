@@ -40,7 +40,7 @@ export function injectQueueMatchCSS(): void {
     .arena-mf-status { font-size:14px; color:var(--mod-text-body); margin-bottom:20px; min-height:20px; }
     .arena-mf-buttons { display:flex; gap:12px; width:100%; max-width:300px; }
     .arena-mf-btn { flex:1; padding:14px 0; border-radius:var(--mod-radius-pill); font-family:var(--mod-font-ui); font-size:14px; font-weight:600; cursor:pointer; border:none; min-height:44px; letter-spacing:1px; }
-    .arena-mf-btn.accept { background:var(--mod-accent); color:#fff; }
+    .arena-mf-btn.accept { background:var(--mod-accent); color:var(--mod-text-on-accent); }
     .arena-mf-btn.accept:active { opacity:0.8; }
     .arena-mf-btn.decline { background:var(--mod-bg-card); color:var(--mod-text-muted); border:1px solid var(--mod-border-primary); }
     .arena-mf-btn.decline:active { background:var(--mod-bg-card-active); }

@@ -149,8 +149,8 @@ function _renderPoolBar(odds: Odds, totalPool: number, sideALabel: string, sideB
         <span>${sideBLabel} · ${odds.b}%</span>
       </div>
       <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--mod-bg-base);">
-        <div style="width:${odds.a}%;background:#2563eb;transition:width 0.4s;"></div>
-        <div style="width:${odds.b}%;background:#cc0000;transition:width 0.4s;"></div>
+        <div style="width:${odds.a}%;background:#2563eb; /* TODO: needs CSS var token */transition:width 0.4s;"></div>
+        <div style="width:${odds.b}%;background:#cc0000; /* TODO: needs CSS var token */transition:width 0.4s;"></div>
       </div>
     </div>`;
 }
@@ -177,7 +177,7 @@ export function renderStakingPanel(
   if (userStake) {
     const stakedSideLabel = userStake.side === 'a' ? sideALabel : sideBLabel;
     return `
-      <div class="staking-panel staking-placed" style="background:#1a1a2e;border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
+      <div class="staking-panel staking-placed" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">YOUR STAKE</div>
         <div style="font-family:var(--mod-font-ui);font-size:16px;color:var(--mod-text-primary);margin-bottom:12px;">
           <span style="color:var(--mod-text-heading);font-weight:700;">${userStake.amount} tokens</span>
@@ -192,8 +192,8 @@ export function renderStakingPanel(
     const next = getNextTier(questionsAnswered || 0);
     const remaining = next ? next.questionsNeeded : 0;
     return `
-      <div class="staking-panel staking-locked" style="background:#1a1a2e;border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
-        <div style="font-family:var(--mod-font-ui);font-size:14px;color:#8a879a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">TOKEN STAKING 🔒</div>
+      <div class="staking-panel staking-locked" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
+        <div style="font-family:var(--mod-font-ui);font-size:14px;color:#8a879a; /* TODO: needs CSS var token */letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">TOKEN STAKING 🔒</div>
         <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">
           Answer ${remaining} more profile questions to unlock staking.
           <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);text-decoration:none;">Complete your profile →</a>
@@ -208,15 +208,15 @@ export function renderStakingPanel(
   if (tier.stakeCap >= 100) quickAmounts.push(100);
 
   return `
-    <div class="staking-panel staking-active" style="background:#1a1a2e;border:1px solid var(--mod-text-heading)44;border-radius:10px;padding:16px;margin:12px 0;">
+    <div class="staking-panel staking-active" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-text-heading)44;border-radius:10px;padding:16px;margin:12px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">STAKE TOKENS</div>
         <div style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">${tier.icon} ${tier.name} · Max ${tier.stakeCap}</div>
       </div>
       ${_renderPoolBar(odds, totalPool, sideALabel, sideBLabel)}
       <div style="display:flex;gap:8px;margin:12px 0 8px;">
-        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #2563eb44;background:#2563eb11;border-radius:8px;color:#2563eb;font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideALabel} · ${odds.multiplierA}x</button>
-        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #cc000044;background:#cc000011;border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideBLabel} · ${odds.multiplierB}x</button>
+        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #2563eb44; /* TODO: needs CSS var token */background:#2563eb11; /* TODO: needs CSS var token */border-radius:8px;color:#2563eb; /* TODO: needs CSS var token */font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideALabel} · ${odds.multiplierA}x</button>
+        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #cc000044; /* TODO: needs CSS var token */background:#cc000011; /* TODO: needs CSS var token */border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideBLabel} · ${odds.multiplierB}x</button>
       </div>
       <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
         <input type="number" id="stake-amount-input" min="1" max="${tier.stakeCap}" placeholder="Amount" style="flex:1;padding:8px 10px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:6px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;outline:none;">
@@ -243,16 +243,16 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
 
       document.querySelectorAll('.stake-side-btn').forEach(b => {
         const bEl = b as HTMLElement;
-        bEl.style.borderColor = bEl.dataset.side === 'a' ? '#2563eb44' : '#cc000044';
-        bEl.style.background = bEl.dataset.side === 'a' ? '#2563eb11' : '#cc000011';
+        bEl.style.borderColor = bEl.dataset.side === 'a' ? '#2563eb44' : '#cc000044'; // TODO: needs CSS var token
+        bEl.style.background = bEl.dataset.side === 'a' ? '#2563eb11' : '#cc000011'; // TODO: needs CSS var token
       });
 
       if (selectedSide === 'a') {
-        el.style.borderColor = '#2563eb';
-        el.style.background = '#2563eb33';
+        el.style.borderColor = '#2563eb'; // TODO: needs CSS var token
+        el.style.background = '#2563eb33'; // TODO: needs CSS var token
       } else {
-        el.style.borderColor = '#cc0000';
-        el.style.background = '#cc000033';
+        el.style.borderColor = '#cc0000'; // TODO: needs CSS var token
+        el.style.background = '#cc000033'; // TODO: needs CSS var token
       }
 
       _updateConfirmButton(selectedSide);
@@ -290,7 +290,7 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
 
       if (result.success) {
         confirmBtn.textContent = 'STAKE PLACED ✓';
-        confirmBtn.style.background = '#16a34a';
+        confirmBtn.style.background = '#16a34a'; // TODO: needs CSS var token
         if (errorEl) errorEl.style.display = 'none';
         if (onStakePlaced) onStakePlaced(result);
       } else {

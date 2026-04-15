@@ -26,7 +26,7 @@ export function injectRivalsPresenceCSS(): void {
       left: 50%;
       transform: translateX(-50%);
       z-index: 99998;
-      background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
+      background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%); /* TODO: needs CSS var token */
       border: 2px solid var(--mod-magenta);
       border-radius: 14px;
       padding: 18px 20px;
@@ -74,7 +74,7 @@ export function injectRivalsPresenceCSS(): void {
       flex: 1;
       padding: 10px;
       background: var(--mod-magenta);
-      color: #fff;
+      color: var(--mod-text-on-accent);
       border: none;
       border-radius: 8px;
       font-family: var(--mod-font-display);

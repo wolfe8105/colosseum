@@ -15,13 +15,13 @@ export function injectFeedRoomCSS(): void {
     .feed-scoreboard { display:flex;align-items:center;justify-content:space-between;gap:8px; }
     .feed-score-side { display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:1; }
     .feed-score-name { font-family:var(--mod-font-ui);font-size:11px;font-weight:700;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%; }
-    .feed-side-a .feed-score-name { color:#E7442A; }
-    .feed-side-b .feed-score-name { color:#4A90D9; }
+    .feed-side-a .feed-score-name { color:#E7442A; /* TODO: needs CSS var token */ }
+    .feed-side-b .feed-score-name { color:#4A90D9; /* TODO: needs CSS var token */ }
     .feed-score-label { font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--mod-text-muted); }
     .feed-score-pts { font-family:var(--mod-font-ui);font-size:20px;font-weight:800;color:var(--mod-text-primary); }
     .feed-timer-block { display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0; }
     .feed-timer { font-family:var(--mod-font-ui);font-size:24px;font-weight:800;color:var(--mod-text-primary);letter-spacing:2px; }
-    .feed-timer.warning { color:#E7442A;animation:livePulse 0.8s ease-in-out infinite; }
+    .feed-timer.warning { color:#E7442A; /* TODO: needs CSS var token */ animation:livePulse 0.8s ease-in-out infinite; }
     .feed-round-label { font-size:9px;font-weight:600;letter-spacing:2px;color:var(--mod-text-muted);text-transform:uppercase; }
     .feed-turn-label { font-size:11px;font-weight:600;color:var(--mod-bar-secondary);letter-spacing:1px; }
     .feed-spectator-bar { text-align:center;font-size:11px;color:var(--mod-text-muted);margin-top:6px; }

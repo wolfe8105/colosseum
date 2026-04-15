@@ -30,7 +30,7 @@ function _injectCSS(): void {
     /* ── Entrance backdrop ──────────────────────────────────── */
     .ent-stage {
       position: fixed; inset: 0; z-index: 8000;
-      background: #000;
+      background: var(--mod-bg-base);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       overflow: hidden;
@@ -67,7 +67,7 @@ function _injectCSS(): void {
       margin: 0 auto 10px;
     }
     .ent-t1-name {
-      font-size: 15px; font-weight: 700; color: #fff;
+      font-size: 15px; font-weight: 700; color: var(--mod-text-on-accent);
       max-width: 110px; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap;
     }
@@ -113,7 +113,7 @@ function _injectCSS(): void {
       box-shadow: 0 0 20px rgba(212,168,67,0.3);
     }
     .ent-t2-name {
-      font-size: 18px; font-weight: 700; color: #fff;
+      font-size: 18px; font-weight: 700; color: var(--mod-text-on-accent);
       letter-spacing: 0.5px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }

@@ -172,7 +172,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
 
   modal.innerHTML = `
     <div style="
-      background:linear-gradient(180deg,#132240 0%,var(--mod-bg-base) 100%);
+      background:linear-gradient(180deg,#132240 /* TODO: needs CSS var token */ 0%,var(--mod-bg-base) 100%);
       border-top-left-radius:20px;border-top-right-radius:20px;
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       text-align:center;
@@ -186,7 +186,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button id="post-debate-share-btn" style="
-          flex:1;padding:14px;background:var(--mod-magenta);color:#fff;border:none;border-radius:10px;
+          flex:1;padding:14px;background:var(--mod-magenta);color:var(--mod-text-on-accent);border:none;border-radius:10px;
           font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;
         ">📤 SHARE</button>
         <button id="post-debate-invite-btn" style="

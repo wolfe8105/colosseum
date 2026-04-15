@@ -144,13 +144,13 @@ export function renderShop(tokenBalance: number): string {
   const items = (Object.entries(CATALOG) as [PowerUpId, PowerUpCatalogEntry][]).map(([id, pu]) => {
     const canAfford = balance >= pu.cost;
     return `
-      <div class="powerup-shop-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:#1a1a2e;border:1px solid #2a2a3e;border-radius:8px;margin-bottom:8px;">
+      <div class="powerup-shop-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:8px;margin-bottom:8px;">
         <div style="font-size:28px;width:40px;text-align:center;">${pu.icon}</div>
         <div style="flex:1;">
           <div style="font-family:var(--mod-font-ui);font-size:15px;font-weight:600;color:var(--mod-text-primary);">${pu.name}</div>
           <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);">${pu.desc}</div>
         </div>
-        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,var(--mod-text-heading),#B8860B)' : '#2a2a3e'};color:${canAfford ? '#0f0f1a' : '#666'};font-family:var(--mod-font-ui);font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${pu.cost} 🪙</button>
+        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,var(--mod-text-heading),#B8860B)' : '#2a2a3e'} /* TODO: needs CSS var token */;color:${canAfford ? '#0f0f1a' : '#666'} /* TODO: needs CSS var token */;font-family:var(--mod-font-ui);font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${pu.cost} 🪙</button>
       </div>`;
   });
 
@@ -182,8 +182,8 @@ export function renderLoadout(
     const next = getNextTier(questionsAnswered || 0);
     const remaining = next ? next.questionsNeeded : 0;
     return `
-      <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#8a879a;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">POWER-UPS 🔒</div>
+      <div class="powerup-loadout" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
+        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#8a879a; /* TODO: needs CSS var token */letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">POWER-UPS 🔒</div>
         <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">Answer ${remaining} more questions to unlock power-up slots.</div>
       </div>`;
   }
@@ -207,7 +207,7 @@ export function renderLoadout(
         </div>`);
     } else {
       slots.push(`
-        <div class="powerup-slot empty" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:#0f0f1a;border:1px dashed #2a2a3e;border-radius:8px;text-align:center;cursor:pointer;">
+        <div class="powerup-slot empty" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:#0f0f1a; /* TODO: needs CSS var token */border:1px dashed #2a2a3e; /* TODO: needs CSS var token */border-radius:8px;text-align:center;cursor:pointer;">
           <div style="font-size:24px;opacity:0.3;">+</div>
           <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-muted);margin-top:4px;">Slot ${i}</div>
         </div>`);
@@ -218,7 +218,7 @@ export function renderLoadout(
   const invItems = (inventory || []).filter(item => item.quantity > 0).map(item => {
     const cat = CATALOG[item.power_up_id as PowerUpId];
     return `
-      <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:6px;cursor:pointer;margin-bottom:4px;">
+      <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:#0f0f1a; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:6px;cursor:pointer;margin-bottom:4px;">
         <span style="font-size:20px;">${escapeHTML(item.icon ?? cat?.icon ?? '?')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);flex:1;">${escapeHTML(item.name ?? cat?.name ?? '')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">x${item.quantity}</span>
@@ -226,7 +226,7 @@ export function renderLoadout(
   });
 
   return `
-    <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;">
+    <div class="powerup-loadout" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:10px;padding:16px;margin:12px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">POWER-UPS</div>
         <div style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">${tier.icon} ${tier.name} · ${maxSlots} slot${maxSlots !== 1 ? 's' : ''}</div>
@@ -255,7 +255,7 @@ export function wireLoadout(debateId: string, onEquipped?: (result: PowerUpResul
       if (picker) picker.style.display = 'block';
 
       document.querySelectorAll('.powerup-slot').forEach(s => {
-        (s as HTMLElement).style.borderColor = s === slot ? 'var(--mod-text-heading)' : (s.classList.contains('filled') ? 'var(--mod-text-heading)44' : '#2a2a3e');
+        (s as HTMLElement).style.borderColor = s === slot ? 'var(--mod-text-heading)' : (s.classList.contains('filled') ? 'var(--mod-text-heading)44' : '#2a2a3e'); // TODO: needs CSS var token
       });
     });
   });
@@ -302,7 +302,7 @@ export function renderActivationBar(equipped: EquippedItem[]): string {
       <button class="powerup-activate-btn ${isPassive ? 'passive' : ''}"
         data-id="${eq.power_up_id}" data-slot="${eq.slot_number}"
         ${isPassive ? 'disabled title="Active — doubles staking payout"' : ''}
-        style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid ${isPassive ? 'var(--mod-text-heading)44' : 'var(--mod-text-heading)66'};background:${isPassive ? 'var(--mod-text-heading)11' : 'rgba(15,15,26,0.9)'};color:${isPassive ? 'var(--mod-text-heading)' : '#fff'};font-family:var(--mod-font-ui);font-size:12px;font-weight:600;cursor:${isPassive ? 'default' : 'pointer'};white-space:nowrap;transition:all 0.2s;">
+        style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid ${isPassive ? 'var(--mod-text-heading)44' : 'var(--mod-text-heading)66'};background:${isPassive ? 'var(--mod-text-heading)11' : 'rgba(15,15,26,0.9)'};color:${isPassive ? 'var(--mod-text-heading)' : 'var(--mod-text-on-accent)'};font-family:var(--mod-font-ui);font-size:12px;font-weight:600;cursor:${isPassive ? 'default' : 'pointer'};white-space:nowrap;transition:all 0.2s;">
         <span style="font-size:18px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</span>
         <span>${isPassive ? 'ACTIVE' : 'USE'}</span>
       </button>`;
@@ -387,7 +387,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
   const items = (equipped || []).map(eq => {
     const cat = CATALOG[eq.power_up_id as PowerUpId];
     return `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0f0f1a; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:8px;">
         <span style="font-size:22px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);">${escapeHTML(eq.name ?? cat?.name ?? eq.power_up_id)}</span>
       </div>`;
@@ -397,7 +397,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
   popup.id = 'powerup-reveal-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--mod-bg-overlay);animation:arenaFadeIn 0.3s ease;';
   popup.innerHTML = `
-    <div style="background:#12122a;border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
+    <div style="background:#12122a; /* TODO: needs CSS var token */border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
       <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:2px;text-align:center;margin-bottom:12px;">👁️ OPPONENT'S LOADOUT</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${items.length > 0 ? items.join('') : '<div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);text-align:center;">No power-ups equipped</div>'}

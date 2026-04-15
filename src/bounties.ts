@@ -244,7 +244,7 @@ export async function renderProfileBountySection(
     body.innerHTML = `
       <div style="background:var(--mod-bg-subtle);border:1px solid var(--mod-accent-border);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
         <div style="font-size:12px;color:var(--mod-text-sub);">Open bounty on this rival</div>
-        <div style="font-family:var(--mod-font-display);font-size:18px;color:#F5A623;margin:4px 0;">${existingBounty.amount} tokens</div>
+        <div style="font-family:var(--mod-font-display);font-size:18px;color:#F5A623; /* TODO: needs CSS var token */margin:4px 0;">${existingBounty.amount} tokens</div>
         <div style="font-size:11px;color:var(--mod-text-muted);">${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining</div>
       </div>
       <button id="bounty-cancel-btn" style="width:100%;padding:10px;background:transparent;border:1px solid var(--mod-magenta);color:var(--mod-magenta);border-radius:8px;font-family:var(--mod-font-display);font-size:12px;letter-spacing:1px;cursor:pointer;">
@@ -361,7 +361,7 @@ export async function renderMyBountiesSection(container: HTMLElement): Promise<v
     const daysLeft = Math.max(0, Math.ceil(
       (new Date(b.expires_at).getTime() - Date.now()) / 86_400_000
     ));
-    const statusColor = b.status === 'open' ? '#F5A623' : 'var(--mod-text-muted)';
+    const statusColor = b.status === 'open' ? '#F5A623' : 'var(--mod-text-muted)'; // TODO: needs CSS var token — #F5A623
     const who = type === 'incoming'
       ? `<span style="color:var(--mod-text-sub);">from</span> <strong>${b.poster_username ?? '?'}</strong>`
       : `<span style="color:var(--mod-text-sub);">on</span> <strong>${b.target_username ?? '?'}</strong>`;
