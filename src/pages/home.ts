@@ -66,19 +66,91 @@ initPullToRefresh();
 // ============================================================
 // INIT — Members Zone assumes valid session
 // ============================================================
+
+/** Show slow-connection overlay with a visible countdown. Returns a cleanup fn. */
+function showSlowConnectionOverlay(seconds: number, onResolved: () => void): { dismiss: () => void; waitForZero: () => Promise<void> } {
+  const overlay = document.createElement('div');
+  overlay.id = 'slow-conn-overlay';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:9999',
+    'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+    'background:rgba(0,0,0,0.82)', 'color:#fff', 'font-family:var(--mod-font-ui,sans-serif)',
+    'padding:2rem', 'text-align:center', 'gap:1rem'
+  ].join(';');
+
+  const msg = document.createElement('p');
+  msg.style.cssText = 'margin:0;font-size:1.1rem;max-width:340px;line-height:1.5';
+  msg.textContent = 'Having trouble connecting... will need to sign back in if unable to resolve your connection';
+
+  const countEl = document.createElement('p');
+  countEl.style.cssText = 'margin:0;font-size:2.5rem;font-weight:700;font-variant-numeric:tabular-nums';
+  countEl.textContent = String(seconds);
+
+  overlay.appendChild(msg);
+  overlay.appendChild(countEl);
+  document.body.appendChild(overlay);
+
+  let remaining = seconds;
+  let resolved = false;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+
+  const dismiss = () => {
+    resolved = true;
+    if (intervalId !== null) { clearInterval(intervalId); intervalId = null; }
+    overlay.remove();
+    onResolved();
+  };
+
+  const waitForZero = () => new Promise<void>(resolve => {
+    intervalId = setInterval(() => {
+      remaining -= 1;
+      countEl.textContent = String(remaining);
+      if (remaining <= 0) {
+        if (intervalId !== null) { clearInterval(intervalId); intervalId = null; }
+        if (!resolved) { overlay.remove(); }
+        resolve();
+      }
+    }, 1000);
+  });
+
+  return { dismiss, waitForZero };
+}
+
 async function appInit() {
+  // Phase 1: wait up to 6 seconds for auth
+  let authSettled = false;
   try {
     await Promise.race([
-      ready,
-      new Promise(r => setTimeout(r, 6000))
+      ready.then(() => { authSettled = true; }),
+      new Promise<void>(r => setTimeout(r, 6000))
     ]);
   } catch (e) { console.warn('[Home] auth init failed:', e); }
+
+  // Phase 2: if auth still pending after 6s, show slow-connection overlay + 20s countdown
+  if (!authSettled && !getCurrentUser() && !getIsPlaceholderMode()) {
+    let overlayDismissed = false;
+    const { dismiss, waitForZero } = showSlowConnectionOverlay(20, () => { overlayDismissed = true; });
+
+    // Race: auth resolves vs countdown hits zero
+    await Promise.race([
+      ready.then(() => { authSettled = true; dismiss(); }),
+      waitForZero()
+    ]);
+
+    if (!authSettled && !overlayDismissed) {
+      // Countdown expired with no auth — tell user and redirect to login
+      showToast('Unable to connect. Please sign in again.', 'error');
+      await new Promise(r => setTimeout(r, 1800));
+      window.location.href = 'moderator-login.html';
+      return;
+    }
+  }
 
   const loading = document.getElementById('loading-screen');
   if (loading) { loading.classList.add('fade-out'); setTimeout(() => loading.remove(), 400); }
 
   if (!getCurrentUser() && !getIsPlaceholderMode()) {
-    window.location.href = 'moderator-plinko.html';
+    window.location.href = 'moderator-login.html';
     return;
   }
 
