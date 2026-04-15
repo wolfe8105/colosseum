@@ -122,6 +122,14 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 1. src/notifications.ts (16,057 bytes)
 2. src/intro-music.ts (13,857 bytes)
 
+## Batch 16R (PENDING) — 28,861 bytes
+
+**Note:** Created 2026-04-15. The original Batch 11R as planned (`arena-entrance.ts`, `async.fetch.ts`, `spectate.types.ts`) was never run — the actual 11R session audited a different file list (`arena-sounds`, `arena-core`, `tokens`, `notifications`) instead. Batch 16R closes out the 3 files left uncovered by that swap. After 16R, audit coverage hits 57/57.
+
+1. src/arena/arena-entrance.ts (17,896 bytes)
+2. src/async.fetch.ts (5,858 bytes)
+3. src/pages/spectate.types.ts (5,107 bytes)
+
 ## Batch 8Rc (PENDING) — 7,357 bytes
 
 **Note:** Created 2026-04-14. The old Batch 8R run covered settings.ts, reference-arsenal.loadout.ts, badge.ts, and profile-debate-archive.ts — overlapping 8Ra and 8Rb entirely except for these 4 small files. Combined into one mini-batch.
