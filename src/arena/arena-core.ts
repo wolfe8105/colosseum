@@ -109,10 +109,16 @@ export function init(): void {
     }
   });
   // F-39: Auto-join via challenge link (?joinCode=XXXXXX)
+  // Session 240: Auto-spectate via ?spectate=<debateId>
+  // Only one path runs — else-if guard prevents both firing when both params are present.
   const challengeCode = new URLSearchParams(window.location.search).get('joinCode');
+  const spectateId = new URLSearchParams(window.location.search).get('spectate');
   if (challengeCode) {
     window.history.replaceState({}, '', window.location.pathname);
     void joinWithCode(challengeCode.toUpperCase());
+  } else if (spectateId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spectateId)) {
+    window.history.replaceState({}, '', window.location.pathname);
+    void enterFeedRoomAsSpectator(spectateId);
   } else {
     // F-39: Consume pending challenge stored by moderator-challenge.html (post-login path)
     try {
@@ -123,12 +129,6 @@ export function init(): void {
         void joinWithCode(pending.toUpperCase());
       }
     } catch { /* localStorage blocked — ignore */ }
-  }
-  // Session 240: Auto-spectate via ?spectate=<debateId>
-  const spectateId = new URLSearchParams(window.location.search).get('spectate');
-  if (spectateId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spectateId)) {
-    window.history.replaceState({}, '', window.location.pathname);
-    void enterFeedRoomAsSpectator(spectateId);
   }
 }
 

@@ -345,8 +345,8 @@ function _refreshSelected(sheet: HTMLElement, id: string): void {
 }
 
 function _close(backdrop: HTMLElement): void {
-  backdrop.style.opacity = '0';
   backdrop.style.transition = 'opacity 0.2s';
+  backdrop.style.opacity = '0';
   setTimeout(() => backdrop.remove(), 220);
 }
 

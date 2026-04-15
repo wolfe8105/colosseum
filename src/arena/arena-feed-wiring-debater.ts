@@ -48,7 +48,7 @@ export function wireDebaterControls(debate: CurrentDebate): void {
     finishCurrentTurn();
   });
 
-  concedeBtn?.addEventListener('click', () => {
+  concedeBtn?.addEventListener('click', () => void (async () => {
     if (!confirm('Concede this debate? This counts as a loss.')) return;
     const d = currentDebate;
     if (!d || d.concededBy) return;
@@ -70,9 +70,9 @@ export function wireDebaterControls(debate: CurrentDebate): void {
       document.getElementById('feed-challenge-overlay')?.remove();
     }
     const name = getCurrentProfile()?.display_name || 'Debater';
-    void writeFeedEvent('speech', `${name} has conceded.`, 'mod');
+    await writeFeedEvent('speech', `${name} has conceded.`, 'mod');
     startFinalAdBreak(d);
-  });
+  })());
 
   // Phase 3: Wire cite button
   const citeBtn = document.getElementById('feed-cite-btn') as HTMLButtonElement | null;
