@@ -46,9 +46,9 @@ export function renderInvite(
           <div class="invite-progress-fill" style="width:${progressPct.toFixed(1)}%"></div>
         </div>
         <div class="invite-progress-stats">
-          <span>${converts} successful</span>
-          <span>${stats.total_signups} signed up</span>
-          <span>${stats.total_clicks} clicks</span>
+          <span>${Number(converts)} successful</span>
+          <span>${Number(stats.total_signups)} signed up</span>
+          <span>${Number(stats.total_clicks)} clicks</span>
         </div>
       </div>
 
