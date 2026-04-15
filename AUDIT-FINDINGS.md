@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 42 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R). 12R–15R pending.
-**Last updated:** 2026-04-14, end of Batch 11R.
+**Coverage:** 44 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R). 13R–15R pending.
+**Last updated:** 2026-04-14, end of Batch 12R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -24,6 +24,21 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 Historical damage scope: exactly 1 complete debate existed in production at fix time, so real-world rating inflation was minimal. Going forward, all new PvP debates are protected.
 
 *(No HIGH findings currently open.)*
+
+### H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection
+**Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed.** The `renderMessages` function builds a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters:
+
+```typescript
+onclick="window.location.href='mailto:reports@themoderator.app?subject=Spectator+Chat+Report&body=Message+ID:+${encodeURIComponent(m.id)}%0AContent:+${encodeURIComponent(m.message)}'"
+```
+
+`encodeURIComponent` percent-encodes for URL safety but **does not encode the single-quote character `'`** — single quote is in the RFC 3986 unreserved set and passes through unchanged. Any stored spectator chat message containing `'` terminates the JS string literal inside the onclick handler and allows injected JS to run in the clicking user's browser context.
+
+**Concrete exploit:** A stored message of `'); alert(document.cookie); var x='` causes the onclick attribute to execute `alert(document.cookie)` — arbitrary JS execution with full access to the clicking spectator's session cookies, localStorage, and any in-memory state. This is a classic stored XSS with worm potential (one malicious message can compromise every spectator who clicks report on it).
+
+**Project rule violated:** CLAUDE.md — "Any user-supplied data entering innerHTML or template literals MUST pass through escapeHTML()." The `encodeURIComponent` output is embedded into an innerHTML template literal without any additional escaping. `m.message` is fully user-controlled spectator chat content.
+
+**Fix:** Replace the inline `onclick` string with `data-msg-id` and `data-msg-content` attributes on the button, then attach a delegated click listener after the `innerHTML` write that constructs the `mailto:` URL using those attributes. This eliminates the injection surface entirely. **Should be fixed immediately — this is the highest-priority open finding in the audit.**
 
 ---
 
@@ -133,6 +148,9 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 
 ### M-J5. `arena-bounty-claim.ts` — `_attemptFeePaid` singleton not reset between renders
 **Batch 10R.** Module-level `_attemptFeePaid` persists across calls to `renderBountyClaimDropdown`. If caller doesn't invoke `resetBountyClaim()` between renders (e.g. switching opponents), lock button silently no-ops with no feedback. Fix: reset `_attemptFeePaid = false` at top of `renderBountyClaimDropdown`.
+
+### M-K1. `arena-feed-spec-chat.ts` — `loadMessages` timestamp deduplication assumes ascending server sort
+**Batch 12R.** The dedup logic uses `msgs[msgs.length - 1].created_at === lastMessageTime` to skip re-renders. This is correct only if `get_spectator_chat` returns rows in ascending chronological order (no client-side sort is applied). Two failure modes: (1) if the RPC ever returns rows in non-ascending order, `lastMessageTime` gets set to a non-latest timestamp and subsequent polls silently skip new messages; (2) if two messages share an identical `created_at` string (likely at 1s resolution), the second message arriving in a later poll is silently dropped. All 5 Stage 3 agents flagged. Fix: iterate to find max timestamp instead of trusting array order, OR sort client-side before dedup.
 
 ### M-I1. `arena-ads.ts` — `showAdInterstitial` double-fire bug: skip click doesn't `clearInterval(tick)`
 **Batch 9R.** Skip button handler calls `dismiss()` which removes the overlay but does not clear the 1-second countdown interval `tick`. Interval keeps running; when `remaining <= 0`, `dismiss()` fires again and `onDone()` is invoked a second time. `overlay.remove()` on the second call is a DOM no-op, but duplicate `onDone()` is a real functional bug — whatever the caller does on ad completion runs twice. **All 5 Stage 3 agents confirmed.** Structural note: `tick` is declared `const` after the skip listener is attached, so `dismiss()` can't reference it in its current position — fix requires moving `let tick` declaration above `dismiss()`.
@@ -330,6 +348,18 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-J7. `arena-bounty-claim.ts` — hardcoded hex colors `#F5A623` / `#0A1128`
 **Batch 10R.** Two hex values assigned directly to `style.background` / `style.color`. Violates CLAUDE.md design DNA rule. Same family as L-A3, L-A7.
 
+### L-K1. `arena-feed-spec-chat.ts` — `initSpecChat` writes `activeDebateId` and `chatOpen` before panel null check
+**Batch 12R.** Lines 47–48 set `activeDebateId = debateId` and `chatOpen = false` unconditionally. The panel null check follows at line 51 and early-returns if the panel element is absent. Result: if `initSpecChat` is called on a page where `feed-spec-chat-panel` doesn't exist, state is partially written (pointing at the new debate) with no polling started. `cleanupSpecChat` recovers it, but a caller that detects the missing panel and skips cleanup leaves stranded state. Fix: move state writes after the null check, or early-return first.
+
+### L-K2. `arena-feed-spec-chat.ts` — `cleanupSpecChat` doesn't cancel `handleSend`'s 3s error-hide setTimeout
+**Batch 12R.** `handleSend` schedules a 3-second `setTimeout` on line 204 to auto-hide the error element after showing it. The timeout handle is not stored, so `cleanupSpecChat` cannot cancel it. If cleanup runs while that timer is in flight, the callback fires against a detached element — currently a no-op (only sets `style.display = 'none'` on a captured ref) but fragile.
+
+### L-K3. `arena-feed-spec-chat.ts` — `loadMessages` has no concurrency guard against poll + send-triggered overlap
+**Batch 12R.** `loadMessages` is called from both the 5s polling interval and from `handleSend`'s success path. If a send completes while a poll is in flight (or vice versa), both calls race to update `lastMessageTime` and render the same messages twice. Low severity in practice but worth an `if (_loadingInFlight) return` guard.
+
+### L-K4. `spectate.render.ts:481` — `state.lastRenderedMessageCount` write is outside the `if (state.app)` guard
+**Batch 12R.** Line 480 guards the `innerHTML` write: `if (state.app) state.app.innerHTML = html`. Line 481 unconditionally writes `state.lastRenderedMessageCount = messages.length`. If `state.app` is null (page not ready), the DOM doesn't update but the counter advances — subsequent render skips (which compare count) may then incorrectly believe they already rendered. Fix: move the counter write inside the guard.
+
  — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -351,7 +381,7 @@ These are not individual findings but families that recur across files. Worth si
 4. **Disable-button-no-finally pattern** — M-B5, M-C2, M-D1, M-E1, M-F1, M-F3, **M-J3 (`selectBountyClaim` in arena-bounty-claim)**. **SEVEN confirmed instances across SEVEN different files.** Disable button → do work → rejection path never re-enables. Grep-sweep PR is overdue.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
 6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
-7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**, **M-I2 (`setInterval` with no `destroy()` in `arena-ads.ts`), M-I3 (`renderList` rank mutation on shared objects — all 5 Stage 2 agents missed it)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. The Stage 3 verifier is reliably catching real project-rule violations that all 5 Stage 2 agents describe without flagging. Strong argument for keeping the verifier stage even if we compress elsewhere.
+7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**, **M-I2 (`setInterval` with no `destroy()` in `arena-ads.ts`), M-I3 (`renderList` rank mutation on shared objects — all 5 Stage 2 agents missed it)**, **M-J4 (bounty option content innerHTML without escapeHTML), H-K1 (stored XSS in spec-chat report button via single-quote injection)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. **Critically, H-K1 is the first High since H-A2 and is an actually exploitable stored XSS** — the Stage 3 verifier found it because all 5 agents independently confirmed the `encodeURIComponent` doesn't-encode-single-quotes mechanic. Strong argument for keeping the verifier stage even if we compress elsewhere.
 8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path), **M-I3** (`renderList` rank mutation on shared `liveData`/`PLACEHOLDER_DATA` objects). Two cases in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong — in both cases the intuitive read is "shallow copy, no shared mutation" or "await failure, clear state" and the actual behavior inverts that.
 
 ---
@@ -372,15 +402,16 @@ These are not individual findings but families that recur across files. Worth si
 | 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 | 11R | 4 (`arena-sounds`, `arena-core`†, `tokens`†, `notifications`) | done | 0 | 0 | 0 |
+| 12R | 2 (`spectate.render`, `arena-feed-spec-chat`) | done | **1** | 1 | 4 |
 
 † `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**42 of 57 files audited (all batches through 11R confirmed). 0 High, 40 Medium, 60 Low. 2 findings FIXED (H-A2, L-C8).**
+**44 of 57 files audited (all batches through 12R confirmed). 1 High (H-K1), 41 Medium, 64 Low. 2 findings FIXED (H-A2, L-C8).**
 
-**Batch 11R notes:** Clean batch for the two net-new files. `arena-sounds.ts` all PASS. `notifications.ts` 14 functions all behaviorally PASS, 2 consensus PARTIAL on wording (`renderList` unread row background tint omission noted unanimously 5/5, `init` module-level `ready.then().catch()` wiring conflated with function body). Re-audits of `arena-core.ts` and `tokens.ts` came back clean — notable divergence from 10R on the same files, logged above. Stage 3 did its job filtering noise — all PARTIALs are description-quality, not code-quality.
+**Batch 12R notes:** Two files. `spectate.render.ts` clean — 5 functions, all behaviorally PASS with Stage 2 wording imprecision (missing `'Human Moderator'` fallback description, missing `spectator_count || 1` floor, missing `|| 0` coercions, `state.lastRenderedMessageCount` miscategorized as a read). One real Low logged (L-K4: counter write outside null guard). `arena-feed-spec-chat.ts` has **H-K1** — the first High since H-A2 in Batch 2. Stored XSS via single-quote injection in the report button's inline onclick handler. `encodeURIComponent` does not encode `'`, which terminates the JS string in the onclick attribute and allows arbitrary JS execution. Unanimous 5/5 agents. Also M-K1 (timestamp dedup fragility) and 3 Lows. **H-K1 should be fixed immediately.**
 
 **Batch 10R notes:** 5 Medium + 7 Low. Real finds: M-J1 init co-execution of joinCode+spectate, M-J2 module-load popstate registration, M-J3 selectBountyClaim rejection leaves button disabled (**seventh** disable-button-no-finally instance), M-J4 bounty option content XSS missing escapeHTML, M-J5 _attemptFeePaid singleton not reset. Low findings across both files.
 
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
-**Last updated:** 2026-04-14, end of Batch 11R.
+**Last updated:** 2026-04-14, end of Batch 12R.
