@@ -7,7 +7,7 @@
  * Each row links to canonical archive page.
  */
 
-import { getCurrentUser, safeRpc } from './auth.core.ts';
+import { safeRpc } from './auth.core.ts';
 import { showAdInterstitial } from './arena/arena-ads.ts';
 import { escapeHTML, showToast } from './config.ts';
 

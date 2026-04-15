@@ -9,9 +9,6 @@
  */
 
 import { getModifierCatalog } from '../modifiers-catalog.ts';
-import { getUserInventory } from '../modifiers-rpc.ts';
-// LANDMINE [LM-SHOP-007]: showToast imported but never called anywhere in this file. Dead import. (L-F3)
-import { showToast } from '../config.ts';
 import { renderShop } from './home.arsenal-shop-render.ts';
 import type { ShopState } from './home.arsenal-shop-types.ts';
 
@@ -38,17 +35,10 @@ export async function loadShopScreen(container: HTMLElement): Promise<void> {
 
   container.innerHTML = '<div class="shop-loading">Loading catalog…</div>';
 
-  const [catalog, inventory] = await Promise.all([
-    getModifierCatalog(),
-    getUserInventory(),
-  ]);
+  const catalog = await getModifierCatalog();
 
   _state.catalog = catalog;
-  // LANDMINE [LM-SHOP-001]: Identical branches — both call _readTokenBalance(); inventory never read.
-  // Likely incomplete: one branch should read inventory.powerup_stock directly. (L-F1)
-  _state.tokenBalance = inventory?.powerup_stock != null
-    ? _readTokenBalance()
-    : _readTokenBalance();
+  _state.tokenBalance = _readTokenBalance();
 
   _rerender(container);
 }

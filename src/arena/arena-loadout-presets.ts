@@ -6,7 +6,7 @@
  * SAVE button snapshots current selection. Long-press chip to delete.
  */
 
-import { safeRpc } from '../auth.ts';
+import { safeRpc, getCurrentProfile } from '../auth.ts';
 import { escapeHTML } from '../config.ts';
 import { getMyPowerUps, equip } from '../powerups.ts';
 import { renderLoadoutPicker } from '../reference-arsenal.loadout.ts';
@@ -163,7 +163,6 @@ async function applyPreset(
       const { renderLoadout, wireLoadout } = await import('../powerups.ts');
       const refreshed = await getMyPowerUps(debate.id);
       if (powerupContainer && refreshed) {
-        const { getCurrentProfile } = await import('../auth.ts');
         const profile = getCurrentProfile();
         powerupContainer.innerHTML = renderLoadout(
           refreshed.inventory, refreshed.equipped,

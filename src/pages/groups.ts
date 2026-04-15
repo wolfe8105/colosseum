@@ -46,7 +46,6 @@ import {
   searchGroupsForChallenge, clearGvGOpponent, submitGroupChallenge,
 } from './groups.challenges.ts';
 import { ready, getCurrentUser, getSupabaseClient, safeRpc } from '../auth.ts';
-import { escapeHTML, showToast } from '../config.ts';
 import { renderGroupBanner } from './group-banner.ts';
 
 // ── INIT ───────────────────────────────────────────────────────────────────────

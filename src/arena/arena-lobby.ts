@@ -7,9 +7,9 @@ import { buy as buyPowerUp, renderShop } from '../powerups.ts';
 import { removeShieldIndicator } from '../powerups.ts';
 import { navigateTo } from '../navigation.ts';
 import {
-  view, screenEl, selectedRuleset, selectedRanked,
+  screenEl, selectedRuleset, selectedRanked,
   privateLobbyPollTimer, privateLobbyDebateId, activatedPowerUps,
-  shieldActive, equippedForDebate, silenceTimer,
+  shieldActive, silenceTimer,
   set_view, set_selectedMode, set_selectedModerator, set_selectedRanked,
   set_selectedRuleset, set_selectedCategory, set_selectedWantMod,
   set_privateLobbyPollTimer, set_privateLobbyDebateId,

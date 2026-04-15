@@ -42,10 +42,7 @@ export async function openClaimSheet(
   const tierNeeded: RarityTier = rewardType === 'legendary_powerup' ? 'legendary' : 'mythic';
   const eligible = catalog.filter((e: ModifierEffect) => e.tier_gate === tierNeeded);
 
-  // LANDMINE [LM-INVITE-004]: dead guard — #claim-picker-grid was inserted 5 lines above.
-  // Will only fire if the template above is malformed by a developer. (L-F8)
-  const grid = overlay.querySelector<HTMLElement>('#claim-picker-grid');
-  if (!grid) return close;
+  const grid = overlay.querySelector<HTMLElement>('#claim-picker-grid')!;
 
   if (eligible.length === 0) {
     grid.innerHTML = '<div class="invite-empty-activity">No eligible effects found.</div>';

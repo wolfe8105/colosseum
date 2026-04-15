@@ -59,8 +59,7 @@ function getBaseUrl(): string {
   return APP.baseUrl || window.location.origin;
 }
 
-// F-59: stable ref code fetched from server once per session, cached in memory
-let _cachedRefCode: string | null = null;
+// F-59: stable invite URL fetched from server once per session, cached in memory
 let _cachedInviteUrl: string | null = null;
 
 async function getStableInviteUrl(): Promise<string> {
@@ -71,7 +70,6 @@ async function getStableInviteUrl(): Promise<string> {
     const data = result.data as { url?: string; ref_code?: string } | null;
     if (data?.url) {
       _cachedInviteUrl = data.url;
-      _cachedRefCode = data.ref_code ?? null;
       return _cachedInviteUrl;
     }
   } catch { /* fall through */ }

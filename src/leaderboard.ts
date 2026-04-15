@@ -71,7 +71,6 @@ const escHtml = escapeHTML;
 // ============================================================
 
 let currentTab: LeaderboardTab = 'elo';
-let currentTime: LeaderboardTimeFilter = 'all';
 let liveData: LeaderboardEntry[] | null = null;
 let myRank: number | null = null;
 let isLoading = false;
@@ -439,8 +438,7 @@ export async function setTab(tab: LeaderboardTab): Promise<void> {
   render();
 }
 
-export function setTime(time: LeaderboardTimeFilter): void {
-  currentTime = time;
+export function setTime(_time: LeaderboardTimeFilter): void {
   currentOffset = 0;
   hasMore = false;
   // NOTE: Week/month time filters require time-bucketed stats

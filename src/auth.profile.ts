@@ -107,14 +107,10 @@ export async function showUserProfile(userId: string): Promise<void> {
   document.body.appendChild(modal);
 
   const profile = await getPublicProfile(userId);
-  if (!profile || profile.error) {
+  if (!profile) {
     const container = modal.querySelector('div > div:last-child');
     if (container) {
-      if (profile?.error === 'profile_private') {
-        container.innerHTML = '<div style="text-align:center;padding:16px 0;"><div style="font-size:24px;margin-bottom:8px;">🔒</div><div style="font-family:var(--mod-font-display);font-size:14px;letter-spacing:1px;color:var(--mod-text-secondary);">PRIVATE PROFILE</div><div style="font-size:12px;color:var(--mod-text-muted);margin-top:6px;">This user has made their profile private.</div></div>';
-      } else {
-        container.innerHTML = '<div style="text-align:center;color:var(--mod-magenta);font-size:14px;">User not found</div>';
-      }
+      container.innerHTML = '<div style="text-align:center;color:var(--mod-magenta);font-size:14px;">User not found</div>';
     }
     return;
   }
