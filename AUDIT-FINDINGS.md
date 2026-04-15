@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 35 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R; 7R pending push).
-**Last updated:** 2026-04-14, end of Batch 9R.
+**Coverage:** 39 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 11R).
+**Last updated:** 2026-04-14, end of Batch 11R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -372,6 +372,13 @@ These are not individual findings but families that recur across files. Worth si
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 
 | 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
+| 11R | 4 (`arena-sounds`, `arena-core`, `tokens`, `notifications`) | done | 0 | 0 | 0 |
+
+**39 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R, 11R confirmed; 7R done per prior synthesis; 10R, 12R–15R pending). 0 High, 34 Medium, 48 Low. 2 findings FIXED (H-A2, L-C8).**
+
+**Batch 11R notes:** Clean batch — zero code bugs across all 4 files. `arena-sounds.ts` (lots of anchors, all PASS), `arena-core.ts` (9 functions, all PASS with minor Stage 2 wording imprecision on `_onPopState` cleanup ordering and `init` omissions — catch-path fallback, replaceState on localStorage branch). `tokens.ts` (24 functions, all behaviorally PASS; 2 consensus PARTIAL on wording — `claimDailyLogin` failure-path `dailyLoginClaimed = true` flag omission, `init` conflating `_updateBalanceDisplay` private vs `updateBalance` exported). `notifications.ts` (14 functions, all behaviorally PASS; 2 consensus PARTIAL on wording — `renderList` unread row background tint omission noted unanimously 5/5, `init` module-level `ready.then().catch()` wiring conflated with function body). No findings escalated to needs-human-review.md. Stage 3 did its job filtering noise — all PARTIALs are description-quality, not code-quality.
+
+**Last updated:** 2026-04-14, end of Batch 11R.
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 
 **42 of 57 files audited (all batches through 10R confirmed; 11R–15R pending). 0 High, 40 Medium, 60 Low. 2 findings FIXED (H-A2, L-C8).**
