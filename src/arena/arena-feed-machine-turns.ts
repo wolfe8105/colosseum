@@ -13,10 +13,11 @@ import {
   feedTurnTimer, feedPaused,
   set_feedTurnTimer,
 } from './arena-state.ts';
-import type { CurrentDebate, FeedTurnPhase } from './arena-types.ts';
+import type { CurrentDebate } from './arena-types.ts';
+import type { FeedTurnPhase } from './arena-types-feed-room.ts';
 import {
   FEED_TURN_DURATION, FEED_PAUSE_DURATION, FEED_TOTAL_ROUNDS,
-} from './arena-types.ts';
+} from './arena-types-feed-room.ts';
 import {
   phase, round, timeLeft, budgetRound,
   firstSpeaker, secondSpeaker,

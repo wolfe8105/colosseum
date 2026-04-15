@@ -16,7 +16,7 @@ import {
 import {
   FEED_TOTAL_ROUNDS,
   FEED_SCORE_BUDGET,
-} from './arena-types.ts';
+} from './arena-types-feed-room.ts';
 import {
   phase, round, timeLeft,
   scoreUsed, budgetRound,

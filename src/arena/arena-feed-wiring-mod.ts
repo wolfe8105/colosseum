@@ -11,7 +11,7 @@
 import { safeRpc } from '../auth.ts';
 import { showToast } from '../config.ts';
 import { currentDebate } from './arena-state.ts';
-import { FEED_SCORE_BUDGET } from './arena-types.ts';
+import { FEED_SCORE_BUDGET } from './arena-types-feed-room.ts';
 import {
   round,
   scoreUsed, pinnedEventIds,

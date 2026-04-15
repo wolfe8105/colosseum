@@ -12,8 +12,9 @@ import {
   set_matchFoundDebate, set_selectedWantMod, set_view,
   set_queuePollTimer, set_queueElapsedTimer,
 } from './arena-state.ts';
-import type { CurrentDebate, MatchData, MatchAcceptResponse, DebateRole } from './arena-types.ts';
-import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-types.ts';
+import type { CurrentDebate, DebateRole } from './arena-types.ts';
+import type { MatchData, MatchAcceptResponse } from './arena-types-match.ts';
+import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
 import { showPreDebate, enterRoom } from './arena-room-setup.ts';
 import { enterQueue } from './arena-queue.ts';

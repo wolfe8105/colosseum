@@ -4,7 +4,8 @@ import {
   view, screenEl, selectedRounds, modDebatePollTimer, modDebateId,
   set_view, set_modDebatePollTimer, set_modDebateId,
 } from './arena-state.ts';
-import type { ArenaView, CurrentDebate, DebateMode, DebateRole, ModDebateCheckResult } from './arena-types.ts';
+import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
+import type { ModDebateCheckResult } from './arena-types-moderator.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
 import { showModQueue } from './arena-mod-queue.ts';
 import { enterRoom } from './arena-room-setup.ts';

@@ -12,7 +12,7 @@ import {
   set_roundTimeLeft,
 } from './arena-state.ts';
 import type { DebateMode, DebateRole, CurrentDebate } from './arena-types.ts';
-import { TEXT_MAX_CHARS, OPPONENT_POLL_MS, OPPONENT_POLL_TIMEOUT_SEC, ROUND_DURATION } from './arena-types.ts';
+import { TEXT_MAX_CHARS, OPPONENT_POLL_MS, OPPONENT_POLL_TIMEOUT_SEC, ROUND_DURATION } from './arena-constants.ts';
 import { isPlaceholder, formatTimer } from './arena-core.ts';
 import { handleAIResponse, generateSimulatedResponse } from './arena-room-ai.ts';
 import { endCurrentDebate } from './arena-room-end.ts';

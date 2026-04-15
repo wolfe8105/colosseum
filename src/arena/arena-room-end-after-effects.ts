@@ -4,7 +4,7 @@
 // Returns empty string if no adjustments fired.
 
 import { escapeHTML } from '../config.ts';
-import type { EndOfDebateBreakdown } from './arena-types.ts';
+import type { EndOfDebateBreakdown } from './arena-types-results.ts';
 
 export function renderAfterEffects(
   breakdown: EndOfDebateBreakdown | null,

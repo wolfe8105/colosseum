@@ -14,7 +14,7 @@ import { challengesRemaining } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import {
   FEED_SCORE_BUDGET, FEED_MAX_CHALLENGES,
-} from './arena-types.ts';
+} from './arena-types-feed-room.ts';
 // LANDMINE [LM-WIRING-005]: FEED_MAX_CHALLENGES imported but never used —
 // dead import, part of the L-A6 family in AUDIT-FINDINGS.md. Preserved to
 // match the strict "no cleanup" refactor rule.

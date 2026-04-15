@@ -16,7 +16,7 @@ import {
 import type { CurrentDebate } from './arena-types.ts';
 import {
   FEED_AD_BREAK_DURATION, FEED_FINAL_AD_BREAK_DURATION, FEED_VOTE_GATE_DURATION,
-} from './arena-types.ts';
+} from './arena-types-feed-room.ts';
 import {
   round, timeLeft, votedRounds, hasVotedFinal,
   set_phase, set_round, set_timeLeft,

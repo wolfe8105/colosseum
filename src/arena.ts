@@ -13,33 +13,15 @@
 import './arena/arena-core.ts';
 
 // --- Types ---
-export type {
-  ArenaView,
-  DebateMode,
-  DebateStatus,
-  DebateRole,
-  ModeInfo,
-  DebateMessage,
-  CurrentDebate,
-  SelectedModerator,
-  MatchData,
-  MatchAcceptResponse,
-  ArenaFeedItem,
-  AutoDebateItem,
-  AvailableModerator,
-  PowerUpEquipped,
-  RankedCheckResult,
-  UpdateDebateResult,
-  ReferenceItem,
-  AIScoreResult,
-  SideScores,
-  ModQueueItem,
-  ModDebateJoinResult,
-  ModDebateCheckResult,
-} from './arena/arena-types.ts';
+export type { ArenaView, DebateMode, DebateStatus, DebateRole, ModeInfo, DebateMessage, CurrentDebate, SelectedModerator } from './arena/arena-types.ts';
+export type { MatchData, MatchAcceptResponse } from './arena/arena-types-match.ts';
+export type { ArenaFeedItem, AutoDebateItem } from './arena/arena-types-feed-list.ts';
+export type { AvailableModerator, ModQueueItem, ModDebateJoinResult, ModDebateCheckResult } from './arena/arena-types-moderator.ts';
+export type { PowerUpEquipped, RankedCheckResult, UpdateDebateResult, ReferenceItem } from './arena/arena-types-results.ts';
+export type { AIScoreResult, SideScores } from './arena/arena-types-ai-scoring.ts';
 
 // --- Constants ---
-export { MODES, TEXT_MAX_CHARS } from './arena/arena-types.ts';
+export { MODES, TEXT_MAX_CHARS } from './arena/arena-constants.ts';
 
 // --- State (re-export for any external consumers) ---
 export {

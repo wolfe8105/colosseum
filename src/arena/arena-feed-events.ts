@@ -18,7 +18,7 @@ import {
   activeChallengeRefId,
   set_activeChallengeRefId,
 } from './arena-state.ts';
-import type { FeedEvent, FeedEventType } from './arena-types.ts';
+import type { FeedEvent, FeedEventType } from './arena-types-feed-room.ts';
 import {
   round, scoreA, scoreB, budgetRound,
   renderedEventIds, pinnedEventIds,

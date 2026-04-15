@@ -8,8 +8,9 @@ import {
   set_selectedModerator, set_selectedCategory, set_selectedWantMod,
   set_selectedRuleset,
 } from './arena-state.ts';
-import type { AvailableModerator, DebateMode } from './arena-types.ts';
-import { MODES, QUEUE_CATEGORIES } from './arena-types.ts';
+import type { DebateMode } from './arena-types.ts';
+import type { AvailableModerator } from './arena-types-moderator.ts';
+import { MODES, QUEUE_CATEGORIES } from './arena-constants.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.ts';
 import { enterQueue } from './arena-queue.ts';
 import { maybeRoutePrivate } from './arena-private-picker.ts';

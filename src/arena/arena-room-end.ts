@@ -9,7 +9,7 @@ import {
   currentDebate, roundTimer, silenceTimer, activatedPowerUps, loadedRefs,
   set_view, set_silenceTimer, set_shieldActive,
 } from './arena-state.ts';
-import type { EndOfDebateBreakdown } from './arena-types.ts';
+import type { EndOfDebateBreakdown } from './arena-types-results.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.ts';
 import { stopOpponentPoll } from './arena-room-live.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';

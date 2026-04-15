@@ -20,7 +20,7 @@ import {
   set_shieldActive, set_silenceTimer,
 } from './arena-state.ts';
 import type { CurrentDebate, DebateRole } from './arena-types.ts';
-import { ROUND_DURATION, TEXT_MAX_CHARS } from './arena-types.ts';
+import { ROUND_DURATION, TEXT_MAX_CHARS } from './arena-constants.ts';
 import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
 import { renderInputControls, startLiveRoundTimer, initLiveAudio, addSystemMessage } from './arena-room-live.ts';
 import { addReferenceButton, assignSelectedMod, startReferencePoll } from './arena-mod-refs.ts';

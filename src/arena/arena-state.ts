@@ -2,7 +2,8 @@
  * Arena State — all mutable state variables
  */
 
-import type { ArenaView, DebateMode, CurrentDebate, SelectedModerator, LoadoutReference, OpponentCitedRef } from './arena-types.ts';
+import type { ArenaView, DebateMode, CurrentDebate, SelectedModerator } from './arena-types.ts';
+import type { LoadoutReference, OpponentCitedRef } from './arena-types-feed-room.ts';
 import type { EquippedItem } from '../powerups.ts';
 import { DEBATE } from '../config.ts';
 

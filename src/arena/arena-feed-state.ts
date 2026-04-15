@@ -9,7 +9,7 @@
  * in place and don't need rebinding.
  */
 
-import type { FeedTurnPhase } from './arena-types.ts';
+import type { FeedTurnPhase } from './arena-types-feed-room.ts';
 
 // ============================================================
 // TURN STATE MACHINE

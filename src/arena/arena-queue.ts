@@ -11,8 +11,10 @@ import {
   set_queueSeconds, set_queueErrorState, set_aiFallbackShown,
   set__queuePollInFlight, set_selectedRuleset,
 } from './arena-state.ts';
-import type { ArenaView, DebateMode, ArenaFeedItem, MatchData } from './arena-types.ts';
-import { MODES, QUEUE_AI_PROMPT_SEC, QUEUE_HARD_TIMEOUT_SEC, QUEUE_CATEGORIES, AI_TOPICS } from './arena-types.ts';
+import type { ArenaView, DebateMode } from './arena-types.ts';
+import type { ArenaFeedItem } from './arena-types-feed-list.ts';
+import type { MatchData } from './arena-types-match.ts';
+import { MODES, QUEUE_AI_PROMPT_SEC, QUEUE_HARD_TIMEOUT_SEC, QUEUE_CATEGORIES, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, formatTimer, pushArenaState, randomFrom } from './arena-core.ts';
 import { onMatchFound, startAIDebate } from './arena-match.ts';
 

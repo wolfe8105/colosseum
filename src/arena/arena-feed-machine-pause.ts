@@ -18,7 +18,7 @@ import {
   set_activeChallengeRefId, set_activeChallengeId,
 } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
-import { FEED_CHALLENGE_RULING_SEC } from './arena-types.ts';
+import { FEED_CHALLENGE_RULING_SEC } from './arena-types-feed-room.ts';
 import {
   phase, round, timeLeft,
   set_timeLeft,

@@ -26,7 +26,8 @@ import {
   HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS,
   set_heartbeatSendTimer, set_heartbeatCheckTimer, set_disconnectHandled,
 } from './arena-feed-state.ts';
-import type { CurrentDebate, FeedEvent } from './arena-types.ts';
+import type { CurrentDebate } from './arena-types.ts';
+import type { FeedEvent } from './arena-types-feed-room.ts';
 import { isPlaceholder } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { stopTranscription } from './arena-deepgram.ts';

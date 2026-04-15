@@ -4,8 +4,9 @@
 import { safeRpc, getSupabaseClient } from '../auth.ts';
 import { escapeHTML, SUPABASE_URL, FEATURES } from '../config.ts';
 import { currentDebate } from './arena-state.ts';
-import type { CurrentDebate, DebateMessage, DebateRole, SideScores, AIScoreResult, CriterionScore } from './arena-types.ts';
-import { AI_RESPONSES, AI_TOPICS } from './arena-types.ts';
+import type { CurrentDebate, DebateMessage, DebateRole } from './arena-types.ts';
+import type { SideScores, AIScoreResult, CriterionScore } from './arena-types-ai-scoring.ts';
+import { AI_RESPONSES, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom } from './arena-core.ts';
 import { addMessage, advanceRound } from './arena-room-live.ts';
 

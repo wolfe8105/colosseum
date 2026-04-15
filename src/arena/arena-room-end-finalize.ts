@@ -8,10 +8,10 @@ import { citeReference } from '../reference-arsenal.ts';
 import { claimDebate, claimAiSparring } from '../tokens.ts';
 import { settleStakes } from '../staking.ts';
 import { resolveTournamentMatch } from '../tournaments.ts';
-import type {
-  CurrentDebate, AIScoreResult, UpdateDebateResult,
-  EndOfDebateBreakdown, LoadoutReference,
-} from './arena-types.ts';
+import type { CurrentDebate } from './arena-types.ts';
+import type { AIScoreResult } from './arena-types-ai-scoring.ts';
+import type { UpdateDebateResult, EndOfDebateBreakdown } from './arena-types-results.ts';
+import type { LoadoutReference } from './arena-types-feed-room.ts';
 
 export interface ModifierResult {
   scoreA: number | null;

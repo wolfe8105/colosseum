@@ -7,12 +7,10 @@ import {
   set_view, set_selectedMode, set_privateLobbyPollTimer,
   set_privateLobbyDebateId, set_modDebateId,
 } from './arena-state.ts';
-import type {
-  ArenaView, CurrentDebate, DebateMode, DebateRole,
-  PrivateLobbyResult, PendingChallenge, CheckPrivateLobbyResult,
-  JoinPrivateLobbyResult, ModDebateJoinResult,
-} from './arena-types.ts';
-import { AI_TOPICS } from './arena-types.ts';
+import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
+import type { PrivateLobbyResult, PendingChallenge, CheckPrivateLobbyResult, JoinPrivateLobbyResult } from './arena-types-private-lobby.ts';
+import type { ModDebateJoinResult } from './arena-types-moderator.ts';
+import { AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
 import { showMatchFound } from './arena-match.ts';
 import { showModDebateWaitingDebater } from './arena-mod-debate.ts';

@@ -15,7 +15,8 @@ import {
   set_privateLobbyPollTimer, set_privateLobbyDebateId,
   set_shieldActive, set_equippedForDebate, set_silenceTimer,
 } from './arena-state.ts';
-import type { ArenaView, ArenaFeedItem, AutoDebateItem } from './arena-types.ts';
+import type { ArenaView } from './arena-types.ts';
+import type { ArenaFeedItem, AutoDebateItem } from './arena-types-feed-list.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.ts';
 import { showRankedPicker } from './arena-config-settings.ts';
 import { showPrivateLobbyPicker } from './arena-private-picker.ts';

@@ -37,7 +37,7 @@ import {
 import type { CurrentDebate } from './arena-types.ts';
 import {
   FEED_TOTAL_ROUNDS, FEED_MAX_CHALLENGES,
-} from './arena-types.ts';
+} from './arena-types-feed-room.ts';
 import { formatTimer, pushArenaState } from './arena-core.ts';
 import { cleanupDeepgram } from './arena-deepgram.ts';
 import {

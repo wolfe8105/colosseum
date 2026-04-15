@@ -6,7 +6,8 @@ import {
   set_view, set_modQueuePollTimer, set_modStatusPollTimer,
   set_modRequestModalShown,
 } from './arena-state.ts';
-import type { ArenaView, ModQueueItem, ModStatusResult } from './arena-types.ts';
+import type { ArenaView } from './arena-types.ts';
+import type { ModQueueItem, ModStatusResult } from './arena-types-moderator.ts';
 import { showModDebatePicker } from './arena-mod-debate.ts';
 import { enterRoom } from './arena-room-setup.ts';
 

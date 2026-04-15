@@ -2,7 +2,8 @@
 // Also renders the "THE JUDGE IS REVIEWING..." loading screen during AI scoring.
 
 import { screenEl } from './arena-state.ts';
-import type { CurrentDebate, AIScoreResult } from './arena-types.ts';
+import type { CurrentDebate } from './arena-types.ts';
+import type { AIScoreResult } from './arena-types-ai-scoring.ts';
 import { requestAIScoring, sumSideScore } from './arena-room-ai.ts';
 
 export interface GeneratedScores {
