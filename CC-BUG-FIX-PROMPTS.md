@@ -195,3 +195,69 @@ Push to main.
 
 Pattern 10 (race conditions): M-A1, M-B7, M-C4, M-J1, M-K1, L-N1
 These need real reasoning. Rushing them introduces new bugs.
+
+---
+
+## Prompt 7 of 8 — Pattern 10 (simple): M-J1, M-B7, L-N1
+
+```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
+Three small race condition / ordering fixes:
+
+Fix 1 — arena-core.ts (M-J1):
+In the init() function, the joinCode path and spectate path both execute if
+both ?joinCode=X and ?spectate=Y are present in the URL. Add an else if
+before the spectate block so only one path runs.
+
+Fix 2 — arena-feed-wiring.ts (M-B7):
+In the concede handler, startFinalAdBreak fires before writeFeedEvent completes.
+Await writeFeedEvent before calling startFinalAdBreak.
+
+Fix 3 — intro-music.ts (L-N1):
+In the _close function, backdrop.style.opacity = '0' is set BEFORE
+backdrop.style.transition = 'opacity 0.2s'. The transition must be set first
+or the browser applies the opacity change instantly with no animation.
+Swap the two lines so transition is set before opacity.
+
+Commit: "fix(race): arena-core else-if guard, writeFeedEvent await, intro-music transition order"
+Push to main.
+```
+
+---
+
+## Prompt 8 of 8 — Pattern 10 (medium): M-K1
+
+```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
+Fix timestamp deduplication in arena-feed-spec-chat.ts (M-K1):
+
+Current code uses msgs[msgs.length - 1].created_at === lastMessageTime to
+skip re-renders. This assumes the server always returns rows in ascending
+chronological order, which is not guaranteed. Two failure modes:
+1. If rows arrive out of order, lastMessageTime gets set to a non-latest
+   timestamp and subsequent polls silently skip new messages.
+2. If two messages share identical created_at values (likely at 1s resolution),
+   the second message is silently dropped.
+
+Fix: instead of trusting array position, iterate all returned messages to find
+the actual maximum created_at value. Use that as lastMessageTime.
+Also sort messages client-side by created_at ascending before rendering,
+so display order is always correct regardless of server sort.
+
+Commit: "fix(race): spec-chat dedup uses max timestamp instead of last array element"
+Push to main.
+```
+
+---
+
+## Do NOT prompt these — discuss first
+
+M-A1 (arena-feed-machine.ts): unpauseFeed fires before RPCs resolve.
+Need to understand feed machine state flow before touching.
+
+M-C4 (home.ts): 6s auth race silently demotes logged-in users to plinko.
+Need to decide correct fallback behavior before writing a fix.
