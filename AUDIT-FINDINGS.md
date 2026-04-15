@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 44 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R). 13R–15R pending.
-**Last updated:** 2026-04-14, end of Batch 12R.
+**Coverage:** 46 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R). 14R–15R pending.
+**Last updated:** 2026-04-14, end of Batch 13R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -350,6 +350,15 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-K4. `spectate.render.ts:481` — `state.lastRenderedMessageCount` write is outside the `if (state.app)` guard
 **Batch 12R.** Line 480 guards the `innerHTML` write: `if (state.app) state.app.innerHTML = html`. Line 481 unconditionally writes `state.lastRenderedMessageCount = messages.length`. If `state.app` is null (page not ready), the DOM doesn't update but the counter advances — subsequent render skips (which compare count) may then incorrectly believe they already rendered. Fix: move the counter write inside the guard.
 
+### L-L1. `group-banner.ts` — `_renderTier1Fallback` onerror path doesn't clear container, leaves broken `<img>` in DOM
+**Batch 13R.** When `renderGroupBanner` renders a Tier 2 `<img>` and that image fails to load, `img.onerror` calls `_renderTier1Fallback(container, emoji, name)`, which does `container.appendChild(wrap)` (line 288) without first removing the broken `<img>`. Result: the container contains both the failed `<img>` element and the fallback `<div class="group-banner-t1">` simultaneously. Whether this produces a visible rendering artifact depends on browser behavior for broken images with `object-fit: cover`. Only 1 of 5 Stage 3 agents (Agent 02) flagged this; Stage 3 caught it as a latent behavioral gap. May or may not be a visible bug in practice — worth confirming in real browsers. Fix: clear or remove the `<img>` in the onerror handler before calling `_renderTier1Fallback`.
+
+### L-L2. `async.render.ts:294` — `_showWagerPicker` double-escape on sideLabel
+**Batch 13R.** Line 285: `const sideLabel = side === 'a' ? esc(pred.p1) : esc(pred.p2);` — already escaped. Line 294: `WAGER ON ${esc(sideLabel.toUpperCase())}` — calls `esc()` again. Benign from a security standpoint (no injection possible, double-escape is safe), but produces corrupted display for prediction participant names containing `&`, `<`, `>`, `"`, or `'`. Example: a name like `Rock 'n' Rollers` renders as `ROCK &#x27;N&#x27; ROLLERS` in the picker header. All 5 Stage 3 agents flagged. Fix: use `pred.p1.toUpperCase()` / `pred.p2.toUpperCase()` and escape once, or drop the second `esc()` call.
+
+### L-L3. `async.render.ts` — `_renderStandaloneCard` missing inline `Number()` casts on total/pctA/pctB
+**Batch 13R.** `total` (lines 228–229), `pctA` (230), `pctB` (231) are derived from `Number()` arithmetic — they are numerically safe. But they're interpolated into innerHTML at lines 241, 262, 264–265 **without** an explicit `Number()` wrapper at the interpolation site. No security risk (values can't be user-controlled strings), but it's a direct CLAUDE.md convention violation and inconsistent with how `_renderPredictionCard` handles the same fields (which DO have inline `Number()` casts at every interpolation). Same family as L-F5, L-F7, M-D2. Fix: add `Number()` at each interpolation site.
+
  — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -393,10 +402,13 @@ These are not individual findings but families that recur across files. Worth si
 | 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
 | 11R | 4 (`arena-sounds`, `arena-core`†, `tokens`†, `notifications`) | done | 0 | 0 | 0 |
 | 12R | 2 (`spectate.render`, `arena-feed-spec-chat`) | done | **1** | 1 | 4 |
+| 13R | 2 (`group-banner`, `async.render`) | done | 0 | 0 | 3 |
 
 † `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**44 of 57 files audited (all batches through 12R confirmed). 0 High, 41 Medium, 64 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
+**46 of 57 files audited (all batches through 13R confirmed). 0 High, 41 Medium, 67 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
+
+**Batch 13R notes:** Two files, both clean on code quality — no Mediums, no Highs. `group-banner.ts` has L-L1 (onerror path leaves broken `<img>` in DOM alongside fallback — Agent 02-only catch, behavioral gap that may or may not be visible depending on browser rendering). `async.render.ts` has L-L2 (double-escape on sideLabel in `_showWagerPicker` — display bug for names with HTML-special chars, no security risk) and L-L3 (missing inline `Number()` casts on total/pctA/pctB in `_renderStandaloneCard` — convention violation, same family as L-F5/L-F7/M-D2). One N/V observation worth downstream review: `vgBadge()` / `bountyDot()` return values are interpolated into `_renderTake`'s innerHTML without `esc()` — safety depends on those modules' own escaping discipline. All 5 Stage 3 agents flagged both L-L2 and L-L3 unanimously. Clean batch: Stage 3 correctly filtered Stage 2 noise (one Stage 2 agent incorrectly called the Tier I row "locked" when source says `class="gb-tier-row unlocked"` — Stage 3 flagged that as a FAIL against the specific claim).
 
 **Batch 12R notes:** Two files. `spectate.render.ts` clean — 5 functions, all behaviorally PASS with Stage 2 wording imprecision (missing `'Human Moderator'` fallback description, missing `spectator_count || 1` floor, missing `|| 0` coercions, `state.lastRenderedMessageCount` miscategorized as a read). One real Low logged (L-K4: counter write outside null guard). `arena-feed-spec-chat.ts` has **H-K1** — the first High since H-A2 in Batch 2. Stored XSS via single-quote injection in the report button's inline onclick handler. `encodeURIComponent` does not encode `'`, which terminates the JS string in the onclick attribute and allows arbitrary JS execution. Unanimous 5/5 agents. Also M-K1 (timestamp dedup fragility) and 3 Lows. **H-K1 should be fixed immediately.**
 
@@ -404,4 +416,4 @@ These are not individual findings but families that recur across files. Worth si
 
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
-**Last updated:** 2026-04-14, end of Batch 12R.
+**Last updated:** 2026-04-14, end of Batch 13R.
