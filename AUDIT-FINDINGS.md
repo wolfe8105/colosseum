@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 47 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R). 15R pending.
-**Last updated:** 2026-04-14, end of Batch 14R.
+**Coverage:** 49 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R, 15R).
+**Last updated:** 2026-04-15, end of Batch 15R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -368,6 +368,18 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-M3. `bounties.ts:255` — `renderProfileBountySection` cancel button has dual-handler pattern
 **Batch 14R.** The cancel button is wired via `document.getElementById('bounty-cancel-btn')?.addEventListener('click', ...)` at line 255. Inside that listener's first-click branch, the code assigns `btn.onclick = ...` with the confirmation handler. On the second click, both the outer `addEventListener` callback AND the newly-assigned `onclick` fire. The outer handler's first-click branch has already been consumed (via dataset flag), but the pattern is structurally weird: every click fires both layers, and the second click re-assigns `onclick` to the same closure reference. Benign (dataset flag guard prevents re-entry) but fragile. Also: if `#bounty-cancel-btn` is missing when the listener tries to attach, the `?.` silently drops it.
 
+### L-N1. `intro-music.ts:347` — `_close` sets `opacity` before `transition`; CSS fade does not animate
+**Batch 15R.** `_close` assigns `backdrop.style.opacity = '0'` on line 348, then `backdrop.style.transition = 'opacity 0.2s'` on line 349. The transition property must be registered *before* the targeted property changes for the browser to animate the change. Setting it after means the opacity jump is applied instantly with no fade. The element disappears immediately and is removed 220ms later by the `setTimeout`. 4 of 5 Stage 3 agents flagged this (Agents 02, 03, 04, 05); Stage 2 described both assignments without detecting the ordering bug. Fix: swap the two lines so `style.transition` is set first.
+
+### L-N2. `intro-music.ts:248–258` — `t.icon` and `t.id` injected into innerHTML without `escapeHTML`
+**Batch 15R.** In the `INTRO_TRACKS.map(...)` block, `t.label` and `t.description` are correctly passed through `escapeHTML()`, but `t.icon` (emoji) is interpolated raw into `<span class="im-track-icon">${t.icon}</span>` and `t.id` is interpolated raw into `data-id="${t.id}"` and `data-preview="${t.id}"` attributes. `INTRO_TRACKS` is currently a hardcoded constant in `arena-sounds.ts`, so there is no immediate XSS risk. But if track data ever becomes server-sourced or user-editable, these are injection points. 2 of 5 Stage 3 agents flagged (Agents 04, 05). Fix: pass `t.icon` and `t.id` through `escapeHTML()` at each interpolation site.
+
+### L-N3. `intro-music.ts:276–279` — `pendingUrl` not cleared on standard track selection
+**Batch 15R.** When the user clicks a standard track button, the click handler sets `selectedId = btn.dataset.id` and clears `pendingFile = null`, but does not clear `pendingUrl`. If the user previously had a custom track selected (setting `pendingUrl` to the custom signed URL from the profile), then switches to a standard track, `pendingUrl` retains the old URL in the closure. On save, `_saveIntroMusic` receives a non-null `existingUrl` even though `selectedId !== 'custom'` — however, the `if (trackId === 'custom')` branch is not entered, so `p_custom_url` is still sent as `null` to the RPC. The stale `pendingUrl` has no effect on the current save behavior, but the closure state is misleading and could become load-bearing if logic around `pendingUrl` changes. 2 of 5 Stage 3 agents flagged (Agents 03, 05). Fix: add `pendingUrl = null` alongside `pendingFile = null` in the track button click handler.
+
+### L-N4. `intro-music.ts:394–397` — `save_intro_music` RPC sends `p_custom_url: null` for all non-custom saves, clearing stored custom URL
+**Batch 15R.** For non-custom tracks, `uploadedUrl` remains `undefined` throughout `_saveIntroMusic`, so `p_custom_url: uploadedUrl ?? null` = `null`. The RPC is therefore instructed to clear `custom_intro_url` whenever the user saves a standard track — even if they previously had a custom intro uploaded. This is likely intentional (switching away from custom clears the URL to avoid orphaned storage objects), but it means a user who switches between standard tracks loses their uploaded custom audio and must re-upload it if they ever switch back to custom. The in-memory profile cache mutation at lines 404–408 consistently applies the same `null`, so cache and DB stay in sync. Only 1 of 5 Stage 3 agents flagged (Agent 05). Low priority but worth documenting for the product decision.
+
  — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -413,12 +425,15 @@ These are not individual findings but families that recur across files. Worth si
 | 12R | 2 (`spectate.render`, `arena-feed-spec-chat`) | done | **1** | 1 | 4 |
 | 13R | 2 (`group-banner`, `async.render`) | done | 0 | 0 | 3 |
 | 14R | 2 (`bounties`, `arena-sounds`‡) | done | 0 | 0 | 3 |
+| 15R | 2 (`notifications`, `intro-music`) | done | 0 | 0 | 4 |
 
 ‡ `arena-sounds.ts` was re-audited in 14R (overlap with 11R). **Both runs agreed: no code bugs.** 11R reported "all PASS, no findings." 14R reported "25 PASS, 0 FAIL" with 6 needs_review observations — but those are design-limitation notes (synthesized tracks can't be stopped, noise/osc gain asymmetry, haptics coupled to SFX toggle, etc.), not bugs. This is a **positive** audit-method data point, unlike the 10R/11R divergence on `arena-core.ts`: two independent 5-agent runs on a pure-code-quality question (does this code have bugs?) reached the same answer. The verbosity difference between runs is real, but the verdict is consistent.
 
 † `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**47 of 57 files audited (all batches through 14R confirmed; arena-sounds re-audit in 14R reaffirmed 11R's clean verdict — counts it once). 0 High, 41 Medium, 70 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
+**49 of 57 files audited (all batches through 15R confirmed; arena-sounds re-audit in 14R reaffirmed 11R's clean verdict — counts it once). 0 High, 41 Medium, 74 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
+
+**Batch 15R notes:** Two files. `notifications.ts` is clean — 14 anchors, all 5 Stage 3 agents unanimous PASS on every claim, no code bugs. One `needs_review` observation (not a finding): `(window as any).ColosseumNotifications = notificationsModule` at line 416 is a module-load side effect that Stage 2 agents universally missed; it exposes the module object globally, which is a debugging pattern but not a bug in this app context. `intro-music.ts` has 4 Lows — L-N1 (opacity-before-transition bug in `_close` means the CSS fade never animates, flagged 4/5 agents), L-N2 (`t.icon` and `t.id` unescaped in innerHTML), L-N3 (`pendingUrl` stale across standard track selection), L-N4 (`p_custom_url: null` sent for all non-custom saves, destructively clears stored custom URL). No Medium or High findings. Audit method observation: the `_close` ordering bug was missed unanimously by all 5 Stage 2 agents and caught unanimously by Stage 3 — another confirmation that the verifier pass catches real bugs that runtime-walk agents miss (consistent with the M-I3 and M-E5 precedents).
 
 **Batch 14R notes:** Two files, both clean on code quality. `bounties.ts` has 3 Lows — L-M1 (missing try/catch around `getMyBounties()` in `renderMyBountiesSection`, works today only because getMyBounties itself never rejects), L-M2 (refund calculation uses `duration_days` instead of the unused-but-defined `duration_fee` field — fragile assumption), L-M3 (cancel button dual-handler pattern — addEventListener + onclick assignment, works but weird). All 5 Stage 3 agents unanimous on all three. `arena-sounds.ts` was a re-audit of 11R's clean verdict — both runs agree there are no code bugs. 14R's 6 needs_review items are design limitations (no stop handle on synthesized intro tracks, noise() pre-scales samples making the gain parameter non-equivalent to osc()'s gain, haptics coupled to SFX toggle, closed AudioContext edge case, silent fallback to 'gladiator' on unknown trackId). Worth logging as future-feature/accessibility backlog but not code bugs. The 11R/14R agreement on arena-sounds is a positive data point about audit method consistency, contrasting with the 10R/11R divergence on arena-core.ts.
 
@@ -428,4 +443,4 @@ These are not individual findings but families that recur across files. Worth si
 
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
-**Last updated:** 2026-04-14, end of Batch 14R.
+**Last updated:** 2026-04-15, end of Batch 15R.
