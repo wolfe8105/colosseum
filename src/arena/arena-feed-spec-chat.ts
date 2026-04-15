@@ -168,11 +168,20 @@ function renderMessages(msgs: SpecChatMessage[]): void {
         <button
           class="spec-chat-report-btn"
           title="Report message"
-          onclick="window.location.href='mailto:reports@themoderator.app?subject=Spectator+Chat+Report&body=Message+ID:+${encodeURIComponent(m.id)}%0AContent:+${encodeURIComponent(m.message)}'"
+          data-msg-id="${escapeHTML(m.id)}"
+          data-msg-content="${escapeHTML(m.message)}"
         >⚑</button>
       </div>
     `;
   }).join('');
+
+  container.querySelectorAll<HTMLButtonElement>('.spec-chat-report-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.msgId ?? '';
+      const content = btn.dataset.msgContent ?? '';
+      window.location.href = `mailto:reports@themoderator.app?subject=Spectator+Chat+Report&body=Message+ID:+${encodeURIComponent(id)}%0AContent:+${encodeURIComponent(content)}`;
+    });
+  });
 
   scrollToBottom();
 }
