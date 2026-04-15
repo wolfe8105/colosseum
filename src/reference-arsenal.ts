@@ -41,7 +41,8 @@ export { saveDebateLoadout, getMyDebateLoadout, citeDebateReference, fileReferen
 export { showForgeForm } from './reference-arsenal.forge.ts';
 
 // Renderers
-export { renderReferenceCard, renderArsenal, renderArmory, renderLibrary } from './reference-arsenal.render.ts';
+export { renderReferenceCard, renderArsenal } from './reference-arsenal.render.ts';
+export { renderArmory, renderLibrary } from './reference-arsenal.armory.ts';
 
 // Loadout picker
 export { renderLoadoutPicker } from './reference-arsenal.loadout.ts';
@@ -52,7 +53,8 @@ export { renderLoadoutPicker } from './reference-arsenal.loadout.ts';
 
 import { forgeReference, editReference, deleteReference, secondReference, citeReference, challengeReference } from './reference-arsenal.rpc.ts';
 import { showForgeForm } from './reference-arsenal.forge.ts';
-import { renderArsenal, renderLibrary, renderReferenceCard } from './reference-arsenal.render.ts';
+import { renderArsenal, renderReferenceCard } from './reference-arsenal.render.ts';
+import { renderLibrary } from './reference-arsenal.armory.ts';
 import { compositeScore, powerDisplay } from './reference-arsenal.utils.ts';
 import { saveDebateLoadout, getMyDebateLoadout, citeDebateReference, fileReferenceChallenge } from './reference-arsenal.debate.ts';
 import { renderLoadoutPicker } from './reference-arsenal.loadout.ts';
