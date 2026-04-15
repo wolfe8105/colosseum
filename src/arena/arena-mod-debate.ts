@@ -8,7 +8,7 @@ import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-t
 import type { ModDebateCheckResult } from './arena-types-moderator.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
 import { showModQueue } from './arena-mod-queue.ts';
-import { enterRoom } from './arena-room-setup.ts';
+import { enterRoom } from './arena-room-enter.ts';
 import { showMatchFound } from './arena-match.ts';
 
 export function showModDebatePicker(): void {

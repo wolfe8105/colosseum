@@ -9,7 +9,7 @@ import {
 import type { ArenaView } from './arena-types.ts';
 import type { ModQueueItem, ModStatusResult } from './arena-types-moderator.ts';
 import { showModDebatePicker } from './arena-mod-debate.ts';
-import { enterRoom } from './arena-room-setup.ts';
+import { enterRoom } from './arena-room-enter.ts';
 
 export function showModQueue(): void {
   set_view('modQueue');

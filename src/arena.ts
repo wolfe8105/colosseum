@@ -54,7 +54,8 @@ export { showModeSelect, closeModeSelect } from './arena/arena-config-mode.ts';
 export { enterQueue, leaveQueue } from './arena/arena-queue.ts';
 
 // --- Room ---
-export { showPreDebate, enterRoom } from './arena/arena-room-setup.ts';
+export { showPreDebate } from './arena/arena-room-predebate.ts';
+export { enterRoom } from './arena/arena-room-enter.ts';
 export { submitTextArgument } from './arena/arena-room-live-poll.ts';
 export { addMessage, addSystemMessage } from './arena/arena-room-live-messages.ts';
 export { wireVoiceMemoControls } from './arena/arena-room-voicememo.ts';
