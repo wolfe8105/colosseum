@@ -36,7 +36,9 @@ import {
   updateCiteButtonState, updateChallengeButtonState,
   applySentimentUpdate,
 } from './arena-feed-ui.ts';
-import { clearFeedTimer, finishCurrentTurn, startFinalAdBreak, pauseFeed } from './arena-feed-machine.ts';
+import { clearFeedTimer, finishCurrentTurn } from './arena-feed-machine-turns.ts';
+import { startFinalAdBreak } from './arena-feed-machine-ads.ts';
+import { pauseFeed } from './arena-feed-machine-pause.ts';
 import { showCiteDropdown, showChallengeDropdown, showReferencePopup } from './arena-feed-references.ts';
 import { clearInterimTranscript } from './arena-feed-transcript.ts';
 import { modNullDebate } from './arena-feed-realtime.ts';

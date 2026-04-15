@@ -28,7 +28,7 @@ import {
   set_pendingSentimentA, set_pendingSentimentB,
 } from './arena-feed-state.ts';
 import { updateBudgetDisplay, resetBudget, updateChallengeButtonState } from './arena-feed-ui.ts';
-import { pauseFeed, unpauseFeed } from './arena-feed-machine.ts';
+import { pauseFeed, unpauseFeed } from './arena-feed-machine-pause.ts';
 
 
 export function appendFeedEvent(ev: FeedEvent): void {

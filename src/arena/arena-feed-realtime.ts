@@ -31,9 +31,10 @@ import { isPlaceholder } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { stopTranscription } from './arena-deepgram.ts';
 import {
-  appendFeedEvent, clearFeedTimer, addLocalSystem, setDebaterInputEnabled,
+  appendFeedEvent, addLocalSystem, setDebaterInputEnabled,
   writeFeedEvent, clearInterimTranscript, cleanupFeedRoom,
 } from './arena-feed-room.ts';
+import { clearFeedTimer } from './arena-feed-machine-turns.ts';
 
 // ============================================================
 // REALTIME SUBSCRIPTION

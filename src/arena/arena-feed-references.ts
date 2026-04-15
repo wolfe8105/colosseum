@@ -22,7 +22,7 @@ import {
 import type { CurrentDebate } from './arena-types.ts';
 import { round } from './arena-feed-state.ts';
 import { updateCiteButtonState, updateChallengeButtonState } from './arena-feed-ui.ts';
-import { pauseFeed } from './arena-feed-machine.ts';
+import { pauseFeed } from './arena-feed-machine-pause.ts';
 
 
 export function showCiteDropdown(debate: CurrentDebate): void {

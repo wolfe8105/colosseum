@@ -50,7 +50,7 @@ import {
 import { updateCiteButtonState } from './arena-feed-ui.ts';
 import { renderControls } from './arena-feed-wiring.ts';
 import { initSpecChat, cleanupSpecChat } from './arena-feed-spec-chat.ts';
-import { startPreRoundCountdown, clearFeedTimer } from './arena-feed-machine.ts';
+import { startPreRoundCountdown, clearFeedTimer } from './arena-feed-machine-turns.ts';
 
 // ============================================================
 // Re-exports — keep external callers unbroken
@@ -58,7 +58,6 @@ import { startPreRoundCountdown, clearFeedTimer } from './arena-feed-machine.ts'
 
 export { appendFeedEvent, addLocalSystem, writeFeedEvent } from './arena-feed-events.ts';
 export { setDebaterInputEnabled } from './arena-feed-ui.ts';
-export { clearFeedTimer } from './arena-feed-machine.ts';
 export { clearInterimTranscript } from './arena-feed-transcript.ts';
 
 
