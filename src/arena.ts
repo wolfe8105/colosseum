@@ -56,7 +56,8 @@ export { enterQueue, leaveQueue } from './arena/arena-queue.ts';
 // --- Room ---
 export { showPreDebate } from './arena/arena-room-predebate.ts';
 export { enterRoom } from './arena/arena-room-enter.ts';
-export { submitTextArgument, addMessage, addSystemMessage } from './arena/arena-room-live.ts';
+export { submitTextArgument } from './arena/arena-room-live-poll.ts';
+export { addMessage, addSystemMessage } from './arena/arena-room-live-messages.ts';
 export { wireVoiceMemoControls } from './arena/arena-room-voicememo.ts';
 export { endCurrentDebate } from './arena/arena-room-end.ts';
 

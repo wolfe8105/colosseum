@@ -11,7 +11,7 @@ import {
 } from './arena-state.ts';
 import type { EndOfDebateBreakdown } from './arena-types-results.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.ts';
-import { stopOpponentPoll } from './arena-room-live.ts';
+import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';
 import { cleanupFeedRoom } from './arena-feed-room.ts';
