@@ -227,7 +227,7 @@ Push to main.
 
 ---
 
-## Prompt 8 of 8 — Pattern 10 (medium): M-K1
+## Prompt 8 of 9 — Pattern 10 (medium): M-K1
 
 ```
 First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
@@ -254,13 +254,9 @@ Push to main.
 
 ---
 
-## Do NOT prompt these — discuss first
+## Do NOT prompt this — fix after refactor
 
-M-A1 (arena-feed-machine.ts): unpauseFeed fires before RPCs resolve.
-Need to understand feed machine state flow before touching.
-
-M-C4 (home.ts): 6s auth race silently demotes logged-in users to plinko.
-Need to decide correct fallback behavior before writing a fix.
+M-A1 (arena-feed-machine.ts): unpauseFeed fires before RPCs resolve. Fix after refactor is complete. See comment in arena-feed-machine-pause.ts for exact fix instructions.
 
 ---
 
