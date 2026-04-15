@@ -377,7 +377,7 @@ export function playEntranceSequence(debate: CurrentDebate): Promise<void> {
     try {
       if (tier === 3) {
         playSound('roundStart');
-        setTimeout(() => playSound('roundStart'), 600);
+        setTimeout(() => { try { playSound('roundStart'); } catch { /* sound optional */ } }, 600);
       } else {
         playSound('roundStart');
       }

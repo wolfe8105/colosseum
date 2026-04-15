@@ -22,6 +22,7 @@ import { escapeHTML } from '../config.ts';
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let pollInterval: ReturnType<typeof setInterval> | null = null;
+let errorHideTimer: ReturnType<typeof setTimeout> | null = null;
 let lastMessageTime: string | null = null;
 let chatOpen = false;
 let activeDebateId: string | null = null;
@@ -109,6 +110,10 @@ export function cleanupSpecChat(): void {
   if (pollInterval) {
     clearInterval(pollInterval);
     pollInterval = null;
+  }
+  if (errorHideTimer) {
+    clearTimeout(errorHideTimer);
+    errorHideTimer = null;
   }
   lastMessageTime = null;
   activeDebateId = null;
@@ -210,7 +215,8 @@ async function handleSend(): Promise<void> {
       if (errorEl) {
         errorEl.textContent = msg;
         errorEl.style.display = 'block';
-        setTimeout(() => { errorEl.style.display = 'none'; }, 3000);
+        if (errorHideTimer) clearTimeout(errorHideTimer);
+        errorHideTimer = setTimeout(() => { errorHideTimer = null; errorEl.style.display = 'none'; }, 3000);
       }
     } else {
       input.value = '';

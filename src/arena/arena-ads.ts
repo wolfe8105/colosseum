@@ -16,6 +16,14 @@
 const PUB_ID  = 'ca-pub-1800696416995461';
 const SLOT_ID = '8647716209';
 
+// ── Module-level interval handle ──────────────────────────────────────────────
+let _interstitialTick: ReturnType<typeof setInterval> | null = null;
+
+/** Cancel any running interstitial countdown tick. */
+export function destroy(): void {
+  if (_interstitialTick) { clearInterval(_interstitialTick); _interstitialTick = null; }
+}
+
 function _pushAd(): void {
   try {
     type W = typeof window & { adsbygoogle?: unknown[] };
@@ -95,20 +103,23 @@ export function showAdInterstitial(
   const skipBtn  = overlay.querySelector<HTMLElement>('#sad-skip')!;
 
   function dismiss(): void {
+    if (_interstitialTick) { clearInterval(_interstitialTick); _interstitialTick = null; }
     overlay.remove();
     onDone();
   }
 
   skipBtn.addEventListener('click', dismiss);
 
-  const tick = setInterval(() => {
+  if (_interstitialTick) clearInterval(_interstitialTick);
+  _interstitialTick = setInterval(() => {
     remaining -= 1;
     countEl.textContent = `${remaining}s`;
     if (remaining <= totalSec - skipSec) {
       skipBtn.style.display = 'inline-block';
     }
     if (remaining <= 0) {
-      clearInterval(tick);
+      clearInterval(_interstitialTick!);
+      _interstitialTick = null;
       dismiss();
     }
   }, 1000);

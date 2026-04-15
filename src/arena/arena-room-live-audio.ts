@@ -1,20 +1,40 @@
 // arena-room-live-audio.ts — live audio mode: WebRTC event wiring, joinDebate, mute toggle
 
-import { joinDebate, on as onWebRTC, toggleMute, createWaveform, getLocalStream } from '../webrtc.ts';
+import { joinDebate, on as onWebRTC, off as offWebRTC, toggleMute, createWaveform, getLocalStream } from '../webrtc.ts';
+import type { WebRTCEventCallback } from '../webrtc.ts';
 import { currentDebate } from './arena-state.ts';
 import { formatTimer } from './arena-core.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { addSystemMessage } from './arena-room-live-messages.ts';
 import { advanceRound } from './arena-room-live-poll.ts';
 
+// ── Module-level handler refs for deregistration ──────────────────────────────
+let _micReadyHandler:       WebRTCEventCallback | null = null;
+let _connectedHandler:      WebRTCEventCallback | null = null;
+let _disconnectedHandler:   WebRTCEventCallback | null = null;
+let _reconnectingHandler:   WebRTCEventCallback | null = null;
+let _connectionFailedHandler: WebRTCEventCallback | null = null;
+let _muteChangedHandler:    WebRTCEventCallback | null = null;
+let _tickHandler:           WebRTCEventCallback | null = null;
+let _debateEndHandler:      WebRTCEventCallback | null = null;
+
+/** Deregister all WebRTC handlers registered by initLiveAudio. */
+export function destroyLiveAudio(): void {
+  if (_micReadyHandler)         { offWebRTC('micReady',         _micReadyHandler);         _micReadyHandler = null; }
+  if (_connectedHandler)        { offWebRTC('connected',        _connectedHandler);        _connectedHandler = null; }
+  if (_disconnectedHandler)     { offWebRTC('disconnected',     _disconnectedHandler);     _disconnectedHandler = null; }
+  if (_reconnectingHandler)     { offWebRTC('reconnecting',     _reconnectingHandler);     _reconnectingHandler = null; }
+  if (_connectionFailedHandler) { offWebRTC('connectionFailed', _connectionFailedHandler); _connectionFailedHandler = null; }
+  if (_muteChangedHandler)      { offWebRTC('muteChanged',      _muteChangedHandler);      _muteChangedHandler = null; }
+  if (_tickHandler)             { offWebRTC('tick',             _tickHandler);             _tickHandler = null; }
+  if (_debateEndHandler)        { offWebRTC('debateEnd',        _debateEndHandler);        _debateEndHandler = null; }
+}
+
 export async function initLiveAudio(): Promise<void> {
-  // LANDMINE [LM-LIVE-002]: Every call to initLiveAudio adds new onWebRTC handlers with NO
-  // deregistration of previous handlers. Re-entry (reconnect, back-nav) causes debateEnd to
-  // fire multiple times → endCurrentDebate runs multiple times. Memory leak + behavioral bug.
-  // Fix requires a destroy() guard or a module-level "already initialized" flag.
+  destroyLiveAudio(); // deregister any stale handlers from a previous call
   const debate = currentDebate!;
 
-  onWebRTC('micReady', () => {
+  _micReadyHandler = () => {
     // LANDMINE [LM-LIVE-005]: Global getElementById lookups inside callbacks. If the arena
     // room is rendered twice in the same DOM, handlers target whichever element has the ID
     // first. Same family as L-I5 in AUDIT-FINDINGS.md.
@@ -25,14 +45,16 @@ export async function initLiveAudio(): Promise<void> {
     if (canvas && localStream) {
       createWaveform(localStream, canvas);
     }
-  });
+  };
+  onWebRTC('micReady', _micReadyHandler);
 
-  onWebRTC('connected', () => {
+  _connectedHandler = () => {
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) statusEl.textContent = '\uD83D\uDFE2 Connected \u2014 debate is live!';
-  });
+  };
+  onWebRTC('connected', _connectedHandler);
 
-  onWebRTC('disconnected', (data: unknown) => {
+  _disconnectedHandler = (data: unknown) => {
     const { recovering } = data as { state: string; recovering?: boolean };
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) {
@@ -40,21 +62,24 @@ export async function initLiveAudio(): Promise<void> {
         ? '\uD83D\uDFE1 Connection interrupted \u2014 reconnecting...'
         : '\uD83D\uDD34 Connection lost';
     }
-  });
+  };
+  onWebRTC('disconnected', _disconnectedHandler);
 
   // Session 208: ICE restart feedback (audit #14)
-  onWebRTC('reconnecting', (data: unknown) => {
+  _reconnectingHandler = (data: unknown) => {
     const { attempt, max } = data as { attempt: number; max: number };
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) statusEl.textContent = `\uD83D\uDFE1 Reconnecting (${attempt}/${max})...`;
-  });
+  };
+  onWebRTC('reconnecting', _reconnectingHandler);
 
-  onWebRTC('connectionFailed', () => {
+  _connectionFailedHandler = () => {
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) statusEl.textContent = '\uD83D\uDD34 Connection failed \u2014 audio unavailable';
-  });
+  };
+  onWebRTC('connectionFailed', _connectionFailedHandler);
 
-  onWebRTC('muteChanged', (data: unknown) => {
+  _muteChangedHandler = (data: unknown) => {
     const { muted } = data as { muted: boolean };
     const btn = document.getElementById('arena-mic-btn');
     if (btn) {
@@ -63,18 +88,21 @@ export async function initLiveAudio(): Promise<void> {
     }
     const statusEl = document.getElementById('arena-audio-status');
     if (statusEl) statusEl.textContent = muted ? 'Muted' : 'Unmuted \u2014 speaking';
-  });
+  };
+  onWebRTC('muteChanged', _muteChangedHandler);
 
-  onWebRTC('tick', (data: unknown) => {
+  _tickHandler = (data: unknown) => {
     const { timeLeft } = data as { timeLeft: number };
     const timerEl = document.getElementById('arena-room-timer');
     if (timerEl) {
       timerEl.textContent = formatTimer(timeLeft);
       timerEl.classList.toggle('warning', timeLeft <= 15);
     }
-  });
+  };
+  onWebRTC('tick', _tickHandler);
 
-  onWebRTC('debateEnd', () => { void endCurrentDebate(); });
+  _debateEndHandler = () => { void endCurrentDebate(); };
+  onWebRTC('debateEnd', _debateEndHandler);
 
   try {
     await joinDebate(debate.id, debate.role, debate.totalRounds);

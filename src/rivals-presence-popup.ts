@@ -21,6 +21,16 @@ export interface PopupState {
   active: boolean;
 }
 
+// ── Module-level timer handles for deregistration ────────────────────────────
+let _dismissTimer:  ReturnType<typeof setTimeout> | null = null;
+let _showNextTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Cancel any in-flight dismiss/showNext timers. Call from the parent destroy(). */
+export function destroy(): void {
+  if (_dismissTimer)  { clearTimeout(_dismissTimer);  _dismissTimer  = null; }
+  if (_showNextTimer) { clearTimeout(_showNextTimer); _showNextTimer = null; }
+}
+
 // ============================================================
 // POPUP DOM
 // ============================================================
@@ -32,15 +42,14 @@ export function dismissPopup(state: PopupState): void {
   // queues without ever showing. Only recovery is destroy(). (catalogued M-E7)
   if (!popup) return;
   popup.classList.add('dismissing');
-  // LANDMINE [LM-RIVALS-003]: setTimeout handles below are anonymous — never stored.
-  // If destroy() is called while dismiss animation is in flight, these timers still fire
-  // and call showNext() against torn-down state. Fix: store IDs and clear in destroy().
-  // (catalogued M-E6)
-  setTimeout(() => {
+  if (_dismissTimer) clearTimeout(_dismissTimer);
+  _dismissTimer = setTimeout(() => {
+    _dismissTimer = null;
     popup.remove();
     state.active = false;
     if (state.queue.length > 0) {
-      setTimeout(() => showNext(state), 600);
+      if (_showNextTimer) clearTimeout(_showNextTimer);
+      _showNextTimer = setTimeout(() => { _showNextTimer = null; showNext(state); }, 600);
     }
   }, 300);
 }
