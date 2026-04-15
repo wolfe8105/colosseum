@@ -261,3 +261,36 @@ Need to understand feed machine state flow before touching.
 
 M-C4 (home.ts): 6s auth race silently demotes logged-in users to plinko.
 Need to decide correct fallback behavior before writing a fix.
+
+---
+
+## Prompt 9 of 9 — M-C4: Auth race slow connection UX
+
+```
+First: set git remote to https://YOUR_GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+and configure git user name "Claude Code" email "cc@colosseum.app"
+
+Fix the silent auth race in home.ts (M-C4).
+
+Current behavior: Promise.race([authReady, setTimeout(6000)]) — if auth takes
+longer than 6 seconds, the user is silently redirected to plinko with no
+explanation. A logged-in user on a slow connection gets bumped with no warning.
+
+New behavior:
+1. Keep the initial 6 second wait
+2. If auth hasn't resolved after 6 seconds, show a "slow connection" UI overlay
+   with the message: "Having trouble connecting... will need to sign back in if
+   unable to resolve your connection"
+3. Start a visible 20 second countdown in that overlay
+4. If auth resolves before the countdown hits zero: dismiss the overlay, continue
+   normally as if nothing happened
+5. If countdown hits zero with no auth: dismiss overlay, show a toast or message
+   "Unable to connect. Please sign in again." then redirect to the login/sign-in page
+
+The overlay should be simple — no need for a new component, just inline DOM.
+Use existing toast/notification patterns from the codebase where possible.
+Do not change the underlying auth logic, only the timeout handling and UX.
+
+Commit: "fix(auth): slow connection countdown UI instead of silent plinko redirect (M-C4)"
+Push to main.
+```
