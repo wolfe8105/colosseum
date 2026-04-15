@@ -13,18 +13,11 @@
  *   Bottom sheet confirm on card tap
  */
 
-import {
-  getModifierCatalog,
-  getUserInventory,
-  renderEffectCard,
-  handleBuyModifier,
-  handleBuyPowerup,
-  tierLabel,
-  categoryLabel,
-  type ModifierEffect,
-  type ModifierCategory,
-  type RarityTier,
-} from '../modifiers.ts';
+import type { ModifierEffect, ModifierCategory, RarityTier } from '../modifiers.ts';
+import { getModifierCatalog } from '../modifiers-catalog.ts';
+import { getUserInventory } from '../modifiers-rpc.ts';
+import { renderEffectCard, tierLabel, categoryLabel } from '../modifiers-render.ts';
+import { handleBuyModifier, handleBuyPowerup } from '../modifiers-handlers.ts';
 import { escapeHTML, showToast } from '../config.ts';
 
 // ── Types ──────────────────────────────────────────────────

@@ -8,13 +8,9 @@
 
 import { safeRpc } from '../auth.ts';
 import { escapeHTML, showToast } from '../config.ts';
-import {
-  getModifierCatalog,
-  renderEffectCard,
-  tierLabel,
-  type ModifierEffect,
-  type RarityTier,
-} from '../modifiers.ts';
+import type { ModifierEffect, RarityTier } from '../modifiers.ts';
+import { getModifierCatalog } from '../modifiers-catalog.ts';
+import { renderEffectCard, tierLabel } from '../modifiers-render.ts';
 
 // ── Types ─────────────────────────────────────────────────
 
