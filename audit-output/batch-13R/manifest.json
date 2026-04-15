@@ -1,0 +1,23 @@
+{
+  "run_id": "audit-run-20260414-batch13R",
+  "created_at": "2026-04-14T00:00:00Z",
+  "batch": "13R",
+  "files": [
+    {
+      "path": "src/pages/group-banner.ts",
+      "sanitized": "src__pages__group-banner.ts",
+      "stage1":   {"status": "done", "output_path": "src__pages__group-banner.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "src__pages__group-banner.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "src__pages__group-banner.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "src__pages__group-banner.ts/stage3.md"}
+    },
+    {
+      "path": "src/async.render.ts",
+      "sanitized": "src__async.render.ts",
+      "stage1":   {"status": "done", "output_path": "src__async.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "src__async.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "src__async.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "src__async.render.ts/stage3.md"}
+    }
+  ]
+}
