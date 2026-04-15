@@ -5,38 +5,16 @@
  * Ungated entry point. Anonymous voting with fingerprint dedup.
  * SESSION 103/107: Backend persistence via landing_vote_counts RPCs.
  *
- * Migration: Session 128 (Phase 4)
+ * Migration: Session 128 (Phase 4). Refactored Session 254
+ * (types → debate-landing.types.ts, data → debate-landing.data.ts).
  */
 
 // ES imports (replaces window globals)
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, showToast } from '../config.ts';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, escapeHTML, showToast } from '../config.ts';
 import { downloadCard as dlCardFn } from '../cards.ts';
 import '../analytics.ts';
-
-// ============================================================
-// TYPE DEFINITIONS
-// ============================================================
-
-interface HotTake {
-  author: string;
-  text: string;
-  fire: number;
-  swords: number;
-}
-
-interface DebateEntry {
-  topic: string;
-  sideA: string;
-  sideB: string;
-  category: string;
-  catIcon: string;
-  catLabel: string;
-  yesVotes: number;
-  noVotes: number;
-  takes: HotTake[];
-  is_auto?: boolean;
-}
+import { DEBATES, debate, topicSlug, voteKey, getFingerprint } from './debate-landing.data.ts';
 
 // ============================================================
 // INIT SUPABASE (standalone — this page uses anon client, not ModeratorAuth)
@@ -45,110 +23,11 @@ interface DebateEntry {
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
 
 // ============================================================
-// ESCAPE HTML
-// ============================================================
-
-function escHtml(str: unknown): string {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-// ============================================================
-// DEMO DEBATES (seed data — backend counts override on load)
-// ============================================================
-
-const DEBATES: Record<string, DebateEntry> = {
-  'mahomes-vs-allen': {
-    topic: 'Is Patrick Mahomes better than Josh Allen?',
-    sideA: 'Mahomes', sideB: 'Allen',
-    category: 'sports', catIcon: '🏈', catLabel: 'Sports',
-    yesVotes: 847, noVotes: 762,
-    takes: [
-      { author: 'GridironGuru', text: 'Three rings. End of discussion. Mahomes has more hardware than Allen will ever see.', fire: 42, swords: 18 },
-      { author: 'BillsMafia4Life', text: "Allen does more with less. Put him on the Chiefs and he'd have 5 rings by now.", fire: 38, swords: 31 },
-      { author: 'NFLAnalytics', text: "Stats don't lie — Allen's rushing adds a dimension Mahomes can't match. Total package.", fire: 27, swords: 12 },
-    ]
-  },
-  'caleb-downs-combine': {
-    topic: 'Is Caleb Downs worth a top 10 pick in the 2026 NFL Draft?',
-    sideA: 'Yes — Top 10', sideB: 'No — Reach',
-    category: 'sports', catIcon: '🏈', catLabel: 'Sports',
-    yesVotes: 534, noVotes: 289,
-    takes: [
-      { author: 'DraftSzn', text: 'Best safety prospect since Ed Reed. You take that every time.', fire: 55, swords: 8 },
-      { author: 'ScoutingDept', text: 'Safety at 10 is a luxury pick. Build the trenches first.', fire: 31, swords: 22 },
-    ]
-  },
-  'trump-tariffs': {
-    topic: "Will Trump's new tariffs help or hurt the average American?",
-    sideA: 'Help', sideB: 'Hurt',
-    category: 'politics', catIcon: '🏛️', catLabel: 'Politics',
-    yesVotes: 612, noVotes: 871,
-    takes: [
-      { author: 'EconWatcher', text: 'Every economist agrees: tariffs are a tax on consumers. Your groceries are about to get expensive.', fire: 63, swords: 41 },
-      { author: 'MadeInUSA', text: 'Short term pain for long term gain. We need manufacturing back on American soil.', fire: 48, swords: 33 },
-    ]
-  },
-  'beyonce-overrated': {
-    topic: 'Is Beyoncé overrated?',
-    sideA: 'Yes', sideB: 'No',
-    category: 'entertainment', catIcon: '🎤', catLabel: 'Entertainment',
-    yesVotes: 223, noVotes: 891,
-    takes: [
-      { author: 'MusicCritic101', text: 'Talented? Sure. Greatest of all time? The Beyhive has lost its mind.', fire: 72, swords: 88 },
-      { author: 'QueenBFan', text: '28 Grammys. Most awarded artist in history. "Overrated" is cope.', fire: 94, swords: 15 },
-    ]
-  }
-};
-
-// ============================================================
 // STATE
 // ============================================================
 
 let voteCounted = false;
 const container = document.getElementById('main-container');
-
-function getFingerprint(): string {
-  let fp = localStorage.getItem('col_fp');
-  if (!fp) {
-    fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
-    localStorage.setItem('col_fp', fp);
-  }
-  return fp;
-}
-
-const urlParams = new URLSearchParams(window.location.search);
-const topicSlug = urlParams.get('topic') ?? 'mahomes-vs-allen';
-const customTitle = urlParams.get('title');
-const source = urlParams.get('src');
-
-// Custom topic support
-if (topicSlug && !DEBATES[topicSlug] && customTitle) {
-  const catMap: Record<string, [string, string]> = {
-    sports: ['🏈', 'Sports'], politics: ['🏛️', 'Politics'],
-    entertainment: ['🎤', 'Entertainment'], music: ['🎵', 'Music'], trending: ['🔥', 'Trending'],
-  };
-  const cat = urlParams.get('cat') ?? 'trending';
-  const [catIcon, catLabel] = catMap[cat] ?? ['🔥', 'Trending'];
-  DEBATES[topicSlug] = {
-    topic: decodeURIComponent(customTitle),
-    sideA: 'Yes', sideB: 'No',
-    category: cat, catIcon, catLabel,
-    yesVotes: 0, noVotes: 0,
-    takes: [
-      { author: 'The Moderator', text: 'This debate was started from ' + (source === 'telegram' || source === 'telegram-inline' ? 'Telegram' : 'a shared link') + '. Cast your vote and drop a hot take!', fire: 1, swords: 0 },
-    ]
-  };
-}
-
-const debate = DEBATES[topicSlug] ?? DEBATES['mahomes-vs-allen'];
-const voteKey = 'colosseum_vote_' + topicSlug;
-
-document.title = debate.topic + ' — The Moderator';
 
 // ============================================================
 // RENDER
@@ -162,10 +41,10 @@ function render(): void {
   let html = '';
 
   // Category pill
-  html += `<a href="https://themoderator.app?cat=${encodeURIComponent(debate.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escHtml(debate.catIcon)}</span>${escHtml(debate.catLabel)}</a>`;
+  html += `<a href="https://themoderator.app?cat=${encodeURIComponent(debate.category)}" class="cat-pill" style="text-decoration:none;color:inherit;cursor:pointer;"><span class="cat-icon">${escapeHTML(debate.catIcon)}</span>${escapeHTML(debate.catLabel)}</a>`;
 
   html += `<div class="debate-card">`;
-  html += `<div class="debate-topic">${escHtml(debate.topic)}</div>`;
+  html += `<div class="debate-topic">${escapeHTML(debate.topic)}</div>`;
 
   if (debate.is_auto) {
     html += `<div class="ai-generated-badge"><span class="ai-icon">AI</span>AI-Generated Debate — Not Real People</div>`;
@@ -173,8 +52,8 @@ function render(): void {
 
   if (!hasVoted) {
     html += `<div class="vote-row">
-      <button class="vote-btn yes" data-action="cast-vote" data-side="yes"><span class="vote-label">${escHtml(debate.sideA)}</span><span class="vote-sub">Pick this side</span></button>
-      <button class="vote-btn no" data-action="cast-vote" data-side="no"><span class="vote-label">${escHtml(debate.sideB)}</span><span class="vote-sub">Pick this side</span></button>
+      <button class="vote-btn yes" data-action="cast-vote" data-side="yes"><span class="vote-label">${escapeHTML(debate.sideA)}</span><span class="vote-sub">Pick this side</span></button>
+      <button class="vote-btn no" data-action="cast-vote" data-side="no"><span class="vote-label">${escapeHTML(debate.sideB)}</span><span class="vote-sub">Pick this side</span></button>
     </div>`;
   } else {
     const yV = debate.yesVotes + (!voteCounted && votedSide === 'yes' ? 1 : 0);
@@ -183,8 +62,8 @@ function render(): void {
     const yPct = Math.round((yV / tot) * 100);
     const nPct = 100 - yPct;
     html += `<div class="vote-row">
-      <button class="vote-btn yes voted ${votedSide === 'yes' ? 'winner' : ''}"><span class="vote-label">${escHtml(debate.sideA)}</span><span class="vote-sub">${votedSide === 'yes' ? '✓ Your pick' : ''}</span></button>
-      <button class="vote-btn no voted ${votedSide === 'no' ? 'winner' : ''}"><span class="vote-label">${escHtml(debate.sideB)}</span><span class="vote-sub">${votedSide === 'no' ? '✓ Your pick' : ''}</span></button>
+      <button class="vote-btn yes voted ${votedSide === 'yes' ? 'winner' : ''}"><span class="vote-label">${escapeHTML(debate.sideA)}</span><span class="vote-sub">${votedSide === 'yes' ? '✓ Your pick' : ''}</span></button>
+      <button class="vote-btn no voted ${votedSide === 'no' ? 'winner' : ''}"><span class="vote-label">${escapeHTML(debate.sideB)}</span><span class="vote-sub">${votedSide === 'no' ? '✓ Your pick' : ''}</span></button>
     </div>`;
     html += `<div class="results-section show">
       <div class="vote-bar-track"><div class="vote-bar-fill yes-fill" style="width:${yPct}%">${yPct}%</div><div class="vote-bar-fill no-fill" style="width:${nPct}%">${nPct}%</div></div>
@@ -208,8 +87,8 @@ function render(): void {
     html += `<div class="section-label">🔥 Hot Takes</div><div class="takes-list">`;
     debate.takes.forEach(t => {
       html += `<div class="take-card">
-        <a href="/u/${encodeURIComponent(t.author)}" class="take-author" style="text-decoration:none;color:inherit;cursor:pointer;">@${escHtml(t.author)}</a>
-        <div class="take-text">${escHtml(t.text)}</div>
+        <a href="/u/${encodeURIComponent(t.author)}" class="take-author" style="text-decoration:none;color:inherit;cursor:pointer;">@${escapeHTML(t.author)}</a>
+        <div class="take-text">${escapeHTML(t.text)}</div>
         <div class="take-reactions"><span>🔥 ${Number(t.fire) || 0}</span><span>⚔️ ${Number(t.swords) || 0}</span></div>
       </div>`;
     });
@@ -236,8 +115,8 @@ function render(): void {
       if (!d) return;
       const dTotal = d.yesVotes + d.noVotes;
       html += `<div class="mini-debate" data-action="go-debate" data-slug="${encodeURIComponent(slug)}"
-        <div class="mini-topic">${escHtml(d.topic)}</div>
-        <div class="mini-meta"><span class="mini-cat">${escHtml(d.catIcon)} ${escHtml(d.catLabel)}</span><span>${dTotal.toLocaleString()} votes</span></div>
+        <div class="mini-topic">${escapeHTML(d.topic)}</div>
+        <div class="mini-meta"><span class="mini-cat">${escapeHTML(d.catIcon)} ${escapeHTML(d.catLabel)}</span><span>${dTotal.toLocaleString()} votes</span></div>
       </div>`;
     });
     html += `</div>`;
@@ -283,8 +162,8 @@ async function loadBackendCounts(): Promise<void> {
     const counts = data as Record<string, { yes_votes: number; no_votes: number }>;
     for (const [slug, c] of Object.entries(counts)) {
       if (DEBATES[slug]) {
-        DEBATES[slug].yesVotes = Number(c.yes_votes) || 0;
-        DEBATES[slug].noVotes = Number(c.no_votes) || 0;
+        DEBATES[slug]!.yesVotes = Number(c.yes_votes) || 0;
+        DEBATES[slug]!.noVotes = Number(c.no_votes) || 0;
       }
     }
 
@@ -343,7 +222,6 @@ function downloadCard(): void {
   dlCardFn({ topic: debate.topic, sideA: debate.sideA, sideB: debate.sideB, yesVotes: yV, noVotes: nV, size: 'og' });
 }
 
-
 function goSignup(): void {
   window.location.href = 'moderator-plinko.html';
 }
@@ -379,4 +257,4 @@ document.addEventListener('click', (e) => {
 // ============================================================
 
 render();
-loadBackendCounts();
+void loadBackendCounts();
