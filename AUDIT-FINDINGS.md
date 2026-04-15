@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 46 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R). 14R–15R pending.
-**Last updated:** 2026-04-14, end of Batch 13R.
+**Coverage:** 47 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R). 15R pending.
+**Last updated:** 2026-04-14, end of Batch 14R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
@@ -359,6 +359,15 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-L3. `async.render.ts` — `_renderStandaloneCard` missing inline `Number()` casts on total/pctA/pctB
 **Batch 13R.** `total` (lines 228–229), `pctA` (230), `pctB` (231) are derived from `Number()` arithmetic — they are numerically safe. But they're interpolated into innerHTML at lines 241, 262, 264–265 **without** an explicit `Number()` wrapper at the interpolation site. No security risk (values can't be user-controlled strings), but it's a direct CLAUDE.md convention violation and inconsistent with how `_renderPredictionCard` handles the same fields (which DO have inline `Number()` casts at every interpolation). Same family as L-F5, L-F7, M-D2. Fix: add `Number()` at each interpolation site.
 
+### L-M1. `bounties.ts:358` — `renderMyBountiesSection` has no try/catch around `getMyBounties()`
+**Batch 14R.** Unlike its sibling `renderProfileBountySection` which wraps the `getMyBounties()` call in a silent try/catch, `renderMyBountiesSection` calls it bare at line 358. If `getMyBounties()` rejects, the promise propagates uncaught and the container is left stuck showing the loading placeholder indefinitely. In practice `getMyBounties()` itself catches errors and always resolves with `{ incoming: [], outgoing: [] }`, so this doesn't surface as a bug today. But the structural asymmetry is fragile — if `getMyBounties` ever stops swallowing errors, this caller breaks. All 5 Stage 3 agents flagged. Fix: add try/catch matching the sibling function.
+
+### L-M2. `bounties.ts:258–259` — refund calculation uses `duration_days` instead of the `duration_fee` field
+**Batch 14R.** The `BountyRow` interface has a dedicated `duration_fee` field (line 30) that never gets referenced. The refund calculation (`totalPaid = existingBounty.amount + existingBounty.duration_days`) uses `duration_days` as the fee proxy instead. This works today only if the two values are always equal server-side — a fragile assumption. If `duration_fee` ever diverges from `duration_days` (e.g. variable pricing tiers, promotional rates, fee adjustments), refund amounts will be wrong. 5/5 Stage 3 agents confirmed the field exists and is unused. Worth an SQL check on the server-side function: if the fee is computed from days, remove the unused field; if the fee is independent, fix the client to use it.
+
+### L-M3. `bounties.ts:255` — `renderProfileBountySection` cancel button has dual-handler pattern
+**Batch 14R.** The cancel button is wired via `document.getElementById('bounty-cancel-btn')?.addEventListener('click', ...)` at line 255. Inside that listener's first-click branch, the code assigns `btn.onclick = ...` with the confirmation handler. On the second click, both the outer `addEventListener` callback AND the newly-assigned `onclick` fire. The outer handler's first-click branch has already been consumed (via dataset flag), but the pattern is structurally weird: every click fires both layers, and the second click re-assigns `onclick` to the same closure reference. Benign (dataset flag guard prevents re-entry) but fragile. Also: if `#bounty-cancel-btn` is missing when the listener tries to attach, the `?.` silently drops it.
+
  — `checkHIBP` fail-open on network error undocumented
 **Batch 4.** Returns `false` on any network failure, timeout, or CORS block — silently allowing potentially breached passwords through. Deliberate tradeoff per in-code comments but not documented in any spec or README.
 
@@ -403,12 +412,15 @@ These are not individual findings but families that recur across files. Worth si
 | 11R | 4 (`arena-sounds`, `arena-core`†, `tokens`†, `notifications`) | done | 0 | 0 | 0 |
 | 12R | 2 (`spectate.render`, `arena-feed-spec-chat`) | done | **1** | 1 | 4 |
 | 13R | 2 (`group-banner`, `async.render`) | done | 0 | 0 | 3 |
+| 14R | 2 (`bounties`, `arena-sounds`‡) | done | 0 | 0 | 3 |
+
+‡ `arena-sounds.ts` was re-audited in 14R (overlap with 11R). **Both runs agreed: no code bugs.** 11R reported "all PASS, no findings." 14R reported "25 PASS, 0 FAIL" with 6 needs_review observations — but those are design-limitation notes (synthesized tracks can't be stopped, noise/osc gain asymmetry, haptics coupled to SFX toggle, etc.), not bugs. This is a **positive** audit-method data point, unlike the 10R/11R divergence on `arena-core.ts`: two independent 5-agent runs on a pure-code-quality question (does this code have bugs?) reached the same answer. The verbosity difference between runs is real, but the verdict is consistent.
 
 † `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**46 of 57 files audited (all batches through 13R confirmed). 0 High, 41 Medium, 67 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
+**47 of 57 files audited (all batches through 14R confirmed; arena-sounds re-audit in 14R reaffirmed 11R's clean verdict — counts it once). 0 High, 41 Medium, 70 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
 
-**Batch 13R notes:** Two files, both clean on code quality — no Mediums, no Highs. `group-banner.ts` has L-L1 (onerror path leaves broken `<img>` in DOM alongside fallback — Agent 02-only catch, behavioral gap that may or may not be visible depending on browser rendering). `async.render.ts` has L-L2 (double-escape on sideLabel in `_showWagerPicker` — display bug for names with HTML-special chars, no security risk) and L-L3 (missing inline `Number()` casts on total/pctA/pctB in `_renderStandaloneCard` — convention violation, same family as L-F5/L-F7/M-D2). One N/V observation worth downstream review: `vgBadge()` / `bountyDot()` return values are interpolated into `_renderTake`'s innerHTML without `esc()` — safety depends on those modules' own escaping discipline. All 5 Stage 3 agents flagged both L-L2 and L-L3 unanimously. Clean batch: Stage 3 correctly filtered Stage 2 noise (one Stage 2 agent incorrectly called the Tier I row "locked" when source says `class="gb-tier-row unlocked"` — Stage 3 flagged that as a FAIL against the specific claim).
+**Batch 14R notes:** Two files, both clean on code quality. `bounties.ts` has 3 Lows — L-M1 (missing try/catch around `getMyBounties()` in `renderMyBountiesSection`, works today only because getMyBounties itself never rejects), L-M2 (refund calculation uses `duration_days` instead of the unused-but-defined `duration_fee` field — fragile assumption), L-M3 (cancel button dual-handler pattern — addEventListener + onclick assignment, works but weird). All 5 Stage 3 agents unanimous on all three. `arena-sounds.ts` was a re-audit of 11R's clean verdict — both runs agree there are no code bugs. 14R's 6 needs_review items are design limitations (no stop handle on synthesized intro tracks, noise() pre-scales samples making the gain parameter non-equivalent to osc()'s gain, haptics coupled to SFX toggle, closed AudioContext edge case, silent fallback to 'gladiator' on unknown trackId). Worth logging as future-feature/accessibility backlog but not code bugs. The 11R/14R agreement on arena-sounds is a positive data point about audit method consistency, contrasting with the 10R/11R divergence on arena-core.ts.
 
 **Batch 12R notes:** Two files. `spectate.render.ts` clean — 5 functions, all behaviorally PASS with Stage 2 wording imprecision (missing `'Human Moderator'` fallback description, missing `spectator_count || 1` floor, missing `|| 0` coercions, `state.lastRenderedMessageCount` miscategorized as a read). One real Low logged (L-K4: counter write outside null guard). `arena-feed-spec-chat.ts` has **H-K1** — the first High since H-A2 in Batch 2. Stored XSS via single-quote injection in the report button's inline onclick handler. `encodeURIComponent` does not encode `'`, which terminates the JS string in the onclick attribute and allows arbitrary JS execution. Unanimous 5/5 agents. Also M-K1 (timestamp dedup fragility) and 3 Lows. **H-K1 should be fixed immediately.**
 
@@ -416,4 +428,4 @@ These are not individual findings but families that recur across files. Worth si
 
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
-**Last updated:** 2026-04-14, end of Batch 13R.
+**Last updated:** 2026-04-14, end of Batch 14R.
