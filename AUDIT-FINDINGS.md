@@ -1,7 +1,7 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 39 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 11R).
+**Coverage:** 42 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R). 12R–15R pending.
 **Last updated:** 2026-04-14, end of Batch 11R.
 
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
@@ -369,20 +369,18 @@ These are not individual findings but families that recur across files. Worth si
 | 7R | 4 (`arena-room-setup`, `spectate`, `auth.types`, `auth.profile`) | done | 0 | 1 | 5 |
 | 8R | 4 (`settings`, `reference-arsenal.loadout`, `badge`, `profile-debate-archive`) | done | 0 | 2 | 1 |
 | 8Rc | 4 (`vite.config`, `async.types`, `home.feed`, `home.types`) | done | 0 | 0 | 0 |
-| 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
-
 | 9R | 3 (`leaderboard`, `arena-ads`, `arena-mod-scoring`) | done | 0 | 3 | 6 |
-| 11R | 4 (`arena-sounds`, `arena-core`, `tokens`, `notifications`) | done | 0 | 0 | 0 |
+| 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
+| 11R | 4 (`arena-sounds`, `arena-core`†, `tokens`†, `notifications`) | done | 0 | 0 | 0 |
 
-**39 of 57 files audited (Batches 1–6 partial, 4, 8R, 8Rc, 9R, 11R confirmed; 7R done per prior synthesis; 10R, 12R–15R pending). 0 High, 34 Medium, 48 Low. 2 findings FIXED (H-A2, L-C8).**
+† `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**Batch 11R notes:** Clean batch — zero code bugs across all 4 files. `arena-sounds.ts` (lots of anchors, all PASS), `arena-core.ts` (9 functions, all PASS with minor Stage 2 wording imprecision on `_onPopState` cleanup ordering and `init` omissions — catch-path fallback, replaceState on localStorage branch). `tokens.ts` (24 functions, all behaviorally PASS; 2 consensus PARTIAL on wording — `claimDailyLogin` failure-path `dailyLoginClaimed = true` flag omission, `init` conflating `_updateBalanceDisplay` private vs `updateBalance` exported). `notifications.ts` (14 functions, all behaviorally PASS; 2 consensus PARTIAL on wording — `renderList` unread row background tint omission noted unanimously 5/5, `init` module-level `ready.then().catch()` wiring conflated with function body). No findings escalated to needs-human-review.md. Stage 3 did its job filtering noise — all PARTIALs are description-quality, not code-quality.
+**42 of 57 files audited (all batches through 11R confirmed). 0 High, 40 Medium, 60 Low. 2 findings FIXED (H-A2, L-C8).**
+
+**Batch 11R notes:** Clean batch for the two net-new files. `arena-sounds.ts` all PASS. `notifications.ts` 14 functions all behaviorally PASS, 2 consensus PARTIAL on wording (`renderList` unread row background tint omission noted unanimously 5/5, `init` module-level `ready.then().catch()` wiring conflated with function body). Re-audits of `arena-core.ts` and `tokens.ts` came back clean — notable divergence from 10R on the same files, logged above. Stage 3 did its job filtering noise — all PARTIALs are description-quality, not code-quality.
+
+**Batch 10R notes:** 5 Medium + 7 Low. Real finds: M-J1 init co-execution of joinCode+spectate, M-J2 module-load popstate registration, M-J3 selectBountyClaim rejection leaves button disabled (**seventh** disable-button-no-finally instance), M-J4 bounty option content XSS missing escapeHTML, M-J5 _attemptFeePaid singleton not reset. Low findings across both files.
+
+**Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
 **Last updated:** 2026-04-14, end of Batch 11R.
-| 10R | 3 (`tokens`, `arena-core`, `arena-bounty-claim`) | done | 0 | 5 | 7 |
-
-**42 of 57 files audited (all batches through 10R confirmed; 11R–15R pending). 0 High, 40 Medium, 60 Low. 2 findings FIXED (H-A2, L-C8).**
-
-**Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime. Note: batch-07R folder contains a stale Batch 11R manifest.json from an aborted run — CC will archive it automatically when 11R runs.
-
-**Last updated:** 2026-04-14, end of Batch 7R synthesis.
