@@ -25,20 +25,10 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 
 *(No HIGH findings currently open.)*
 
-### H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection
-**Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed.** The `renderMessages` function builds a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters:
+### ~~H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection~~ — **FIXED 2026-04-14 (commit 4166c1e)**
+**Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed. Fixed same day.** The `renderMessages` function built a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters, interpolating `encodeURIComponent(m.message)` into that JS string. `encodeURIComponent` does not encode the single-quote character (RFC 3986 unreserved), so a stored spectator chat message containing `'` terminated the JS string and allowed arbitrary JS execution in any spectator's browser that clicked the report button. `m.message` was fully user-controlled (spectator chat content), making this a stored XSS with worm potential.
 
-```typescript
-onclick="window.location.href='mailto:reports@themoderator.app?subject=Spectator+Chat+Report&body=Message+ID:+${encodeURIComponent(m.id)}%0AContent:+${encodeURIComponent(m.message)}'"
-```
-
-`encodeURIComponent` percent-encodes for URL safety but **does not encode the single-quote character `'`** — single quote is in the RFC 3986 unreserved set and passes through unchanged. Any stored spectator chat message containing `'` terminates the JS string literal inside the onclick handler and allows injected JS to run in the clicking user's browser context.
-
-**Concrete exploit:** A stored message of `'); alert(document.cookie); var x='` causes the onclick attribute to execute `alert(document.cookie)` — arbitrary JS execution with full access to the clicking spectator's session cookies, localStorage, and any in-memory state. This is a classic stored XSS with worm potential (one malicious message can compromise every spectator who clicks report on it).
-
-**Project rule violated:** CLAUDE.md — "Any user-supplied data entering innerHTML or template literals MUST pass through escapeHTML()." The `encodeURIComponent` output is embedded into an innerHTML template literal without any additional escaping. `m.message` is fully user-controlled spectator chat content.
-
-**Fix:** Replace the inline `onclick` string with `data-msg-id` and `data-msg-content` attributes on the button, then attach a delegated click listener after the `innerHTML` write that constructs the `mailto:` URL using those attributes. This eliminates the injection surface entirely. **Should be fixed immediately — this is the highest-priority open finding in the audit.**
+**Fix applied:** Replaced inline `onclick` with `data-msg-id` and `data-msg-content` attributes (both passed through `escapeHTML()`), then attached click listeners after the `innerHTML` assignment that read the data attributes and construct the `mailto:` URL via `encodeURIComponent` in URL context (where it's the correct escape). The user content never enters a JS string context. Fix matches the `needs-human-review.md` NR-8 recommendation exactly. Build clean, typecheck baseline unchanged (391→391).
 
 ---
 
@@ -406,7 +396,7 @@ These are not individual findings but families that recur across files. Worth si
 
 † `arena-core.ts` and `tokens.ts` were re-audited in 11R (overlap with 10R). 11R's Stage 3 on these files came back fully clean, but 10R's Stage 3 on the same `arena-core.ts` flagged M-J1 (init co-execution) and M-J2 (module-load popstate). **10R findings stand** — they are real code issues, independent of which run caught them. 11R's clean verdict on the overlap is a data point about audit method variance, not evidence the bugs don't exist. Only `arena-sounds.ts` and `notifications.ts` are net-new from 11R; both clean.
 
-**44 of 57 files audited (all batches through 12R confirmed). 1 High (H-K1), 41 Medium, 64 Low. 2 findings FIXED (H-A2, L-C8).**
+**44 of 57 files audited (all batches through 12R confirmed). 0 High, 41 Medium, 64 Low. 3 findings FIXED (H-A2, H-K1, L-C8).**
 
 **Batch 12R notes:** Two files. `spectate.render.ts` clean — 5 functions, all behaviorally PASS with Stage 2 wording imprecision (missing `'Human Moderator'` fallback description, missing `spectator_count || 1` floor, missing `|| 0` coercions, `state.lastRenderedMessageCount` miscategorized as a read). One real Low logged (L-K4: counter write outside null guard). `arena-feed-spec-chat.ts` has **H-K1** — the first High since H-A2 in Batch 2. Stored XSS via single-quote injection in the report button's inline onclick handler. `encodeURIComponent` does not encode `'`, which terminates the JS string in the onclick attribute and allows arbitrary JS execution. Unanimous 5/5 agents. Also M-K1 (timestamp dedup fragility) and 3 Lows. **H-K1 should be fixed immediately.**
 
