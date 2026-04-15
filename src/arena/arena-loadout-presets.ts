@@ -205,6 +205,7 @@ async function handleSave(
   } catch { /* silent */ }
 
   const saveBtn = container.querySelector<HTMLButtonElement>('#preset-save-btn');
+  const saveBtnOrigText = saveBtn?.textContent ?? '＋ SAVE';
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'SAVING...'; }
 
   try {
@@ -230,6 +231,8 @@ async function handleSave(
   } catch (e) {
     console.warn('[Presets] Save failed:', e);
     alert('Could not save preset.');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = saveBtnOrigText; }
   }
 }
 

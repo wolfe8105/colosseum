@@ -74,7 +74,7 @@ export function wireModControls(): void {
 
   // Score button clicks — budget-checked, then score_debate_comment RPC
   document.querySelectorAll('.feed-score-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const pts = Number((btn as HTMLElement).dataset.pts);
       // Phase 2: Budget check
       const limit = FEED_SCORE_BUDGET[pts] ?? 0;
@@ -92,30 +92,26 @@ export function wireModControls(): void {
       }
       const debate = currentDebate;
       if (!debate) return;
-      // LANDMINE [LM-WIRING-001]: button is disabled BEFORE the RPC resolves and
-      // only re-enabled in the error path. The success path relies on the
-      // point_award Realtime event arriving via appendFeedEvent to update budget
-      // — if Realtime delivery fails, the button stays disabled forever.
-      // Verify the re-enable path.
-      // Disable button immediately to prevent double-tap
-      (btn as HTMLButtonElement).disabled = true;
-      void safeRpc('score_debate_comment', {
-        p_debate_id: debate.id,
-        p_feed_event_id: Number(eventId),
-        p_score: pts,
-      }).then(({ error }) => {
-        if (error) {
-          console.warn('[FeedRoom] score_debate_comment failed:', error);
-          showToast('Scoring failed', 'error');
-          // Re-enable since it failed
-          (btn as HTMLButtonElement).disabled = false;
-        }
-        // Budget update happens via appendFeedEvent when the point_award arrives via Realtime
-      });
-      // Clear selection
+      // Clear selection immediately (before async work)
       selected.classList.remove('feed-evt-selected');
       const scoreRow = document.getElementById('feed-mod-score-row');
       if (scoreRow) scoreRow.style.display = 'none';
+      // Disable button immediately to prevent double-tap
+      (btn as HTMLButtonElement).disabled = true;
+      try {
+        const { error } = await safeRpc('score_debate_comment', {
+          p_debate_id: debate.id,
+          p_feed_event_id: Number(eventId),
+          p_score: pts,
+        });
+        if (error) {
+          console.warn('[FeedRoom] score_debate_comment failed:', error);
+          showToast('Scoring failed', 'error');
+        }
+        // Budget update happens via appendFeedEvent when the point_award arrives via Realtime
+      } finally {
+        (btn as HTMLButtonElement).disabled = false;
+      }
     });
   });
 

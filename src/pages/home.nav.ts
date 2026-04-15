@@ -40,7 +40,7 @@ export function navigateTo(screenId: string) {
     if (archiveEl) void loadDebateArchive(archiveEl, true);
   }
   if (screenId === 'arsenal') {
-    loadArsenalScreen();
+    loadArsenalScreen().catch(e => console.error('[home.nav]', e));
   }
   if (screenId === 'invite') {
     const container = document.getElementById('invite-content');

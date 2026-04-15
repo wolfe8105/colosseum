@@ -66,24 +66,23 @@ export async function openClaimSheet(
       const effect = eligible.find((e: ModifierEffect) => e.id === effectId);
       if (!effect) return;
 
-      // LANDMINE [LM-INVITE-002]: btn disabled before async with no finally block.
-      // On rejection before data is assigned, button stays stuck permanently. (M-F3)
-      // Sixth instance of the disable-button-no-finally pattern.
       btn.disabled = true;
       btn.textContent = 'Claiming…';
+      try {
+        const res  = await safeRpc('claim_invite_reward', {
+          p_reward_id: rewardId,
+          p_effect_id: effect.effect_num,
+        });
+        const data = res.data as { ok?: boolean; error?: string; effect_name?: string } | null;
 
-      const res  = await safeRpc('claim_invite_reward', {
-        p_reward_id: rewardId,
-        p_effect_id: effect.effect_num,
-      });
-      const data = res.data as { ok?: boolean; error?: string; effect_name?: string } | null;
-
-      if (data?.ok) {
-        close();
-        showToast(`🎁 ${data.effect_name ?? 'Item'} added to your inventory!`, 'success');
-        onReload();
-      } else {
-        showToast(data?.error ?? 'Claim failed', 'error');
+        if (data?.ok) {
+          close();
+          showToast(`🎁 ${data.effect_name ?? 'Item'} added to your inventory!`, 'success');
+          onReload();
+        } else {
+          showToast(data?.error ?? 'Claim failed', 'error');
+        }
+      } finally {
         btn.disabled = false;
         btn.textContent = 'Select';
       }

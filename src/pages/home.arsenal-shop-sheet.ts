@@ -86,23 +86,23 @@ export function openBottomSheet(
 
   const confirmBtn = overlay.querySelector<HTMLButtonElement>('#sheet-confirm');
   if (confirmBtn && canAfford) {
-    // LANDMINE [LM-SHOP-003]: confirm button disabled before async with no finally block.
-    // On rejection, close() is never reached — sheet stays open, button permanently stuck.
-    // Fix requires try/finally around the await. Fifth instance of disable-button-no-finally (M-F1).
     confirmBtn.addEventListener('click', async () => {
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Purchasing…';
-
-      const productType = confirmBtn.dataset.product as ProductType;
-      let ok = false;
-      if (productType === 'modifier') {
-        ok = await handleBuyModifier(effect.id, effect.name);
-      } else {
-        ok = await handleBuyPowerup(effect.id, effect.name);
+      try {
+        const productType = confirmBtn.dataset.product as ProductType;
+        let ok = false;
+        if (productType === 'modifier') {
+          ok = await handleBuyModifier(effect.id, effect.name);
+        } else {
+          ok = await handleBuyPowerup(effect.id, effect.name);
+        }
+        close();
+        if (ok) onBuySuccess();
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `Buy ${productLabel} · ${cost} tokens`;
       }
-
-      close();
-      if (ok) onBuySuccess();
     });
   }
 

@@ -125,6 +125,7 @@ export async function submitDeleteGroup(): Promise<void> {
     onGroupDeleted?.();
   } catch (e) {
     showToast((e as Error).message || 'Could not delete group');
+  } finally {
     btn.disabled    = false;
     btn.textContent = 'DELETE FOREVER';
   }

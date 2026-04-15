@@ -27,7 +27,7 @@ export function goToStep(n: number): void {
   // F-59: On step-5, fetch & show invite link nudge.
   // Dynamic import preserves dependency direction (invite-nudge is downstream of helpers).
   if (n === 5) {
-    void import('./plinko-invite-nudge.ts').then(m => m.injectInviteNudge());
+    void import('./plinko-invite-nudge.ts').then(m => m.injectInviteNudge()).catch(e => console.error('[plinko]', e));
   }
 }
 

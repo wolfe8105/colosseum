@@ -124,27 +124,29 @@ export async function renderBountyClaimDropdown(
 
     lockBtn.disabled = true;
     lockBtn.textContent = '…';
+    try {
+      const result = await selectBountyClaim(bountyId, debateId);
 
-    const result = await selectBountyClaim(bountyId, debateId);
+      if (result.success) {
+        _selectedBountyId = bountyId;
+        _attemptFeePaid = true;
 
-    if (result.success) {
-      _selectedBountyId = bountyId;
-      _attemptFeePaid = true;
+        // Hide the dropdown, show locked state
+        select.style.display = 'none';
+        preview.style.display = 'none';
+        lockBtn.style.display = 'none';
 
-      // Hide the dropdown, show locked state
-      select.style.display = 'none';
-      preview.style.display = 'none';
-      lockBtn.style.display = 'none';
-
-      const lockedEl = inner.querySelector<HTMLElement>('#bounty-claim-locked')!;
-      const detailEl = inner.querySelector<HTMLElement>('#bounty-claim-locked-detail')!;
-      lockedEl.style.display = 'block';
-      detailEl.textContent = `${fee} token attempt fee paid. Win this debate to claim ${Math.round(amt * 0.95 * 100) / 100} tokens.`;
-    } else {
+        const lockedEl = inner.querySelector<HTMLElement>('#bounty-claim-locked')!;
+        const detailEl = inner.querySelector<HTMLElement>('#bounty-claim-locked-detail')!;
+        lockedEl.style.display = 'block';
+        detailEl.textContent = `${fee} token attempt fee paid. Win this debate to claim ${Math.round(amt * 0.95 * 100) / 100} tokens.`;
+      } else {
+        lockBtn.textContent = 'LOCK IN BOUNTY CLAIM';
+        errEl.textContent = result.error ?? 'Something went wrong.';
+        errEl.style.display = 'block';
+      }
+    } finally {
       lockBtn.disabled = false;
-      lockBtn.textContent = 'LOCK IN BOUNTY CLAIM';
-      errEl.textContent = result.error ?? 'Something went wrong.';
-      errEl.style.display = 'block';
     }
   });
 }

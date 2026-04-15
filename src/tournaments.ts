@@ -304,8 +304,8 @@ function _timeUntil(iso: string): string {
 // INIT — wire into notifications polling on auth ready
 // ============================================================
 
-export function initTournaments(): void {
-  void ready().then(() => {
+export function initTournaments(): Promise<void> {
+  return ready().then(() => {
     startTournamentMatchPoll();
   });
 }

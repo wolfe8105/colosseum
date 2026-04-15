@@ -315,7 +315,9 @@ export async function renderArmory(container: HTMLElement): Promise<void> {
         closeSheet(); void loadCards();
       } catch (err) {
         showToast(err instanceof Error ? err.message : 'Second failed', 'error');
-        btn.disabled = false; btn.textContent = '👍 Second';
+        btn.textContent = '👍 Second';
+      } finally {
+        btn.disabled = false;
       }
     });
     actions.querySelector('.sheet-challenge-btn')?.addEventListener('click', () => {

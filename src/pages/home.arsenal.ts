@@ -8,16 +8,16 @@ import type { ArsenalReference } from '../reference-arsenal.ts';
 import { state } from './home.state.ts';
 import { loadShopScreen, cleanupShopScreen } from './home.arsenal-shop.ts';
 
-export function loadArsenalScreen(): void {
+export function loadArsenalScreen(): Promise<void> {
   if (state.arsenalForgeCleanup) { state.arsenalForgeCleanup(); state.arsenalForgeCleanup = null; }
   cleanupShopScreen();
   const container = document.getElementById('arsenal-content');
-  if (!container) return;
+  if (!container) return Promise.resolve();
   state.arsenalActiveTab = 'my-arsenal';
   document.querySelectorAll('[data-arsenal-tab]').forEach(t => {
     t.classList.toggle('active', (t as HTMLElement).dataset.arsenalTab === 'my-arsenal');
   });
-  void loadMyArsenal(container);
+  return loadMyArsenal(container);
 }
 
 async function loadMyArsenal(container: HTMLElement): Promise<void> {

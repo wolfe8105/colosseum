@@ -94,13 +94,15 @@ export async function startPresence(state: ChannelState): Promise<void> {
     if (status === 'SUBSCRIBED') {
       // Track own presence
       const profile = (await import('./auth.ts')).getCurrentProfile();
-      // LANDMINE [LM-RIVALS-005]: track() call below has no try/catch. Network failure
-      // causes an unhandled promise rejection inside the async callback. (catalogued L-E1)
-      await state.channelRef.value!.track({
-        user_id: user.id,
-        username: profile?.username ?? null,
-        display_name: profile?.display_name ?? null,
-      });
+      try {
+        await state.channelRef.value!.track({
+          user_id: user.id,
+          username: profile?.username ?? null,
+          display_name: profile?.display_name ?? null,
+        });
+      } catch (e) {
+        console.warn('[RivalsPresence] track() failed:', e);
+      }
     } else if (status === 'CHANNEL_ERROR') {
       // ADV-2: RLS rejected — log and degrade gracefully
       console.warn('[RivalsPresence] Channel denied:', err?.message ?? 'no permissions');
