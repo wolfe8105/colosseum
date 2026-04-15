@@ -79,7 +79,9 @@ export function pauseFeed(debate: CurrentDebate): void {
         }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
         // LANDMINE [LM-MACHINE-001]: calls unpauseFeed() directly AND inserts a mod_ruling event which
         // triggers unpause again via the Realtime subscription. Potential double-unpause — one local,
-        // one remote. Verify the Realtime handler is idempotent or whether the direct call is redundant.
+        // one remote. FIX AFTER REFACTOR: (1) move unpauseFeed() inside the .then() so it fires after
+        // RPCs resolve, (2) make unpauseFeed() idempotent (guard with feedPaused check) so double-call
+        // from Realtime subscription is harmless. Do not touch until feed machine refactor is complete.
         unpauseFeed();
       }
     }, 1000));
