@@ -30,9 +30,7 @@ Run after tools have cleared mechanical issues. Looks for behavioral and archite
 
 `THE-MODERATOR-AUDIT-METHOD-V3.md` — 5-agent, 4-stage, Claude Sonnet, 4 files per batch.
 
-First pass already completed: 63 files audited, 0 High / 47 Medium / 86 Low found, 3 fixed in-session. All findings fixed via CC bug sweeps.
-
-Remaining files get batched through after Phases 1 and 2 have filtered out systemic and behavioral issues. Precision work on what's left. `FIRST-RUN-FILES.md` has the remaining file queue. `AUDIT-SESSION-PLAYBOOK.md` is the execution guide.
+Runs after Phases 1 and 2 are fully complete and all fixes are in. Treats the entire codebase fresh — every file, no carry-over assumptions from prior sessions. The refactor alone invalidates any previous file-level audit data. Precision work on what the other two phases couldn't catch. `AUDIT-SESSION-PLAYBOOK.md` is the execution guide.
 
 ---
 
