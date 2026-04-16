@@ -76,7 +76,7 @@ export function showModDebatePicker(): void {
 
   document.getElementById('mod-debate-picker-back')?.addEventListener('click', () => {
     void (async () => {
-      const { showModQueue } = await import('./arena-mod-queue.ts');
+      const { showModQueue } = await import('./arena-mod-queue-browse.ts');
       showModQueue();
     })();
   });

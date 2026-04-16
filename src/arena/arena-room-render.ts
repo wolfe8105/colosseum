@@ -23,7 +23,7 @@ import { startLiveRoundTimer } from './arena-room-live-poll.ts';
 import { initLiveAudio } from './arena-room-live-audio.ts';
 import { addSystemMessage } from './arena-room-live-messages.ts';
 import { addReferenceButton, assignSelectedMod, startReferencePoll } from './arena-mod-refs.ts';
-import { startModStatusPoll } from './arena-mod-queue.ts';
+import { startModStatusPoll } from './arena-mod-queue-status.ts';
 import { bountyDot } from '../bounties.ts';
 
 export function renderRoom(debate: CurrentDebate): void {

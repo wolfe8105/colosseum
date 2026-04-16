@@ -21,7 +21,7 @@ import type { ArenaFeedItem, AutoDebateItem } from './arena-types-feed-list.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { showRankedPicker } from './arena-config-settings.ts';
 import { showPrivateLobbyPicker } from './arena-private-picker.ts';
-import { showModQueue } from './arena-mod-queue.ts';
+import { showModQueue } from './arena-mod-queue-browse.ts';
 import { joinWithCode } from './arena-private-lobby.join.ts';
 import { loadPendingChallenges } from './arena-pending-challenges.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';

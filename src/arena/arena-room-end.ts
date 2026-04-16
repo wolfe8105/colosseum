@@ -13,7 +13,7 @@ import type { EndOfDebateBreakdown } from './arena-types-results.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
-import { stopModStatusPoll } from './arena-mod-queue.ts';
+import { stopModStatusPoll } from './arena-mod-queue-status.ts';
 import { cleanupFeedRoom } from './arena-feed-room.ts';
 import { renderNulledDebate } from './arena-room-end-nulled.ts';
 import { generateScores } from './arena-room-end-scores.ts';

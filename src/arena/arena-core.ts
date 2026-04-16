@@ -25,7 +25,7 @@ import { clearQueueTimers } from './arena-queue.ts';
 import { clearMatchAcceptTimers } from './arena-match-timers.ts';
 import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
-import { stopModStatusPoll } from './arena-mod-queue.ts';
+import { stopModStatusPoll } from './arena-mod-queue-status.ts';
 
 import { joinWithCode } from './arena-private-lobby.join.ts';
 import { injectCSS } from './arena-css.ts';
