@@ -6,7 +6,7 @@ import {
 import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
 import type { ModDebateCheckResult } from './arena-types-moderator.ts';
 import { enterRoom } from './arena-room-enter.ts';
-import { showMatchFound } from './arena-match.ts';
+import { showMatchFound } from './arena-match-found.ts';
 // LANDMINE [LM-MODDEBATE-001]: showModQueue is imported dynamically to break the
 // arena-mod-queue ↔ arena-mod-debate mutual static import cycle. Keep it dynamic.
 
@@ -100,6 +100,6 @@ export async function cancelModDebate(debateId: string): Promise<void> {
     await safeRpc('cancel_mod_debate', { p_debate_id: debateId });
   } catch { /* silent */ }
   set_modDebateId(null);
-  const { showModQueue } = await import('./arena-mod-queue.ts');
+  const { showModQueue } = await import('./arena-mod-queue-browse.ts');
   showModQueue();
 }
