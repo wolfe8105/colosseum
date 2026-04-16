@@ -18,7 +18,8 @@ import { openMemberActionsModal } from './groups.members.modal.ts';
 import type { GroupMember } from './groups.types.ts';
 
 // Re-export setGroupOpenCallback so orchestrator import in groups.ts still works
-export { setGroupOpenCallback, setRefreshMembersCallback, _injectMemberActionsModal } from './groups.members.modal.ts';
+export { setGroupOpenCallback, setRefreshMembersCallback } from './groups.members.modal.ts';
+export { _injectMemberActionsModal } from './groups.members.modal.html.ts';
 
 // ── MEMBERS LIST ──────────────────────────────────────────────────────────────
 
