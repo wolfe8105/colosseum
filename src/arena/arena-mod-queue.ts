@@ -8,7 +8,7 @@ import {
 } from './arena-state.ts';
 import type { ArenaView } from './arena-types.ts';
 import type { ModQueueItem, ModStatusResult } from './arena-types-moderator.ts';
-import { showModDebatePicker } from './arena-mod-debate.ts';
+import { showModDebatePicker } from './arena-mod-debate-picker.ts';
 import { enterRoom } from './arena-room-enter.ts';
 
 export function showModQueue(): void {
