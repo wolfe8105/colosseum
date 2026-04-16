@@ -100,7 +100,6 @@ export async function ruleOnReference(
   referenceId: string,
   ruling: string,
   reason: string | null,
-  ruledByType?: string
 ): Promise<AuthResult> {
   if (getIsPlaceholderMode()) return { success: true };
   try {
@@ -108,7 +107,6 @@ export async function ruleOnReference(
       p_reference_id: referenceId,
       p_ruling: ruling,
       p_reason: reason ?? null,
-      p_ruled_by_type: ruledByType ?? 'human',
     });
     if (error) throw error;
     return (data as AuthResult) ?? { success: true };

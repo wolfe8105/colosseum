@@ -44,7 +44,7 @@ export async function requestAIModRuling(
     const ruling = data?.ruling || 'allowed';
     const reason = data?.reason || 'AI ruling.';
 
-    const result = await ruleOnReference(referenceId, ruling, '\uD83E\uDD16 ' + reason, 'ai');
+    const result = await ruleOnReference(referenceId, ruling, '🤖 ' + reason);
     if (result?.error) {
       console.warn('[Arena] AI mod ruling RPC failed:', result.error);
     }
@@ -54,7 +54,7 @@ export async function requestAIModRuling(
 
   } catch (err) {
     console.warn('[Arena] AI Moderator Edge Function failed:', err);
-    await ruleOnReference(referenceId, 'denied', '\uD83E\uDD16 Auto-denied (AI moderator unavailable)', 'ai');
+    await ruleOnReference(referenceId, 'denied', '🤖 Auto-denied (AI moderator unavailable)');
     addSystemMessage('\u274C AI Moderator: Evidence AUTO-DENIED (moderator unavailable)');
   }
 }
