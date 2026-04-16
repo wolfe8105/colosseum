@@ -5,7 +5,7 @@
  * They read from arena-feed-state.ts and arena-state.ts but never set timers.
  */
 
-import { formatTimer } from './arena-core.ts';
+import { formatTimer } from './arena-core.utils.ts';
 import {
   currentDebate,
   feedPaused,

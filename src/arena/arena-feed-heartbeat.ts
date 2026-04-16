@@ -21,7 +21,7 @@ import {
   HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS,
   set_heartbeatSendTimer, set_heartbeatCheckTimer, set_disconnectHandled,
 } from './arena-feed-state.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 
 // Callback to call when a participant goes stale — set by arena-feed-realtime.ts
 // to avoid heartbeat ↔ disconnect circular dep.

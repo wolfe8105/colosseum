@@ -7,7 +7,7 @@
  */
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import { currentDebate } from './arena-state.ts';
 import type { FeedEvent, FeedEventType } from './arena-types-feed-room.ts';
 import { renderedEventIds, round } from './arena-feed-state.ts';

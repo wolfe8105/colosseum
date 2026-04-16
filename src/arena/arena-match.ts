@@ -15,7 +15,7 @@ import {
 import type { CurrentDebate, DebateRole } from './arena-types.ts';
 import type { MatchData, MatchAcceptResponse } from './arena-types-match.ts';
 import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-constants.ts';
-import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
+import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.utils.ts';
 import { showPreDebate } from './arena-room-predebate.ts';
 import { enterRoom } from './arena-room-enter.ts';
 import { enterQueue } from './arena-queue.ts';

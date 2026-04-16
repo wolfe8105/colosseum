@@ -8,7 +8,7 @@ import {
   set_vmRecording, set_vmTimer, set_vmSeconds,
 } from './arena-state.ts';
 import type { DebateRole } from './arena-types.ts';
-import { isPlaceholder, formatTimer } from './arena-core.ts';
+import { isPlaceholder, formatTimer } from './arena-core.utils.ts';
 import { addMessage, addSystemMessage } from './arena-room-live-messages.ts';
 import { startOpponentPoll, advanceRound } from './arena-room-live-poll.ts';
 

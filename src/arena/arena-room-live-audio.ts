@@ -3,7 +3,7 @@
 import { joinDebate, on as onWebRTC, off as offWebRTC, toggleMute, createWaveform, getLocalStream } from '../webrtc.ts';
 import type { WebRTCEventCallback } from '../webrtc.ts';
 import { currentDebate } from './arena-state.ts';
-import { formatTimer } from './arena-core.ts';
+import { formatTimer } from './arena-core.utils.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { addSystemMessage } from './arena-room-live-messages.ts';
 import { advanceRound } from './arena-room-live-poll.ts';

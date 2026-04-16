@@ -23,7 +23,7 @@ import {
   lastSeen,
 } from './arena-feed-state.ts';
 import type { FeedEvent } from './arena-types-feed-room.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import {
   appendFeedEvent,
 } from './arena-feed-room.ts';
