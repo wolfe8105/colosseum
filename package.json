@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.98.0",
+    "dependency-cruiser": "^17.3.10",
     "dotenv": "^16.4.0",
     "jsdom": "^29.0.1",
     "typescript": "^5.7.0",
