@@ -147,7 +147,7 @@ These batches cover the 25 new files created by the refactor plus 13 significant
 modified originals. All are new to the audit — none appeared in Batches 1–16R.
 Byte budget: ≤ 40,000 bytes per batch.
 
-## Batch A (PENDING) — 30,041 bytes
+## Batch A
 Deepgram split + Realtime feed split + lobby cards
 
 1. src/arena/arena-deepgram.types.ts (534 bytes)
@@ -158,7 +158,7 @@ Deepgram split + Realtime feed split + lobby cards
 6. src/arena/arena-feed-disconnect.ts (7,035 bytes)
 7. src/arena/arena-lobby.cards.ts (3,755 bytes)
 
-## Batch B (PENDING) — 30,976 bytes
+## Batch B
 Lobby + Private lobby splits
 
 1. src/arena/arena-lobby.ts (14,056 bytes)
@@ -166,7 +166,7 @@ Lobby + Private lobby splits
 3. src/arena/arena-private-lobby.join.ts (3,528 bytes)
 4. src/arena/arena-pending-challenges.ts (4,730 bytes)
 
-## Batch C (PENDING) — 37,245 bytes
+## Batch C
 Staking split + Tournaments split + Queue (never audited)
 
 1. src/staking.types.ts (679 bytes)
@@ -181,7 +181,7 @@ Staking split + Tournaments split + Queue (never audited)
 10. src/tournaments.render.ts (2,906 bytes)
 11. src/arena/arena-queue.ts (11,017 bytes)
 
-## Batch D (PENDING) — 35,439 bytes
+## Batch D
 Login split + Auto-debate split
 
 1. src/pages/login.types.ts (283 bytes)
@@ -192,7 +192,7 @@ Login split + Auto-debate split
 6. src/pages/auto-debate.render.ts (8,402 bytes)
 7. src/pages/auto-debate.ts (6,800 bytes)
 
-## Batch E (PENDING) — 36,692 bytes
+## Batch E
 Reference arsenal armory (new) + Debate landing split
 
 1. src/reference-arsenal.armory.ts (15,346 bytes)
@@ -201,7 +201,7 @@ Reference arsenal armory (new) + Debate landing split
 4. src/pages/debate-landing.data.ts (4,678 bytes)
 5. src/pages/debate-landing.ts (10,988 bytes)
 
-## Batch F (PENDING) — 29,688 bytes
+## Batch F
 Groups members split + Groups auditions split
 
 1. src/pages/groups.members.modal.ts (12,514 bytes)
