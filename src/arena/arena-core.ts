@@ -22,7 +22,7 @@ import {
 } from './arena-state.ts';
 import type { ArenaView, CurrentDebate } from './arena-types.ts';
 import { clearQueueTimers } from './arena-queue.ts';
-import { clearMatchAcceptTimers } from './arena-match.ts';
+import { clearMatchAcceptTimers } from './arena-match-timers.ts';
 import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { stopModStatusPoll } from './arena-mod-queue.ts';

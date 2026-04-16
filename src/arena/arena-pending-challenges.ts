@@ -12,7 +12,7 @@ import type { CurrentDebate, DebateMode } from './arena-types.ts';
 import type { PendingChallenge, JoinPrivateLobbyResult } from './arena-types-private-lobby.ts';
 import { AI_TOPICS } from './arena-constants.ts';
 import { randomFrom } from './arena-core.utils.ts';
-import { showMatchFound } from './arena-match.ts';
+import { showMatchFound } from './arena-match-found.ts';
 
 export async function loadPendingChallenges(): Promise<void> {
   try {

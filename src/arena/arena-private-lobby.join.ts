@@ -13,7 +13,7 @@ import type { JoinPrivateLobbyResult } from './arena-types-private-lobby.ts';
 import type { ModDebateJoinResult } from './arena-types-moderator.ts';
 import { AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom } from './arena-core.utils.ts';
-import { showMatchFound } from './arena-match.ts';
+import { showMatchFound } from './arena-match-found.ts';
 import { showModDebateWaitingDebater } from './arena-mod-debate-waiting.ts';
 
 export async function joinWithCode(code: string): Promise<void> {

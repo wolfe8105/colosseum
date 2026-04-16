@@ -1,25 +1,35 @@
-// arena-match.ts — Match found, accept/decline, AI debate start
-// Part of the arena.ts monolith split
+// arena-match-found.ts — Match-found screen: queue→match transition, UI render,
+// decline/return helpers, and AI debate start.
+// Part of the arena-match.ts split (Session 254+).
+//
+// Cycle note: this file ↔ arena-queue.ts is a pre-existing static cycle
+// (mirrors the original arena-match.ts ↔ arena-queue.ts cycle).
+// arena-match-flow.ts imports returnToQueueAfterDecline from here but is NOT
+// imported back statically — only via dynamic import() in showMatchFound button
+// handlers, which breaks the would-be found→flow→queue→found cycle.
 
-import { safeRpc, getCurrentUser, getCurrentProfile } from '../auth.ts';
+import { safeRpc, getCurrentProfile } from '../auth.ts';
 import { escapeHTML, DEBATE } from '../config.ts';
 import {
-  selectedMode, selectedRanked, selectedRuleset, selectedWantMod, selectedRounds,
-  matchAcceptTimer, matchAcceptPollTimer, matchAcceptSeconds, matchFoundDebate,
-  screenEl, view,
+  selectedMode, selectedRanked, selectedRuleset,
+  matchAcceptSeconds, matchFoundDebate, screenEl,
   queuePollTimer, queueElapsedTimer,
-  set_matchAcceptTimer, set_matchAcceptPollTimer, set_matchAcceptSeconds,
-  set_matchFoundDebate, set_selectedWantMod, set_view,
+  set_matchAcceptTimer, set_matchAcceptSeconds, set_matchFoundDebate, set_view,
   set_queuePollTimer, set_queueElapsedTimer,
 } from './arena-state.ts';
-import type { CurrentDebate, DebateRole } from './arena-types.ts';
-import type { MatchData, MatchAcceptResponse } from './arena-types-match.ts';
-import { MATCH_ACCEPT_SEC, MATCH_ACCEPT_POLL_TIMEOUT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-constants.ts';
+import type { CurrentDebate } from './arena-types.ts';
+import type { MatchData } from './arena-types-match.ts';
+import { MATCH_ACCEPT_SEC, AI_TOTAL_ROUNDS, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.utils.ts';
-import { showPreDebate } from './arena-room-predebate.ts';
 import { enterRoom } from './arena-room-enter.ts';
-import { enterQueue } from './arena-queue.ts';
+import { showPreDebate } from './arena-room-predebate.ts';
 import { playIntroMusic } from './arena-sounds.ts';
+import { clearMatchAcceptTimers } from './arena-match-timers.ts';
+// LANDMINE [LM-MATCH-001]: Static circular dep — found.ts imports enterQueue from
+// arena-queue.ts; arena-queue.ts imports onMatchFound + startAIDebate from here.
+// Pre-existing (was arena-match.ts ↔ arena-queue.ts). All exports are functions;
+// no init-order issue at runtime. Tracked by madge 3-Gate baseline (37 cycles).
+import { enterQueue } from './arena-queue.ts';
 
 function clearQueueTimersInline(): void {
   if (queuePollTimer) { clearInterval(queuePollTimer); set_queuePollTimer(null); }
@@ -57,11 +67,6 @@ export function onMatchFound(data: MatchData): void {
   }, 1200);
 }
 
-export function clearMatchAcceptTimers(): void {
-  if (matchAcceptTimer) { clearInterval(matchAcceptTimer); set_matchAcceptTimer(null); }
-  if (matchAcceptPollTimer) { clearInterval(matchAcceptPollTimer); set_matchAcceptPollTimer(null); }
-}
-
 export function showMatchFound(debateData: CurrentDebate): void {
   clearMatchAcceptTimers();
   set_matchFoundDebate(debateData);
@@ -74,6 +79,8 @@ export function showMatchFound(debateData: CurrentDebate): void {
   const opInitial = (debateData.opponentName[0] || '?').toUpperCase();
   const mf = document.createElement('div');
   mf.className = 'arena-match-found arena-fade-in';
+  // LANDMINE [LM-MATCH-002]: opponentElo interpolated into innerHTML without Number() cast.
+  // CLAUDE.md requires Number() for numeric innerHTML values. Pre-existing; refactor-only.
   mf.innerHTML = `
     <div class="arena-mf-label">\u2694\uFE0F MATCH FOUND</div>
     <div class="arena-mf-opponent">
@@ -91,7 +98,11 @@ export function showMatchFound(debateData: CurrentDebate): void {
   `;
   screenEl?.appendChild(mf);
 
-  document.getElementById('mf-accept-btn')?.addEventListener('click', () => onMatchAccept());
+  // Dynamic imports break the static found→flow cycle. arena-match-flow.ts is
+  // pre-cached by Vite; by the time the user interacts it is already loaded.
+  document.getElementById('mf-accept-btn')?.addEventListener('click', () => {
+    void import('./arena-match-flow.ts').then(({ onMatchAccept }) => onMatchAccept());
+  });
   document.getElementById('mf-decline-btn')?.addEventListener('click', () => onMatchDecline());
 
   // F-21: Play the user's own intro music
@@ -108,88 +119,12 @@ export function showMatchFound(debateData: CurrentDebate): void {
   }, 1000));
 }
 
-export async function onMatchAccept(): Promise<void> {
-  clearInterval(matchAcceptTimer!);
-  set_matchAcceptTimer(null);
-  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
-  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
-  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
-  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
-
-  const statusEl = document.getElementById('mf-status');
-  if (statusEl) statusEl.textContent = 'Waiting for opponent\u2026';
-
-  if (!isPlaceholder() && matchFoundDebate) {
-    const { error } = await safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: true });
-    if (error) {
-      if (statusEl) statusEl.textContent = 'Error \u2014 retrying\u2026';
-      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.style.opacity = '1'; }
-      if (declineBtn) { declineBtn.disabled = false; declineBtn.style.opacity = '1'; }
-      return;
-    }
-  }
-
-  // Start polling for opponent acceptance
-  let pollElapsed = 0;
-  let _pollInFlight = false;
-  set_matchAcceptPollTimer(setInterval(async () => {
-    pollElapsed += 1.5;
-    if (pollElapsed >= MATCH_ACCEPT_POLL_TIMEOUT_SEC) {
-      onOpponentDeclined();
-      return;
-    }
-    if (!matchFoundDebate || isPlaceholder()) {
-      onMatchConfirmed();
-      return;
-    }
-    if (_pollInFlight) return;
-    _pollInFlight = true;
-    try {
-      const { data, error } = await safeRpc<MatchAcceptResponse>('check_match_acceptance', { p_debate_id: matchFoundDebate.id });
-      if (error || !data) return;
-      const resp = data as MatchAcceptResponse;
-      if (resp.status === 'cancelled') {
-        onOpponentDeclined();
-        return;
-      }
-      const myCol = matchFoundDebate.role === 'a' ? resp.player_a_ready : resp.player_b_ready;
-      const opCol = matchFoundDebate.role === 'a' ? resp.player_b_ready : resp.player_a_ready;
-      if (opCol === false) { onOpponentDeclined(); return; }
-      if (myCol === true && opCol === true) { onMatchConfirmed(); return; }
-    } catch { /* retry next tick */ } finally { _pollInFlight = false; }
-  }, 1500));
-}
-
 export function onMatchDecline(): void {
   clearMatchAcceptTimers();
   if (!isPlaceholder() && matchFoundDebate) {
     safeRpc('respond_to_match', { p_debate_id: matchFoundDebate.id, p_accept: false }).catch((e) => console.warn('[Arena] respond_to_match decline failed:', e));
   }
   returnToQueueAfterDecline();
-}
-
-export function onMatchConfirmed(): void {
-  clearMatchAcceptTimers();
-  const statusEl = document.getElementById('mf-status');
-  if (statusEl) statusEl.textContent = '\u2705 Both ready \u2014 entering battle!';
-  if (matchFoundDebate) {
-    if (selectedWantMod && !isPlaceholder()) {
-      safeRpc('request_mod_for_debate', { p_debate_id: matchFoundDebate.id }).catch((e) => console.warn('[Arena] request_mod_for_debate failed:', e));
-    }
-    set_selectedWantMod(false);
-    setTimeout(() => { void showPreDebate(matchFoundDebate!); }, 800);
-  }
-}
-
-export function onOpponentDeclined(): void {
-  clearMatchAcceptTimers();
-  const statusEl = document.getElementById('mf-status');
-  if (statusEl) statusEl.textContent = 'Opponent declined \u2014 returning to queue\u2026';
-  const acceptBtn = document.getElementById('mf-accept-btn') as HTMLButtonElement | null;
-  const declineBtn = document.getElementById('mf-decline-btn') as HTMLButtonElement | null;
-  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.style.opacity = '0.5'; }
-  if (declineBtn) { declineBtn.disabled = true; declineBtn.style.opacity = '0.5'; }
-  setTimeout(() => returnToQueueAfterDecline(), 1500);
 }
 
 export function returnToQueueAfterDecline(): void {
