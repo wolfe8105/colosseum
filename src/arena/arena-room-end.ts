@@ -6,14 +6,14 @@ import { removeShieldIndicator } from '../powerups.ts';
 import { leaveDebate } from '../webrtc.ts';
 import { nudge } from '../nudge.ts';
 import {
-  currentDebate, roundTimer, silenceTimer, activatedPowerUps, loadedRefs,
+  view, currentDebate, roundTimer, silenceTimer, activatedPowerUps, loadedRefs,
   set_view, set_silenceTimer, set_shieldActive,
 } from './arena-state.ts';
 import type { EndOfDebateBreakdown } from './arena-types-results.ts';
-import { isPlaceholder, pushArenaState } from './arena-core.ts';
+import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { stopOpponentPoll } from './arena-room-live-poll.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
-import { stopModStatusPoll } from './arena-mod-queue.ts';
+import { stopModStatusPoll } from './arena-mod-queue-status.ts';
 import { cleanupFeedRoom } from './arena-feed-room.ts';
 import { renderNulledDebate } from './arena-room-end-nulled.ts';
 import { generateScores } from './arena-room-end-scores.ts';
@@ -21,6 +21,7 @@ import { applyEndOfDebateModifiers, finalizeDebate } from './arena-room-end-fina
 import { renderPostDebate } from './arena-room-end-render.ts';
 
 export async function endCurrentDebate(): Promise<void> {
+  if (view === 'postDebate') return;
   set_view('postDebate');
   pushArenaState('postDebate');
   if (roundTimer) clearInterval(roundTimer);

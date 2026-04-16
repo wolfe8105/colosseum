@@ -11,17 +11,13 @@ Solo founder project. **Vite + TypeScript build pipeline** — all source files 
 ## Architecture
 
 **Three-zone model:**
-- **Ring 6 — Static Mirror** (Cloudflare Pages at `colosseum-f30.pages.dev`): Pure HTML, zero JS, zero auth. Bot army links route here.
+- **Ring 6 — Static Mirror** (Cloudflare Pages at `colosseum-f30.pages.dev`): Pure HTML, zero JS, zero auth. Legacy entry point.
 - **Plinko Gate** (`moderator-plinko.html`): 4-step signup (OAuth → Age → Username → Done)
 - **Members Zone** (Vercel at `themoderator.app`): Full app, auto-deploys from GitHub via Vite build
 
-**Backend:** Supabase project `faomczmipsccwbhpivmp`. 41+ tables, 55+ server functions, RLS hardened.
+**Backend:** Supabase project `faomczmipsccwbhpivmp`. 43+ tables, ~260 server functions, RLS hardened.
 
-**Bot army:** DigitalOcean VPS at `161.35.137.21`, PM2 managed. TypeScript source in repo (`bot-engine.ts`, `bot-config.ts`, etc.). PM2 runs compiled output from `dist/`.
-
-**VPS paths:**
-- Git repo root: `/opt/colosseum` (NOT the bot-army subdirectory)
-- Bot army on VPS: `/opt/colosseum/bot-army/colosseum-bot-army/`
+**Bot army: SCRATCHED (S248).** VPS ($6/mo, Ubuntu 24.04, NYC3, IP `161.35.137.21`) is up with PM2 idle — code is inert, no teardown plan. Ignore all bot army files (`bot-engine.ts`, `bot-config.ts`, `lib/leg*.ts`, etc.).
 
 ## CRITICAL Security Rules — Never Violate
 
@@ -163,8 +159,11 @@ Notes: Knip may OOM on this repo (pre-existing oxc-parser issue) — manual grep
 3. Dependency direction: types → state → utils → features → orchestrator. Nothing imports "up".
 4. No circular deps — extract a shared primitive or use late-bound ref in state.
 
-## VPS
-VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) is up. PM2 idle. Bot army SCRATCHED (S248) — code is inert, no teardown plan. Ignore all bot army files.
+## Codebase State (April 16, 2026)
+
+- **372 modules** — full TypeScript refactor complete. Every file under 300 lines.
+- **Audit complete** — 63 files, 5-agent method. All findings fixed. See `BUG-FIX-PATTERNS.md`.
+- **Design phase closed.** All features shipped and live-tested. Next phase: launch.
 
 ## Design DNA
 
@@ -176,8 +175,9 @@ VPS ($6/mo, Ubuntu 24.04, NYC3, IP 161.35.137.21) is up. PM2 idle. Bot army SCRA
 ## Important Documentation
 
 - `THE-MODERATOR-NEW-TESTAMENT.md` — condensed project knowledge, key decisions, current state
-- `THE-MODERATOR-OLD-TESTAMENT.md` — all session build logs (1-191)
+- `THE-MODERATOR-OLD-TESTAMENT.md` — session build logs (1-228). S229-present in NT infrastructure section.
 - `THE-MODERATOR-LAND-MINE-MAP.md` — 194+ documented pitfalls. **Read before any SQL, schema, auth, or deployment change.**
-- 
 - `THE-MODERATOR-PUNCH-LIST.md` — single source of truth for all open work
 - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play
+- `AUDIT-FINDINGS.md` — full audit findings (63 files, 0 High, 47 Medium, 86 Low)
+- `BUG-FIX-PATTERNS.md` — all findings grouped by pattern for sweep fixes

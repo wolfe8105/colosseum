@@ -5,7 +5,7 @@
  * Refactored: split into css, state, filter, render, picker, edit sub-modules.
  */
 
-import { safeRpc } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import { injectCSS } from './profile-debate-archive.css.ts';
 import { setEntries, setIsOwner, resetFilters } from './profile-debate-archive.state.ts';
 import { renderTable } from './profile-debate-archive.render.ts';

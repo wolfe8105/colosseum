@@ -5,7 +5,7 @@
  * They read from arena-feed-state.ts and arena-state.ts but never set timers.
  */
 
-import { formatTimer } from './arena-core.ts';
+import { formatTimer } from './arena-core.utils.ts';
 import {
   currentDebate,
   feedPaused,
@@ -132,4 +132,14 @@ export function updateChallengeButtonState(): void {
   const challengeable = opponentCitedRefs.filter((r) => !r.already_challenged);
   btn.disabled = !isMyTurn || challengeable.length === 0 || challengesRemaining <= 0 || feedPaused;
   btn.textContent = `\u2694\uFE0F CHALLENGE (${challengesRemaining})`;
+}
+
+export function showDisconnectBanner(message: string): void {
+  document.getElementById('feed-disconnect-banner')?.remove();
+  const banner = document.createElement('div');
+  banner.id = 'feed-disconnect-banner';
+  banner.className = 'feed-disconnect-banner';
+  banner.textContent = message;
+  const room = document.querySelector('.feed-room');
+  if (room) room.prepend(banner);
 }

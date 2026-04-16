@@ -48,7 +48,7 @@ export {
   showRankedPicker, closeRankedPicker,
   showRulesetPicker, closeRulesetPicker,
 } from './arena/arena-config-settings.ts';
-export { showModeSelect, closeModeSelect } from './arena/arena-config-mode.ts';
+export { showModeSelect, closeModeSelect } from './arena/arena-config-mode-select.ts';
 
 // --- Queue ---
 export { enterQueue, leaveQueue } from './arena/arena-queue.ts';

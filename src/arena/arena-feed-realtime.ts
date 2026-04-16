@@ -23,7 +23,7 @@ import {
   lastSeen,
 } from './arena-feed-state.ts';
 import type { FeedEvent } from './arena-types-feed-room.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import {
   appendFeedEvent,
 } from './arena-feed-room.ts';
@@ -34,9 +34,14 @@ import { handleParticipantGone, modNullDebate } from './arena-feed-disconnect.ts
 // without a direct import (which would create a circular dep).
 setParticipantGoneCallback(handleParticipantGone);
 
-export function subscribeRealtime(debateId: string): void {
+export async function subscribeRealtime(debateId: string): Promise<void> {
   const client = getSupabaseClient();
   if (!client || isPlaceholder()) return;
+
+  // Set auth token before subscribing so the private channel has a valid JWT context.
+  const { data: sessionData } = await (client as any).auth.getSession();
+  const accessToken = sessionData?.session?.access_token ?? null;
+  if (accessToken) (client as any).realtime.setAuth(accessToken);
 
   const channel = (client as any)
     .channel(`feed:${debateId}`, { config: { private: true } })

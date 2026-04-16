@@ -38,7 +38,7 @@ import type { CurrentDebate } from './arena-types.ts';
 import {
   FEED_TOTAL_ROUNDS, FEED_MAX_CHALLENGES,
 } from './arena-types-feed-room.ts';
-import { formatTimer, pushArenaState } from './arena-core.ts';
+import { formatTimer, pushArenaState } from './arena-core.utils.ts';
 import { cleanupDeepgram } from './arena-deepgram.ts';
 import {
   set_phase, set_round, set_timeLeft, set_scoreA, set_scoreB,
@@ -174,7 +174,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   screenEl?.appendChild(room);
 
   // Subscribe to Realtime for feed events
-  subscribeRealtime(debate.id);
+  void subscribeRealtime(debate.id);
 
   // Phase 3: Fetch reference loadout for this debate
   if (!isModView && !isSpectator) {

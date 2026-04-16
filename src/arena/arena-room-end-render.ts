@@ -11,7 +11,7 @@ import type { AIScoreResult } from './arena-types-ai-scoring.ts';
 import type { EndOfDebateBreakdown } from './arena-types-results.ts';
 import { enterQueue } from './arena-queue.ts';
 import { renderModScoring } from './arena-mod-scoring.ts';
-import { renderAIScorecard } from './arena-room-ai.ts';
+import { renderAIScorecard } from './arena-room-ai-scoring.ts';
 import { injectAdSlot } from './arena-ads.ts';
 import { renderAfterEffects } from './arena-room-end-after-effects.ts';
 import { attachTranscriptHandler } from './arena-room-end-transcript.ts';

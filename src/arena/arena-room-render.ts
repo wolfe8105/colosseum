@@ -17,13 +17,13 @@ import {
 } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import { ROUND_DURATION } from './arena-constants.ts';
-import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
+import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.utils.ts';
 import { renderInputControls } from './arena-room-live-input.ts';
 import { startLiveRoundTimer } from './arena-room-live-poll.ts';
 import { initLiveAudio } from './arena-room-live-audio.ts';
 import { addSystemMessage } from './arena-room-live-messages.ts';
 import { addReferenceButton, assignSelectedMod, startReferencePoll } from './arena-mod-refs.ts';
-import { startModStatusPoll } from './arena-mod-queue.ts';
+import { startModStatusPoll } from './arena-mod-queue-status.ts';
 import { bountyDot } from '../bounties.ts';
 
 export function renderRoom(debate: CurrentDebate): void {

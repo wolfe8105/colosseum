@@ -15,8 +15,8 @@ import type { ArenaView, DebateMode } from './arena-types.ts';
 import type { ArenaFeedItem } from './arena-types-feed-list.ts';
 import type { MatchData } from './arena-types-match.ts';
 import { MODES, QUEUE_AI_PROMPT_SEC, QUEUE_HARD_TIMEOUT_SEC, QUEUE_CATEGORIES, AI_TOPICS } from './arena-constants.ts';
-import { isPlaceholder, formatTimer, pushArenaState, randomFrom } from './arena-core.ts';
-import { onMatchFound, startAIDebate } from './arena-match.ts';
+import { isPlaceholder, formatTimer, pushArenaState, randomFrom } from './arena-core.utils.ts';
+import { onMatchFound, startAIDebate } from './arena-match-found.ts';
 
 export function enterQueue(mode: DebateMode | string, topic: string): void {
   set_selectedMode(mode as DebateMode);

@@ -5,9 +5,9 @@ import {
   selectedRounds,
   set__pendingPrivateType,
 } from './arena-state.ts';
-import { isPlaceholder, pushArenaState } from './arena-core.ts';
-import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
-import { showModeSelect } from './arena-config-mode.ts';
+import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
+import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-round-picker.ts';
+import { showModeSelect } from './arena-config-mode-select.ts';
 import { createAndWaitPrivateLobby } from './arena-private-lobby.ts';
 
 export function showPrivateLobbyPicker(): void {

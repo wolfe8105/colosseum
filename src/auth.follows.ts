@@ -2,7 +2,8 @@
  * THE MODERATOR — Auth Follows (follow/unfollow, followers/following lists, counts)
  */
 
-import { getSupabaseClient, getIsPlaceholderMode, safeRpc, isUUID } from './auth.core.ts';
+import { getSupabaseClient, getIsPlaceholderMode, isUUID } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import type { AuthResult, FollowRow } from './auth.types.ts';
 
 export async function followUser(targetUserId: string): Promise<AuthResult> {

@@ -21,8 +21,8 @@ import {
 import type { CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
 import type { PrivateLobbyResult, CheckPrivateLobbyResult } from './arena-types-private-lobby.ts';
 import { AI_TOPICS } from './arena-constants.ts';
-import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.ts';
-import { showMatchFound } from './arena-match.ts';
+import { isPlaceholder, randomFrom, pushArenaState } from './arena-core.utils.ts';
+import { showMatchFound } from './arena-match-found.ts';
 
 export async function createAndWaitPrivateLobby(
   mode: string,

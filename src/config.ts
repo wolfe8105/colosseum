@@ -2,132 +2,52 @@
  * THE MODERATOR — Central Configuration (TypeScript)
  *
  * Runtime module — replaces moderator-config.js when Vite build is active.
- * All constants, escapeHTML, showToast, friendlyError live here.
+ * All constants, escapeHTML, friendlyError live here.
+ * Types extracted to config.types.ts (Session 255).
+ * showToast extracted to config.toast.ts (Session 255).
  *
  * Migration: Session 126 (Phase 1), Session 138 (cutover — window bridge added)
  */
 
 // ============================================================
-// TYPE DEFINITIONS
+// RE-EXPORTS — preserve all existing import paths unchanged
 // ============================================================
 
-export type ToastType = 'success' | 'error' | 'info';
+export type {
+  ToastType,
+  StripePrices,
+  IceServer,
+  AppSettings,
+  SubscriptionTier,
+  SubscriptionTiers,
+  TokenEarning,
+  TokenConfig,
+  DebateSettings,
+  FeatureFlags,
+  TopicSection,
+  PlaceholderMode,
+  ModeratorConfig,
+} from './config.types';
 
-export interface StripePrices {
-  readonly contender_monthly: string;
-  readonly champion_monthly: string;
-  readonly creator_monthly: string;
-}
+export { showToast } from './config.toast';
 
-export interface IceServer {
-  readonly urls: string;
-}
+// ============================================================
+// INTERNAL IMPORTS
+// ============================================================
 
-export interface AppSettings {
-  readonly name: string;
-  readonly tagline: string;
-  readonly version: string;
-  readonly baseUrl: string;
-}
-
-export interface SubscriptionTier {
-  readonly name: string;
-  readonly price: number;
-  readonly tokensPerDay: number;
-  readonly ads: boolean;
-  readonly features: readonly string[];
-}
-
-export interface SubscriptionTiers {
-  readonly free: SubscriptionTier;
-  readonly contender: SubscriptionTier;
-  readonly champion: SubscriptionTier;
-  readonly creator: SubscriptionTier;
-}
-
-export interface TokenEarning {
-  readonly dailyLogin: number;
-  readonly challenge: number;
-  readonly firstWin: number;
-  readonly streak3: number;
-  readonly streak5: number;
-  readonly streak10: number;
-  readonly referral: number;
-  readonly modWork: number;
-}
-
-export interface TokenConfig {
-  readonly earning: TokenEarning;
-  readonly referralCap: number;
-}
-
-export interface DebateSettings {
-  readonly roundDurationSec: number;
-  readonly breakDurationSec: number;
-  readonly defaultRounds: number;
-  readonly maxSpectators: number;
-  readonly minEloForRanked: number;
-  readonly startingElo: number;
-  readonly formats: readonly string[];
-}
-
-export interface FeatureFlags {
-  readonly liveDebates: boolean;
-  readonly asyncDebates: boolean;
-  readonly hotTakes: boolean;
-  readonly predictions: boolean;
-  readonly predictionsUI: boolean;
-  readonly cosmetics: boolean;
-  readonly leaderboard: boolean;
-  readonly notifications: boolean;
-  readonly shareLinks: boolean;
-  readonly profileDepth: boolean;
-  readonly voiceMemo: boolean;
-  readonly followsUI: boolean;
-  readonly rivals: boolean;
-  readonly arena: boolean;
-  readonly aiSparring: boolean;
-  readonly recording: boolean;
-}
-
-export interface TopicSection {
-  readonly id: string;
-  readonly name: string;
-  readonly icon: string;
-  readonly tier: number;
-}
-
-export interface PlaceholderMode {
-  readonly supabase: boolean;
-  readonly stripe: boolean;
-  readonly stripeFunction: boolean;
-  readonly signaling: boolean;
-  readonly deepgram: boolean;
-}
-
-/** Full typed shape of what moderator-config.js exposes as window.ModeratorConfig */
-export interface ModeratorConfig {
-  readonly SUPABASE_URL: string;
-  readonly SUPABASE_ANON_KEY: string;
-  readonly STRIPE_PUBLISHABLE_KEY: string;
-  readonly STRIPE_PRICES: StripePrices;
-  readonly STRIPE_FUNCTION_URL: string;
-  readonly SIGNALING_SERVER_URL: null;
-  readonly ICE_SERVERS: readonly IceServer[];
-  readonly DEEPGRAM_API_KEY: string;
-  readonly APP: AppSettings;
-  readonly TIERS: SubscriptionTiers;
-  readonly TOKENS: TokenConfig;
-  readonly DEBATE: DebateSettings;
-  readonly FEATURES: FeatureFlags;
-  readonly SECTIONS: readonly TopicSection[];
-  readonly placeholderMode: PlaceholderMode;
-  readonly isAnyPlaceholder: boolean;
-  readonly isPlaceholder: (val: unknown) => boolean;
-  readonly escapeHTML: (str: string | null | undefined) => string;
-  readonly showToast: (msg: string, type?: ToastType) => void;
-  readonly friendlyError: (err: unknown) => string;
-}
+import type {
+  StripePrices,
+  IceServer,
+  AppSettings,
+  SubscriptionTiers,
+  TokenConfig,
+  DebateSettings,
+  FeatureFlags,
+  TopicSection,
+  PlaceholderMode,
+  ModeratorConfig,
+} from './config.types';
+import { showToast } from './config.toast';
 
 // ============================================================
 // CREDENTIALS (read from Vite env vars, fall back to defaults)
@@ -260,8 +180,6 @@ const SECTIONS: readonly TopicSection[] = [
 /** UUID v4 regex. Canonical — do not duplicate in other modules. */
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// ============================================================
-
 /** OWASP 5-char HTML escape. Canonical implementation — do not duplicate. */
 export function escapeHTML(str: string | null | undefined): string {
   if (str == null) return '';
@@ -271,69 +189,6 @@ export function escapeHTML(str: string | null | undefined): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
-}
-
-// ============================================================
-// GLOBAL TOAST
-// ============================================================
-
-let _toastTimeout: ReturnType<typeof setTimeout> | null = null;
-let _toastKeyframeInjected = false;
-
-export function showToast(msg: string, type: ToastType = 'info'): void {
-  // Inject keyframe on first call
-  if (!_toastKeyframeInjected) {
-    const ks = document.createElement('style');
-    ks.textContent = '@keyframes coloToastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
-    document.head.appendChild(ks);
-    _toastKeyframeInjected = true;
-  }
-
-  // Remove any existing toast
-  const old = document.getElementById('colo-toast');
-  if (old) old.remove();
-  if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
-
-  const colors: Record<ToastType, { bg: string; text: string }> = {
-    success: { bg: 'var(--mod-accent)', text: 'var(--mod-bg-base)' },
-    error:   { bg: 'var(--mod-magenta)', text: 'var(--mod-text-on-accent)' },
-    info:    { bg: 'rgba(26,45,74,0.95)', text: 'var(--mod-text-heading)' },
-  };
-  const c = colors[type];
-
-  const toast = document.createElement('div');
-  toast.id = 'colo-toast';
-  toast.setAttribute('role', 'alert');
-  toast.style.cssText = [
-    'position:fixed',
-    'top:80px',
-    'left:50%',
-    'transform:translateX(-50%)',
-    `background:${c.bg}`,
-    `color:${c.text}`,
-    'padding:12px 24px',
-    'border-radius:8px',
-    'font-family:var(--mod-font-ui)',
-    'font-weight:700',
-    'font-size:14px',
-    'letter-spacing:0.5px',
-    'z-index:99999',
-    'max-width:90vw',
-    'text-align:center',
-    'box-shadow:0 4px 20px rgba(0,0,0,0.4)',
-    'border:1px solid var(--mod-border-primary)',
-    'animation:coloToastIn 0.25s ease',
-  ].join(';');
-  toast.textContent = msg;
-
-  document.body.appendChild(toast);
-
-  const duration = type === 'error' ? 4000 : 2500;
-  _toastTimeout = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
 }
 
 // ============================================================
