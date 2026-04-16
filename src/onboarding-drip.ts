@@ -53,7 +53,7 @@ const DAYS: readonly DripDayDef[] = [
 let _progress: DripProgress | null = null;
 let _cardEl: HTMLElement | null = null;
 let _loaded = false;
-let _claimedThisSession = new Set<number>();
+const _claimedThisSession = new Set<number>();
 
 // ============================================================
 // CSS

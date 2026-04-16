@@ -79,11 +79,11 @@ export async function searchGroupsForChallenge(query: string) {
         data-gid="${esc(g.id)}"
         data-gname="${esc(g.name)}"
         data-gemoji="${esc(g.avatar_emoji || '⚔️')}"
-        data-gelo="${parseInt(String(g.group_elo || 1200))}">
+        data-gelo="${Number.parseInt(String(g.group_elo || 1200))}">
         <span style="font-size:20px;">${esc(g.avatar_emoji || '⚔️')}</span>
         <div style="flex:1;">
           <div style="color:var(--white);font-size:13px;font-weight:700;">${esc(g.name)}</div>
-          <div style="color:var(--white-dim);font-size:11px;">${parseInt(String(g.member_count || 0))} members · Elo ${parseInt(String(g.group_elo || 1200))}</div>
+          <div style="color:var(--white-dim);font-size:11px;">${Number.parseInt(String(g.member_count || 0))} members · Elo ${Number.parseInt(String(g.group_elo || 1200))}</div>
         </div>
       </div>
     `).join('');
@@ -94,7 +94,7 @@ export async function searchGroupsForChallenge(query: string) {
           id:    el.dataset.gid,
           name:  el.dataset.gname,
           emoji: el.dataset.gemoji,
-          elo:   parseInt(el.dataset.gelo),
+          elo:   Number.parseInt(el.dataset.gelo),
         };
         const sel  = document.getElementById('gvg-selected-opponent');
         const esc2 = escapeHTML;
@@ -220,7 +220,7 @@ export async function loadGroupChallenges(groupId: string) {
           <span style="font-size:18px;">${esc(oppEmoji || '⚔️')}</span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--white);">${isDefender ? 'Challenged by' : 'vs'} ${esc(oppName)}</div>
-            <div style="font-size:11px;color:var(--white-dim);">Elo ${parseInt(oppElo)} · ${esc(c.format)}</div>
+            <div style="font-size:11px;color:var(--white-dim);">Elo ${Number.parseInt(oppElo)} · ${esc(c.format)}</div>
           </div>
           ${badge}
         </div>

@@ -138,7 +138,7 @@ export function showReferencePopup(el: HTMLElement): void {
     <div class="feed-ref-popup-inner">
       <div class="feed-ref-popup-claim">"${escapeHTML(claim)}"</div>
       <div class="feed-ref-popup-meta">
-        <span class="feed-ref-popup-type">${escapeHTML(sourceType.replace(/_/g, ' '))}</span>
+        <span class="feed-ref-popup-type">${escapeHTML(sourceType.replaceAll('_', ' '))}</span>
         <span class="feed-ref-popup-domain">${escapeHTML(sourceTitle)}</span>
       </div>
       ${url ? `<a class="feed-ref-popup-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Open source \u2197</a>` : ''}

@@ -701,12 +701,12 @@ body {
       <div class="settings-section-title">General</div>
 
       <div class="form-field">
-        <label class="form-label">Description</label>
+        <label class="form-label" for="settings-desc">Description</label>
         <textarea class="form-textarea" id="settings-desc" placeholder="What does this group debate about?" maxlength="300"></textarea>
       </div>
 
       <div class="form-field">
-        <label class="form-label">Category</label>
+        <label class="form-label" for="settings-category">Category</label>
         <select class="form-select" id="settings-category">
           <option value="general">General</option>
           <option value="politics">🏛️ Politics</option>
@@ -791,11 +791,11 @@ body {
       <div class="settings-sub-section" id="settings-requirements-section" style="display:none;">
         <div class="settings-section-title">Entry Gates</div>
         <div class="form-field">
-          <label class="form-label">Minimum Elo (leave blank to skip)</label>
+          <label class="form-label" for="settings-min-elo">Minimum Elo (leave blank to skip)</label>
           <input class="form-input" type="number" id="settings-min-elo" min="0" max="5000" placeholder="e.g. 1200">
         </div>
         <div class="form-field">
-          <label class="form-label">Minimum Staking Tier</label>
+          <label class="form-label" for="settings-min-tier">Minimum Staking Tier</label>
           <select class="form-select" id="settings-min-tier">
             <option value="">No minimum</option>
             <option value="spectator_plus">Spectator+</option>
@@ -830,11 +830,11 @@ body {
           Leave blank to let the candidate choose. Fill in to lock the field.
         </div>
         <div class="form-field">
-          <label class="form-label">Topic (optional lock)</label>
+          <label class="form-label" for="settings-aud-topic">Topic (optional lock)</label>
           <input class="form-input" type="text" id="settings-aud-topic" placeholder="Leave blank — candidate picks" maxlength="200">
         </div>
         <div class="form-field">
-          <label class="form-label">Category (optional lock)</label>
+          <label class="form-label" for="settings-aud-category">Category (optional lock)</label>
           <select class="form-select" id="settings-aud-category">
             <option value="">Candidate picks</option>
             <option value="general">General</option>
@@ -846,7 +846,7 @@ body {
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">Ruleset (optional lock)</label>
+          <label class="form-label" for="settings-aud-ruleset">Ruleset (optional lock)</label>
           <select class="form-select" id="settings-aud-ruleset">
             <option value="">Candidate picks</option>
             <option value="amplified">Amplified</option>
@@ -854,7 +854,7 @@ body {
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">Rounds (optional lock)</label>
+          <label class="form-label" for="settings-aud-rounds">Rounds (optional lock)</label>
           <select class="form-select" id="settings-aud-rounds">
             <option value="">Candidate picks</option>
             <option value="4">4 rounds</option>
@@ -895,17 +895,17 @@ body {
     <div class="modal-title">CREATE GROUP</div>
 
     <div class="form-field">
-      <label class="form-label">Name</label>
+      <label class="form-label" for="group-name">Name</label>
       <input class="form-input" id="group-name" type="text" placeholder="Keyboard Warriors, Sports Bros…" maxlength="50">
     </div>
 
     <div class="form-field">
-      <label class="form-label">Description (optional)</label>
+      <label class="form-label" for="group-desc-input">Description (optional)</label>
       <textarea class="form-textarea" id="group-desc-input" placeholder="What does this group debate about?"></textarea>
     </div>
 
     <div class="form-field">
-      <label class="form-label">Category</label>
+      <label class="form-label" for="group-category">Category</label>
       <select class="form-select" id="group-category">
         <option value="general">General</option>
         <option value="politics">Politics</option>
@@ -949,12 +949,12 @@ body {
 
     <div id="audition-debate-params">
       <div class="form-field" id="audition-topic-row">
-        <label class="form-label">Topic</label>
+        <label class="form-label" for="audition-topic">Topic</label>
         <input class="form-input" type="text" id="audition-topic"
           placeholder="What will you debate?" maxlength="200">
       </div>
       <div class="form-field" id="audition-category-row">
-        <label class="form-label">Category</label>
+        <label class="form-label" for="audition-category">Category</label>
         <select class="form-select" id="audition-category">
           <option value="">Select…</option>
           <option value="general">General</option>
@@ -966,14 +966,14 @@ body {
         </select>
       </div>
       <div class="form-field" id="audition-ruleset-row">
-        <label class="form-label">Ruleset</label>
+        <label class="form-label" for="audition-ruleset">Ruleset</label>
         <select class="form-select" id="audition-ruleset">
           <option value="amplified">Amplified</option>
           <option value="unplugged">Unplugged</option>
         </select>
       </div>
       <div class="form-field" id="audition-rounds-row">
-        <label class="form-label">Rounds</label>
+        <label class="form-label" for="audition-rounds">Rounds</label>
         <select class="form-select" id="audition-rounds">
           <option value="4">4 rounds</option>
           <option value="6">6 rounds</option>
@@ -1008,15 +1008,15 @@ body {
       <button data-action="close-gvg-modal" style="background:none;border:none;color:var(--mod-text-primary);font-size:20px;cursor:pointer;">✕</button>
     </div>
 
-    <label style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">OPPONENT GROUP</label>
+    <label for="gvg-opponent-search" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">OPPONENT GROUP</label>
     <input id="gvg-opponent-search" type="text" placeholder="Search groups…" maxlength="100" class="form-input" style="margin-bottom:4px;">
     <div id="gvg-opponent-results" style="max-height:140px;overflow-y:auto;margin-bottom:8px;"></div>
     <div id="gvg-selected-opponent" style="display:none;background:var(--mod-accent-muted);border:1px solid var(--mod-accent-border);border-radius:8px;padding:10px;margin-bottom:12px;"></div>
 
-    <label style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">DEBATE TOPIC</label>
+    <label for="gvg-topic" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">DEBATE TOPIC</label>
     <input id="gvg-topic" type="text" placeholder="e.g. Should college athletes be paid?" maxlength="200" class="form-input" style="margin-bottom:12px;">
 
-    <label style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">CATEGORY</label>
+    <label for="gvg-category" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mod-text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">CATEGORY</label>
     <select id="gvg-category" class="form-select" style="margin-bottom:12px;">
       <option value="politics">Politics</option>
       <option value="sports">Sports</option>

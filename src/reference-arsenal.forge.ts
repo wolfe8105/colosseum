@@ -78,15 +78,15 @@ export function showForgeForm(
       html += `
         <h3>Source Details</h3>
         <p class="forge-hint">Title, author, date, and specific locator (page, timestamp, paragraph).</p>
-        <label class="forge-label">Source Title</label>
+        <label class="forge-label" for="forge-title">Source Title</label>
         <input type="text" id="forge-title" placeholder="e.g. IPCC Climate Report 2023" value="${esc(state.source_title)}" />
-        <label class="forge-label">Author / Organization</label>
+        <label class="forge-label" for="forge-author">Author / Organization</label>
         <input type="text" id="forge-author" placeholder="e.g. IPCC Working Group I" value="${esc(state.source_author)}" />
-        <label class="forge-label">Source Date</label>
+        <label class="forge-label" for="forge-date">Source Date</label>
         <input type="date" id="forge-date" value="${esc(state.source_date)}" />
-        <label class="forge-label">Locator (page, timestamp, paragraph)</label>
+        <label class="forge-label" for="forge-locator">Locator (page, timestamp, paragraph)</label>
         <input type="text" id="forge-locator" placeholder="e.g. p.42, 3:15, Section 2.1" value="${esc(state.locator)}" />
-        <label class="forge-label">Source URL (optional)</label>
+        <label class="forge-label" for="forge-url">Source URL (optional)</label>
         <input type="url" id="forge-url" placeholder="https://..." value="${esc(state.source_url)}" />
       `;
     } else if (state.step === 2) {

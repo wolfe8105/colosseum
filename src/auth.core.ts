@@ -25,7 +25,7 @@ import type { Profile, AuthListener, SafeRpcResult } from './auth.types.ts';
 let supabaseClient: SupabaseClient | null = null;
 let currentUser: User | null = null;
 let currentProfile: Profile | null = null;
-let listeners: AuthListener[] = [];
+const listeners: AuthListener[] = [];
 let isPlaceholderMode = true;
 
 let _resolveReady: () => void;

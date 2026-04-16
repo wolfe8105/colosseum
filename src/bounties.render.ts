@@ -77,11 +77,11 @@ export async function renderProfileBountySection(
     <div style="font-size:12px;color:var(--mod-text-muted);margin-bottom:8px;">Put a price on this rival's head. ${slotsLeft} slot${slotsLeft !== 1 ? 's' : ''} remaining.</div>
     <div style="display:flex;gap:8px;margin-bottom:8px;">
       <div style="flex:1;">
-        <label style="font-size:10px;letter-spacing:1px;color:var(--mod-text-sub);">AMOUNT (tokens)</label>
+        <label for="bounty-amount-input" style="font-size:10px;letter-spacing:1px;color:var(--mod-text-sub);">AMOUNT (tokens)</label>
         <input id="bounty-amount-input" type="number" min="1" max="${viewerBalance}" placeholder="e.g. 100" style="width:100%;margin-top:4px;padding:8px;background:var(--mod-bg-control);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-primary);font-size:14px;box-sizing:border-box;" />
       </div>
       <div style="flex:1;">
-        <label style="font-size:10px;letter-spacing:1px;color:var(--mod-text-sub);">DURATION (days)</label>
+        <label for="bounty-duration-input" style="font-size:10px;letter-spacing:1px;color:var(--mod-text-sub);">DURATION (days)</label>
         <input id="bounty-duration-input" type="number" min="1" max="365" value="7" style="width:100%;margin-top:4px;padding:8px;background:var(--mod-bg-control);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-primary);font-size:14px;box-sizing:border-box;" />
       </div>
     </div>

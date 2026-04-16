@@ -50,7 +50,7 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
   // Wire debater buttons
   section.querySelectorAll('.mod-score-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const score = parseInt((btn as HTMLElement).dataset.score!, 10);
+      const score = Number.parseInt((btn as HTMLElement).dataset.score!, 10);
       section.querySelectorAll('.mod-score-btn').forEach((b) => { (b as HTMLButtonElement).disabled = true; (b as HTMLElement).style.opacity = '0.4'; });
       const result = await scoreModerator(debate.id, score);
       const scoredEl = document.getElementById('mod-scored');
@@ -69,7 +69,7 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
     slider.addEventListener('input', () => { valEl.textContent = slider.value; });
   }
   document.getElementById('mod-score-submit')?.addEventListener('click', async () => {
-    const score = parseInt(slider?.value || '25', 10);
+    const score = Number.parseInt(slider?.value || '25', 10);
     const submitBtn = document.getElementById('mod-score-submit') as HTMLButtonElement | null;
     if (submitBtn) { submitBtn.textContent = '\u23F3'; submitBtn.disabled = true; }
     const result = await scoreModerator(debate.id, score);

@@ -35,7 +35,7 @@ export function sanitizeAnswers(raw: unknown): Answers {
     if (!validIds.has(key)) continue;
     const v = (raw as Record<string, unknown>)[key];
     if (typeof v === 'string' && v.length <= 500) clean[key] = v;
-    else if (typeof v === 'number' && isFinite(v)) clean[key] = v;
+    else if (typeof v === 'number' && Number.isFinite(v)) clean[key] = v;
     else if (Array.isArray(v) && v.length <= 20 && v.every((i: unknown) => typeof i === 'string' && (i as string).length <= 200)) clean[key] = v as string[];
   }
   return clean;

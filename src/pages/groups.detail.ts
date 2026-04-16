@@ -110,7 +110,7 @@ export async function toggleMembership(): Promise<void> {
       btn.textContent = 'JOIN GROUP'; btn.className = 'join-btn join';
       (document.getElementById('gvg-challenge-btn') as HTMLElement).style.display = 'none';
       const mc = document.getElementById('detail-members')!;
-      mc.textContent = String(parseInt(mc.textContent!) - 1);
+      mc.textContent = String(Number.parseInt(mc.textContent!) - 1);
     } else {
       const { error } = await safeRpc('join_group', { p_group_id: currentGroupId });
       if (error) throw error;
@@ -118,7 +118,7 @@ export async function toggleMembership(): Promise<void> {
       btn.textContent = 'LEAVE GROUP'; btn.className = 'join-btn leave';
       (document.getElementById('gvg-challenge-btn') as HTMLElement).style.display = 'block';
       const mc = document.getElementById('detail-members')!;
-      mc.textContent = String(parseInt(mc.textContent!) + 1);
+      mc.textContent = String(Number.parseInt(mc.textContent!) + 1);
     }
     loadGroupMembers(currentGroupId!);
   } catch (e) {

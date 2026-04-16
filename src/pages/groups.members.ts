@@ -72,7 +72,7 @@ export async function loadGroupMembers(groupId: string): Promise<void> {
         </div>
         <div class="member-info" style="flex:1;min-width:0;">
           <div class="member-name">${esc(name)}</div>
-          <div class="member-elo">ELO ${parseInt(String(m.elo_rating), 10) || 1000} · ${parseInt(String(m.wins), 10) || 0}W ${parseInt(String(m.losses), 10) || 0}L</div>
+          <div class="member-elo">ELO ${Number.parseInt(String(m.elo_rating), 10) || 1000} · ${Number.parseInt(String(m.wins), 10) || 0}W ${Number.parseInt(String(m.losses), 10) || 0}L</div>
           ${actionHtml}
         </div>
         <div class="member-role">${roleBadge}</div>

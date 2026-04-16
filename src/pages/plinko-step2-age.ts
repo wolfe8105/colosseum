@@ -16,13 +16,13 @@ export function attachStep2(): void {
     if (!month || !day || !year) { showMsg('step2-msg', 'Please enter your date of birth.', 'error'); return; }
     if (!tos) { showMsg('step2-msg', 'You must agree to the Terms of Service.', 'error'); return; }
 
-    const age = getAge(parseInt(month), parseInt(day), parseInt(year));
+    const age = getAge(Number.parseInt(month), Number.parseInt(day), Number.parseInt(year));
     if (age < 13) {
       showMsg('step2-msg', 'You must be at least 13 years old to use The Moderator.', 'error');
       return;
     }
 
-    set_signupDob(`${year}-${String(parseInt(month)).padStart(2, '0')}-${String(parseInt(day)).padStart(2, '0')}`);
+    set_signupDob(`${year}-${String(Number.parseInt(month)).padStart(2, '0')}-${String(Number.parseInt(day)).padStart(2, '0')}`);
     set_isMinor(age < 18);
     goToStep(3);
   });

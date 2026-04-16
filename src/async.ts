@@ -175,7 +175,7 @@ function _wirePredictionDelegation(container: HTMLElement): void {
       }
     } else if (action === 'wager-confirm') {
       const input = container.querySelector('#wager-amount-input') as HTMLInputElement | null;
-      const amount = input ? parseInt(input.value, 10) : 0;
+      const amount = input ? Number.parseInt(input.value, 10) : 0;
       const debateId = btn.dataset['id'] ?? '';
       const pick = btn.dataset['pick'] ?? '';
       if (amount >= 1 && amount <= 500 && debateId && pick) {
@@ -201,7 +201,7 @@ function _wirePredictionDelegation(container: HTMLElement): void {
   container.addEventListener('input', (e: Event) => {
     const input = e.target as HTMLInputElement;
     if (input.id !== 'wager-amount-input') return;
-    const amount = parseInt(input.value, 10);
+    const amount = Number.parseInt(input.value, 10);
     const confirmBtn = container.querySelector('[data-action="wager-confirm"]') as HTMLButtonElement | null;
     if (!confirmBtn) return;
     const balance = getCurrentProfile()?.token_balance || 0;

@@ -93,8 +93,8 @@ export async function renderBountyClaimDropdown(
 
   select.addEventListener('change', () => {
     const opt = select.selectedOptions[0];
-    const fee = parseFloat(opt.dataset.fee ?? '0');
-    const amt = parseFloat(opt.dataset.amount ?? '0');
+    const fee = Number.parseFloat(opt.dataset.fee ?? '0');
+    const amt = Number.parseFloat(opt.dataset.amount ?? '0');
 
     if (!select.value) {
       preview.textContent = '';
@@ -120,8 +120,8 @@ export async function renderBountyClaimDropdown(
 
     const bountyId = select.value;
     const opt = select.selectedOptions[0];
-    const fee = parseFloat(opt.dataset.fee ?? '0');
-    const amt = parseFloat(opt.dataset.amount ?? '0');
+    const fee = Number.parseFloat(opt.dataset.fee ?? '0');
+    const amt = Number.parseFloat(opt.dataset.amount ?? '0');
 
     lockBtn.disabled = true;
     lockBtn.textContent = '…';

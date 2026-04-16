@@ -165,7 +165,7 @@ export function wireSignupForm(getReturnTo: () => string, isPlaceholder: boolean
       showMsg('signup-msg', 'You must agree to the Terms of Service.', 'error'); return;
     }
 
-    const age = getAge(parseInt(month), parseInt(day), parseInt(year));
+    const age = getAge(Number.parseInt(month), Number.parseInt(day), Number.parseInt(year));
     if (age < 13) {
       showMsg('signup-msg', 'You must be at least 13 years old to use The Moderator.', 'error'); return;
     }
@@ -180,7 +180,7 @@ export function wireSignupForm(getReturnTo: () => string, isPlaceholder: boolean
     if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
     try {
-      const dob = `${year}-${String(parseInt(month)).padStart(2, '0')}-${String(parseInt(day)).padStart(2, '0')}`;
+      const dob = `${year}-${String(Number.parseInt(month)).padStart(2, '0')}-${String(Number.parseInt(day)).padStart(2, '0')}`;
       const result = await signUp({ email, password, username, displayName: username, dob });
 
       if (!result.success) {

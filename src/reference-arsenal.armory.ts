@@ -225,7 +225,7 @@ export async function renderArmory(container: HTMLElement): Promise<void> {
     actions.querySelector('.sheet-challenge-btn')?.addEventListener('click', () => {
       body.innerHTML += `
         <div class="sheet-challenge-form">
-          <label class="sheet-challenge-label">Grounds for challenge</label>
+          <label class="sheet-challenge-label" for="armory-challenge-grounds">Grounds for challenge</label>
           <textarea id="armory-challenge-grounds" class="sheet-challenge-ta" rows="3" maxlength="280" placeholder="Why is this reference inaccurate or miscategorized?"></textarea>
           <p class="sheet-challenge-hint">Challenging escrows tokens. If denied, escrow is burned.</p>
         </div>`;

@@ -63,7 +63,7 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
   // B-09: filter by selected category, fall back to general feed if empty
   (async () => {
     try {
-      let { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5, p_category: selectedCategory });
+      const { data } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 5, p_category: selectedCategory });
       const feedEl = document.getElementById('arena-queue-feed');
       if (!feedEl || view !== 'queue') return;
       let items = data as ArenaFeedItem[] | null;

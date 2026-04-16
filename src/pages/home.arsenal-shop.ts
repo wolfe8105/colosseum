@@ -14,7 +14,7 @@ import type { ShopState } from './home.arsenal-shop-types.ts';
 
 // ── Module-level state ─────────────────────────────────────────────────────
 
-let _state: ShopState = {
+const _state: ShopState = {
   catalog:        [],
   productType:    'powerup',
   categoryFilter: 'all',
@@ -71,5 +71,5 @@ function _rerender(container: HTMLElement): void {
 // Read live token balance from the DOM (already kept up to date by home.ts)
 function _readTokenBalance(): number {
   const el = document.querySelector<HTMLElement>('[data-token-balance]');
-  return el ? parseInt(el.textContent ?? '0', 10) || 0 : 0;
+  return el ? Number.parseInt(el.textContent ?? '0', 10) || 0 : 0;
 }

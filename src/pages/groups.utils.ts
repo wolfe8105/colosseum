@@ -85,13 +85,13 @@ export function renderGroupList(
         ${g.description ? `<div class="group-desc">${esc(g.description)}</div>` : ''}
         <div class="group-meta">
           <span class="meta-pill cat">${catLabel}</span>
-          <span class="meta-pill members">👥 ${parseInt(String(g.member_count), 10) || 0}</span>
+          <span class="meta-pill members">👥 ${Number.parseInt(String(g.member_count), 10) || 0}</span>
           ${roleHtml}
         </div>
       </div>
       <div class="group-elo">
-        ${showRank ? `<div class="elo-label">#${parseInt(String(g.rank), 10) || (i + 1)}</div>` : ''}
-        <div class="elo-num">${parseInt(String(g.elo_rating), 10) || 1000}</div>
+        ${showRank ? `<div class="elo-label">#${Number.parseInt(String(g.rank), 10) || (i + 1)}</div>` : ''}
+        <div class="elo-num">${Number.parseInt(String(g.elo_rating), 10) || 1000}</div>
         <div class="elo-label">ELO</div>
       </div>
     </div>`;

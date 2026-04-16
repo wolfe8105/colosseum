@@ -15,8 +15,8 @@ export async function placeStake(debateId: string, side: string, amount: number 
     return { success: false, error: 'Missing required fields' };
   }
 
-  const parsedAmount = parseInt(String(amount), 10);
-  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+  const parsedAmount = Number.parseInt(String(amount), 10);
+  if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
     return { success: false, error: 'Amount must be a positive number' };
   }
 

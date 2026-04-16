@@ -84,7 +84,7 @@ export function wireLoadout(debateId: string, onEquipped?: (result: PowerUpResul
 
   document.querySelectorAll('.powerup-slot.empty').forEach(slot => {
     slot.addEventListener('click', () => {
-      selectedSlot = parseInt((slot as HTMLElement).dataset.slot ?? '0', 10);
+      selectedSlot = Number.parseInt((slot as HTMLElement).dataset.slot ?? '0', 10);
       const picker = document.getElementById('powerup-inventory-picker');
       if (picker) picker.style.display = 'block';
       document.querySelectorAll('.powerup-slot').forEach(s => {

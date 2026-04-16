@@ -106,16 +106,16 @@ export function openCreatePredictionForm(): void {
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 16px;"></div>
       <div style="font-family:var(--mod-font-display);font-size:16px;letter-spacing:2px;color:var(--mod-accent);text-align:center;margin-bottom:16px;">CREATE PREDICTION</div>
       <div style="margin-bottom:12px;">
-        <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">QUESTION</label>
+        <label for="cpq-topic" style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">QUESTION</label>
         <textarea id="cpq-topic" maxlength="200" placeholder="Will AI replace most jobs by 2030?" style="width:100%;min-height:60px;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;resize:none;outline:none;"></textarea>
         <div id="cpq-topic-count" style="font-size:10px;color:#6a7a90; /* TODO: needs CSS var token */text-align:right;margin-top:2px;">0/200</div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:12px;">
-        <div style="flex:1;"><label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE A</label><input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;"></div>
-        <div style="flex:1;"><label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE B</label><input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;"></div>
+        <div style="flex:1;"><label for="cpq-side-a" style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE A</label><input id="cpq-side-a" type="text" maxlength="50" placeholder="Yes" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;"></div>
+        <div style="flex:1;"><label for="cpq-side-b" style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">SIDE B</label><input id="cpq-side-b" type="text" maxlength="50" placeholder="No" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;"></div>
       </div>
       <div style="margin-bottom:16px;">
-        <label style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">CATEGORY (optional)</label>
+        <label for="cpq-category" style="font-size:11px;color:var(--mod-text-sub);letter-spacing:1px;display:block;margin-bottom:4px;">CATEGORY (optional)</label>
         <select id="cpq-category" style="width:100%;padding:10px 12px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:8px;color:var(--mod-text-heading);font-family:var(--mod-font-ui);font-size:14px;outline:none;-webkit-appearance:none;">
           <option value="">None</option><option value="politics">Politics</option><option value="sports">Sports</option>
           <option value="entertainment">Entertainment</option><option value="trending">Trending</option><option value="technology">Technology</option>

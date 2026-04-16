@@ -13,7 +13,7 @@ function _updateConfirmButton(selectedSide: string | null): void {
   const amountInput = document.getElementById('stake-amount-input') as HTMLInputElement | null;
   if (!confirmBtn) return;
 
-  const amount = amountInput ? parseInt(amountInput.value, 10) : 0;
+  const amount = amountInput ? Number.parseInt(amountInput.value, 10) : 0;
 
   if (selectedSide && amount > 0) {
     confirmBtn.disabled = false;
@@ -79,7 +79,7 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
     confirmBtn.addEventListener('click', async () => {
       if (!selectedSide || !amountInput?.value) return;
 
-      const amount = parseInt(amountInput.value, 10);
+      const amount = Number.parseInt(amountInput.value, 10);
       const errorEl = document.getElementById('stake-error');
 
       confirmBtn.disabled = true;

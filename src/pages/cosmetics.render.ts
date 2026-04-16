@@ -13,7 +13,7 @@ const escHtml = escapeHTML;
 
 export function depthLabel(threshold: number | null): string {
   if (threshold === null) return '?%';
-  const key = String(parseFloat(threshold.toFixed(2)));
+  const key = String(Number.parseFloat(threshold.toFixed(2)));
   return DEPTH_LABEL[key] ?? `${Math.round(threshold * 100)}%`;
 }
 
