@@ -14,7 +14,7 @@ import { MODES, QUEUE_CATEGORIES } from './arena-constants.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { enterQueue } from './arena-queue.ts';
 import { maybeRoutePrivate } from './arena-private-picker.ts';
-import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
+import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-round-picker.ts';
 
 // ============================================================
 // MODE SELECT

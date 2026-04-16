@@ -6,7 +6,7 @@ import {
 } from './arena-state.ts';
 import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
 import type { ModDebateCheckResult } from './arena-types-moderator.ts';
-import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';
+import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-round-picker.ts';
 import { showModQueue } from './arena-mod-queue.ts';
 import { enterRoom } from './arena-room-enter.ts';
 import { showMatchFound } from './arena-match.ts';
