@@ -63,12 +63,9 @@ RULES:
 - Refactor only — do not fix bugs.
 
 Wait for approval of the split map before writing any code.
-```
-
-AFTER BUILD PASSES — commit and push to main:
-```
+After build passes, commit and push directly to main:
 git add -A
-git commit -m "refactor: <describe what was split>"
+git commit -m "refactor: $(basename $(pwd)) split complete"
 git push origin HEAD:main
+Confirm push succeeded.
 ```
-Confirm the push succeeded before ending the session.
