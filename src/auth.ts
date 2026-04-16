@@ -3,7 +3,9 @@
  *
  * Thin re-export surface. All logic lives in sub-modules:
  *   auth.types.ts      — type definitions (no runtime)
- *   auth.core.ts       — module state, init, safeRpc, requireAuth, getters, auto-init
+ *   auth.core.ts       — module state, init, getters, auto-init
+ *   auth.rpc.ts        — safeRpc (401-recovery RPC wrapper)
+ *   auth.gate.ts       — requireAuth (sign-up prompt modal)
  *   auth.ops.ts        — signUp, logIn, oauthLogin, logOut, resetPassword, updatePassword
  *   auth.follows.ts    — followUser, unfollowUser, getFollowers, getFollowing, getFollowCounts
  *   auth.rivals.ts     — declareRival, respondRival, getMyRivals
@@ -16,9 +18,15 @@
  */
 
 // --- Core ---
-export { isUUID, onChange, safeRpc, init, requireAuth,
+export { isUUID, onChange, init,
          getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
          getSupabaseClient, ready } from './auth.core.ts';
+
+// --- RPC wrapper ---
+export { safeRpc } from './auth.rpc.ts';
+
+// --- Auth gate ---
+export { requireAuth } from './auth.gate.ts';
 
 // --- Auth operations ---
 export { signUp, logIn, oauthLogin, logOut,
@@ -52,7 +60,9 @@ export type { SafeRpcResult, AuthResult, Profile, PublicProfile,
 // ============================================================
 
 import { getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient,
-         ready, init, onChange, safeRpc, requireAuth } from './auth.core.ts';
+         ready, init, onChange } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
+import { requireAuth } from './auth.gate.ts';
 import { signUp, logIn, oauthLogin, logOut, resetPassword, updatePassword } from './auth.ops.ts';
 import { followUser, unfollowUser, getFollowers, getFollowing, getFollowCounts } from './auth.follows.ts';
 import { declareRival, respondRival, getMyRivals } from './auth.rivals.ts';
