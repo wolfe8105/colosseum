@@ -3,7 +3,7 @@
  * showEditSheet, toggleHide, removeEntry, loadAndRender.
  */
 
-import { safeRpc } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import { escapeHTML, showToast } from './config.ts';
 import { setEntries } from './profile-debate-archive.state.ts';
 import { renderTable } from './profile-debate-archive.render.ts';

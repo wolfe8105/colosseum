@@ -20,7 +20,8 @@
       "Bash(cp \"C:/Users/wolfe/Downloads/_SPEC.md\" \"C:/Users/wolfe/colosseum/docs/interaction-maps/_SPEC.md\")",
       "Bash(cp \"C:/Users/wolfe/Downloads/F-49-go-guest-sparring.md\" \"C:/Users/wolfe/colosseum/docs/interaction-maps/F-49-go-guest-sparring.md\")",
       "Bash(grep -v '^[0-9]*:```')",
-      "Bash(export PATH=\"/c/Users/PatrickWolfe/node/node-v22.11.0-win-x64:$PATH\")"
+      "Bash(export PATH=\"/c/Users/PatrickWolfe/node/node-v22.11.0-win-x64:$PATH\")",
+      "Bash(/c/Users/PatrickWolfe/node/node-v22.11.0-win-x64/npm.cmd run *)"
     ]
   }
 }

@@ -2,7 +2,8 @@
  * THE MODERATOR — Auth Rivals (declare, respond, list)
  */
 
-import { getIsPlaceholderMode, safeRpc, isUUID } from './auth.core.ts';
+import { getIsPlaceholderMode, isUUID } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import type { AuthResult, RivalData } from './auth.types.ts';
 
 export async function declareRival(targetId: string, message?: string): Promise<AuthResult & { error?: string }> {

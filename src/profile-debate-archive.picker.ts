@@ -3,7 +3,7 @@
  * showAddPicker — bottom sheet for adding a debate to the archive.
  */
 
-import { safeRpc } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import { escapeHTML, showToast } from './config.ts';
 import { loadAndRender } from './profile-debate-archive.edit.ts';
 import type { RecentDebate } from './profile-debate-archive.types.ts';

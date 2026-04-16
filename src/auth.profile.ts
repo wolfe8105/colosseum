@@ -2,7 +2,9 @@
  * THE MODERATOR — Auth Profile (updateProfile, deleteAccount, getPublicProfile, showUserProfile)
  */
 
-import { requireAuth, getSupabaseClient, getIsPlaceholderMode, getCurrentUser, getCurrentProfile, safeRpc, isUUID, _notify, _clearAuthState } from './auth.core.ts';
+import { getSupabaseClient, getIsPlaceholderMode, getCurrentUser, getCurrentProfile, isUUID, _notify, _clearAuthState } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
+import { requireAuth } from './auth.gate.ts';
 import { escapeHTML, FEATURES } from './config.ts';
 import { vgBadge } from './badge.ts';
 import { followUser, unfollowUser } from './auth.follows.ts';

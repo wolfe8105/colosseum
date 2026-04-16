@@ -5,7 +5,8 @@
  * directly via getCurrentProfile() (same object reference — see LM-AUTH-001).
  */
 
-import { getIsPlaceholderMode, getCurrentUser, getCurrentProfile, safeRpc, isUUID, _notify } from './auth.core.ts';
+import { getIsPlaceholderMode, getCurrentUser, getCurrentProfile, isUUID, _notify } from './auth.core.ts';
+import { safeRpc } from './auth.rpc.ts';
 import type { AuthResult, ModeratorInfo, DebateReference } from './auth.types.ts';
 
 export async function toggleModerator(enabled: boolean): Promise<AuthResult> {
