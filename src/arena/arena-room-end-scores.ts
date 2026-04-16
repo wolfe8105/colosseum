@@ -4,7 +4,7 @@
 import { screenEl } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import type { AIScoreResult } from './arena-types-ai-scoring.ts';
-import { requestAIScoring, sumSideScore } from './arena-room-ai.ts';
+import { requestAIScoring, sumSideScore } from './arena-room-ai-scoring.ts';
 
 export interface GeneratedScores {
   scoreA: number | null;
