@@ -5,7 +5,7 @@ import { safeRpc, getCurrentUser, getCurrentProfile } from '../auth.ts';
 import { selectedRanked, set_selectedRanked, set_selectedRuleset } from './arena-state.ts';
 import type { RankedCheckResult } from './arena-types-results.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
-import { showModeSelect } from './arena-config-mode.ts';
+import { showModeSelect } from './arena-config-mode-select.ts';
 
 // ============================================================
 // RANKED PICKER
