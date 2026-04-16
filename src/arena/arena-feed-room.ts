@@ -174,7 +174,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
   screenEl?.appendChild(room);
 
   // Subscribe to Realtime for feed events
-  subscribeRealtime(debate.id);
+  void subscribeRealtime(debate.id);
 
   // Phase 3: Fetch reference loadout for this debate
   if (!isModView && !isSpectator) {

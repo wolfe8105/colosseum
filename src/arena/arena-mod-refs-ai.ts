@@ -54,7 +54,7 @@ export async function requestAIModRuling(
 
   } catch (err) {
     console.warn('[Arena] AI Moderator Edge Function failed:', err);
-    await ruleOnReference(referenceId, 'allowed', '\uD83E\uDD16 Auto-allowed (AI moderator unavailable)', 'ai');
-    addSystemMessage('\u2705 AI Moderator: Evidence AUTO-ALLOWED (moderator unavailable)');
+    await ruleOnReference(referenceId, 'denied', '\uD83E\uDD16 Auto-denied (AI moderator unavailable)', 'ai');
+    addSystemMessage('\u274C AI Moderator: Evidence AUTO-DENIED (moderator unavailable)');
   }
 }
