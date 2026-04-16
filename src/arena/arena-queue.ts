@@ -2,7 +2,7 @@
 // Part of the arena.ts monolith split
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { friendlyError, FEATURES } from '../config.ts';
+import { friendlyError, FEATURES, showToast } from '../config.ts';
 import {
   view, selectedMode, selectedRanked, selectedRuleset, selectedRounds,
   selectedCategory, queuePollTimer, queueElapsedTimer, queueSeconds,
@@ -17,6 +17,8 @@ import type { MatchData } from './arena-types-match.ts';
 import { MODES, QUEUE_AI_PROMPT_SEC, QUEUE_HARD_TIMEOUT_SEC, QUEUE_CATEGORIES, AI_TOPICS } from './arena-constants.ts';
 import { isPlaceholder, formatTimer, pushArenaState, randomFrom } from './arena-core.utils.ts';
 import { onMatchFound, startAIDebate } from './arena-match-found.ts';
+
+let consecutivePollErrors = 0;
 
 export function enterQueue(mode: DebateMode | string, topic: string): void {
   set_selectedMode(mode as DebateMode);
@@ -164,6 +166,39 @@ export function showAIFallbackPrompt(): void {
 }
 
 export async function joinServerQueue(mode: DebateMode, topic: string): Promise<void> {
+  function startQueuePoll() {
+    set_queuePollTimer(setInterval(async () => {
+      if (view !== 'queue') return;
+      if (_queuePollInFlight) return;
+      set__queuePollInFlight(true);
+      try {
+        const { data: status, error: pollErr } = await safeRpc<MatchData>('check_queue_status');
+        if (pollErr) throw pollErr;
+        if (view !== 'queue') return;
+
+        consecutivePollErrors = 0;
+
+        // Update queue population count
+        const qc = (status as Record<string, unknown>)?.queue_count;
+        const popEl = document.getElementById('arena-queue-pop');
+        if (popEl) {
+          const count = typeof qc === 'number' ? qc : 0;
+          popEl.textContent = count > 0 ? `${count} other${count !== 1 ? 's' : ''} searching` : '';
+        }
+
+        if (status && (status as MatchData).status === 'matched') {
+          onMatchFound(status as MatchData);
+        }
+      } catch (pollError) {
+        consecutivePollErrors++;
+        if (consecutivePollErrors === 3) showToast('Queue connection lost — retrying...', 'error');
+        console.warn('[Arena] Queue poll failed:', pollError);
+      } finally {
+        set__queuePollInFlight(false);
+      }
+    }, 4000));
+  }
+
   try {
     const { data, error } = await safeRpc<MatchData>('join_debate_queue', {
       p_mode: mode,
@@ -177,32 +212,15 @@ export async function joinServerQueue(mode: DebateMode, topic: string): Promise<
     if ((data as MatchData)?.status === 'matched') {
       onMatchFound(data as MatchData);
     } else {
-      set_queuePollTimer(setInterval(async () => {
-        if (view !== 'queue') return;
-        if (_queuePollInFlight) return;
-        set__queuePollInFlight(true);
-        try {
-          const { data: status, error: pollErr } = await safeRpc<MatchData>('check_queue_status');
-          if (pollErr) throw pollErr;
-          if (view !== 'queue') return;
-
-          // Update queue population count
-          const qc = (status as Record<string, unknown>)?.queue_count;
-          const popEl = document.getElementById('arena-queue-pop');
-          if (popEl) {
-            const count = typeof qc === 'number' ? qc : 0;
-            popEl.textContent = count > 0 ? `${count} other${count !== 1 ? 's' : ''} searching` : '';
-          }
-
-          if (status && (status as MatchData).status === 'matched') {
-            onMatchFound(status as MatchData);
-          }
-        } catch { /* handled */ } finally {
-          set__queuePollInFlight(false);
-        }
-      }, 4000));
+      startQueuePoll();
     }
   } catch (err) {
+    const isDuplicate = String(err).includes('duplicate key') || String(err).includes('23505');
+    if (isDuplicate) {
+      // Already in queue on server — start polling instead of showing error
+      startQueuePoll();
+      return;
+    }
     console.error('[Arena] Queue join error:', err);
     set_queueErrorState(true);
     const statusEl = document.getElementById('arena-queue-status');

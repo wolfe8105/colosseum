@@ -155,9 +155,7 @@ export async function finalizeDebate(
 
     // F-18: resolve audition pass/fail if this was an audition debate
     try {
-      const { getSupabaseClient } = await import('../auth.ts');
-      const _sb = getSupabaseClient();
-      await _sb.rpc('resolve_audition_from_debate', { p_debate_id: debate.id });
+      await safeRpc('resolve_audition_from_debate', { p_debate_id: debate.id });
     } catch (err) { console.error('[Arena] resolve_audition_from_debate failed:', err); }
   }
     // LANDMINE [LM-END-004]: convert_referral `if` is indented as if inside the `if (debate.ruleset !== 'unplugged')` block above,

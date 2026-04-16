@@ -3,7 +3,7 @@
  * Two branches: email signup (signUp RPC) and OAuth (update_profile + set_profile_dob).
  */
 
-import { signUp, getSupabaseClient } from '../auth.ts';
+import { signUp, getSupabaseClient, safeRpc } from '../auth.ts';
 import { isAnyPlaceholder } from '../config.ts';
 import { nudge } from '../nudge.ts';
 import { clearMsg, goToStep, showMsg } from './plinko-helpers.ts';
@@ -140,7 +140,7 @@ export function attachStep3(): void {
         const supabaseClient = getSupabaseClient() as { rpc: (fn: string, args: Record<string, string>) => Promise<unknown> } | null;
         if (supabaseClient) {
           try {
-            await supabaseClient.rpc('update_profile', {
+            await safeRpc('update_profile', {
               p_display_name: displayName,
               p_username: username,
             });
@@ -149,7 +149,7 @@ export function attachStep3(): void {
           // SESSION 134: Write DOB to profiles via RPC (OAuth bypasses signUp metadata)
           if (signupDob) {
             try {
-              await supabaseClient.rpc('set_profile_dob', { p_dob: signupDob });
+              await safeRpc('set_profile_dob', { p_dob: signupDob });
             } catch { /* non-critical — DOB missing is better than blocking signup */ }
           }
         }
