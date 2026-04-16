@@ -11,7 +11,7 @@ import { safeRpc } from '../auth.ts';
 import { showToast } from '../config.ts';
 import {
   currentDebate,
-  feedPauseTimeLeft,
+  feedPaused, feedPauseTimeLeft,
   challengeRulingTimer, activeChallengeRefId, activeChallengeId,
   set_feedPaused, set_feedPauseTimeLeft,
   set_challengeRulingTimer,
@@ -76,19 +76,16 @@ export function pauseFeed(debate: CurrentDebate): void {
               p_ruling: 'upheld',
             });
           }
+        }).then(() => {
+          unpauseFeed();
         }).catch((e: unknown) => console.warn('[Arena] Auto-accept ruling failed:', e));
-        // LANDMINE [LM-MACHINE-001]: calls unpauseFeed() directly AND inserts a mod_ruling event which
-        // triggers unpause again via the Realtime subscription. Potential double-unpause — one local,
-        // one remote. FIX AFTER REFACTOR: (1) move unpauseFeed() inside the .then() so it fires after
-        // RPCs resolve, (2) make unpauseFeed() idempotent (guard with feedPaused check) so double-call
-        // from Realtime subscription is harmless. Do not touch until feed machine refactor is complete.
-        unpauseFeed();
       }
     }, 1000));
   }
 }
 
 export function unpauseFeed(): void {
+  if (!feedPaused) return; // idempotent — safe to call from both local and Realtime paths
   set_feedPaused(false);
 
   // Clear ruling timer
