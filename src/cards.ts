@@ -10,120 +10,13 @@
  * Migration: Session 127 (Phase 3)
  */
 
-// ============================================================
-// TYPE DEFINITIONS
-// ============================================================
+import type { CardSize, CardDimensions, GenerateCardOptions } from './cards.types.ts';
+import { SIZES, COLORS, CANVAS_FONT } from './cards.types.ts';
+import { truncLabel, roundRect, wrapText, validateSize } from './cards.helpers.ts';
 
-export type CardSize = 'og' | 'story' | 'twitter' | 'square';
-
-export interface CardDimensions {
-  readonly w: number;
-  readonly h: number;
-  readonly label: string;
-}
-
-export interface GenerateCardOptions {
-  topic?: string;
-  sideA?: string;
-  sideB?: string;
-  yesVotes?: number;
-  noVotes?: number;
-  size?: CardSize | string;
-}
-
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-export const SIZES: Readonly<Record<CardSize, CardDimensions>> = {
-  og: { w: 1200, h: 630, label: 'Link Preview' },
-  story: { w: 1080, h: 1920, label: 'Instagram Story' },
-  twitter: { w: 1200, h: 675, label: 'Twitter/X' },
-  square: { w: 1080, h: 1080, label: 'Square' },
-} as const;
-
-/** BUG 1 FIX: Allowlist of valid size keys for filename validation */
-const VALID_SIZES: ReadonlySet<string> = new Set(Object.keys(SIZES));
-
-const COLORS = {
-  bg1: '#1a2d4a',
-  bg2: '#2d5a8e',
-  bg3: '#0a1628',
-  gold: '#d4a843',
-  goldDim: '#b8922e',
-  red: '#cc2936',
-  green: '#2ecc71',
-  white: '#f0f0f0',
-  whiteDim: '#a0a8b8',
-  cardBg: 'rgba(10, 17, 40, 0.85)',
-} as const;
-
-// Preload Antonio for Canvas API — CSS loads it for DOM, but Canvas needs explicit load
-if (typeof document !== 'undefined' && document.fonts) {
-  document.fonts.load('400 16px "Antonio"').catch((e) => console.warn('[Cards] font load failed:', e));
-  document.fonts.load('700 16px "Antonio"').catch((e) => console.warn('[Cards] font load failed:', e));
-}
-
-const CANVAS_FONT = "'Antonio', sans-serif";
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-/** BUG 2 FIX: Truncate label strings to prevent canvas overflow */
-function truncLabel(str: unknown, max: number): string {
-  const s = String(str ?? '');
-  return s.length > max ? s.slice(0, max - 1) + '…' : s;
-}
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-): void {
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.lineTo(x + r, y + h);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.lineTo(x, y + r);
-  ctx.arcTo(x, y, x + r, y, r);
-  ctx.closePath();
-}
-
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const words = String(text).split(' ');
-  const lines: string[] = [];
-  let line = '';
-
-  words.forEach((word) => {
-    const test = line + (line ? ' ' : '') + word;
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = test;
-    }
-  });
-  if (line) lines.push(line);
-
-  // Max 3 lines, truncate with ellipsis
-  if (lines.length > 3) {
-    lines.length = 3;
-    lines[2] = (lines[2] ?? '').replace(/\s+\S*$/, '') + '…';
-  }
-
-  return lines;
-}
-
-function validateSize(size: string | undefined): CardSize {
-  return VALID_SIZES.has(size ?? '') ? (size as CardSize) : 'og';
-}
+// Re-export types to preserve existing import paths
+export type { CardSize, CardDimensions, GenerateCardOptions } from './cards.types.ts';
+export { SIZES } from './cards.types.ts';
 
 // ============================================================
 // CARD GENERATION
