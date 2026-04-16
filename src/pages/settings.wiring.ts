@@ -13,6 +13,7 @@ const isPlaceholder: boolean = isAnyPlaceholder;
 
 export function wireSettings(): void {
   document.getElementById('save-btn')?.addEventListener('click', saveSettings);
+  document.getElementById('settings-back-btn')?.addEventListener('click', () => { window.location.href = 'index.html'; });
 
   // Dark mode toggle — immediate effect
   getEl<HTMLInputElement>('set-dark-mode')?.addEventListener('change', (e: Event) => {

@@ -114,7 +114,7 @@ function render(): void {
       const d = DEBATES[slug];
       if (!d) return;
       const dTotal = d.yesVotes + d.noVotes;
-      html += `<div class="mini-debate" data-action="go-debate" data-slug="${encodeURIComponent(slug)}"
+      html += `<div class="mini-debate" data-action="go-debate" data-slug="${encodeURIComponent(slug)}">
         <div class="mini-topic">${escapeHTML(d.topic)}</div>
         <div class="mini-meta"><span class="mini-cat">${escapeHTML(d.catIcon)} ${escapeHTML(d.catLabel)}</span><span>${dTotal.toLocaleString()} votes</span></div>
       </div>`;
