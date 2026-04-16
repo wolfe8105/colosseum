@@ -38,3 +38,11 @@ RULES:
 
 Commit: "refactor: extract arena-config-round-picker.ts — break config-mode cycle"
 ```
+
+AFTER BUILD PASSES — commit and push to main:
+```
+git add -A
+git commit -m "refactor: <describe what was split>"
+git push origin HEAD:main
+```
+Confirm the push succeeded before ending the session.

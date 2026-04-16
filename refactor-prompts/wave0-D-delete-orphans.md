@@ -24,3 +24,11 @@ Steps:
 
 Do NOT touch any files in src/arena/. Only the root-level copies.
 ```
+
+AFTER BUILD PASSES — commit and push to main:
+```
+git add -A
+git commit -m "refactor: <describe what was split>"
+git push origin HEAD:main
+```
+Confirm the push succeeded before ending the session.

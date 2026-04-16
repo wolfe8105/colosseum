@@ -44,3 +44,11 @@ RULES:
 
 Commit: "refactor: extract arena-core.utils.ts — break 4 circular deps"
 ```
+
+AFTER BUILD PASSES — commit and push to main:
+```
+git add -A
+git commit -m "refactor: <describe what was split>"
+git push origin HEAD:main
+```
+Confirm the push succeeded before ending the session.

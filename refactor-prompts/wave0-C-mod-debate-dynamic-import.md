@@ -32,3 +32,11 @@ RULES:
 
 Commit: "refactor: break arena-mod-queue ↔ arena-mod-debate cycle via dynamic import"
 ```
+
+AFTER BUILD PASSES — commit and push to main:
+```
+git add -A
+git commit -m "refactor: <describe what was split>"
+git push origin HEAD:main
+```
+Confirm the push succeeded before ending the session.
