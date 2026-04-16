@@ -138,3 +138,73 @@ Feed these batches one at a time into the v3 audit method orchestration prompt. 
 2. src/async.types.ts (1,523 bytes)
 3. src/pages/home.feed.ts (3,445 bytes)
 4. src/pages/home.types.ts (491 bytes)
+
+---
+
+# Refactor Audit Batches (post-split, April 2026)
+
+These batches cover the 25 new files created by the refactor plus 13 significantly
+modified originals. All are new to the audit — none appeared in Batches 1–16R.
+Byte budget: ≤ 40,000 bytes per batch.
+
+## Batch A (PENDING) — 30,041 bytes
+Deepgram split + Realtime feed split + lobby cards
+
+1. src/arena/arena-deepgram.types.ts (534 bytes)
+2. src/arena/arena-deepgram.token.ts (1,177 bytes)
+3. src/arena/arena-deepgram.ts (10,238 bytes)
+4. src/arena/arena-feed-realtime.ts (3,012 bytes)
+5. src/arena/arena-feed-heartbeat.ts (4,290 bytes)
+6. src/arena/arena-feed-disconnect.ts (7,035 bytes)
+7. src/arena/arena-lobby.cards.ts (3,755 bytes)
+
+## Batch B (PENDING) — 30,976 bytes
+Lobby + Private lobby splits
+
+1. src/arena/arena-lobby.ts (14,056 bytes)
+2. src/arena/arena-private-lobby.ts (8,662 bytes)
+3. src/arena/arena-private-lobby.join.ts (3,528 bytes)
+4. src/arena/arena-pending-challenges.ts (4,730 bytes)
+
+## Batch C (PENDING) — 37,245 bytes
+Staking split + Tournaments split + Queue (never audited)
+
+1. src/staking.types.ts (679 bytes)
+2. src/staking.ts (714 bytes)
+3. src/staking.rpc.ts (2,842 bytes)
+4. src/staking.render.ts (6,914 bytes)
+5. src/staking.wire.ts (3,918 bytes)
+6. src/tournaments.types.ts (953 bytes)
+7. src/tournaments.ts (1,289 bytes)
+8. src/tournaments.indicator.ts (2,610 bytes)
+9. src/tournaments.rpc.ts (3,403 bytes)
+10. src/tournaments.render.ts (2,906 bytes)
+11. src/arena/arena-queue.ts (11,017 bytes)
+
+## Batch D (PENDING) — 35,439 bytes
+Login split + Auto-debate split
+
+1. src/pages/login.types.ts (283 bytes)
+2. src/pages/login.forms.ts (8,734 bytes)
+3. src/pages/login.ts (7,742 bytes)
+4. src/pages/auto-debate.types.ts (741 bytes)
+5. src/pages/auto-debate.vote.ts (2,737 bytes)
+6. src/pages/auto-debate.render.ts (8,402 bytes)
+7. src/pages/auto-debate.ts (6,800 bytes)
+
+## Batch E (PENDING) — 36,692 bytes
+Reference arsenal armory (new) + Debate landing split
+
+1. src/reference-arsenal.armory.ts (15,346 bytes)
+2. src/reference-arsenal.render.ts (5,225 bytes)
+3. src/pages/debate-landing.types.ts (455 bytes)
+4. src/pages/debate-landing.data.ts (4,678 bytes)
+5. src/pages/debate-landing.ts (10,988 bytes)
+
+## Batch F (PENDING) — 29,688 bytes
+Groups members split + Groups auditions split
+
+1. src/pages/groups.members.modal.ts (12,514 bytes)
+2. src/pages/groups.members.ts (4,753 bytes)
+3. src/pages/groups.auditions.render.ts (3,488 bytes)
+4. src/pages/groups.auditions.ts (8,933 bytes)
