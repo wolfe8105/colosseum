@@ -42,8 +42,10 @@ export async function castVoteImpl(
   const d = (window as unknown as Record<string, unknown>)._debate as AutoDebateData | undefined;
   if (!d) return;
 
-  const btnA = document.getElementById('btn-a');
-  const btnB = document.getElementById('btn-b');
+  const btnA = document.getElementById('btn-a') as HTMLButtonElement | null;
+  const btnB = document.getElementById('btn-b') as HTMLButtonElement | null;
+  if (btnA) btnA.disabled = true;
+  if (btnB) btnB.disabled = true;
   btnA?.classList.add('voted');
   btnB?.classList.add('voted');
   if (side === 'a') btnA?.classList.add('winner');
