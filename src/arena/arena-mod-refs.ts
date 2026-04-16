@@ -9,7 +9,7 @@ import {
 } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import type { ReferenceItem } from './arena-types-results.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import { addSystemMessage } from './arena-room-live-messages.ts';
 import { getUserJwt } from './arena-room-ai.ts';
 import { removeShieldIndicator } from '../powerups.ts';

@@ -7,7 +7,7 @@ import { currentDebate } from './arena-state.ts';
 import type { CurrentDebate, DebateMessage, DebateRole } from './arena-types.ts';
 import type { SideScores, AIScoreResult, CriterionScore } from './arena-types-ai-scoring.ts';
 import { AI_RESPONSES, AI_TOPICS } from './arena-constants.ts';
-import { isPlaceholder, randomFrom } from './arena-core.ts';
+import { isPlaceholder, randomFrom } from './arena-core.utils.ts';
 import { addMessage } from './arena-room-live-messages.ts';
 import { advanceRound } from './arena-room-live-poll.ts';
 

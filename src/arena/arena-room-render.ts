@@ -17,7 +17,7 @@ import {
 } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import { ROUND_DURATION } from './arena-constants.ts';
-import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.ts';
+import { isPlaceholder, formatTimer, pushArenaState } from './arena-core.utils.ts';
 import { renderInputControls } from './arena-room-live-input.ts';
 import { startLiveRoundTimer } from './arena-room-live-poll.ts';
 import { initLiveAudio } from './arena-room-live-audio.ts';

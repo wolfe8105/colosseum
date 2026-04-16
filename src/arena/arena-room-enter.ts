@@ -5,7 +5,7 @@ import { safeRpc } from '../auth.ts';
 import { nudge } from '../nudge.ts';
 import { set_view } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
-import { isPlaceholder } from './arena-core.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import { enterFeedRoom } from './arena-feed-room.ts';
 import { renderRoom } from './arena-room-render.ts';
 

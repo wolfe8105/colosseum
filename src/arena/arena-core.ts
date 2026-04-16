@@ -1,10 +1,13 @@
-// arena-core.ts — init, destroy, utilities, browser history
+// arena-core.ts — init, destroy, browser history, lifecycle orchestration
 // Part of the arena.ts monolith split
+// Pure utilities (isPlaceholder, formatTimer, randomFrom, pushArenaState)
+// live in arena-core.utils.ts to break circular deps with arena siblings.
 
 import {
-  safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile,
+  safeRpc, getCurrentUser, getCurrentProfile,
 } from '../auth.ts';
-import { isAnyPlaceholder, FEATURES } from '../config.ts';
+import { FEATURES } from '../config.ts';
+import { isPlaceholder } from './arena-core.utils.ts';
 import { leaveDebate } from '../webrtc.ts';
 import { ready } from '../auth.ts';
 import {
@@ -28,32 +31,6 @@ import { joinWithCode } from './arena-private-lobby.join.ts';
 import { injectCSS } from './arena-css.ts';
 import { cleanupPendingRecording } from '../voicememo.ts';
 import { cleanupFeedRoom, enterFeedRoomAsSpectator } from './arena-feed-room.ts';
-
-// ============================================================
-// UTILITY HELPERS
-// ============================================================
-
-export function isPlaceholder(): boolean {
-  return !getSupabaseClient() || isAnyPlaceholder;
-}
-
-export function formatTimer(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return m + ':' + (s < 10 ? '0' : '') + s;
-}
-
-export function randomFrom<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]!;
-}
-
-// ============================================================
-// BROWSER HISTORY (Session 121 rewrite)
-// ============================================================
-
-export function pushArenaState(viewName: string): void {
-  history.pushState({ arenaView: viewName }, '');
-}
 
 export const _onPopState = () => {
   // Clean up any overlays still in DOM

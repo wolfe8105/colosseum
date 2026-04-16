@@ -11,7 +11,7 @@ import {
   set_shieldActive, set_silenceTimer,
 } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
-import { pushArenaState } from './arena-core.ts';
+import { pushArenaState } from './arena-core.utils.ts';
 import { injectAdSlot } from './arena-ads.ts';
 // LANDMINE [LM-SETUP-001]: injectAdSlot was missing from arena-room-setup.ts imports —
 // the original file called it without importing it. Import added here as housekeeping.

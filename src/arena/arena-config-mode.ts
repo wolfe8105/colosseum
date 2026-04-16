@@ -11,7 +11,7 @@ import {
 import type { DebateMode } from './arena-types.ts';
 import type { AvailableModerator } from './arena-types-moderator.ts';
 import { MODES, QUEUE_CATEGORIES } from './arena-constants.ts';
-import { isPlaceholder, pushArenaState } from './arena-core.ts';
+import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { enterQueue } from './arena-queue.ts';
 import { maybeRoutePrivate } from './arena-private-picker.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-settings.ts';

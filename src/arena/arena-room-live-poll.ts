@@ -10,7 +10,7 @@ import {
 } from './arena-state.ts';
 import type { DebateRole } from './arena-types.ts';
 import { OPPONENT_POLL_MS, OPPONENT_POLL_TIMEOUT_SEC, ROUND_DURATION } from './arena-constants.ts';
-import { isPlaceholder, formatTimer } from './arena-core.ts';
+import { isPlaceholder, formatTimer } from './arena-core.utils.ts';
 import { handleAIResponse, generateSimulatedResponse } from './arena-room-ai.ts';
 import { endCurrentDebate } from './arena-room-end.ts';
 import { addMessage, addSystemMessage } from './arena-room-live-messages.ts';

@@ -12,7 +12,7 @@ import type { CurrentDebate, DebateMode } from './arena-types.ts';
 import type { JoinPrivateLobbyResult } from './arena-types-private-lobby.ts';
 import type { ModDebateJoinResult } from './arena-types-moderator.ts';
 import { AI_TOPICS } from './arena-constants.ts';
-import { isPlaceholder, randomFrom } from './arena-core.ts';
+import { isPlaceholder, randomFrom } from './arena-core.utils.ts';
 import { showMatchFound } from './arena-match.ts';
 import { showModDebateWaitingDebater } from './arena-mod-debate.ts';
 
