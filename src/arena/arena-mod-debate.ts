@@ -7,7 +7,8 @@ import {
 import type { ArenaView, CurrentDebate, DebateMode, DebateRole } from './arena-types.ts';
 import type { ModDebateCheckResult } from './arena-types-moderator.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-round-picker.ts';
-import { showModQueue } from './arena-mod-queue.ts';
+// LANDMINE [LM-MODDEBATE-001]: showModQueue is imported dynamically to break the
+// arena-mod-queue ↔ arena-mod-debate mutual static import cycle. Keep it dynamic.
 import { enterRoom } from './arena-room-enter.ts';
 import { showMatchFound } from './arena-match.ts';
 
@@ -77,7 +78,10 @@ export function showModDebatePicker(): void {
   wireRoundPicker(container);
 
   document.getElementById('mod-debate-picker-back')?.addEventListener('click', () => {
-    showModQueue();
+    void (async () => {
+      const { showModQueue } = await import('./arena-mod-queue.ts');
+      showModQueue();
+    })();
   });
 
   document.getElementById('mod-debate-create-btn')?.addEventListener('click', () => {
@@ -264,5 +268,6 @@ export async function cancelModDebate(debateId: string): Promise<void> {
     await safeRpc('cancel_mod_debate', { p_debate_id: debateId });
   } catch { /* silent */ }
   set_modDebateId(null);
+  const { showModQueue } = await import('./arena-mod-queue.ts');
   showModQueue();
 }
