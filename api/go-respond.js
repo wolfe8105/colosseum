@@ -7,11 +7,33 @@
 // 2. Calls Claude (claude-sonnet-4-20250514) server-side
 // 3. Returns AI counter-argument
 //
-// No auth required. No database. Ephemeral debates.
+// Public endpoint — rate-limited by IP (10 req/min) and global concurrency (20 in-flight).
 // ROUTE: /api/go-respond (called by moderator-go.html)
 //
 // ENV VAR REQUIRED: ANTHROPIC_API_KEY (set in Vercel dashboard)
 // ============================================================
+
+// Per-IP rate limiter: max 10 requests per 60 seconds
+const ipTimestamps = new Map();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const times = (ipTimestamps.get(ip) || []).filter(t => t > cutoff);
+  if (times.length >= RATE_LIMIT_MAX) {
+    ipTimestamps.set(ip, times);
+    return true;
+  }
+  times.push(now);
+  ipTimestamps.set(ip, times);
+  return false;
+}
+
+// Global concurrency cap
+let inFlightCount = 0;
+const MAX_IN_FLIGHT = 20;
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
@@ -80,6 +102,15 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ?? req.socket?.remoteAddress ?? 'unknown';
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Rate limit exceeded — try again in a minute' });
+  }
+
+  if (inFlightCount >= MAX_IN_FLIGHT) {
+    return res.status(503).json({ error: 'Service busy — try again' });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.error('[go-respond] ANTHROPIC_API_KEY not set');
@@ -93,44 +124,53 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields: topic, side' });
     }
 
+    const safeHistory = (messageHistory || [])
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .slice(-20);
+
     // Scoring request after final round
     if (action === 'score') {
-      const historyText = (messageHistory || [])
+      const historyText = safeHistory
         .map(m => `${m.role === 'user' ? 'HUMAN' : 'AI'}: ${m.content}`)
         .join('\n');
 
-      const claudeRes = await fetch(CLAUDE_API_URL, {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 200,
-          temperature: 0.7,
-          messages: [
-            { role: 'user', content: buildScoringPrompt(topic, side, historyText) },
-          ],
-        }),
-      });
-
-      if (!claudeRes.ok) {
-        console.error('[go-respond] Claude score error:', claudeRes.status);
-        return res.status(502).json({ error: 'AI scoring failed' });
-      }
-
-      const claudeData = await claudeRes.json();
-      const raw = claudeData?.content?.[0]?.text?.trim() || '';
-
+      inFlightCount++;
       try {
-        const scores = JSON.parse(raw.replace(/```json|```/g, '').trim());
-        return res.status(200).json({ scores });
-      } catch {
-        return res.status(200).json({
-          scores: { logic: 6, evidence: 5, delivery: 6, rebuttal: 5, verdict: 'Good effort — keep debating to sharpen your skills.' }
+        const claudeRes = await fetch(CLAUDE_API_URL, {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 200,
+            temperature: 0.7,
+            messages: [
+              { role: 'user', content: buildScoringPrompt(topic, side, historyText) },
+            ],
+          }),
         });
+
+        if (!claudeRes.ok) {
+          console.error('[go-respond] Claude score error:', claudeRes.status);
+          return res.status(502).json({ error: 'AI scoring failed' });
+        }
+
+        const claudeData = await claudeRes.json();
+        const raw = claudeData?.content?.[0]?.text?.trim() || '';
+
+        try {
+          const scores = JSON.parse(raw.replace(/```json|```/g, '').trim());
+          return res.status(200).json({ scores });
+        } catch {
+          return res.status(200).json({
+            scores: { logic: 6, evidence: 5, delivery: 6, rebuttal: 5, verdict: 'Good effort — keep debating to sharpen your skills.' }
+          });
+        }
+      } finally {
+        inFlightCount--;
       }
     }
 
@@ -139,7 +179,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields: userArg, round, totalRounds' });
     }
 
-    const conversationMessages = (messageHistory || []).map(m => ({
+    const conversationMessages = safeHistory.map(m => ({
       role: m.role,
       content: m.content,
     }));
@@ -156,37 +196,42 @@ export default async function handler(req, res) {
       };
     }
 
-    const claudeRes = await fetch(CLAUDE_API_URL, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: buildSystemPrompt(topic, side, totalRounds),
-        temperature: 0.85,
-        top_p: 0.9,
-        messages: conversationMessages,
-      }),
-    });
+    inFlightCount++;
+    try {
+      const claudeRes = await fetch(CLAUDE_API_URL, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: MAX_TOKENS,
+          system: buildSystemPrompt(topic, side, totalRounds),
+          temperature: 0.85,
+          top_p: 0.9,
+          messages: conversationMessages,
+        }),
+      });
 
-    if (!claudeRes.ok) {
-      const errText = await claudeRes.text();
-      console.error('[go-respond] Claude API error:', claudeRes.status, errText);
-      return res.status(502).json({ error: 'AI response failed' });
+      if (!claudeRes.ok) {
+        const errText = await claudeRes.text();
+        console.error('[go-respond] Claude API error:', claudeRes.status, errText);
+        return res.status(502).json({ error: 'AI response failed' });
+      }
+
+      const claudeData = await claudeRes.json();
+      const response = claudeData?.content?.[0]?.text?.trim();
+
+      if (!response) {
+        return res.status(502).json({ error: 'Empty response from AI' });
+      }
+
+      return res.status(200).json({ response });
+    } finally {
+      inFlightCount--;
     }
-
-    const claudeData = await claudeRes.json();
-    const response = claudeData?.content?.[0]?.text?.trim();
-
-    if (!response) {
-      return res.status(502).json({ error: 'Empty response from AI' });
-    }
-
-    return res.status(200).json({ response });
 
   } catch (err) {
     console.error('[go-respond] Unexpected error:', err);
