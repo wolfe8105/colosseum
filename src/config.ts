@@ -192,6 +192,24 @@ export function escapeHTML(str: string | null | undefined): string {
     .replaceAll("'", '&#39;');
 }
 
+// IS-04 fix: sanitize URLs before use in href attributes.
+// escapeHTML() does not protect against javascript: URIs — a stored
+// javascript:alert(1) passes through unchanged and executes on click.
+// Only allow http: and https: protocols. Returns '' for anything else.
+export function sanitizeUrl(url: string | null | undefined): string {
+  if (url == null) return '';
+  const trimmed = String(url).trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return escapeHTML(trimmed);
+    }
+  } catch {
+    // Not a valid URL
+  }
+  return '';
+}
+
 // ============================================================
 // FRIENDLY ERROR MAP
 // ============================================================
@@ -331,6 +349,7 @@ const config: ModeratorConfig = {
   isAnyPlaceholder,
   isPlaceholder,
   escapeHTML,
+  sanitizeUrl,
   showToast,
   friendlyError,
 } as const;

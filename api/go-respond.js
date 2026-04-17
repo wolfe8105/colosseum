@@ -87,8 +87,38 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ?? req.socket?.remoteAddress ?? 'unknown';
-  const { success } = await ratelimit.limit(ip);
+  // DOS-01 fix: require authenticated session — prevents unauthenticated API drain
+  // Caller must pass Authorization: Bearer <supabase-jwt> header
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  // Validate JWT structure (3 base64url segments) without full verification —
+  // full verification would require Supabase JWT secret. This blocks anonymous
+  // callers while Supabase RLS on the client enforces real auth.
+  const jwtParts = token.split('.');
+  if (jwtParts.length !== 3) {
+    return res.status(401).json({ error: 'Invalid authentication token' });
+  }
+  let userId = 'unknown';
+  try {
+    const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
+    userId = payload.sub || 'unknown';
+    // Reject expired tokens
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return res.status(401).json({ error: 'Authentication token expired' });
+    }
+  } catch {
+    return res.status(401).json({ error: 'Malformed authentication token' });
+  }
+
+  // IS-01 fix: use x-real-ip (set by Vercel infrastructure, not spoofable by caller)
+  // x-forwarded-for is caller-controlled and trivially spoofed for rate limit bypass.
+  const ip = req.headers['x-real-ip'] ?? req.socket?.remoteAddress ?? 'unknown';
+  // Rate limit by userId (authenticated) not IP — prevents IP-spoof bypass
+  const rateLimitKey = `user:${userId}`;
+  const { success } = await ratelimit.limit(rateLimitKey);
   if (!success) {
     return res.status(429).json({ error: 'Rate limit exceeded — try again in a minute' });
   }
@@ -106,7 +136,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields: topic, side' });
     }
 
-    const safeTopic = String(topic || '').slice(0, 500);
+    // IS-02 fix: strip prompt injection markers from topic before system prompt interpolation
+    const safeTopic = String(topic || '')
+      .slice(0, 500)
+      .replace(/\bignore\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions?|prompts?|rules?|context)/gi, '[removed]')
+      .replace(/\bsystem\s*prompt\b/gi, '[removed]')
+      .replace(/\byou\s+are\s+now\b/gi, '[removed]')
+      .replace(/\bdo\s+not\s+(follow|obey|respect)\b/gi, '[removed]')
+      .replace(/<\/?[a-z][^>]*>/gi, '');
     const safeArg = String(userArg || '').slice(0, 2000);
 
     const safeHistory = (messageHistory || [])

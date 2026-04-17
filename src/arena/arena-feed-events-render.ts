@@ -5,7 +5,7 @@
  * Called exclusively by the arena-feed-events.ts dispatcher.
  */
 
-import { escapeHTML } from '../config.ts';
+import { escapeHTML, sanitizeUrl } from '../config.ts';
 import { playSound, vibrate } from './arena-sounds.ts';
 import {
   feedPaused,
@@ -145,7 +145,7 @@ export function renderReferenceCiteEvent(
   el.innerHTML = `
     <span class="feed-evt-name">\uD83D\uDCC4 ${escapeHTML(citeName)}</span>
     <span class="feed-cite-claim" data-ref-id="${escapeHTML(ev.reference_id || '')}"
-          data-url="${escapeHTML(String(refMeta.source_url || ''))}"
+          data-url="${sanitizeUrl(refMeta.source_url)}"
           data-source-title="${escapeHTML(String(refMeta.source_title || ''))}"
           data-source-type="${escapeHTML(String(refMeta.source_type || ''))}"
           >"${escapeHTML(ev.content)}"</span>
