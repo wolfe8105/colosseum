@@ -106,7 +106,7 @@ export function initSpecChat(debateId: string): void {
 }
 
 /** Stop polling and clear panel state. Call from cleanupFeedRoom. */
-export function cleanupSpecChat(): void {
+export function destroy(): void {
   if (pollInterval) {
     clearInterval(pollInterval);
     pollInterval = null;

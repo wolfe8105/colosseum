@@ -49,7 +49,7 @@ import {
 } from './arena-feed-realtime.ts';
 import { updateCiteButtonState } from './arena-feed-ui.ts';
 import { renderControls } from './arena-feed-wiring.ts';
-import { initSpecChat, cleanupSpecChat } from './arena-feed-spec-chat.ts';
+import { initSpecChat, destroy as destroySpecChat } from './arena-feed-spec-chat.ts';
 import { startPreRoundCountdown, clearFeedTimer } from './arena-feed-machine-turns.ts';
 
 // ============================================================
@@ -282,5 +282,5 @@ export function cleanupFeedRoom(): void {
   offWebRTC('connectionFailed');
   leaveDebate();
   // F-07: Spectator chat cleanup
-  cleanupSpecChat();
+  destroySpecChat();
 }
