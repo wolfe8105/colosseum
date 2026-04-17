@@ -26,7 +26,7 @@ import { addLocalSystem } from './arena-feed-events.ts';
 import {
   updateTimerDisplay, updateTurnLabel, updateRoundLabel,
   setDebaterInputEnabled,
-  setSpectatorVotingEnabled, applySentimentUpdate,
+  applySentimentUpdate,
 } from './arena-feed-ui.ts';
 import { clearFeedTimer, startPreRoundCountdown } from './arena-feed-machine-turns.ts';
 
@@ -41,11 +41,6 @@ export function startAdBreak(debate: CurrentDebate): void {
 
   const overlay = showAdOverlay(FEED_AD_BREAK_DURATION);
 
-  // Enable spectator voting during ad break
-  if (debate.spectatorView && !votedRounds.has(round)) {
-    setSpectatorVotingEnabled(true);
-  }
-
   // LANDMINE [LM-MACHINE-004]: startAdBreak and startFinalAdBreak share ~80% of their code
   // (setDebaterInputEnabled, showAdOverlay, spectator voting enable, setInterval body).
   // Candidate for extraction to a shared runAdCountdown(durationSec, onComplete) helper in a follow-up refactor.
@@ -58,7 +53,6 @@ export function startAdBreak(debate: CurrentDebate): void {
     if (timeLeft <= 0) {
       clearFeedTimer();
       overlay?.remove();
-      setSpectatorVotingEnabled(false);
       applySentimentUpdate();
       // Advance to next round (round_divider written by startPreRoundCountdown)
       set_round(round + 1);
@@ -79,11 +73,6 @@ export function startFinalAdBreak(debate: CurrentDebate): void {
 
   const overlay = showAdOverlay(FEED_FINAL_AD_BREAK_DURATION);
 
-  // Enable spectator voting during final ad break
-  if (debate.spectatorView && !votedRounds.has(round)) {
-    setSpectatorVotingEnabled(true);
-  }
-
   set_feedTurnTimer(setInterval(() => {
     set_timeLeft(timeLeft - 1);
     updateTimerDisplay();
@@ -93,7 +82,6 @@ export function startFinalAdBreak(debate: CurrentDebate): void {
     if (timeLeft <= 0) {
       clearFeedTimer();
       overlay?.remove();
-      setSpectatorVotingEnabled(false);
       applySentimentUpdate();
 
       // Vote gate for spectators, straight to finish for debaters/mod

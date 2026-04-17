@@ -81,13 +81,6 @@ export function resetBudget(newRound: number): void {
   updateBudgetDisplay();
 }
 
-export function setSpectatorVotingEnabled(_enabled: boolean): void {
-  // F-58: Tip strip is always active during live debates.
-  // The tier gate (Unranked check in cast_sentiment_tip) is the only lock —
-  // not the round timer. Called by arena-feed-machine at ad-break start/end;
-  // intentionally leave tip buttons untouched here.
-}
-
 export function updateSentimentGauge(): void {
   const total = sentimentA + sentimentB;
   const pctA = total > 0 ? Math.round((sentimentA / total) * 100) : 50;
