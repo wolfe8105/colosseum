@@ -644,3 +644,9 @@ Fixes applied during the Full Monty 85-batch run. Log here as batches complete s
 |---|---|---|---|---|
 | `bd4a1c6` | M-END-001 | MEDIUM | `applyEndOfDebateModifiers` — debater B branch now correctly swaps `debater_b.final_score` → `scoreA` and `debater_a.final_score` → `scoreB`. Previously both branches assigned debater A's scores, silently giving debater B the wrong modifiers on every ranked debate. | `src/arena/arena-room-end-finalize.ts` |
 | `a3f9b21` | M-R1 (Batch 04) | MEDIUM | `spectate.render.ts` — AI scorecard now renders side B per-criterion reasoning. Previously only side A reasoning was shown; side B data was in the payload but never rendered. | `src/pages/spectate.render.ts` |
+| `8bc9ae6` | M-S1 (B12) | MEDIUM | `arena-config-mode-select.ts` — escapeHTML() on avatar initial from user-controlled display_name/username in moderator picker | `src/arena/arena-config-mode-select.ts` |
+| `8bc9ae6` | B05/B09 staking XSS | MEDIUM | `staking.render.ts` — escapeHTML() on sideALabel/sideBLabel in pool bars, stake buttons, stakedSideLabel. display_name flows in from pre-debate screen. | `src/staking.render.ts` |
+| `8bc9ae6` | B03 bounties XSS | MEDIUM | `bounties.render.ts` — escapeHTML() on poster_username and target_username in bounty list rows | `src/bounties.render.ts` |
+| `8bc9ae6` | B03 queue XSS | MEDIUM | `arena-queue.ts` — escapeHTML() on selectedCategory fallback label in queue title | `src/arena/arena-queue.ts` |
+| `8bc9ae6` | L-T6 (B11) | LOW | `plinko-step3-username.ts` — credential wipe moved after success check; retry on failure now possible | `src/pages/plinko-step3-username.ts` |
+| `8bc9ae6` | B09 textContent | LOW | `arena-private-lobby.ts` — removed escapeHTML() from .textContent; entities were rendering literally | `src/arena/arena-private-lobby.ts` |
