@@ -4,6 +4,40 @@
 **Coverage:** 52 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R, 15R, 16R). **AUDIT PLAN COMPLETE — 57/57 coverage.**
 **Last updated:** 2026-04-15, end of Batch 16R. Original 57-file audit plan closed.
 
+---
+
+## Pre-Audit State — Stage 5 Fixes Applied Before Full Monty Run
+
+The following fixes were applied between the original 57-file audit and the Full Monty 5-agent run (85 batches, 338 files). Auditors must read this section before reporting findings — do not re-report items marked FIXED below.
+
+**HEAD at Full Monty start:** `f0d5854` · April 17, 2026
+
+| Commit | Fix | Files Affected |
+|---|---|---|
+| `051595f` | Tier 1 Fix 1: tsconfig.src.json — src/ typecheck gate now real (32 files fixed) | `tsconfig.src.json` + 32 `src/` files |
+| `bc7a3bb` | Tier 1 Fix 2: phantom votes — dead `cast_auto_debate_vote` RPC call removed | `src/pages/auto-debate.vote.ts` |
+| `18ec733` | Tier 1 Fix 3: f48 test mock — `DEBATE` export added to config mock factory | `tests/f48-mod-debate.test.ts` |
+| `c5a68fa` | Tier 1 Fix 4: model string updated `claude-sonnet-4-20250514` → `claude-sonnet-4-6` | `api/go-respond.js` |
+| `96307f4` | Tier 1 Fix 5: null session guard added in `arena-feed-realtime.ts` | `src/arena/arena-feed-realtime.ts` |
+| `7be566d` | Tier 1 Fix 6: `source_url` HTTP(S) CHECK added to `forge_reference` SQL | `supabase/stage5-fix6-forge-source-url-check.sql` |
+| `4aee53b` | Tier 2: CONF-M-02 — `getSession()` replaced with `INITIAL_SESSION` token at 3 call sites | `src/arena/arena-deepgram.token.ts`, `src/arena/arena-room-ai-response.ts`, `src/webrtc.ice.ts` |
+| `043980e` | Tier 2: CR-1/DOS-04 — 9s AbortController timeout on both Anthropic fetch calls | `api/go-respond.js` |
+| `737f77e` | Tier 2: AA-03 — service role key → anon key in invite.js | `api/invite.js` |
+| `dd213a5` | Tier 2: SR-1/DOS-02 — `.limit(100)` on follower/following queries | `src/auth.follows.ts` |
+| `1bca5a1` | Tier 2: BI-4/IS-05 — ref code regex tightened to `/^[a-z0-9]{5}$/` | `src/share.ts` |
+| `2a265d2` | Tier 2: DU-1 — `getFingerprint()` extracted to `config.ts` | `src/config.ts`, `src/pages/auto-debate.ts`, `src/pages/debate-landing.data.ts` |
+| `c6cffd1` | Tier 2: SYC-M-02 — `Number()` cast added at 4 innerHTML numeric sites | `src/arena/arena-private-picker.ts`, `src/bounties.render.ts`, `src/arena/arena-room-end-scores.ts` |
+| `81aa880` | Tier 2: BI-2 — dead `auto_debates` fallback query removed from `arena-lobby.ts` | `src/arena/arena-lobby.ts` |
+| `427235e` | Tier 2: M-F2 — `rewardTypeLabel()` guarded against undefined | `src/pages/home.invite.ts` |
+| `37b92d5` | Phase 8 remediation — `safeRpc` CLAUDE.md drift fixed; `as any` cluster replaced with typed accessor; `arena-state.ts` `feedRealtimeChannel` typed | `CLAUDE.md`, `src/arena/arena-state.ts`, `src/arena/arena-feed-realtime.ts`, `src/arena/arena-feed-heartbeat.ts`, `src/arena/arena-realtime-client.ts` |
+| `a21984e` | Phase 7 HIGHs — IP spoofing, prompt injection, stored XSS ×2, CSP AdSense, auth gate | `api/go-respond.js`, `api/challenge.html.js`, `src/reference-arsenal.render.ts`, `vercel.json` |
+| `980f68a` | HP-01 — in-memory rate limiter → Upstash Redis sliding window | `api/go-respond.js` |
+| `d876eda` | P5-EP-1 — hardcoded prod credentials removed from `config.ts` fallback | `src/config.ts` |
+
+**Typecheck state at Full Monty start:** `npm run typecheck` passes clean — zero errors on both `tsc --noEmit` and `tsc --noEmit -p tsconfig.src.json`.
+
+---
+
 This is the working punch list of every real code finding from the v3 audit. Source-of-truth audit output lives in `audit-output/batch-NN/<file>/stage3.md` for verification — this file is the human-readable index. Findings are grouped by severity, then by file. Each finding includes the file, function, batch, and a one-line description plus enough context to act on it.
 
 When a finding is fixed: strike it through and add a `FIXED in commit <sha>` note. Do not delete entries.
@@ -567,3 +601,37 @@ These are not individual findings but families that recur across files. Worth si
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
 
 **Last updated:** 2026-04-15, end of Batch 16R. Original 57-file audit plan closed.
+
+---
+
+## Pre-Audit State — Stage 5 Fixes Applied Before Full Monty Run
+
+The following fixes were applied between the original 57-file audit and the Full Monty 5-agent run (85 batches, 338 files). Auditors must read this section before reporting findings — do not re-report items marked FIXED below.
+
+**HEAD at Full Monty start:** `f0d5854` · April 17, 2026
+
+| Commit | Fix | Files Affected |
+|---|---|---|
+| `051595f` | Tier 1 Fix 1: tsconfig.src.json — src/ typecheck gate now real (32 files fixed) | `tsconfig.src.json` + 32 `src/` files |
+| `bc7a3bb` | Tier 1 Fix 2: phantom votes — dead `cast_auto_debate_vote` RPC call removed | `src/pages/auto-debate.vote.ts` |
+| `18ec733` | Tier 1 Fix 3: f48 test mock — `DEBATE` export added to config mock factory | `tests/f48-mod-debate.test.ts` |
+| `c5a68fa` | Tier 1 Fix 4: model string updated `claude-sonnet-4-20250514` → `claude-sonnet-4-6` | `api/go-respond.js` |
+| `96307f4` | Tier 1 Fix 5: null session guard added in `arena-feed-realtime.ts` | `src/arena/arena-feed-realtime.ts` |
+| `7be566d` | Tier 1 Fix 6: `source_url` HTTP(S) CHECK added to `forge_reference` SQL | `supabase/stage5-fix6-forge-source-url-check.sql` |
+| `4aee53b` | Tier 2: CONF-M-02 — `getSession()` replaced with `INITIAL_SESSION` token at 3 call sites | `src/arena/arena-deepgram.token.ts`, `src/arena/arena-room-ai-response.ts`, `src/webrtc.ice.ts` |
+| `043980e` | Tier 2: CR-1/DOS-04 — 9s AbortController timeout on both Anthropic fetch calls | `api/go-respond.js` |
+| `737f77e` | Tier 2: AA-03 — service role key → anon key in invite.js | `api/invite.js` |
+| `dd213a5` | Tier 2: SR-1/DOS-02 — `.limit(100)` on follower/following queries | `src/auth.follows.ts` |
+| `1bca5a1` | Tier 2: BI-4/IS-05 — ref code regex tightened to `/^[a-z0-9]{5}$/` | `src/share.ts` |
+| `2a265d2` | Tier 2: DU-1 — `getFingerprint()` extracted to `config.ts` | `src/config.ts`, `src/pages/auto-debate.ts`, `src/pages/debate-landing.data.ts` |
+| `c6cffd1` | Tier 2: SYC-M-02 — `Number()` cast added at 4 innerHTML numeric sites | `src/arena/arena-private-picker.ts`, `src/bounties.render.ts`, `src/arena/arena-room-end-scores.ts` |
+| `81aa880` | Tier 2: BI-2 — dead `auto_debates` fallback query removed from `arena-lobby.ts` | `src/arena/arena-lobby.ts` |
+| `427235e` | Tier 2: M-F2 — `rewardTypeLabel()` guarded against undefined | `src/pages/home.invite.ts` |
+| `37b92d5` | Phase 8 remediation — `safeRpc` CLAUDE.md drift fixed; `as any` cluster replaced with typed accessor; `arena-state.ts` `feedRealtimeChannel` typed | `CLAUDE.md`, `src/arena/arena-state.ts`, `src/arena/arena-feed-realtime.ts`, `src/arena/arena-feed-heartbeat.ts`, `src/arena/arena-realtime-client.ts` |
+| `a21984e` | Phase 7 HIGHs — IP spoofing, prompt injection, stored XSS ×2, CSP AdSense, auth gate | `api/go-respond.js`, `api/challenge.html.js`, `src/reference-arsenal.render.ts`, `vercel.json` |
+| `980f68a` | HP-01 — in-memory rate limiter → Upstash Redis sliding window | `api/go-respond.js` |
+| `d876eda` | P5-EP-1 — hardcoded prod credentials removed from `config.ts` fallback | `src/config.ts` |
+
+**Typecheck state at Full Monty start:** `npm run typecheck` passes clean — zero errors on both `tsc --noEmit` and `tsc --noEmit -p tsconfig.src.json`.
+
+---

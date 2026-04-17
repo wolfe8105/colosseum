@@ -41,6 +41,17 @@ If you upgrade to Max 20x: run up to 20 parallel sessions → ~5 rounds.
 
 ---
 
+## Pre-Audit State
+
+**HEAD at Full Monty start:** `f0d5854` · April 17, 2026
+**Typecheck:** clean — zero errors on both typecheck passes
+**Stage 5 fixes applied:** Tiers 1, 2, and 3 complete — see `AUDIT-FINDINGS.md` pre-audit state section for full list
+
+Auditors: read the pre-audit state section in `AUDIT-FINDINGS.md` before reporting findings.
+Do not re-report issues already marked FIXED there.
+
+---
+
 ## Batch Index
 
 | Batch | Files | Size | File List |
