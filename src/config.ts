@@ -57,7 +57,7 @@ import { showToast } from './config.toast';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'PASTE_YOUR_SUPABASE_URL_HERE';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE';
 
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51T5T9uPuHT2VlOoCgqdUqtvuez0QHuN9dKcFtYOsclcsjSoSHce8ROcw6zzF5JhPeNkiJK8cJ8DCrB8FU9jhEHwk00GAYHTzzi';
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'PASTE_YOUR_STRIPE_PUBLISHABLE_KEY_HERE';
 
 const STRIPE_PRICES: StripePrices = {
   contender_monthly: 'price_1T5THJPuHT2VlOoCYoDarYU5',
