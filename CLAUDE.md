@@ -145,6 +145,14 @@ TypeScript + Vite. Run `npm install` then `npm run build` to compile. Serve the 
 
 **GitHub workflow:** Upload files via GitHub web UI drag-and-drop. Vercel auto-deploys on every push.
 
+### File Read Verification (mandatory — every file read)
+Before reading any file, record its size:
+```bash
+wc -c <filename>   # bytes
+wc -l <filename>   # lines
+```
+After reading, confirm the bytes/lines received match. If the read was truncated — even by one line — stop and re-read before proceeding. A partial read is worse than no read: it produces confident wrong answers. This rule has no exceptions. A file is not "read" until the byte count is verified.
+
 ### 3-Gate Verification (run after every decomposition or major refactor)
 ```bash
 npm run build                                                         # Gate 1: types
