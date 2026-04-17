@@ -41,7 +41,11 @@ export async function subscribeRealtime(debateId: string): Promise<void> {
 
   // Set auth token before subscribing so the private channel has a valid JWT context.
   const accessToken = await getAccessToken(client);
-  if (accessToken) setRealtimeAuth(client, accessToken);
+  if (accessToken) {
+    setRealtimeAuth(client, accessToken);
+  } else {
+    console.warn("[arena-feed-realtime] No access token — proceeding with anonymous Realtime subscription (RLS may limit events)");
+  }
 
   const channel = createChannel(client, `feed:${debateId}`, { private: true })
     .on(
