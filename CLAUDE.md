@@ -135,7 +135,7 @@ Deployed RPCs are split into 10 domain files (Session 254 Track C). Use the rele
 - **Tokens are earned only, never purchased** — prestige signal
 - **Full file replacement over patches** — always produce complete files, never diffs
 - **Groq model is `llama-3.3-70b-versatile`** — `llama-3.1-70b-versatile` is decommissioned
-- **SRI hashes pin supabase-js to @2.98.0** — must regenerate hashes when upgrading
+- **SRI hashes pin supabase-js to @2.101.1** — must regenerate hashes when upgrading
 - **Single canonical debate table is `arena_debates`** — legacy `debates` table is gone
 - **All log_event calls use named parameters** — `log_event(p_event_type :=, p_user_id :=, p_debate_id :=, p_category :=, p_side :=, p_metadata :=)`
 
