@@ -635,3 +635,11 @@ The following fixes were applied between the original 57-file audit and the Full
 **Typecheck state at Full Monty start:** `npm run typecheck` passes clean — zero errors on both `tsc --noEmit` and `tsc --noEmit -p tsconfig.src.json`.
 
 ---
+
+## Full Monty In-Flight Fixes
+
+Fixes applied during the Full Monty 85-batch run. Log here as batches complete so triage session has accurate pre-state.
+
+| Commit | ID | Severity | Fix | File |
+|---|---|---|---|---|
+| `bd4a1c6` | M-END-001 | MEDIUM | `applyEndOfDebateModifiers` — debater B branch now correctly swaps `debater_b.final_score` → `scoreA` and `debater_a.final_score` → `scoreB`. Previously both branches assigned debater A's scores, silently giving debater B the wrong modifiers on every ranked debate. | `src/arena/arena-room-end-finalize.ts` |
