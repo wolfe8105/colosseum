@@ -20,7 +20,7 @@
 // --- Core ---
 export { isUUID, onChange, init,
          getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
-         getSupabaseClient, ready } from './auth.core.ts';
+         getSupabaseClient, getAccessToken, ready } from './auth.core.ts';
 
 // --- RPC wrapper ---
 export { safeRpc } from './auth.rpc.ts';

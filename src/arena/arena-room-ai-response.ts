@@ -3,7 +3,7 @@
 
 // LANDMINE [LM-ROOMAI-001]: AI_TOPICS imported in original arena-room-ai.ts but never used anywhere in the file — dead import carried in from original.
 
-import { safeRpc, getSupabaseClient } from '../auth.ts';
+import { safeRpc, getAccessToken } from '../auth.ts';
 import { SUPABASE_URL, FEATURES } from '../config.ts';
 import { currentDebate } from './arena-state.ts';
 import type { CurrentDebate } from './arena-types.ts';
@@ -55,15 +55,8 @@ export async function handleAIResponse(debate: CurrentDebate, userText: string):
 }
 
 // Session 208: Get user JWT for Edge Function auth (audit #32)
-export async function getUserJwt(): Promise<string | null> {
-  try {
-    const client = getSupabaseClient();
-    if (!client) return null;
-    const { data } = await client.auth.getSession();
-    return data?.session?.access_token ?? null;
-  } catch {
-    return null;
-  }
+export function getUserJwt(): string | null {
+  return getAccessToken();
 }
 
 export async function generateAIDebateResponse(
@@ -83,7 +76,7 @@ export async function generateAIDebateResponse(
     if (!supabaseUrl) throw new Error('No supabase URL');
 
     const edgeUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai-sparring';
-    const jwt = await getUserJwt();
+    const jwt = getUserJwt();
     if (!jwt) throw new Error('Not authenticated');
 
     const res = await fetch(edgeUrl, {

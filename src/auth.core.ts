@@ -28,6 +28,7 @@ import type { Profile, AuthListener } from './auth.types.ts';
 let supabaseClient: SupabaseClient | null = null;
 let currentUser: User | null = null;
 let currentProfile: Profile | null = null;
+let currentSession: Session | null = null;
 const listeners: AuthListener[] = [];
 let isPlaceholderMode = true;
 
@@ -159,6 +160,7 @@ export function init(): void {
     supabaseClient.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION') {
         clearTimeout(safetyTimeout);
+        currentSession = session;
         if (session?.user) {
           currentUser = session.user;
           setTimeout(() => {
@@ -170,14 +172,18 @@ export function init(): void {
           _resolveReady();
         }
       } else if (event === 'SIGNED_IN' && session?.user) {
+        currentSession = session;
         currentUser = session.user;
         setTimeout(() => void _loadProfile(session.user.id), 0);
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        currentSession = session;
         currentUser = session.user;
       } else if (event === 'PASSWORD_RECOVERY' && session?.user) {
+        currentSession = session;
         currentUser = session.user;
         _notify(currentUser, currentProfile);
       } else if (event === 'SIGNED_OUT') {
+        currentSession = null;
         currentUser = null;
         currentProfile = null;
         _notify(null, null);
@@ -197,6 +203,8 @@ export function getCurrentUser(): User | null { return currentUser; }
 export function getCurrentProfile(): Profile | null { return currentProfile; }
 export function getIsPlaceholderMode(): boolean { return isPlaceholderMode; }
 export function getSupabaseClient(): SupabaseClient | null { return supabaseClient; }
+/** Returns the stored access_token from the last INITIAL_SESSION/SIGNED_IN event. */
+export function getAccessToken(): string | null { return currentSession?.access_token ?? null; }
 
 /** The ready promise — resolves when auth state is known (logged in or anonymous) */
 export const ready: Promise<void> = readyPromise;

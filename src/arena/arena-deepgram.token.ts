@@ -4,16 +4,12 @@
  * Extracted from arena-deepgram.ts (Session 254 track).
  */
 
-import { getSupabaseClient } from '../auth.ts';
+import { getAccessToken } from '../auth.ts';
 import { SUPABASE_URL } from '../config.ts';
 
 export async function fetchDeepgramToken(): Promise<string | null> {
   try {
-    const supabase = getSupabaseClient();
-    if (!supabase) return null;
-
-    const { data } = await supabase.auth.getSession();
-    const jwt = data?.session?.access_token;
+    const jwt = getAccessToken();
     if (!jwt) return null;
 
     const res = await fetch(`${SUPABASE_URL}/functions/v1/deepgram-token`, {

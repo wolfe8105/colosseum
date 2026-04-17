@@ -4,17 +4,14 @@
  * TURN credential fetching. Async, network-only. No debate logic.
  */
 
-import { state, getSupabase, FALLBACK_ICE_SERVERS } from './webrtc.state.ts';
+import { state, FALLBACK_ICE_SERVERS } from './webrtc.state.ts';
+import { getAccessToken } from './auth.ts';
 import { SUPABASE_URL } from './config.ts';
 
 /** Fetch short-lived TURN credentials from Edge Function. Returns null on failure. */
 async function fetchTurnCredentials(): Promise<RTCIceServer[] | null> {
   try {
-    const supabase = getSupabase();
-    if (!supabase) return null;
-
-    const { data } = await supabase.auth.getSession();
-    const jwt = data?.session?.access_token;
+    const jwt = getAccessToken();
     if (!jwt) return null;
 
     const res = await fetch(`${SUPABASE_URL}/functions/v1/turn-credentials`, {
