@@ -79,6 +79,25 @@ MANIFEST:  [REPO_ROOT_PATH]/audit/manifest.json
 FILE LIST (up to 5):
 [FILE_LIST]
 
+TASK LIST — MANDATORY FORMAT
+============================
+
+Before doing anything else, create your task list with EXACTLY these items,
+using EXACTLY these names. No additions. No rewordings. No batch numbers in
+task names. No file names in the setup task. Every session must look identical.
+
+  - Setup audit directory and manifest
+  - Audit [file1_basename] (Stages 1 → 1.5 → 2 → 3)
+  - Audit [file2_basename] (Stages 1 → 1.5 → 2 → 3)
+  - Audit [file3_basename] (Stages 1 → 1.5 → 2 → 3)
+  - Audit [file4_basename] (Stages 1 → 1.5 → 2 → 3)
+  - Report batch summary
+
+Where [fileN_basename] is the filename only — no path, no batch number prefix.
+Example: "Audit arena-feed-references.ts (Stages 1 → 1.5 → 2 → 3)"
+NOT: "Batch 19 File 2: audit src/arena/arena-feed-references.ts (Stages 1→1.5→2→3)"
+NOT: "File 2: audit src/pages/auto-debate.ts (Stages 1→1.5→2→3)"
+
 BEFORE STARTING
 ===============
 
