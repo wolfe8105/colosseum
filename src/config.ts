@@ -286,6 +286,19 @@ export function friendlyError(err: unknown): string {
 }
 
 // ============================================================
+// FINGERPRINT (stable per-device ID for vote dedup)
+// ============================================================
+
+export function getFingerprint(): string {
+  let fp = localStorage.getItem('col_fp');
+  if (!fp) {
+    fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
+    localStorage.setItem('col_fp', fp);
+  }
+  return fp;
+}
+
+// ============================================================
 // PLACEHOLDER DETECTION
 // ============================================================
 

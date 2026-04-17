@@ -5,6 +5,7 @@
  */
 
 import type { DebateEntry } from './debate-landing.types.ts';
+export { getFingerprint } from '../config.ts';
 
 // ============================================================
 // DEMO DEBATES (seed data — backend counts override on load)
@@ -88,15 +89,3 @@ export const voteKey: string = 'colosseum_vote_' + topicSlug;
 // Set page title as side effect
 document.title = debate.topic + ' — The Moderator';
 
-// ============================================================
-// FINGERPRINT
-// ============================================================
-
-export function getFingerprint(): string {
-  let fp = localStorage.getItem('col_fp');
-  if (!fp) {
-    fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
-    localStorage.setItem('col_fp', fp);
-  }
-  return fp;
-}

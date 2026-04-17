@@ -12,7 +12,7 @@
 
 // ES imports (replaces window globals)
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, escapeHTML } from '../config.ts';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, escapeHTML, getFingerprint } from '../config.ts';
 import { shareCard } from '../cards.ts';
 import '../analytics.ts';
 import type { AutoDebateData } from './auto-debate.types.ts';
@@ -51,15 +51,6 @@ function showError(msg: string): void {
   if (loadingEl) loadingEl.style.display = 'none';
   if (app) app.innerHTML = `<div class="error-state">❌ ${escapeHTML(msg)}</div>
     <div style="text-align:center;margin-top:20px"><a href="/" class="join-btn">Go to The Moderator</a></div>`;
-}
-
-function getFingerprint(): string {
-  let fp = localStorage.getItem('col_fp');
-  if (!fp) {
-    fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
-    localStorage.setItem('col_fp', fp);
-  }
-  return fp;
 }
 
 // ============================================================
