@@ -47,6 +47,7 @@ vi.mock('../src/config.ts', () => ({
   SUPABASE_ANON_KEY: 'test-key',
   showToast:        vi.fn(),
   friendlyError:    vi.fn((e: unknown) => String(e)),
+  DEBATE: { roundDurationSec: 120, breakDurationSec: 30, defaultRounds: 5, maxSpectators: 500, minEloForRanked: 1000, startingElo: 1200, formats: ['standard', 'crossfire', 'qa_prep'] },
 }));
 
 vi.mock('../src/tokens.ts', () => ({
