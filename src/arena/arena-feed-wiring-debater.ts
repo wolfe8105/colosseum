@@ -7,6 +7,7 @@
  */
 
 import { getCurrentProfile } from '../auth.ts';
+import { showToast } from '../config.ts';
 import { stopTranscription } from './arena-deepgram.ts';
 import {
   currentDebate,
@@ -118,5 +119,10 @@ async function submitDebaterMessage(): Promise<void> {
   });
 
   // Persist via RPC (Realtime will broadcast to others)
-  await writeFeedEvent('speech', text, debate.role);
+  try {
+    await writeFeedEvent('speech', text, debate.role);
+  } catch (e) {
+    showToast('Message failed to send. Please try again.', 'error');
+    console.warn('[Arena] writeFeedEvent failed:', e);
+  }
 }
