@@ -7,7 +7,7 @@
  * If two profile sheets are open concurrently, the wrong values may be read.
  */
 
-import { loadBountyDotSet } from './bounties.dot.ts';
+import { escapeHTML,  loadBountyDotSet } from './bounties.dot.ts';
 import { postBounty, cancelBounty, getMyBounties, bountySlotLimit } from './bounties.rpc.ts';
 import type { BountyRow } from './bounties.types.ts';
 
@@ -134,8 +134,8 @@ export async function renderMyBountiesSection(container: HTMLElement): Promise<v
     const daysLeft = Math.max(0, Math.ceil((new Date(b.expires_at).getTime() - Date.now()) / 86_400_000));
     const statusColor = b.status === 'open' ? '#F5A623' : 'var(--mod-text-muted)'; // TODO: needs CSS var token
     const who = type === 'incoming'
-      ? `<span style="color:var(--mod-text-sub);">from</span> <strong>${b.poster_username ?? '?'}</strong>`
-      : `<span style="color:var(--mod-text-sub);">on</span> <strong>${b.target_username ?? '?'}</strong>`;
+      ? `<span style="color:var(--mod-text-sub);">from</span> <strong>${escapeHTML(b.poster_username ?? '?')}</strong>`
+      : `<span style="color:var(--mod-text-sub);">on</span> <strong>${escapeHTML(b.target_username ?? '?')}</strong>`;
     return `
       <div class="bounty-list-row" data-bounty-id="${b.id}" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--mod-border-subtle);">
         <div style="flex:1;min-width:0;"><div style="font-size:13px;">${who}</div><div style="font-size:11px;color:var(--mod-text-muted);margin-top:2px;">${daysLeft}d remaining · ${b.duration_days}-day window</div></div>

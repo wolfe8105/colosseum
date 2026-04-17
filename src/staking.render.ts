@@ -5,7 +5,8 @@
  * Extracted from staking.ts (Session 254 track).
  */
 
-import { getTier, canStake, getNextTier } from './tiers.ts';
+import { escapeHTML,
+   getTier, canStake, getNextTier } from './tiers.ts';
 import { getOdds } from './staking.rpc.ts';
 import type { PoolData, Odds } from './staking.types.ts';
 
@@ -17,9 +18,9 @@ function _renderPoolBar(odds: Odds, totalPool: number, sideALabel: string, sideB
   return `
     <div style="margin:8px 0;">
       <div style="display:flex;justify-content:space-between;font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);margin-bottom:4px;">
-        <span>${sideALabel} · ${odds.a}%</span>
+        <span>${escapeHTML(sideALabel)} · ${odds.a}%</span>
         <span style="color:var(--mod-text-heading);font-weight:600;">${totalPool} tokens in pool</span>
-        <span>${sideBLabel} · ${odds.b}%</span>
+        <span>${escapeHTML(sideBLabel)} · ${odds.b}%</span>
       </div>
       <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--mod-bg-base);">
         <div style="width:${odds.a}%;background:#2563eb; /* TODO: needs CSS var token */transition:width 0.4s;"></div>
@@ -50,7 +51,7 @@ export function renderStakingPanel(
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">YOUR STAKE</div>
         <div style="font-family:var(--mod-font-ui);font-size:16px;color:var(--mod-text-primary);margin-bottom:12px;">
           <span style="color:var(--mod-text-heading);font-weight:700;">${userStake.amount} tokens</span>
-          on <span style="font-weight:600;">${stakedSideLabel}</span>
+          on <span style="font-weight:600;">${escapeHTML(stakedSideLabel)}</span>
         </div>
         ${_renderPoolBar(odds, totalPool, sideALabel, sideBLabel)}
       </div>`;
@@ -84,8 +85,8 @@ export function renderStakingPanel(
       </div>
       ${_renderPoolBar(odds, totalPool, sideALabel, sideBLabel)}
       <div style="display:flex;gap:8px;margin:12px 0 8px;">
-        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #2563eb44; /* TODO: needs CSS var token */background:#2563eb11; /* TODO: needs CSS var token */border-radius:8px;color:#2563eb; /* TODO: needs CSS var token */font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideALabel} · ${odds.multiplierA}x</button>
-        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #cc000044; /* TODO: needs CSS var token */background:#cc000011; /* TODO: needs CSS var token */border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${sideBLabel} · ${odds.multiplierB}x</button>
+        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #2563eb44; /* TODO: needs CSS var token */background:#2563eb11; /* TODO: needs CSS var token */border-radius:8px;color:#2563eb; /* TODO: needs CSS var token */font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideALabel)} · ${odds.multiplierA}x</button>
+        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #cc000044; /* TODO: needs CSS var token */background:#cc000011; /* TODO: needs CSS var token */border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideBLabel)} · ${odds.multiplierB}x</button>
       </div>
       <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
         <input type="number" id="stake-amount-input" min="1" max="${tier.stakeCap}" placeholder="Amount" style="flex:1;padding:8px 10px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:6px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;outline:none;">

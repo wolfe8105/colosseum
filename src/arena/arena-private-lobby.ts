@@ -112,7 +112,7 @@ export async function createAndWaitPrivateLobby(
       });
     } else if (visibility === 'private') {
       if (titleEl) titleEl.textContent = 'CHALLENGE SENT';
-      if (statusEl) statusEl.textContent = `Waiting for ${escapeHTML(invitedUserName || 'them')} to accept...`;
+      if (statusEl) statusEl.textContent = `Waiting for ${invitedUserName || 'them'} to accept...`;
     } else if (visibility === 'group') {
       if (titleEl) titleEl.textContent = 'GROUP LOBBY OPEN';
       if (statusEl) statusEl.textContent = 'Waiting for a group member to join...';

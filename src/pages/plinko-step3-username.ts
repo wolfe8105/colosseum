@@ -53,10 +53,6 @@ export function attachStep3(): void {
           dob: signupDob,
         });
 
-        // SESSION 64: Clear credentials from memory immediately
-        set_signupPassword('');
-        set_signupEmail('');
-
         if (!result.success) {
           const err = result.error ?? 'Signup failed.';
           // Layer 3: If password-related error slipped past client validation,
@@ -71,6 +67,10 @@ export function attachStep3(): void {
           if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
           return;
         }
+
+        // Clear credentials from memory after confirmed success
+        set_signupPassword('');
+        set_signupEmail('');
 
         // Email signup: check if Supabase returned a session
         // If Confirm email is enabled, session is null — user must confirm first

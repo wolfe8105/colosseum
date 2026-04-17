@@ -149,7 +149,7 @@ export async function loadAvailableModerators(overlay: HTMLElement): Promise<voi
 
   container.replaceChildren();
   mods.forEach((m) => {
-    const initial = ((m as AvailableModerator).display_name || (m as AvailableModerator).username || '?')[0].toUpperCase();
+    const initial = escapeHTML(((m as AvailableModerator).display_name || (m as AvailableModerator).username || '?')[0].toUpperCase());
     const opt = document.createElement('div');
     opt.className = 'mod-picker-opt';
     opt.dataset.modType = 'human';

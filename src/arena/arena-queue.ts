@@ -1,7 +1,7 @@
 // arena-queue.ts — Queue management (enter, poll, timeout, leave)
 // Part of the arena.ts monolith split
 
-import { safeRpc, getCurrentProfile } from '../auth.ts';
+import { escapeHTML,  safeRpc, getCurrentProfile } from '../auth.ts';
 import { friendlyError, FEATURES, showToast } from '../config.ts';
 import {
   view, selectedMode, selectedRanked, selectedRuleset, selectedRounds,
@@ -48,7 +48,7 @@ export function enterQueue(mode: DebateMode | string, topic: string): void {
     <div class="arena-queue-search-ring" id="arena-queue-ring">
       <div class="arena-queue-icon">${modeInfo.icon}</div>
     </div>
-    <div class="arena-queue-title">${modeInfo.name}${selectedCategory ? ` · ${QUEUE_CATEGORIES.find(c => c.id === selectedCategory)?.label ?? selectedCategory}` : ''}</div>
+    <div class="arena-queue-title">${modeInfo.name}${selectedCategory ? ` · ${escapeHTML(QUEUE_CATEGORIES.find(c => c.id === selectedCategory)?.label ?? selectedCategory)}` : ''}</div>
     <div class="arena-queue-timer" id="arena-queue-timer">0:00</div>
     <div class="arena-queue-status" id="arena-queue-status">Searching for a worthy opponent...</div>
     ${selectedRuleset !== 'unplugged' ? `<div class="arena-queue-elo">Your ELO: ${elo}${selectedRanked ? ' (on the line)' : ''}</div>` : ''}
