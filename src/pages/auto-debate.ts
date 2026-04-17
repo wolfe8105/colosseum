@@ -23,7 +23,7 @@ import { castVoteImpl, showResults } from './auto-debate.vote.ts';
 // INIT
 // ============================================================
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as {
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as unknown as {
   rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
   from: (table: string) => {
     select: (cols: string) => {

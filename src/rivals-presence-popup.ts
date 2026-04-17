@@ -98,7 +98,7 @@ export function showNext(state: PopupState): void {
       // already statically loaded at page init. Could be added to static imports. Cosmetic.
       // (catalogued L-E1)
       import('./auth.ts').then(({ showUserProfile }) => {
-        showUserProfile(payload.user_id, payload.username ?? undefined);
+        showUserProfile(payload.user_id);
       }).catch((e) => console.warn('[Rivals] showUserProfile import failed:', e));
     }
   });

@@ -23,7 +23,7 @@ export { renderTournamentBanner, renderTournamentCard } from './tournaments.rend
 // ============================================================
 
 export function initTournaments(): Promise<void> {
-  return ready().then(() => {
+  return ready.then(() => {
     startTournamentMatchPoll();
   });
 }

@@ -92,7 +92,7 @@ function showPlaceholderModal(type: 'subscription' | 'tokens', detail: string): 
   const existing = document.getElementById('payment-placeholder-modal');
   if (existing) existing.remove();
 
-  const tierInfo = (TIERS as Record<string, { name: string; price: number }>)[detail];
+  const tierInfo = (TIERS as unknown as Record<string, { name: string; price: number }>)[detail];
   const tokenPkg = (TOKENS as unknown as { packages?: TokenPackage[] }).packages?.find(
     (p) => p.id === detail
   );
@@ -154,7 +154,7 @@ export async function subscribe(tier: string): Promise<void> {
     return;
   }
 
-  const priceId = (STRIPE_PRICES as Record<string, string>)[`${tier}_monthly`];
+  const priceId = (STRIPE_PRICES as unknown as Record<string, string>)[`${tier}_monthly`];
   if (!priceId || isPlaceholder(priceId)) {
     showPlaceholderModal('subscription', tier);
     return;
@@ -200,7 +200,7 @@ export async function buyTokens(packageId: string): Promise<void> {
     return;
   }
 
-  const priceId = (STRIPE_PRICES as Record<string, string>)[packageId];
+  const priceId = (STRIPE_PRICES as unknown as Record<string, string>)[packageId];
   if (!priceId || isPlaceholder(priceId)) {
     showPlaceholderModal('tokens', packageId);
     return;

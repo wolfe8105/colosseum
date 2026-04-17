@@ -86,8 +86,9 @@ export function on(event: string, fn: WebRTCEventCallback): void {
   state.callbacks[event]!.push(fn);
 }
 
-export function off(event: string, fn: WebRTCEventCallback): void {
+export function off(event: string, fn?: WebRTCEventCallback): void {
   if (!state.callbacks[event]) return;
+  if (!fn) { state.callbacks[event] = []; return; }
   state.callbacks[event] = state.callbacks[event]!.filter((f) => f !== fn);
 }
 

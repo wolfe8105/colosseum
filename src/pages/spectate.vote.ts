@@ -40,7 +40,8 @@ async function castVote(side: string, d: SpectateDebate): Promise<void> {
 
     nudge('first_vote', '🗳️ Vote cast. Your voice shapes the verdict.');
 
-    const { data: fresh } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId });
+    const { data: rawFresh } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId });
+    const fresh = rawFresh as { vote_count_a?: number; vote_count_b?: number } | null;
     if (fresh) {
       updateVoteBar(fresh.vote_count_a || 0, fresh.vote_count_b || 0);
       updatePulse(fresh.vote_count_a || 0, fresh.vote_count_b || 0);
@@ -51,7 +52,7 @@ async function castVote(side: string, d: SpectateDebate): Promise<void> {
       updatePulse(fva, fvb);
     }
 
-    claimVote(state.debateId);
+    claimVote(state.debateId!);
   } catch (err) {
     const fva = (d.vote_count_a || 0) + (side === 'a' ? 1 : 0);
     const fvb = (d.vote_count_b || 0) + (side === 'b' ? 1 : 0);

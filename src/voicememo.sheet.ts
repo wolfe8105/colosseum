@@ -8,6 +8,8 @@ import { safeRpc, getIsPlaceholderMode } from './auth.ts';
 import { loadHotTakes } from './async.ts';
 import { startRecording, stopRecording, isRecordingState, RecordingResult } from './voicememo.record.ts';
 import type { RecorderContext } from './voicememo.ts';
+import { resetPlayingState } from './voicememo.player.ts';
+import { uploadVoiceMemo } from './voicememo.upload.ts';
 
 // LANDMINE [LM-VM-001]: openRecorderSheet is a stub. The actual recorder sheet
 // HTML/CSS lives in a legacy moderator-voicememo.js file, not in this TypeScript

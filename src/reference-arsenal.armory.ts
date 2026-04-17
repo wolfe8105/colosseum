@@ -197,7 +197,7 @@ export async function renderArmory(container: HTMLElement): Promise<void> {
       } else {
         const cur = state[filter] as string;
         const next = cur === value ? '' : value;
-        (state as Record<string, unknown>)[filter] = next;
+        (state as unknown as Record<string, unknown>)[filter] = next;
         container.querySelectorAll(`[data-filter="${filter}"]`).forEach(c =>
           c.classList.toggle('active', (c as HTMLElement).dataset.value === next && next !== ''));
       }

@@ -65,10 +65,11 @@ export function wireChatUI(d: SpectateDebate): void {
     input!.value = '';
 
     try {
-      const { data, error } = await safeRpc('send_spectator_chat', {
+      const { data: rawData, error } = await safeRpc('send_spectator_chat', {
         p_debate_id: state.debateId,
         p_message: msg
       });
+      const data = rawData as { success?: boolean; error?: string; display_name?: string } | null;
 
       if (error) {
         console.warn('[Spectate] Chat send error:', error.message);
@@ -114,7 +115,8 @@ export function startChatPolling(): void {
   if (state.chatPollTimer) clearInterval(state.chatPollTimer);
   state.chatPollTimer = setInterval(async () => {
     try {
-      const { data: freshChat } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 });
+      const { data: rawFresh } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 });
+      const freshChat = rawFresh as SpectatorChatMessage[] | null;
       if (!freshChat || freshChat.length === 0) return;
       const newMessages = state.lastChatMessageAt
         ? freshChat.filter((m: SpectatorChatMessage) => m.created_at! > state.lastChatMessageAt!)

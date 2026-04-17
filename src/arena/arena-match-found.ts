@@ -107,7 +107,7 @@ export function showMatchFound(debateData: CurrentDebate): void {
 
   // F-21: Play the user's own intro music
   const profile = getCurrentProfile();
-  playIntroMusic(profile?.intro_music_id ?? 'gladiator', profile?.custom_intro_url);
+  playIntroMusic((profile?.intro_music_id as string | null | undefined) ?? 'gladiator', profile?.custom_intro_url as string | null | undefined);
 
   set_matchAcceptTimer(setInterval(() => {
     set_matchAcceptSeconds(matchAcceptSeconds - 1);

@@ -73,7 +73,7 @@ export function renderReferenceCard(
       </div>
       ${ref.sockets != null ? renderSocketDots(ref) : ''}
       ${statusLabel ? `<div class="ref-card-status">${statusLabel}</div>` : ''}
-      ${ref.source_url ? `<a class="ref-card-url" href="${sanitizeUrl(ref.source_url ?? state?.source_url ?? '')}" target="_blank" rel="noopener">View Source</a>` : ''}
+      ${ref.source_url ? `<a class="ref-card-url" href="${sanitizeUrl(ref.source_url ?? '')}" target="_blank" rel="noopener">View Source</a>` : ''}
       ${showSecondBtn ? `<button class="ref-card-second-btn" data-ref-id="${esc(ref.id)}">👍 Second</button>` : ''}
       ${showEditBtn ? `<button class="ref-card-edit-btn" data-ref-id="${esc(ref.id)}">✏️ Edit</button>` : ''}
       ${showEditBtn ? `<button class="ref-card-delete-btn" data-ref-id="${esc(ref.id)}">🗑️ Delete</button>` : ''}

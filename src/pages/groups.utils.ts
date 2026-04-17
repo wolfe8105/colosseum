@@ -68,13 +68,14 @@ export function renderGroupList(
   onGroupClick: (groupId: string) => void
 ): void {
   const el = document.getElementById(containerId);
+  if (!el) return;
   if (groups.length === 0) {
     el.innerHTML = renderEmpty('👥', 'No groups here yet', 'Be the first to create one');
     return;
   }
   const esc = escapeHTML;
   el.innerHTML = groups.map((g, i) => {
-    const catLabel = CATEGORY_LABELS[g.category] || esc(g.category || 'General');
+    const catLabel = (g.category ? CATEGORY_LABELS[g.category as keyof typeof CATEGORY_LABELS] : undefined) || esc(g.category || 'General');
     const roleHtml = (showRole && g.role)
       ? `<span class="my-role-badge ${esc(g.role)}">${esc(g.role.toUpperCase())}</span>`
       : '';
@@ -99,7 +100,7 @@ export function renderGroupList(
 
   el.querySelectorAll('.group-card[data-group-id]').forEach(card => {
     card.addEventListener('click', () => {
-      onGroupClick((card as HTMLElement).dataset.groupId);
+      onGroupClick((card as HTMLElement).dataset.groupId ?? '');
     });
   });
 }

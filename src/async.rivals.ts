@@ -35,7 +35,7 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
   }
 
   const rivals: RivalEntry[] =
-    ((await getMyRivals()) as RivalEntry[]) ?? [];
+    ((await getMyRivals()) as unknown as RivalEntry[]) ?? [];
 
   if (!rivals.length) {
     container.innerHTML = `

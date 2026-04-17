@@ -121,4 +121,5 @@ export interface ModeratorConfig {
   readonly escapeHTML: (str: string | null | undefined) => string;
   readonly showToast: (msg: string, type?: ToastType) => void;
   readonly friendlyError: (err: unknown) => string;
+  readonly sanitizeUrl: (url: string | null | undefined) => string;
 }

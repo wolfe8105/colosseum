@@ -113,7 +113,7 @@ function _renderStep5(state: ForgeFormState, isEdit: boolean): string {
       </div>
       <div class="forge-review-meta">
         Locator: ${esc(state.locator)}
-        ${state.source_url ? `<br/><a href="${sanitizeUrl(ref.source_url ?? state?.source_url ?? '')}" target="_blank" rel="noopener">${esc(state.source_url)}</a>` : ''}
+        ${state.source_url ? `<br/><a href="${sanitizeUrl(state.source_url ?? '')}" target="_blank" rel="noopener">${esc(state.source_url)}</a>` : ''}
       </div>
       <div class="forge-review-type">
         ${srcInfo ? `${srcInfo.label} (${srcInfo.tier}-tier \u00B7 Max Power ${srcInfo.ceiling})` : ''}

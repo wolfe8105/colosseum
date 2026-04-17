@@ -72,7 +72,7 @@ export function openMemberActionsModal(member: GroupMember): void {
 
   // Promote dropdown — hidden for elder (can only kick/ban members)
   const promoteSection = document.getElementById('mam-promote-section')!;
-  const roles = assignableRoles(callerRole);
+  const roles = assignableRoles(callerRole ?? "");
   if (roles.length > 0 && callerRole !== 'elder') {
     const sel = document.getElementById('mam-promote-select') as HTMLSelectElement;
     const opts = roles.filter(r => r !== member.role);

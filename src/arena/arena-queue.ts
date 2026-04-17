@@ -179,7 +179,7 @@ export async function joinServerQueue(mode: DebateMode, topic: string): Promise<
         consecutivePollErrors = 0;
 
         // Update queue population count
-        const qc = (status as Record<string, unknown>)?.queue_count;
+        const qc = ((status as unknown) as Record<string, unknown>)?.queue_count;
         const popEl = document.getElementById('arena-queue-pop');
         if (popEl) {
           const count = typeof qc === 'number' ? qc : 0;

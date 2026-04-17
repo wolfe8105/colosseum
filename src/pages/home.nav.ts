@@ -34,7 +34,7 @@ export function navigateTo(screenId: string) {
     renderFeed().catch(e => console.error('renderFeed error:', e));
   }
   if (screenId === 'profile') {
-    ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed'));
+    ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed')!);
     loadFollowCounts();
     const archiveEl = document.getElementById('profile-debate-archive');
     if (archiveEl) void loadDebateArchive(archiveEl, true);
@@ -65,7 +65,7 @@ document.addEventListener('click', (e: Event) => {
   } else if (action === 'share-profile') {
     const p = getCurrentProfile();
     const u = getCurrentUser();
-    shareProfile({ userId: u?.id, username: p?.username, displayName: p?.display_name, elo: p?.elo_rating, wins: p?.wins, losses: p?.losses, streak: p?.current_streak });
+    shareProfile({ userId: u?.id, username: p?.username ?? undefined, displayName: p?.display_name ?? undefined, elo: p?.elo_rating, wins: p?.wins, losses: p?.losses, streak: p?.current_streak });
   } else if (action === 'invite-rewards') {
     navigateTo('invite');
   } else if (action === 'subscribe') {

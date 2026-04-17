@@ -20,7 +20,7 @@ export function closeCreateModal(): void {
 export function selectEmoji(el: HTMLElement): void {
   document.querySelectorAll('.emoji-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
-  setSelectedEmoji(el.dataset.emoji);
+  setSelectedEmoji(el.dataset.emoji ?? "");
 }
 
 export async function submitCreateGroup(): Promise<void> {

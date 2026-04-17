@@ -20,7 +20,7 @@ import { DEBATES, debate, topicSlug, voteKey, getFingerprint } from './debate-la
 // INIT SUPABASE (standalone — this page uses anon client, not ModeratorAuth)
 // ============================================================
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
 
 // ============================================================
 // STATE

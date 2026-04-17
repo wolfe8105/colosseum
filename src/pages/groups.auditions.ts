@@ -50,22 +50,22 @@ export function openAuditionModal(g: GroupDetail): void {
   }
 
   // Reset
-  document.getElementById('audition-error').style.display = 'none';
+  document.getElementById('audition-error')!.style.display = 'none';
   (document.getElementById('audition-submit-btn') as HTMLButtonElement).disabled = false;
   (document.getElementById('audition-submit-btn') as HTMLButtonElement).textContent = 'REQUEST AUDITION';
 
-  document.getElementById('audition-modal').classList.add('open');
+  document.getElementById('audition-modal')!.classList.add('open');
 }
 
 export function closeAuditionModal(): void {
-  document.getElementById('audition-modal').classList.remove('open');
+  document.getElementById('audition-modal')!.classList.remove('open');
 }
 
 export async function submitAuditionRequest(): Promise<void> {
   const btn = document.getElementById('audition-submit-btn') as HTMLButtonElement;
   btn.disabled    = true;
   btn.textContent = 'REQUESTING…';
-  document.getElementById('audition-error').style.display = 'none';
+  document.getElementById('audition-error')!.style.display = 'none';
 
   try {
     const { data, error } = await safeRpc('request_audition', {
@@ -83,8 +83,8 @@ export async function submitAuditionRequest(): Promise<void> {
     await loadPendingAuditions(currentAuditionGroupId!, null);
   } catch (e) {
     const errEl = document.getElementById('audition-error');
-    errEl.textContent    = (e as Error).message || 'Could not request audition';
-    errEl.style.display  = 'block';
+    errEl!.textContent    = (e as Error).message || 'Could not request audition';
+    errEl!.style.display  = 'block';
     btn.disabled         = false;
     btn.textContent      = 'REQUEST AUDITION';
   }

@@ -219,7 +219,7 @@ export async function showUserProfile(userId: string): Promise<void> {
   });
 
   // F-28: Bounty section — only shown to authenticated users viewing another user's profile
-  if (currentUser && currentProfile && userId !== currentUser.id) {
+  if (currentUser && getCurrentProfile() && userId !== currentUser.id) {
     const bountyContainer = document.createElement('div');
     bountyContainer.id = 'upm-bounty-section';
     modalInner.appendChild(bountyContainer);
@@ -227,8 +227,8 @@ export async function showUserProfile(userId: string): Promise<void> {
     // Count viewer's open outgoing bounties for slot check
     // We pass 0 as a starting count and let renderProfileBountySection
     // fetch the real count via getMyBounties internally
-    const viewerDepth = Number(currentProfile.profile_depth_pct) || 0;
-    const viewerBalance = Number(currentProfile.token_balance) || 0;
+    const viewerDepth = Number(getCurrentProfile()!.profile_depth_pct) || 0;
+    const viewerBalance = Number(getCurrentProfile()!.token_balance) || 0;
     const slotLimit = bountySlotLimit(viewerDepth);
 
     if (slotLimit > 0) {

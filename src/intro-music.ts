@@ -27,8 +27,8 @@ export function openIntroMusicPicker(): void {
   injectIntroMusicCSS();
 
   const profile        = getCurrentProfile();
-  const currentId      = profile?.intro_music_id ?? 'gladiator';
-  const currentUrl     = profile?.custom_intro_url ?? null;
+  const currentId      = (profile?.intro_music_id as string | null | undefined) ?? 'gladiator';
+  const currentUrl     = (profile?.custom_intro_url as string | null | undefined) ?? null;
   const depthPct       = profile?.profile_depth_pct ?? 0;
   const tier2Unlocked  = depthPct >= 35;
 
@@ -77,7 +77,7 @@ export function openIntroMusicPicker(): void {
   backdrop.appendChild(sheet);
   document.body.appendChild(backdrop);
 
-  let selectedId  = currentId;
+  let selectedId: string = currentId;
   let pendingFile: File | null = null;
   const pendingUrl = currentUrl;
 

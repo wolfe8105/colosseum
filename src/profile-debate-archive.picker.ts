@@ -27,7 +27,7 @@ export async function showAddPicker(container: HTMLElement): Promise<void> {
           : list.map(d => {
               const date = new Date(d.debate_created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
               const opp = esc(d.opponent_name ?? d.opponent_username ?? 'Unknown');
-              const result = d.winner === undefined ? '' : (d.is_win ? '✅ W' : '❌ L');
+              const result = d.is_win ? '✅ W' : '❌ L';
               return `
                 <div class="dba-picker-row" data-debate="${esc(d.debate_id)}">
                   <div class="dba-picker-topic">${esc(d.topic ?? 'Untitled debate')}</div>

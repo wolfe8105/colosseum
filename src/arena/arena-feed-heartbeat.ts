@@ -55,6 +55,9 @@ export function startHeartbeat(): void {
   const sendBeat = () => {
     if (!feedRealtimeChannel) return;
     feedRealtimeChannel.send({
+      type: 'broadcast',
+      event: 'heartbeat',
+      payload: { role: myRole, ts: Date.now() },
     });
   };
   // Send first beat immediately

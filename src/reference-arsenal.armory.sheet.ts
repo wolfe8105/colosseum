@@ -39,7 +39,7 @@ export function openSheet(ref: ArsenalReference, myId: string | null, onReload: 
       <tr><td>Strikes</td><td>${Number(ref.strikes)}</td></tr>
       <tr><td>Status</td><td>${CHALLENGE_STATUS_LABELS[ref.challenge_status] || '✅ Clean'}</td></tr>
     </table>
-    ${ref.source_url ? `<a class="sheet-link" href="${sanitizeUrl(ref.source_url ?? state?.source_url ?? '')}" target="_blank" rel="noopener">🔗 View Source</a>` : ''}`;
+    ${ref.source_url ? `<a class="sheet-link" href="${sanitizeUrl(ref.source_url ?? '')}" target="_blank" rel="noopener">🔗 View Source</a>` : ''}`;
 
   const isOwn = ref.user_id === myId;
   const isFrozen = ref.challenge_status === 'frozen';

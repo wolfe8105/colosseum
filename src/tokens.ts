@@ -8,7 +8,7 @@
 
 import { onChange } from './auth.ts';
 import { _injectCSS } from './tokens.animations.ts';
-import { _initBroadcast, _updateBalanceDisplay, _rpc, lastKnownBalance } from './tokens.balance.ts';
+import { _initBroadcast, _updateBalanceDisplay, _rpc, lastKnownBalance, requireTokens } from './tokens.balance.ts';
 import { _loadMilestones, MILESTONES, claimMilestone, getMilestoneList, checkProfileMilestones } from './tokens.milestones.ts';
 import { claimDailyLogin, claimHotTake, claimReaction, claimVote, claimDebate, claimAiSparring, claimPrediction } from './tokens.claims.ts';
 
@@ -35,7 +35,7 @@ const tokens = {
   claimDailyLogin, claimHotTake, claimReaction, claimVote,
   claimDebate, claimAiSparring, claimPrediction,
   getSummary: async () => { const { getSummary } = await import('./tokens.balance.ts'); return getSummary(); },
-  requireTokens: (amount: number, label?: string) => { const { requireTokens } = require('./tokens.balance.ts'); return requireTokens(amount, label); },
+  requireTokens,
   claimMilestone, checkProfileMilestones, getMilestoneList,
   get balance() { return lastKnownBalance; },
   get MILESTONES() { return MILESTONES; },

@@ -50,11 +50,11 @@ export function playEntranceSequence(debate: CurrentDebate): Promise<void> {
     stage.id = 'ent-stage';
 
     if (tier === 1) {
-      renderTier1(stage, myInitial, myName, myElo, oppInitial, oppName, oppElo, isAI, isRanked);
+      renderTier1(stage, myInitial, myName, myElo, oppInitial, oppName, Number(oppElo), isAI, isRanked);
     } else if (tier === 2) {
-      renderTier2(stage, myInitial, myName, myElo, oppInitial, oppName, oppElo, isAI, topic, isRanked);
+      renderTier2(stage, myInitial, myName, myElo, oppInitial, oppName, Number(oppElo), isAI, topic, isRanked);
     } else {
-      renderTier3(stage, myInitial, myName, myElo, wins, losses, oppInitial, oppName, oppElo, isAI, topic, isRanked);
+      renderTier3(stage, myInitial, myName, myElo, wins, losses, oppInitial, oppName, Number(oppElo), isAI, topic, isRanked);
     }
 
     document.body.appendChild(stage);

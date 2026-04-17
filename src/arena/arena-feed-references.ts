@@ -37,8 +37,8 @@ export function showCiteDropdown(debate: CurrentDebate): void {
   for (const ref of uncited) {
     html += `
       <div class="feed-dropdown-item" data-ref-id="${escapeHTML(ref.reference_id)}">
-        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim_text)}"</span>
-        <span class="feed-dropdown-meta">${escapeHTML(ref.source_title)} \u00B7 PWR ${Number(ref.current_power)}</span>
+        <span class="feed-dropdown-claim">"${escapeHTML(ref.claim)}"</span>
+        <span class="feed-dropdown-meta">${escapeHTML(ref.author)} \u00B7 PWR ${Number(ref.current_power)}</span>
       </div>
     `;
   }

@@ -29,13 +29,13 @@ export function openGroupSettings(
   onGroupDeleted  = callbacks.onDeleted;
 
   _populateSettings(g);
-  document.getElementById('view-detail').style.display   = 'none';
-  document.getElementById('view-settings').style.display = 'flex';
+  document.getElementById('view-detail')!.style.display   = 'none';
+  document.getElementById('view-settings')!.style.display = 'flex';
 }
 
 export function closeGroupSettings(): void {
-  document.getElementById('view-settings').style.display = 'none';
-  document.getElementById('view-detail').style.display   = 'flex';
+  document.getElementById('view-settings')!.style.display = 'none';
+  document.getElementById('view-detail')!.style.display   = 'flex';
   _hideDeleteConfirm();
 }
 
@@ -102,9 +102,9 @@ export async function submitGroupSettings(): Promise<void> {
 }
 
 export function showDeleteConfirm(): void {
-  document.getElementById('settings-delete-confirm').style.display = 'block';
+  document.getElementById('settings-delete-confirm')!.style.display = 'block';
   (document.getElementById('settings-delete-name-input') as HTMLInputElement).value = '';
-  document.getElementById('settings-delete-confirm').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('settings-delete-confirm')!.scrollIntoView({ behavior: 'smooth' });
 }
 
 export async function submitDeleteGroup(): Promise<void> {
@@ -121,7 +121,7 @@ export async function submitDeleteGroup(): Promise<void> {
       p_confirm_name: confirmName,
     });
     if (error) throw error;
-    document.getElementById('view-settings').style.display = 'none';
+    document.getElementById('view-settings')!.style.display = 'none';
     onGroupDeleted?.();
   } catch (e) {
     showToast((e as Error).message || 'Could not delete group');

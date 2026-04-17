@@ -202,7 +202,7 @@ export async function triggerDripDay(day: number): Promise<void> {
       const container = _cardEl.parentElement;
       _cardEl.remove();
       _cardEl = null;
-      if (container && !_progress.all_done) _renderCard(container);
+      if (container && _progress && !_progress.all_done) _renderCard(container);
     }
   } catch { /* silent */ }
 }

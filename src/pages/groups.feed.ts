@@ -13,7 +13,7 @@ import { renderEmpty } from './groups.utils.ts';
 // ── HOT TAKES FOR GROUP ───────────────────────────────────────────────────────
 export async function loadGroupHotTakes(groupId: string) {
   try {
-    const { data, error } = await sb
+    const { data, error } = await sb!
       .from('hot_takes')
       .select('id, content, user_id, reaction_count, created_at, profiles_public(username, display_name)')
       .eq('section', groupId)
@@ -43,7 +43,7 @@ export async function loadGroupHotTakes(groupId: string) {
     }
 
     if (!data || data.length === 0) {
-      document.getElementById('detail-hot-takes').innerHTML = composerHtml + renderEmpty('💬', 'No hot takes yet', currentUser ? 'Be the first to post' : 'Join and post the first one');
+      document.getElementById('detail-hot-takes')!.innerHTML = composerHtml + renderEmpty('💬', 'No hot takes yet', currentUser ? 'Be the first to post' : 'Join and post the first one');
       _wireGroupTakeComposer(groupId);
       return;
     }
@@ -56,10 +56,10 @@ export async function loadGroupHotTakes(groupId: string) {
       </div>`;
     }).join('');
 
-    document.getElementById('detail-hot-takes').innerHTML = composerHtml + takesHtml;
+    document.getElementById('detail-hot-takes')!.innerHTML = composerHtml + takesHtml;
     _wireGroupTakeComposer(groupId);
   } catch (e) {
-    document.getElementById('detail-hot-takes').innerHTML = renderEmpty('⚠️', 'Could not load hot takes', '');
+    document.getElementById('detail-hot-takes')!.innerHTML = renderEmpty('⚠️', 'Could not load hot takes', '');
   }
 }
 
@@ -68,7 +68,7 @@ function _wireGroupTakeComposer(groupId: string) {
   const btn     = document.getElementById('group-take-post') as HTMLButtonElement | null;
   const counter = document.getElementById('group-take-count');
   if (!input || !btn) return;
-  input.addEventListener('input', () => { counter.textContent = input.value.length + '/280'; });
+  input.addEventListener('input', () => { if (counter) counter.textContent = input.value.length + '/280'; });
   btn.addEventListener('click', () => postGroupHotTake(groupId));
 }
 
@@ -95,7 +95,7 @@ export async function postGroupHotTake(groupId: string) {
       return;
     }
     input.value = '';
-    document.getElementById('group-take-count').textContent = '0/280';
+    document.getElementById('group-take-count')!.textContent = '0/280';
     showToast('🔥 Hot take posted', 'success');
     loadGroupHotTakes(groupId);
   } catch (e) {

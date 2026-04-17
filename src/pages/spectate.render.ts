@@ -32,10 +32,10 @@ export function renderSpectateView(d: SpectateDebate, messages: DebateMessage[])
   html += '<div class="topic-card fade-up"><div class="topic-text">' + escHtml(d.topic) + '</div></div>';
 
   html += '<div class="vs-bar fade-up">';
-  html += '<div class="vs-debater">' + renderAvatar(d.debater_a_avatar, d.debater_a_name, 'side-a');
+  html += '<div class="vs-debater">' + renderAvatar(d.debater_a_avatar, d.debater_a_name ?? '', 'side-a');
   html += '<div><div class="vs-name">' + escHtml(d.debater_a_name) + '</div><div class="vs-elo">' + Number(d.debater_a_elo) + ' ELO</div></div></div>';
   html += '<div class="vs-text">VS</div>';
-  html += '<div class="vs-debater right">' + renderAvatar(d.debater_b_avatar, d.debater_b_name, 'side-b');
+  html += '<div class="vs-debater right">' + renderAvatar(d.debater_b_avatar, d.debater_b_name ?? '', 'side-b');
   html += '<div><div class="vs-name">' + escHtml(d.debater_b_name) + '</div><div class="vs-elo">' + Number(d.debater_b_elo) + ' ELO</div></div></div></div>';
 
   if (d.moderator_type && d.moderator_type !== 'none') {

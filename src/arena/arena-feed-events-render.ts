@@ -145,7 +145,7 @@ export function renderReferenceCiteEvent(
   el.innerHTML = `
     <span class="feed-evt-name">\uD83D\uDCC4 ${escapeHTML(citeName)}</span>
     <span class="feed-cite-claim" data-ref-id="${escapeHTML(ev.reference_id || '')}"
-          data-url="${sanitizeUrl(refMeta.source_url)}"
+          data-url="${sanitizeUrl(refMeta.source_url as string | null | undefined)}"
           data-source-title="${escapeHTML(String(refMeta.source_title || ''))}"
           data-source-type="${escapeHTML(String(refMeta.source_type || ''))}"
           >"${escapeHTML(ev.content)}"</span>

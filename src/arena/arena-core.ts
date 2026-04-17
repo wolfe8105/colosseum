@@ -133,7 +133,7 @@ export function destroy(): void {
   }
 
   // Clean up any pending voice memo recordings and ObjectURLs
-  cleanupPendingRecording();
+  cleanupPendingRecording(null);
 
   // resetState() clears ALL timers (queue, match, round, vm, reference,
   // ruling countdown, private lobby, mod queue, mod status, mod debate,

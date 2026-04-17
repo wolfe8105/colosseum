@@ -85,7 +85,7 @@ export async function createAndWaitPrivateLobby(
 
     if (error) throw error;
     // RETURNS TABLE comes back as an array — unwrap first row
-    const rows = data as PrivateLobbyResult[];
+    const rows = data as unknown as PrivateLobbyResult[];
     const result = Array.isArray(rows) ? rows[0]! : (data as PrivateLobbyResult);
     set_privateLobbyDebateId(result.debate_id);
 

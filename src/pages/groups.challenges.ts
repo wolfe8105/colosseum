@@ -22,25 +22,25 @@ export function openGvGModal() {
   }
   selectedOpponentGroup = null;
   selectedGvGFormat     = '1v1';
-  document.getElementById('gvg-modal').classList.add('open');
-  document.getElementById('gvg-opponent-search').value       = '';
-  document.getElementById('gvg-opponent-results').innerHTML  = '';
-  document.getElementById('gvg-selected-opponent').style.display = 'none';
+  document.getElementById('gvg-modal')!.classList.add('open');
+  (document.getElementById('gvg-opponent-search') as HTMLInputElement)!.value = '';
+  document.getElementById('gvg-opponent-results')!.innerHTML = '';
+  document.getElementById('gvg-selected-opponent')!.style.display = 'none';
   (document.getElementById('gvg-topic') as HTMLInputElement).value = '';
-  document.getElementById('gvg-error').style.display = 'none';
+  document.getElementById('gvg-error')!.style.display = 'none';
   document.querySelectorAll('.gvg-format-pill').forEach(p => p.classList.remove('active'));
-  document.querySelector('.gvg-format-pill[data-format="1v1"]').classList.add('active');
+  document.querySelector('.gvg-format-pill[data-format="1v1"]')!.classList.add('active');
 }
 
 export function closeGvGModal() {
-  document.getElementById('gvg-modal').classList.remove('open');
+  document.getElementById('gvg-modal')!.classList.remove('open');
 }
 
 (function wireGvGControls() {
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.gvg-format-pill').forEach(pill => {
       pill.addEventListener('click', () => {
-        selectedGvGFormat = (pill as HTMLElement).dataset.format;
+        selectedGvGFormat = (pill as HTMLElement).dataset.format ?? selectedGvGFormat;
         document.querySelectorAll('.gvg-format-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
       });
@@ -62,7 +62,7 @@ export async function searchGroupsForChallenge(query: string) {
   if (query.length < 2) { container.innerHTML = ''; return; }
   try {
     const esc = escapeHTML;
-    const { data, error } = await sb
+    const { data, error } = await sb!
       .from('groups')
       .select('id, name, avatar_emoji, group_elo, member_count')
       .ilike('name', '%' + query + '%')
@@ -91,14 +91,14 @@ export async function searchGroupsForChallenge(query: string) {
       opt.addEventListener('click', () => {
         const el = opt as HTMLElement;
         selectedOpponentGroup = {
-          id:    el.dataset.gid,
-          name:  el.dataset.gname,
-          emoji: el.dataset.gemoji,
-          elo:   Number.parseInt(el.dataset.gelo),
+          id:    el.dataset.gid ?? '',
+          name:  el.dataset.gname ?? '',
+          emoji: el.dataset.gemoji ?? '⚔️',
+          elo:   Number.parseInt(el.dataset.gelo ?? '1200'),
         };
-        const sel  = document.getElementById('gvg-selected-opponent');
+        const sel  = document.getElementById('gvg-selected-opponent')!;
         const esc2 = escapeHTML;
-        sel.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
+        sel!.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:20px;">${esc2(selectedOpponentGroup.emoji)}</span>
           <div style="flex:1;">
             <div style="color:var(--white);font-size:14px;font-weight:700;">${esc2(selectedOpponentGroup.name)}</div>
@@ -106,7 +106,7 @@ export async function searchGroupsForChallenge(query: string) {
           </div>
           <button data-action="clear-gvg-opponent" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
         </div>`;
-        sel.style.display = 'block';
+        sel!.style.display = 'block';
         container.innerHTML = '';
         (document.getElementById('gvg-opponent-search') as HTMLInputElement).value = '';
       });
@@ -118,26 +118,26 @@ export async function searchGroupsForChallenge(query: string) {
 
 export function clearGvGOpponent() {
   selectedOpponentGroup = null;
-  document.getElementById('gvg-selected-opponent').style.display = 'none';
+  document.getElementById('gvg-selected-opponent')!.style.display = 'none';
 }
 
 export async function submitGroupChallenge() {
   const errEl = document.getElementById('gvg-error');
   const btn   = document.getElementById('gvg-submit-btn') as HTMLButtonElement;
   if (!selectedOpponentGroup) {
-    errEl.textContent   = 'Select an opponent group';
-    errEl.style.display = 'block';
+    errEl!.textContent   = 'Select an opponent group';
+    errEl!.style.display = 'block';
     return;
   }
   const topic = (document.getElementById('gvg-topic') as HTMLInputElement).value.trim();
   if (topic.length < 5) {
-    errEl.textContent   = 'Topic must be at least 5 characters';
-    errEl.style.display = 'block';
+    errEl!.textContent   = 'Topic must be at least 5 characters';
+    errEl!.style.display = 'block';
     return;
   }
   btn.disabled    = true;
   btn.textContent = 'SENDING…';
-  errEl.style.display = 'none';
+  errEl!.style.display = 'none';
   try {
     const { data, error } = await safeRpc('create_group_challenge', {
       p_challenger_group_id: currentGroupId,
@@ -147,26 +147,26 @@ export async function submitGroupChallenge() {
       p_format:              selectedGvGFormat,
     });
     if (error) {
-      errEl.textContent   = error.message || 'RPC failed';
-      errEl.style.display = 'block';
+      errEl!.textContent   = error.message || 'RPC failed';
+      errEl!.style.display = 'block';
       btn.disabled        = false;
       btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result?.error) {
-      errEl.textContent   = result.error;
-      errEl.style.display = 'block';
+      errEl!.textContent   = result.error;
+      errEl!.style.display = 'block';
       btn.disabled        = false;
       btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
     closeGvGModal();
-    loadGroupChallenges(currentGroupId);
+    loadGroupChallenges(currentGroupId!);
     showToast('⚔️ Challenge sent!', 'success');
   } catch (e) {
-    errEl.textContent   = 'Something went wrong';
-    errEl.style.display = 'block';
+    errEl!.textContent   = 'Something went wrong';
+    errEl!.style.display = 'block';
   }
   btn.disabled    = false;
   btn.textContent = 'SEND CHALLENGE ⚔️';
@@ -184,11 +184,11 @@ export async function loadGroupChallenges(groupId: string) {
       return;
     }
     const esc = escapeHTML;
-    container.innerHTML = challenges.map(c => {
+    container.innerHTML = (challenges as Record<string, unknown>[]).map(c => {
       const isDefender = c.defender_group_id === groupId;
-      const oppName    = isDefender ? c.challenger_name  : c.defender_name;
-      const oppEmoji   = isDefender ? c.challenger_emoji : c.defender_emoji;
-      const oppElo     = isDefender ? c.challenger_elo   : c.defender_elo;
+      const oppName    = String(isDefender ? c.challenger_name ?? '' : c.defender_name ?? '');
+      const oppEmoji   = String(isDefender ? c.challenger_emoji ?? '⚔️' : c.defender_emoji ?? '⚔️');
+      const oppElo     = String(isDefender ? c.challenger_elo ?? 1200 : c.defender_elo ?? 1200);
       let badge = '', actionHtml = '';
       switch (c.status) {
         case 'pending':
@@ -220,11 +220,11 @@ export async function loadGroupChallenges(groupId: string) {
           <span style="font-size:18px;">${esc(oppEmoji || '⚔️')}</span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--white);">${isDefender ? 'Challenged by' : 'vs'} ${esc(oppName)}</div>
-            <div style="font-size:11px;color:var(--white-dim);">Elo ${Number.parseInt(oppElo)} · ${esc(c.format)}</div>
+            <div style="font-size:11px;color:var(--white-dim);">Elo ${Number.parseInt(oppElo)} · ${esc(String(c.format ?? ''))}</div>
           </div>
           ${badge}
         </div>
-        <div style="font-size:13px;color:var(--white-dim);line-height:1.3;">${esc(c.topic)}</div>
+        <div style="font-size:13px;color:var(--white-dim);line-height:1.3;">${esc(String(c.topic ?? ''))}</div>
         ${actionHtml}
       </div>`;
     }).join('');
@@ -232,7 +232,7 @@ export async function loadGroupChallenges(groupId: string) {
     container.querySelectorAll('.gvg-respond-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        respondToChallenge((btn as HTMLElement).dataset.challengeId, (btn as HTMLElement).dataset.action);
+        respondToChallenge((btn as HTMLElement).dataset.challengeId ?? '', (btn as HTMLElement).dataset.action ?? '');
       });
     });
   } catch (e) {
@@ -250,7 +250,7 @@ export async function respondToChallenge(challengeId: string, action: string) {
     if (error) { showToast('⚠️ ' + (error.message || 'Failed'), 'error'); return; }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result?.error) { showToast('⚠️ ' + result.error, 'error'); return; }
-    loadGroupChallenges(currentGroupId);
+    loadGroupChallenges(currentGroupId!);
     showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined', 'success');
   } catch (e) {
     showToast('⚠️ Something went wrong', 'error');
