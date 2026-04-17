@@ -31,14 +31,13 @@ export async function applyEndOfDebateModifiers(
       breakdown = eodData as EndOfDebateBreakdown;
       if (breakdown) {
         const myRole = debate.role;
-        // LANDMINE [LM-END-001]: IDENTICAL branches for 'a' and 'b' — role check is dead code.
-        // Likely an incomplete refactor — the 'b' branch may have been intended to swap.
+        // FIX [M-END-001]: 'b' branch now correctly swaps a/b scores from server breakdown.
         if (myRole === 'a') {
           scoreA = breakdown.debater_a.final_score;
           scoreB = breakdown.debater_b.final_score;
         } else if (myRole === 'b') {
-          scoreA = breakdown.debater_a.final_score;
-          scoreB = breakdown.debater_b.final_score;
+          scoreA = breakdown.debater_b.final_score;
+          scoreB = breakdown.debater_a.final_score;
         }
       }
     }
