@@ -38,7 +38,8 @@ export async function getFollowers(userId: string): Promise<AuthResult<FollowRow
     const { data, count, error } = await getSupabaseClient()!
       .from('follows')
       .select('follower_id, profiles!follows_follower_id_fkey(username, display_name, elo_rating)', { count: 'exact' })
-      .eq('following_id', userId);
+      .eq('following_id', userId)
+      .limit(100);
     if (error) throw error;
     return { success: true, data: data as FollowRow[], count: count ?? 0 };
   } catch (e) {
@@ -52,7 +53,8 @@ export async function getFollowing(userId: string): Promise<AuthResult<FollowRow
     const { data, count, error } = await getSupabaseClient()!
       .from('follows')
       .select('following_id, profiles!follows_following_id_fkey(username, display_name, elo_rating)', { count: 'exact' })
-      .eq('follower_id', userId);
+      .eq('follower_id', userId)
+      .limit(100);
     if (error) throw error;
     return { success: true, data: data as FollowRow[], count: count ?? 0 };
   } catch (e) {
