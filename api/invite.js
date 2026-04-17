@@ -11,7 +11,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const APP_BASE = 'https://themoderator.app';
 
 module.exports = async function handler(req, res) {
@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
 
   // Record the click via service-role RPC (unauthenticated — no user session yet)
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
       ?? req.socket?.remoteAddress
       ?? null;
