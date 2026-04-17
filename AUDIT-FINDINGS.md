@@ -23,11 +23,11 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 
 Historical damage scope: exactly 1 complete debate existed in production at fix time, so real-world rating inflation was minimal. Going forward, all new PvP debates are protected.
 
-### ~~P5-SD-1~~ → **M-P5-SD-1. `api/challenge.html.js:20` — OG metadata injection via unescaped `preview.topic` — OPEN (MEDIUM)**
-**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** `ogDesc` uses raw `preview.topic` (line 20) instead of the already-HTML-escaped `topic` variable from line 13. This lands in a `<meta content="...">` attribute — browsers do not execute script injected into meta tag content, so Phase 5's XSS claim is incorrect. Actual impact: attacker can break the meta tag structure and control link-unfurl preview text shown in Slack/iMessage/Twitter. No script execution. Fix is still correct and cheap: replace `preview.topic` with `topic` on line 20.
+### ~~P5/P7-SD-1. `api/challenge.html.js:20` — HTML injection via unescaped `preview.topic` in server-rendered page~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 5 (Architectural Blindness) + Phase 7 (Red Team), 2026-04-17.** Originally downgraded HIGH→MEDIUM by this session (incorrectly). Phase 7 revalidated as HIGH: `ogDesc` lands in `content="${ogDesc}"` in server-rendered HTML — a topic containing `"` breaks out of the attribute, enabling HTML injection into the served page. `escapeHtml()` was already available on line 13 as `topic`; line 20 used raw `preview.topic` instead. **Fix:** replaced `preview.topic` with the already-escaped `topic` variable. One-character change.
 
-### ~~P5-BI-1~~ → **M-P5-BI-1. `src/pages/auto-debate.vote.ts:55` — Dead RPC call to dropped `cast_auto_debate_vote` — OPEN (MEDIUM)**
-**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** `cast_auto_debate_vote` was dropped in S249 but the call site remains. However the catch block and error path both fall back to local optimistic rendering — no crash, no data corruption, no security issue. Votes simply don't persist; the feature is silently dead. Dead code cleanup, not an urgent fix.
+### P7-AA-02 / P5-BI-1. `src/pages/auto-debate.vote.ts:55` + RPC — Phantom votes, fabricated UI counts — **OPEN (HIGH)**
+**Phase 5 (Architectural Blindness) + Phase 7 (Red Team), 2026-04-17. Phase 7 upheld as HIGH — prior downgrade to MEDIUM was wrong.** `cast_auto_debate_vote` RPC confirmed absent from all SQL files — dropped in S249. Call site at line 55 silently fails; UI shows locally-incremented counts that are never persisted. No partial remediation exists. All auto-debate vote data since S249 is fabricated. Cannot be fixed with a code change — requires rebuilding the vote feature against a live RPC.
 
 ### ~~P5-BI-2~~ → **M-P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates` — OPEN (MEDIUM)**
 **Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** The fallback path queries the dropped `auto_debates` table. The Postgres error is silent and the code falls through to placeholder card rendering — UI degrades gracefully, no crash. Off-peak users see placeholder cards instead of live content, with no error shown. Dead code removal, not urgent. Note: also supersedes M-Q3 (the `sb!` null assertion in the same branch).
@@ -40,6 +40,29 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 
 ### P6-THRASH-01. `api/go-respond.js` — In-memory rate limiter written and fully discarded 11.5h later — **OPEN**
 **Phase 6 (Agentic Drift), 2026-04-17.** SYC-H-02 (`f4a8571`, Apr 16 21:10) shipped a `Map`-based in-memory rate limiter for a serverless function — a known anti-pattern where Map state is ephemeral per cold start and not shared across concurrent instances. HP-01 (`980f68a`, Apr 17 08:40) discarded it entirely and replaced it with Upstash Redis. 167 lines written and thrown away in 11.5 hours. Root cause: SYC-H-02 did not model the serverless execution environment. Cross-session context loss is the likely mechanism — the new session read the code fresh and immediately identified the defect.
+
+### ~~P7-SA-01. Git history contains Supabase anon JWT key~~ — **FIXED 2026-04-17 (dashboard action)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** The Supabase anon key (`eyJhbGci...`) was hardcoded in `src/config.ts` as a fallback and committed to git history. Removing from source doesn't invalidate it — key lived permanently in history. **Fix:** Supabase legacy JWT-based API keys disabled in dashboard. Old key is now dead. New publishable key (`sb_publishable_...`) deployed to Vercel env vars and redeployed.
+
+### ~~P7-DOS-01. `api/go-respond.js` — Unauthenticated Claude API drain via IP-spoofed flood~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** No authentication required on `/api/go-respond`. Rate limit keyed on `x-forwarded-for` (IS-01, caller-controlled). Unauthenticated attacker could spoof IPs and drain Claude API at ~$1,890/hr with no per-user quota. **Fix:** Bearer JWT auth gate added — requests without valid Supabase session token rejected 401. Rate limit key switched from IP to authenticated `userId`. `x-real-ip` (Vercel infrastructure header, not spoofable) used for IP fallback.
+
+### ~~P7-IS-01. `api/go-respond.js:90` — `x-forwarded-for` taken verbatim, rate limit bypassed~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** Rate limit keyed on caller-controlled `x-forwarded-for` header — trivially spoofed to bypass per-IP sliding window. **Fix:** switched to `x-real-ip` (set by Vercel infrastructure) and rate limit now keys on authenticated `userId`, making IP spoofing irrelevant.
+
+### ~~P7-IS-02. `api/go-respond.js` — Prompt injection via `topic` interpolated raw into system prompt~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** `safeTopic` (500-char truncated) interpolated directly into Claude system prompt with no injection filtering. Attacker could craft topic to override AI instructions, manipulate scoring, or extract system prompt. **Fix:** regex stripping of known injection patterns (`ignore previous instructions`, `system prompt`, `you are now`, etc.) applied before interpolation.
+
+### ~~P7-IS-04. `src/reference-arsenal.render.ts:76` + 3 other files — Stored XSS via `javascript:` URI in `source_url`~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** `source_url` stored in DB without protocol validation. `escapeHTML()` does not sanitize `javascript:` URIs — they pass through unchanged and execute on click in 4 render locations. Any user who can forge a reference can store a `javascript:` payload that fires for every debate viewer who clicks "View Source." **Fix:** `sanitizeUrl()` added to `config.ts` — only `http:` and `https:` protocols allowed. Applied to all 4 render callsites.
+
+### ~~P7-SA-03. `vercel.json` — AdSense domains missing from CSP `script-src`~~ — **FIXED 2026-04-17 (commit a21984e)**
+**Phase 7 (Red Team), 2026-04-17. Fixed same day.** AdSense script domains (`pagead2.googlesyndication.com`, `partner.googleadservices.com`, `tpc.googlesyndication.com`) absent from `script-src`, `connect-src`, and `frame-src` directives. CSP-enforcing browsers block AdSense silently — ad revenue zero on those browsers. **Fix:** all required AdSense domains added to CSP in `vercel.json`.
+
+### P7-SA-02. Git history contains Stripe test publishable key — **OPEN**
+**Phase 7 (Red Team), 2026-04-17.** Stripe test key (`pk_test_51T5T9u...`) committed to git history in `src/config.ts`. Test keys have limited blast radius (cannot charge real cards) but should be rotated as best practice. **Action required:** rotate in Stripe dashboard → Developers → API keys. Update `VITE_STRIPE_PUBLISHABLE_KEY` in Vercel env vars.
+
+### P7-AA-02 / P7-BL-02 — see P7-AA-02 / P5-BI-1 entry above (phantom votes).
 
 ### ~~H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection~~ — **FIXED 2026-04-14 (commit 4166c1e)**
 **Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed. Fixed same day.** The `renderMessages` function built a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters, interpolating `encodeURIComponent(m.message)` into that JS string. `encodeURIComponent` does not encode the single-quote character (RFC 3986 unreserved), so a stored spectator chat message containing `'` terminated the JS string and allowed arbitrary JS execution in any spectator's browser that clicked the report button. `m.message` was fully user-controlled (spectator chat content), making this a stored XSS with worm potential.
