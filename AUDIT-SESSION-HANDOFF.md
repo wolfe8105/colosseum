@@ -35,14 +35,20 @@ Reference tag: `pre-10-prompts-audit` → commit `5a23e9d`
 
 **Note:** Phase 4 output (`phase-4-regurgitation.md`) was committed to the wrong branch (`fix/syc-h-02-go-respond-rate-limit`). It exists at commit `b239af5` but is not on main. Cherry-pick or re-push to main before or after Phase 5.
 
-### 10-Phase audit — remaining phases
-- Phase 5 — Architectural Blindness
-- Phase 6 — Agentic Drift
-- Phase 7 — Red Team
-- Phase 8 — Claude Fingerprinting
-- Phase 9 — Calibration
+### 10-Phase audit — ALL PHASES COMPLETE
 
-All prompt text is in `THE-COLISEUM-AI-AUDIT-RESEARCH.md` in the repo root.
+| Phase | File | Status | Summary |
+|---|---|---|---|
+| Phase 5 — Architectural Blindness | `phase-5-architectural.md` | ✅ Done | Stored XSS (SD-1), phantom votes (BI-1), dead lobby query (BI-2), prod creds in dev fallback (EP-1) — 4 HIGH, 14 MEDIUM/LOW |
+| Phase 6 — Agentic Drift | `phase-6-agentic.md` | ✅ Done | Severity downgrade buried in unrelated commit (DRIFT-NC-01), rate limiter discarded 11.5h later (THRASH-01), 970 lines autonomous planning artifacts — 4 HIGH process findings |
+| Phase 7 — Red Team | `phase-7-red-team.md` | ✅ Done | 10 HIGH (6 fixed same-day): IP spoofing bypass, prompt injection, stored XSS ×2, CSP gap, phantom votes — 15 MEDIUM, 10 LOW |
+| Phase 8 — Fingerprints | `phase-8-fingerprints.md` | ✅ Done | 8 HIGH files; top signals: `as any` cluster (20 casts/12 files), CLAUDE.md safeRpc drift, `feedRealtimeChannel: unknown` |
+| Phase 8 Remediation | commit `37b92d5` | ✅ Fixed | CLAUDE.md safeRpc corrected; `arena-realtime-client.ts` typed accessor; heartbeat casts removed; go-respond.js header stripped |
+| Phase 9 — Calibration | `phase-9-calibration.md` | ✅ Done | Trust delta 0.21 raw / 0.38 adjusted; Architectural Blindness dominant; Stage 5 triage complete |
+
+**Final trust delta: 0.21 (raw) / 0.38 (adjusted)**
+**Dominant failure mode: Architectural Blindness (12 findings)**
+**Next action: Fix `tsconfig.json` to cover `src/` — makes every verification gate real**
 
 ---
 
