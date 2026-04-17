@@ -14,6 +14,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const APP_BASE = 'https://themoderator.app';
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 module.exports = async function handler(req, res) {
   const code = req.query.code;
 
@@ -23,7 +25,6 @@ module.exports = async function handler(req, res) {
 
   // Record the click via service-role RPC (unauthenticated — no user session yet)
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
       ?? req.socket?.remoteAddress
       ?? null;
