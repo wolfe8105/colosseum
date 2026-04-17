@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colosseum — Claude Solo Live Run Test Script</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e2e2;padding:0 0 60px}
+  header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:14px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
+  .stats{display:flex;gap:12px;font-size:12px;color:#9ca3af;margin-left:auto;flex-wrap:wrap}
+  .stat span{font-weight:600}
+  .stat .pass{color:#1D9E75}
+  .stat .fail{color:#E24B4A}
+  .stat .skip{color:#888780}
+  .progress-bar{height:3px;background:#2a2d3a;position:sticky;top:45px;z-index:99}
+  .progress-fill{height:100%;background:#1D9E75;transition:width 0.3s;width:0%}
+  .section{margin:24px 20px 0}
+  .section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none}
+  .section-header h2{font-size:13px;font-weight:600;color:#fff;text-transform:uppercase;letter-spacing:0.05em}
+  .section-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#2a2d3a;color:#9ca3af}
+  .section-toggle{margin-left:auto;font-size:11px;color:#6b7280}
+  .section-body{display:flex;flex-direction:column;gap:4px}
+  .section-body.collapsed{display:none}
+  .item{display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:start;background:#1a1d27;border:1px solid #2a2d3a;border-radius:6px;padding:10px 12px;transition:border-color 0.15s}
+  .item.pass{border-color:#1D9E75;background:#0d1f19}
+  .item.fail{border-color:#E24B4A;background:#1f0d0d}
+  .item.skip{border-color:#444;opacity:0.5}
+  .item-action{font-size:12px;font-weight:500;color:#e2e2e2;line-height:1.5}
+  .item-action .tag{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;margin-right:4px;vertical-align:middle}
+  .tag.tap{background:#185FA5;color:#B5D4F4}
+  .tag.type{background:#3B6D11;color:#C0DD97}
+  .tag.verify{background:#854F0B;color:#FAC775}
+  .tag.navigate{background:#534AB7;color:#CECBF6}
+  .tag.wait{background:#3d3d3a;color:#9ca3af}
+  .item-note{grid-column:1/-1;margin-top:6px}
+  .item-note textarea{width:100%;background:#0f1117;border:1px solid #3a3d4a;border-radius:4px;color:#e2e2e2;font-size:11px;padding:6px 8px;resize:vertical;min-height:44px;font-family:inherit}
+  .item-note textarea::placeholder{color:#4b5563}
+  .item-note textarea:focus{outline:none;border-color:#534AB7}
+  .item-controls{display:flex;gap:4px;align-items:center;flex-shrink:0}
+  .btn{padding:4px 9px;border-radius:4px;border:1px solid #3a3d4a;background:#1a1d27;color:#9ca3af;cursor:pointer;font-size:11px;font-weight:500;transition:all 0.1s}
+  .btn:hover{background:#2a2d3a;color:#e2e2e2}
+  .btn.active-pass{background:#0d3320;border-color:#1D9E75;color:#1D9E75}
+  .btn.active-fail{background:#3a0d0d;border-color:#E24B4A;color:#E24B4A}
+  .btn.active-skip{background:#1a1d27;border-color:#444;color:#444}
+  .divider{height:1px;background:#2a2d3a;margin:8px 0}
+  .sub-section{margin-left:12px;margin-top:4px;padding-left:12px;border-left:2px solid #2a2d3a}
+  .sub-label{font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;margin:8px 0 4px}
+  .export-btn{position:fixed;bottom:20px;right:20px;background:#534AB7;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+  .export-btn:hover{background:#7F77DD}
+  .item-id{font-size:10px;color:#4b5563;font-family:monospace;line-height:1.8}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Colosseum — Claude Solo Live Run</h1>
+  <div class="stats">
+    <div class="stat">Total: <span id="s-total">0</span></div>
+    <div class="stat">Pass: <span class="pass" id="s-pass">0</span></div>
+    <div class="stat">Fail: <span class="fail" id="s-fail">0</span></div>
+    <div class="stat">Skip: <span class="skip" id="s-skip">0</span></div>
+    <div class="stat">Remaining: <span id="s-rem">0</span></div>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<div id="app"></div>
+
+<button class="export-btn" onclick="exportResults()">Export Results</button>
+
+<script>
+const SECTIONS = [
+  {
+    id: 'auth',
+    title: 'Auth & Onboarding',
+    items: [
+      {id:'A-01', tag:'navigate', action:'Go to colosseum-plinko.html (Plinko signup page)', note:'Verify page loads, no console errors'},
+      {id:'A-02', tag:'verify', action:'Step 1 — Method screen shows: Google, Apple, Email toggle, ToS checkbox', note:''},
+      {id:'A-03', tag:'tap', action:'Tap Google OAuth — verify redirect and return flow', note:''},
+      {id:'A-04', tag:'tap', action:'Tap Apple OAuth — verify redirect and return flow', note:''},
+      {id:'A-05', tag:'tap', action:'Toggle Email signup — email + password fields appear', note:''},
+      {id:'A-06', tag:'tap', action:'btn-email-next — verify age gate (Step 2) appears', note:''},
+      {id:'A-07', tag:'type', action:'Step 2 — Enter DOB (dob-day, dob-month, dob-year) — btn-age-next advances', note:''},
+      {id:'A-08', tag:'type', action:'Step 3 — Enter username — btn-create — verify username saved', note:''},
+      {id:'A-09', tag:'verify', action:'Step 4/5 — Moderator opt-in screen — btn-enable-mod and btn-skip-mod both work', note:''},
+      {id:'A-10', tag:'navigate', action:'Go to colosseum-login.html — verify login form loads', note:''},
+      {id:'A-11', tag:'tap', action:'login-email-toggle — email login fields appear', note:''},
+      {id:'A-12', tag:'type', action:'Enter credentials — login-btn — verify auth and redirect to index.html', note:''},
+      {id:'A-13', tag:'tap', action:'forgot-link — reset-modal opens', note:''},
+      {id:'A-14', tag:'type', action:'Enter email in reset-email — reset-btn — verify toast', note:''},
+      {id:'A-15', tag:'tap', action:'reset-close — modal closes', note:''},
+      {id:'A-16', tag:'tap', action:'oauth-google-signup on login page — verify redirect', note:''},
+      {id:'A-17', tag:'tap', action:'oauth-apple-login on login page — verify redirect', note:''},
+    ]
+  },
+  {
+    id: 'home',
+    title: 'Home Feed',
+    items: [
+      {id:'H-01', tag:'navigate', action:'Load index.html — verify hot-takes-feed populates', note:''},
+      {id:'H-02', tag:'verify', action:'Profile header: avatar, display name, tier badge, token count all render', note:''},
+      {id:'H-03', tag:'verify', action:'Stats row: stat-elo, stat-wins, stat-losses, stat-debates, stat-streak all show values', note:''},
+      {id:'H-04', tag:'tap', action:'user-avatar-btn — user-dropdown opens', note:''},
+      {id:'H-05', tag:'tap', action:'dropdown logout option — verify sign out', note:''},
+      {id:'H-06', tag:'verify', action:'Hot takes feed loads — posts show username, content, reactions', note:''},
+      {id:'H-07', tag:'tap', action:'Post a hot take — verify appears in feed', note:''},
+      {id:'H-08', tag:'tap', action:'React to a hot take — verify reaction count updates', note:''},
+      {id:'H-09', tag:'tap', action:'Challenge button on a hot take — verify challenge flow opens', note:''},
+      {id:'H-10', tag:'verify', action:'arena-live-section — live debates feed loads', note:''},
+      {id:'H-11', tag:'tap', action:'Spectate button on a live debate — verify spectate page opens', note:''},
+      {id:'H-12', tag:'verify', action:'arena-verdicts-section — completed debates feed loads', note:''},
+      {id:'H-13', tag:'verify', action:'arena-unplugged-section — unplugged debates feed loads', note:''},
+      {id:'H-14', tag:'verify', action:'arena-pending-challenges-section — pending challenges show', note:''},
+      {id:'H-15', tag:'tap', action:'notif-btn — notifications panel opens', note:''},
+      {id:'H-16', tag:'tap', action:'Arena Enter button (arena-enter-btn) — navigates to arena lobby', note:''},
+      {id:'H-17', tag:'tap', action:'arena-challenge-cta — challenge flow opens', note:''},
+      {id:'H-18', tag:'tap', action:'arena-private-btn — private lobby flow opens', note:''},
+      {id:'H-19', tag:'tap', action:'arena-mod-queue-btn — mod queue opens (requires mod role)', note:''},
+      {id:'H-20', tag:'tap', action:'arena-powerup-shop-btn — power-up shop opens', note:''},
+      {id:'H-21', tag:'tap', action:'Pull to refresh — feed reloads', note:''},
+    ]
+  },
+  {
+    id: 'profile',
+    title: 'Profile & Depth Page',
+    items: [
+      {id:'P-01', tag:'navigate', action:'Open own profile (dp-name, dp-elo, dp-wins, dp-losses render)', note:''},
+      {id:'P-02', tag:'verify', action:'dp-tier, dp-tokens, dp-streak, dp-depth-fill all show correct values', note:''},
+      {id:'P-03', tag:'verify', action:'Profile bio displays correctly', note:''},
+      {id:'P-04', tag:'verify', action:'Debate archive section renders — rows show correctly', note:''},
+      {id:'P-05', tag:'tap', action:'Edit a debate archive entry — save-section-btn — verify persist', note:''},
+      {id:'P-06', tag:'verify', action:'section-grid (profile sections) renders all filled sections', note:''},
+      {id:'P-07', tag:'tap', action:'save-section-btn — verify section saves', note:''},
+      {id:'P-08', tag:'verify', action:'Arsenal section renders — equipped items show', note:''},
+      {id:'P-09', tag:'tap', action:'Followers count — follow list modal opens', note:''},
+      {id:'P-10', tag:'tap', action:'Following count — following list modal opens', note:''},
+      {id:'P-11', tag:'navigate', action:'Open another user\'s public profile — verify public view (no edit controls)', note:''},
+      {id:'P-12', tag:'tap', action:'Follow button on public profile — verify follow registers', note:''},
+      {id:'P-13', tag:'tap', action:'Add Rival on public profile — verify rival added', note:''},
+      {id:'P-14', tag:'tap', action:'Challenge button on public profile — verify challenge opens', note:''},
+    ]
+  },
+  {
+    id: 'arena',
+    title: 'Arena — Lobby & Queue',
+    items: [
+      {id:'AR-01', tag:'navigate', action:'Arena lobby loads — mode selector, category selector visible', note:''},
+      {id:'AR-02', tag:'tap', action:'Mode selector — arena-mode-overlay opens — select Ranked', note:''},
+      {id:'AR-03', tag:'tap', action:'Mode selector — select Casual', note:''},
+      {id:'AR-04', tag:'tap', action:'Mode selector — select Unplugged', note:''},
+      {id:'AR-05', tag:'tap', action:'Mode selector — select AI Spar', note:''},
+      {id:'AR-06', tag:'tap', action:'arena-mode-cancel — overlay closes', note:''},
+      {id:'AR-07', tag:'tap', action:'Category selector — arena-cat-backdrop opens — select a category', note:''},
+      {id:'AR-08', tag:'tap', action:'arena-cat-any — Any category selected', note:''},
+      {id:'AR-09', tag:'tap', action:'Ruleset selector — select Standard / Rapid / Oxford', note:''},
+      {id:'AR-10', tag:'tap', action:'Rank selector — select rank range', note:''},
+      {id:'AR-11', tag:'tap', action:'arena-want-mod-toggle — moderator preference toggles', note:''},
+      {id:'AR-12', tag:'tap', action:'Enter queue (arena-enter-btn) — queue screen appears', note:''},
+      {id:'AR-13', tag:'verify', action:'Queue: arena-queue-ring animates, arena-queue-status shows, timer counts', note:''},
+      {id:'AR-14', tag:'tap', action:'arena-queue-cancel — exits queue, returns to lobby', note:''},
+      {id:'AR-15', tag:'tap', action:'AI Spar mode — arena-queue-ai-prompt visible — enter topic', note:''},
+      {id:'AR-16', tag:'tap', action:'arena-queue-ai-spar — starts AI debate', note:''},
+      {id:'AR-17', tag:'tap', action:'arena-challenge-link-btn — generates challenge link', note:''},
+      {id:'AR-18', tag:'tap', action:'arena-private-btn — private lobby opens', note:''},
+      {id:'AR-19', tag:'verify', action:'Private lobby: arena-private-code-display shows 4-char code', note:''},
+      {id:'AR-20', tag:'type', action:'arena-join-code-input — enter a join code — arena-join-code-btn', note:''},
+      {id:'AR-21', tag:'tap', action:'arena-become-mod-btn — mod application flow', note:''},
+    ]
+  },
+  {
+    id: 'debate',
+    title: 'Arena — Live Debate Room',
+    items: [
+      {id:'DR-01', tag:'verify', action:'Pre-debate screen: pre-debate-enter-btn, loadout, staking, refs all render', note:''},
+      {id:'DR-02', tag:'tap', action:'pre-debate-loadout — loadout picker opens', note:''},
+      {id:'DR-03', tag:'tap', action:'pre-debate-presets — preset bar shows saved presets', note:''},
+      {id:'DR-04', tag:'tap', action:'pre-debate-staking — staking UI opens', note:''},
+      {id:'DR-05', tag:'tap', action:'pre-debate-refs — reference arsenal opens', note:''},
+      {id:'DR-06', tag:'tap', action:'pre-debate-share-btn — share sheet opens', note:''},
+      {id:'DR-07', tag:'tap', action:'pre-debate-enter-btn — enter debate room', note:''},
+      {id:'DR-08', tag:'verify', action:'Debate room: arena-room-timer counts, arena-round-label shows round', note:''},
+      {id:'DR-09', tag:'verify', action:'Feed renders: turns, reactions, references, moderator content', note:''},
+      {id:'DR-10', tag:'type', action:'arena-text-input — type message — arena-send-btn — appears in feed', note:''},
+      {id:'DR-11', tag:'verify', action:'arena-char-count updates as typing', note:''},
+      {id:'DR-12', tag:'tap', action:'arena-mic-btn — microphone permission requested / recording starts', note:''},
+      {id:'DR-13', tag:'tap', action:'arena-record-btn — voice memo recording starts', note:''},
+      {id:'DR-14', tag:'verify', action:'arena-waveform animates during recording', note:''},
+      {id:'DR-15', tag:'tap', action:'arena-vm-send — voice memo sent to feed', note:''},
+      {id:'DR-16', tag:'tap', action:'arena-vm-cancel — recording cancelled', note:''},
+      {id:'DR-17', tag:'verify', action:'powerup-loadout-container visible — power-ups usable', note:''},
+      {id:'DR-18', tag:'tap', action:'Use a power-up — verify effect in feed', note:''},
+      {id:'DR-19', tag:'verify', action:'End of debate: scores render, AI scorecard shows BOTH side A and B reasoning', note:'Verify M-END-001 and M-R1 fixes are live'},
+      {id:'DR-20', tag:'tap', action:'arena-share-result — share sheet opens', note:''},
+      {id:'DR-21', tag:'tap', action:'arena-rematch — new match initiated', note:''},
+      {id:'DR-22', tag:'tap', action:'arena-add-rival — rival added', note:''},
+      {id:'DR-23', tag:'tap', action:'arena-back-to-lobby — returns to lobby', note:''},
+    ]
+  },
+  {
+    id: 'spectate',
+    title: 'Spectate',
+    items: [
+      {id:'SP-01', tag:'navigate', action:'Open spectate link — debate loads', note:''},
+      {id:'SP-02', tag:'verify', action:'Debater names, topic, round, timer all render', note:''},
+      {id:'SP-03', tag:'verify', action:'Feed updates in real time as debate progresses', note:''},
+      {id:'SP-04', tag:'tap', action:'chat-toggle — spectator chat panel opens', note:''},
+      {id:'SP-05', tag:'type', action:'chat-input — type message — chat-send — appears in chat', note:''},
+      {id:'SP-06', tag:'verify', action:'spectator-count updates', note:''},
+      {id:'SP-07', tag:'tap', action:'vote-a and vote-b — vote registers, bar updates', note:''},
+      {id:'SP-08', tag:'verify', action:'vote-results shows correct percentages', note:''},
+      {id:'SP-09', tag:'verify', action:'On debate end: AI scorecard shows — both sides\' reasoning visible', note:''},
+      {id:'SP-10', tag:'tap', action:'join-btn (join from spectate) — navigates to queue', note:''},
+      {id:'SP-11', tag:'tap', action:'back-btn — returns to home', note:''},
+    ]
+  },
+  {
+    id: 'autodebate',
+    title: 'Auto-Debate & Debate Landing',
+    items: [
+      {id:'AD-01', tag:'navigate', action:'Open auto-debate page with valid debate ID', note:''},
+      {id:'AD-02', tag:'verify', action:'Topic, debater names, scores, AI scorecard all render', note:''},
+      {id:'AD-03', tag:'tap', action:'btn-a / btn-b — vote registers as guest (no login required)', note:''},
+      {id:'AD-04', tag:'verify', action:'Vote percentage bars update correctly', note:''},
+      {id:'AD-05', tag:'tap', action:'Share button — share sheet opens', note:''},
+      {id:'AD-06', tag:'tap', action:'Enter Arena CTA — redirects to app correctly', note:''},
+      {id:'AD-07', tag:'navigate', action:'Open debate-landing page — topic, sides, vote count render', note:''},
+      {id:'AD-08', tag:'tap', action:'Vote on debate landing — registers, percentages update', note:''},
+    ]
+  },
+  {
+    id: 'groups',
+    title: 'Groups',
+    items: [
+      {id:'G-01', tag:'navigate', action:'Groups page loads — group list renders', note:''},
+      {id:'G-02', tag:'tap', action:'Create group button — create-modal opens', note:''},
+      {id:'G-03', tag:'type', action:'group-name, group-desc-input, group-category — create-submit-btn', note:''},
+      {id:'G-04', tag:'verify', action:'New group appears in list', note:''},
+      {id:'G-05', tag:'tap', action:'Open group detail — detail-name, detail-desc, detail-elo render', note:''},
+      {id:'G-06', tag:'tap', action:'detail-auditions-tab — auditions list loads', note:''},
+      {id:'G-07', tag:'tap', action:'Apply for audition — audition-modal opens', note:''},
+      {id:'G-08', tag:'type', action:'audition-topic, audition-ruleset, audition-rounds — audition-submit-btn', note:''},
+      {id:'G-09', tag:'tap', action:'detail-gear-btn — group settings opens (owner only)', note:''},
+      {id:'G-10', tag:'verify', action:'Settings: group name, desc, audition config all load correctly', note:''},
+      {id:'G-11', tag:'tap', action:'Save settings — verify persists', note:''},
+      {id:'G-12', tag:'tap', action:'detail-members — members list renders', note:''},
+      {id:'G-13', tag:'tap', action:'GvG challenge — gvg-challenge-btn opens gvg-modal', note:''},
+      {id:'G-14', tag:'type', action:'gvg-opponent-search — search for opponent group', note:''},
+      {id:'G-15', tag:'type', action:'gvg-topic — gvg-submit-btn — challenge sent', note:''},
+      {id:'G-16', tag:'tap', action:'join-btn on a group — join flow completes', note:''},
+      {id:'G-17', tag:'verify', action:'Group feed (detail-hot-takes) shows group posts', note:''},
+      {id:'G-18', tag:'type', action:'group-take-input — group-take-post — post appears in feed', note:''},
+      {id:'G-19', tag:'verify', action:'Group banner loads correctly', note:''},
+    ]
+  },
+  {
+    id: 'tokens',
+    title: 'Tokens & Staking',
+    items: [
+      {id:'T-01', tag:'verify', action:'Token balance shows in profile header and stat row', note:''},
+      {id:'T-02', tag:'verify', action:'Daily login claim fires on auth — toast shows token earn', note:''},
+      {id:'T-03', tag:'verify', action:'Earning tokens after debate — toast shows correct amount', note:''},
+      {id:'T-04', tag:'verify', action:'Token balance updates after earn', note:''},
+      {id:'T-05', tag:'tap', action:'Open staking in pre-debate screen', note:''},
+      {id:'T-06', tag:'tap', action:'Select side A / side B to stake on', note:''},
+      {id:'T-07', tag:'type', action:'Enter stake amount — verify tier cap enforced', note:''},
+      {id:'T-08', tag:'tap', action:'Submit stake — verify balance deducted', note:''},
+      {id:'T-09', tag:'verify', action:'After debate — staking result shows win/loss correctly', note:''},
+      {id:'T-10', tag:'tap', action:'Open token milestones — verify progress shows', note:''},
+    ]
+  },
+  {
+    id: 'arsenal',
+    title: 'Arsenal & Cosmetics',
+    items: [
+      {id:'AS-01', tag:'navigate', action:'Open Arsenal shop from home', note:''},
+      {id:'AS-02', tag:'verify', action:'shop-token-balance shows current balance', note:''},
+      {id:'AS-03', tag:'tap', action:'Filter by category — items filter correctly', note:''},
+      {id:'AS-04', tag:'tap', action:'Open item detail — info-modal shows name, description, cost', note:''},
+      {id:'AS-05', tag:'tap', action:'info-modal-close — modal closes', note:''},
+      {id:'AS-06', tag:'tap', action:'Purchase item — confirm-modal opens', note:''},
+      {id:'AS-07', tag:'verify', action:'modal-item-name, modal-cost-amount, modal-balance-after all correct', note:''},
+      {id:'AS-08', tag:'tap', action:'modal-confirm — purchase completes, balance updates', note:''},
+      {id:'AS-09', tag:'tap', action:'modal-cancel — purchase cancelled', note:''},
+      {id:'AS-10', tag:'verify', action:'Purchased item appears in owned tab', note:''},
+      {id:'AS-11', tag:'tap', action:'Equip item — verify equipped in profile', note:''},
+      {id:'AS-12', tag:'navigate', action:'Cosmetics page — all tabs load (avatars, frames, effects, banners)', note:''},
+      {id:'AS-13', tag:'tap', action:'Select cosmetic — preview shows', note:''},
+      {id:'AS-14', tag:'tap', action:'Equip cosmetic — verify in profile', note:''},
+    ]
+  },
+  {
+    id: 'bounties',
+    title: 'Bounties',
+    items: [
+      {id:'B-01', tag:'navigate', action:'Bounties section loads on home', note:''},
+      {id:'B-02', tag:'verify', action:'Active bounties list renders with deadlines and rewards', note:''},
+      {id:'B-03', tag:'tap', action:'Open bounty detail — requirements show', note:''},
+      {id:'B-04', tag:'tap', action:'Claim a completed bounty — verify reward toast', note:''},
+      {id:'B-05', tag:'verify', action:'Claimed bounty removed from active list', note:''},
+      {id:'B-06', tag:'verify', action:'Token balance updates after claim', note:''},
+    ]
+  },
+  {
+    id: 'references',
+    title: 'Reference Arsenal',
+    items: [
+      {id:'REF-01', tag:'navigate', action:'Open Reference Arsenal (armory) — library loads', note:''},
+      {id:'REF-02', tag:'verify', action:'References list: title, source, cite_count render correctly', note:''},
+      {id:'REF-03', tag:'tap', action:'Trending tab — trending references load', note:''},
+      {id:'REF-04', tag:'tap', action:'Forge new reference — form opens', note:''},
+      {id:'REF-05', tag:'type', action:'Title, source URL, description — submit — reference created', note:''},
+      {id:'REF-06', tag:'verify', action:'New reference appears in library', note:''},
+      {id:'REF-07', tag:'tap', action:'Cite a reference in debate — appears in debate feed', note:''},
+      {id:'REF-08', tag:'tap', action:'Challenge a reference — challenge form opens', note:''},
+      {id:'REF-09', tag:'verify', action:'Moderator ruling on reference renders correctly', note:''},
+    ]
+  },
+  {
+    id: 'invites',
+    title: 'Invite & Referral',
+    items: [
+      {id:'I-01', tag:'navigate', action:'Open /i/:code invite link — redirects to plinko with code', note:''},
+      {id:'I-02', tag:'verify', action:'Invite code persists through signup flow', note:''},
+      {id:'I-03', tag:'verify', action:'Referral convert_referral fires after first ranked debate (check logs)', note:''},
+      {id:'I-04', tag:'tap', action:'Share invite from home — invite sheet opens', note:''},
+      {id:'I-05', tag:'verify', action:'Invite link generated correctly with ref code', note:''},
+      {id:'I-06', tag:'tap', action:'Copy invite link — clipboard toast shows', note:''},
+    ]
+  },
+  {
+    id: 'settings',
+    title: 'Settings',
+    items: [
+      {id:'S-01', tag:'navigate', action:'Settings page loads — all fields populated from current profile', note:''},
+      {id:'S-02', tag:'type', action:'Edit display name — save-btn — verify persists', note:''},
+      {id:'S-03', tag:'type', action:'Edit bio — save — verify persists', note:''},
+      {id:'S-04', tag:'tap', action:'Change avatar — upload flow opens', note:''},
+      {id:'S-05', tag:'tap', action:'intro-music-row — intro music picker opens', note:''},
+      {id:'S-06', tag:'tap', action:'Select intro track — verify preview plays', note:''},
+      {id:'S-07', tag:'tap', action:'Save intro music selection — verify persists', note:''},
+      {id:'S-08', tag:'tap', action:'is_private toggle — profile privacy toggles', note:''},
+      {id:'S-09', tag:'tap', action:'reset-pw-btn — password reset flow triggers', note:''},
+      {id:'S-10', tag:'tap', action:'delete-btn — delete-modal opens', note:''},
+      {id:'S-11', tag:'tap', action:'delete-cancel — modal closes, no action', note:''},
+      {id:'S-12', tag:'tap', action:'logout-btn — signs out, redirects to login', note:''},
+      {id:'S-13', tag:'tap', action:'settings-back-btn — returns to home', note:''},
+    ]
+  },
+  {
+    id: 'payments',
+    title: 'Payments & Paywall',
+    items: [
+      {id:'PAY-01', tag:'tap', action:'Trigger paywall (attempt gated action) — paywall-modal opens', note:''},
+      {id:'PAY-02', tag:'tap', action:'paywall-cta-btn — payment flow opens', note:''},
+      {id:'PAY-03', tag:'tap', action:'paywall-dismiss-btn — modal closes', note:''},
+      {id:'PAY-04', tag:'verify', action:'payment-placeholder-modal renders correctly', note:''},
+      {id:'PAY-05', tag:'tap', action:'payment-placeholder-close — closes modal', note:''},
+      {id:'PAY-06', tag:'verify', action:'Stripe payment page loads correctly (do not complete purchase)', note:''},
+    ]
+  },
+  {
+    id: 'moderation',
+    title: 'Moderation (Mod Account Required)',
+    items: [
+      {id:'MOD-01', tag:'navigate', action:'Mod queue opens — pending debates list loads', note:''},
+      {id:'MOD-02', tag:'tap', action:'Accept a debate from queue — enters mod role in debate', note:''},
+      {id:'MOD-03', tag:'verify', action:'Mod controls visible in debate feed (not shown to non-mods)', note:''},
+      {id:'MOD-04', tag:'tap', action:'Score a debater — mod scoring form opens and submits', note:''},
+      {id:'MOD-05', tag:'tap', action:'Rule on a reference — accept/reject — ruling appears in feed', note:''},
+      {id:'MOD-06', tag:'tap', action:'Issue a poll — live poll appears in debate', note:''},
+      {id:'MOD-07', tag:'verify', action:'Mod score contributes to final result correctly', note:''},
+    ]
+  },
+  {
+    id: 'error',
+    title: 'Error States & Edge Cases',
+    items: [
+      {id:'E-01', tag:'verify', action:'Kill network mid-hot-take post — error toast shows, state not corrupted', note:''},
+      {id:'E-02', tag:'verify', action:'Kill network during queue — reconnect or graceful exit', note:''},
+      {id:'E-03', tag:'verify', action:'Kill network mid-debate — debate handles reconnect gracefully', note:''},
+      {id:'E-04', tag:'verify', action:'Background app during debate — returns to correct state', note:''},
+      {id:'E-05', tag:'verify', action:'Open app with expired session — redirected to login, not broken state', note:''},
+      {id:'E-06', tag:'verify', action:'Attempt gated action without tokens — token gate fires with correct message', note:''},
+      {id:'E-07', tag:'verify', action:'Submit empty forms — validation fires, no silent failures', note:''},
+      {id:'E-08', tag:'verify', action:'Double-tap submit buttons — only one submission fires', note:'Prediction double-submit M-R1 known issue'},
+      {id:'E-09', tag:'verify', action:'Console errors — zero unexpected errors across full run', note:''},
+    ]
+  },
+];
+
+// State
+const state = {};
+let total = 0;
+
+function init() {
+  const app = document.getElementById('app');
+  SECTIONS.forEach(sec => {
+    total += sec.items.length;
+    sec.items.forEach(item => { state[item.id] = { status: null, note: '' }; });
+
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.innerHTML = `
+      <div class="section-header" onclick="toggleSection('${sec.id}')">
+        <h2>${sec.title}</h2>
+        <span class="section-badge" id="badge-${sec.id}">${sec.items.length} items</span>
+        <span class="section-toggle" id="tog-${sec.id}">▾</span>
+      </div>
+      <div class="section-body" id="body-${sec.id}">
+        ${sec.items.map(item => `
+          <div class="item" id="item-${item.id}">
+            <span class="item-id">${item.id}</span>
+            <span class="item-action"><span class="tag ${item.tag}">${item.tag}</span>${item.action}</span>
+            <div class="item-controls">
+              <button class="btn" onclick="setStatus('${item.id}','pass')">✓</button>
+              <button class="btn" onclick="setStatus('${item.id}','fail')">✗</button>
+              <button class="btn" onclick="setStatus('${item.id}','skip')">—</button>
+            </div>
+            <div class="item-note">
+              <textarea placeholder="${item.note || 'Notes...'}" oninput="saveNote('${item.id}',this.value)"></textarea>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    app.appendChild(div);
+  });
+  updateStats();
+}
+
+function toggleSection(id) {
+  const body = document.getElementById('body-'+id);
+  const tog = document.getElementById('tog-'+id);
+  const collapsed = body.classList.toggle('collapsed');
+  tog.textContent = collapsed ? '▸' : '▾';
+}
+
+function setStatus(id, status) {
+  state[id].status = state[id].status === status ? null : status;
+  const item = document.getElementById('item-'+id);
+  item.className = 'item' + (state[id].status ? ' '+state[id].status : '');
+  // Update buttons
+  const btns = item.querySelectorAll('.btn');
+  btns[0].className = 'btn' + (state[id].status==='pass'?' active-pass':'');
+  btns[1].className = 'btn' + (state[id].status==='fail'?' active-fail':'');
+  btns[2].className = 'btn' + (state[id].status==='skip'?' active-skip':'');
+  updateStats();
+  save();
+}
+
+function saveNote(id, val) {
+  state[id].note = val;
+  save();
+}
+
+function updateStats() {
+  let pass=0, fail=0, skip=0;
+  Object.values(state).forEach(s => {
+    if(s.status==='pass') pass++;
+    else if(s.status==='fail') fail++;
+    else if(s.status==='skip') skip++;
+  });
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pass').textContent = pass;
+  document.getElementById('s-fail').textContent = fail;
+  document.getElementById('s-skip').textContent = skip;
+  document.getElementById('s-rem').textContent = total - pass - fail - skip;
+  document.getElementById('progress').style.width = ((pass+fail+skip)/total*100).toFixed(1)+'%';
+
+  // Update section badges
+  SECTIONS.forEach(sec => {
+    const done = sec.items.filter(i => state[i.id].status).length;
+    const fails = sec.items.filter(i => state[i.id].status==='fail').length;
+    const badge = document.getElementById('badge-'+sec.id);
+    badge.textContent = done === sec.items.length ? '✓ done' : `${done}/${sec.items.length}`;
+    badge.style.background = fails > 0 ? '#3a0d0d' : done === sec.items.length ? '#0d3320' : '#2a2d3a';
+    badge.style.color = fails > 0 ? '#E24B4A' : done === sec.items.length ? '#1D9E75' : '#9ca3af';
+  });
+}
+
+function save() {
+  try { localStorage.setItem('colosseum-test-state', JSON.stringify(state)); } catch(e){}
+}
+
+function load() {
+  try {
+    const saved = localStorage.getItem('colosseum-test-state');
+    if (!saved) return;
+    const s = JSON.parse(saved);
+    Object.keys(s).forEach(id => {
+      if (!state[id]) return;
+      state[id] = s[id];
+      if (s[id].status) {
+        const item = document.getElementById('item-'+id);
+        if (!item) return;
+        item.className = 'item '+s[id].status;
+        const btns = item.querySelectorAll('.btn');
+        btns[0].className = 'btn'+(s[id].status==='pass'?' active-pass':'');
+        btns[1].className = 'btn'+(s[id].status==='fail'?' active-fail':'');
+        btns[2].className = 'btn'+(s[id].status==='skip'?' active-skip':'');
+      }
+      if (s[id].note) {
+        const ta = document.querySelector('#item-'+id+' textarea');
+        if (ta) ta.value = s[id].note;
+      }
+    });
+    updateStats();
+  } catch(e){}
+}
+
+function exportResults() {
+  const lines = ['# Colosseum Live Run Results', `Date: ${new Date().toISOString()}`, ''];
+  let pass=0,fail=0,skip=0;
+  SECTIONS.forEach(sec => {
+    lines.push(`## ${sec.title}`);
+    sec.items.forEach(item => {
+      const s = state[item.id];
+      const status = s.status ? s.status.toUpperCase() : 'PENDING';
+      if(s.status==='pass') pass++;
+      else if(s.status==='fail') fail++;
+      else if(s.status==='skip') skip++;
+      lines.push(`[${status}] ${item.id} — ${item.action}`);
+      if(s.note) lines.push(`  Note: ${s.note}`);
+    });
+    lines.push('');
+  });
+  lines.unshift(`Pass: ${pass} | Fail: ${fail} | Skip: ${skip} | Pending: ${total-pass-fail-skip}`, '');
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `colosseum-live-run-${new Date().toISOString().slice(0,10)}.md`;
+  a.click();
+}
+
+init();
+load();
+</script>
+</body>
+</html>
