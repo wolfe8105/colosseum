@@ -51,23 +51,7 @@ export async function castVoteImpl(
   if (side === 'a') btnA?.classList.add('winner');
   if (side === 'b') btnB?.classList.add('winner');
 
-  try {
-    const { data } = await sb.rpc('cast_auto_debate_vote', {
-      p_debate_id: d.id, p_fingerprint: getFingerprint(), p_voted_for: side, p_user_id: null,
-    });
-    const result = data as { error?: boolean; success?: boolean; votes_a?: number; votes_b?: number; vote_count?: number } | null;
-
-    if (result?.error) {
-      showResults(d.votes_a, d.votes_b, d.vote_count, d.winner, side);
-      return;
-    }
-    if (result?.success) {
-      showResults(result.votes_a ?? 0, result.votes_b ?? 0, result.vote_count ?? 0, d.winner, side);
-      claimVote(d.id);
-    } else {
-      showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
-    }
-  } catch {
-    showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
-  }
+  // cast_auto_debate_vote RPC not yet deployed — show optimistic result
+  showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
+  claimVote(d.id);
 }
