@@ -17,7 +17,7 @@ function buildChallengeHtml(preview, code) {
   const safeCode = encodeURIComponent(code.toUpperCase());
 
   const ogTitle = `${challenger} challenged you to a debate — The Moderator`;
-  const ogDesc = `"${preview.topic || 'Open Debate'}" — ${category} · ${mode}. Accept the challenge and defend your position.`;
+  const ogDesc = `"${topic}" — ${category} · ${mode}. Accept the challenge and defend your position.`;
   const ogUrl = `${BASE_URL}/challenge?code=${safeCode}`;
   const ogImage = `${BASE_URL}/og-card-default.png`;
 

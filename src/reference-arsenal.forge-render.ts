@@ -1,4 +1,4 @@
-import { escapeHTML } from './config.ts';
+import { escapeHTML, sanitizeUrl } from './config.ts';
 import { SOURCE_TYPES, CATEGORIES, CATEGORY_LABELS } from './reference-arsenal.constants.ts';
 import type { SourceType, ReferenceCategory } from './reference-arsenal.types.ts';
 import type { ForgeFormState } from './reference-arsenal.forge-submit.ts';
@@ -113,7 +113,7 @@ function _renderStep5(state: ForgeFormState, isEdit: boolean): string {
       </div>
       <div class="forge-review-meta">
         Locator: ${esc(state.locator)}
-        ${state.source_url ? `<br/><a href="${esc(state.source_url)}" target="_blank" rel="noopener">${esc(state.source_url)}</a>` : ''}
+        ${state.source_url ? `<br/><a href="${sanitizeUrl(ref.source_url ?? state?.source_url ?? '')}" target="_blank" rel="noopener">${esc(state.source_url)}</a>` : ''}
       </div>
       <div class="forge-review-type">
         ${srcInfo ? `${srcInfo.label} (${srcInfo.tier}-tier \u00B7 Max Power ${srcInfo.ceiling})` : ''}
