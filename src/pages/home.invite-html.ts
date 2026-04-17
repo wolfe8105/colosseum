@@ -16,7 +16,7 @@ export function rewardLabel(milestone: number): string {
 // LANDMINE [LM-INVITE-001]: Object-literal indexing returns undefined for unrecognized reward_type.
 // Callers doing .toUpperCase() (openClaimSheet title) will throw TypeError at runtime.
 // Fix: add a default return value, or use ?. at the call site. (M-F2)
-export function rewardTypeLabel(type: InviteReward['reward_type']): string {
+export function rewardTypeLabel(type: InviteReward['reward_type']): string | undefined {
   return { legendary_powerup: '🟡 Legendary Power-Up', mythic_powerup: '🟣 Mythic Power-Up', mythic_modifier: '⚗️ Mythic Modifier' }[type];
 }
 
@@ -27,7 +27,7 @@ export function rewardRowHtml(r: InviteReward): string {
   return `
     <div class="invite-reward-row" data-reward-id="${escapeHTML(r.id)}">
       <div class="invite-reward-info">
-        <span class="invite-reward-type">${escapeHTML(rewardTypeLabel(r.reward_type))}</span>
+        <span class="invite-reward-type">${escapeHTML(rewardTypeLabel(r.reward_type) ?? 'Reward')}</span>
         <span class="invite-reward-milestone">Milestone: ${r.milestone}</span>
         <span class="invite-reward-date">${escapeHTML(date)}</span>
       </div>

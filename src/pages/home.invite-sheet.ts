@@ -26,7 +26,7 @@ export async function openClaimSheet(
   const overlay = document.createElement('div');
   overlay.className = 'bottom-sheet-overlay';
   overlay.innerHTML = `<div class="bottom-sheet"><div class="sheet-handle"></div>
-    <div class="sheet-title">PICK YOUR ${rewardTypeLabel(rewardType).toUpperCase()}</div>
+    <div class="sheet-title">PICK YOUR ${rewardTypeLabel(rewardType)?.toUpperCase() ?? 'REWARD'}</div>
     <div class="invite-claim-grid" id="claim-picker-grid">
       <div class="invite-loading">Loading catalog…</div>
     </div>
