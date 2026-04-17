@@ -59,8 +59,8 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### ~~P7-SA-03. `vercel.json` — AdSense domains missing from CSP `script-src`~~ — **FIXED 2026-04-17 (commit a21984e)**
 **Phase 7 (Red Team), 2026-04-17. Fixed same day.** AdSense script domains (`pagead2.googlesyndication.com`, `partner.googleadservices.com`, `tpc.googlesyndication.com`) absent from `script-src`, `connect-src`, and `frame-src` directives. CSP-enforcing browsers block AdSense silently — ad revenue zero on those browsers. **Fix:** all required AdSense domains added to CSP in `vercel.json`.
 
-### P7-SA-02. Git history contains Stripe test publishable key — **OPEN**
-**Phase 7 (Red Team), 2026-04-17.** Stripe test key (`pk_test_51T5T9u...`) committed to git history in `src/config.ts`. Test keys have limited blast radius (cannot charge real cards) but should be rotated as best practice. **Action required:** rotate in Stripe dashboard → Developers → API keys. Update `VITE_STRIPE_PUBLISHABLE_KEY` in Vercel env vars.
+### ~~P7-SA-02. Git history contains Stripe test publishable key~~ — **CLOSED 2026-04-17 (Stripe deprecated)**
+**Phase 7 (Red Team), 2026-04-17.** Stripe test key (`pk_test_51T5T9u...`) committed to git history. Stripe integration is permanently deprecated — payments feature will not be rebuilt. Key has no live blast radius. Closed as won't fix.
 
 ### P7-AA-02 / P7-BL-02 — see P7-AA-02 / P5-BI-1 entry above (phantom votes).
 
