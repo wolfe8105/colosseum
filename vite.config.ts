@@ -35,7 +35,7 @@ export default defineConfig({
             return 'vendor';
           }
           // Shared chunk: core modules imported by 3+ pages
-          const shared = ['/src/auth.ts', '/src/config.ts', '/src/tokens.ts', '/src/analytics.ts', '/src/nudge.ts', '/src/navigation.ts', '/src/app-config.ts'];
+          const shared = ['/src/auth.ts', '/src/config.ts', '/src/tokens.ts', '/src/analytics.ts', '/src/nudge.ts', '/src/navigation.ts'];
           if (shared.some(m => id.endsWith(m))) {
             return 'shared';
           }
