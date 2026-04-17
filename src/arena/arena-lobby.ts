@@ -2,7 +2,7 @@
 // Part of the arena.ts monolith split
 // Card renders extracted to arena-lobby.cards.ts (Session 254 track).
 
-import { safeRpc, getSupabaseClient, getCurrentUser, getCurrentProfile, toggleModerator } from '../auth.ts';
+import { safeRpc, getCurrentUser, getCurrentProfile, toggleModerator } from '../auth.ts';
 import { showToast } from '../config.ts';
 import { buy as buyPowerUp, renderShop } from '../powerups.ts';
 import { removeShieldIndicator } from '../powerups.ts';
@@ -17,7 +17,7 @@ import {
   set_shieldActive, set_equippedForDebate, set_silenceTimer,
 } from './arena-state.ts';
 import type { ArenaView } from './arena-types.ts';
-import type { ArenaFeedItem, AutoDebateItem } from './arena-types-feed-list.ts';
+import type { ArenaFeedItem } from './arena-types-feed-list.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
 import { showRankedPicker } from './arena-config-settings.ts';
 import { showPrivateLobbyPicker } from './arena-private-picker.ts';
@@ -191,24 +191,11 @@ export async function loadLobbyFeed(): Promise<void> {
   }
 
   try {
-    const sb = getSupabaseClient();
     const { data, error } = await safeRpc<ArenaFeedItem[]>('get_arena_feed', { p_limit: 20 });
 
     if (error || !data || (data as ArenaFeedItem[]).length === 0) {
-      // Fall back to auto-debates only
-      const { data: autoData } = await sb!.from('auto_debates')
-        .select('id, topic, side_a_label, side_b_label, score_a, score_b, status, created_at')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (autoData && autoData.length > 0) {
-        liveFeed.innerHTML = '<div class="arena-empty"><span class="empty-icon">\uD83C\uDFDB\uFE0F</span>No live debates yet \u2014 be the first to enter the arena</div>';
-        verdictsFeed.innerHTML = (autoData as AutoDebateItem[]).map((d: AutoDebateItem) => renderAutoDebateCard(d)).join('');
-      } else {
-        liveFeed.innerHTML = renderPlaceholderCards('live');
-        verdictsFeed.innerHTML = renderPlaceholderCards('verdict');
-      }
+      liveFeed.innerHTML = renderPlaceholderCards('live');
+      verdictsFeed.innerHTML = renderPlaceholderCards('verdict');
       return;
     }
 
