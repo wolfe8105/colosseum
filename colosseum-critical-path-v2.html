@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colosseum — Critical Path Spine (Full Monty Apr 2026)</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e2e2;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  #toolbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#1a1d27;border-bottom:1px solid #2a2d3a;flex-wrap:wrap;flex-shrink:0}
+  h1{font-size:13px;font-weight:600;color:#fff;white-space:nowrap}
+  #legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;flex:1}
+  .ld{display:flex;align-items:center;gap:5px;font-size:11px;color:#9ca3af}
+  .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  #zbts{display:flex;gap:4px;margin-left:auto}
+  .zb{padding:4px 10px;border-radius:4px;border:1px solid #3a3d4a;background:#1a1d27;color:#e2e2e2;cursor:pointer;font-size:12px}
+  .zb:hover{background:#2a2d3a}
+  #cv-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
+  #cv-wrap:active{cursor:grabbing}
+  canvas{position:absolute;top:0;left:0}
+  #tt{position:absolute;pointer-events:none;background:#1e2130;border:1px solid #3a3d4a;border-radius:6px;padding:8px 12px;font-size:12px;color:#e2e2e2;display:none;max-width:300px;z-index:10;line-height:1.6}
+  #tt strong{color:#fff}
+  #tt .sub{color:#9ca3af;font-size:11px}
+  #info{padding:8px 16px;background:#1a1d27;border-top:1px solid #2a2d3a;font-size:12px;color:#9ca3af;flex-shrink:0;min-height:34px;line-height:1.5}
+  #info strong{color:#e2e2e2}
+  .hint{color:#6b7280;font-size:11px;margin-left:8px}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <h1>Colosseum — Critical Path Spine · Full Monty Apr 2026</h1>
+  <div id="legend">
+    <div class="ld"><div class="ldot" style="background:#E24B4A"></div>T0 Foundation (4)</div>
+    <div class="ld"><div class="ldot" style="background:#EF9F27"></div>T1 Core (2)</div>
+    <div class="ld"><div class="ldot" style="background:#1D9E75"></div>T2 Subsystem (54)</div>
+    <div class="ld"><div class="ldot" style="background:#378ADD"></div>T3 Feature (249)</div>
+    <div class="ld"><div class="ldot" style="background:#888780"></div>T4 Leaf (30)</div>
+    <span class="hint">· one edge per node → its single most critical dependency</span>
+  </div>
+  <div id="zbts">
+    <button class="zb" onclick="doZoom(1.25)">+ Zoom</button>
+    <button class="zb" onclick="doZoom(0.8)">− Zoom</button>
+    <button class="zb" onclick="doReset()">Reset</button>
+    <button class="zb" onclick="exportPNG()">Export PNG</button>
+  </div>
+</div>
+<div id="cv-wrap">
+  <canvas id="cv"></canvas>
+  <div id="tt"></div>
+</div>
+<div id="info">Click any node to highlight its critical path. Drag to pan · Scroll to zoom · Double-click to reset selection.</div>
+
+<script>
+const TIER_COLORS=['#E24B4A','#EF9F27','#1D9E75','#378ADD','#888780'];
+const TIER_NAMES=['Foundation','Core','Subsystem','Feature','Leaf'];
+
+const NODE_DATA=[
+  {f:'api/challenge.helpers.js',t:4,i:0,o:0},
+  {f:'api/challenge.html.js',t:4,i:0,o:0},
+  {f:'api/challenge.js',t:4,i:0,o:0},
+  {f:'api/go-respond.js',t:4,i:0,o:0},
+  {f:'api/invite.js',t:4,i:0,o:0},
+  {f:'api/profile.css.js',t:3,i:1,o:0},
+  {f:'api/profile.helpers.js',t:3,i:1,o:0},
+  {f:'api/profile.html.js',t:3,i:1,o:2},
+  {f:'api/profile.js',t:4,i:0,o:1},
+  {f:'src/analytics.ts',t:4,i:0,o:3},
+  {f:'src/analytics.utils.ts',t:3,i:2,o:1},
+  {f:'src/arena.ts',t:3,i:1,o:21},
+  {f:'src/arena/arena-ads.ts',t:3,i:4,o:0},
+  {f:'src/arena/arena-bounty-claim.ts',t:3,i:1,o:3},
+  {f:'src/arena/arena-config-category.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-config-mode-select.ts',t:3,i:3,o:9},
+  {f:'src/arena/arena-config-round-picker.ts',t:3,i:3,o:3},
+  {f:'src/arena/arena-config-settings.ts',t:3,i:2,o:5},
+  {f:'src/arena/arena-constants.ts',t:2,i:14,o:1},
+  {f:'src/arena/arena-core.ts',t:3,i:1,o:16},
+  {f:'src/arena/arena-core.utils.ts',t:1,i:26,o:2},
+  {f:'src/arena/arena-css-after-effects.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-controls.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-fireworks.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-phase4-5.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-room.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-spec-chat.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-feed-stream.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-lobby.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-misc.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-mode-select.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-moderator.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-post-debate.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-pre-debate.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-queue-match.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-ranked.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-references-phase3.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-references.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-room-input.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-room.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-transcript.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css-unplugged.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-css.ts',t:3,i:1,o:22},
+  {f:'src/arena/arena-deepgram.token.ts',t:3,i:1,o:2},
+  {f:'src/arena/arena-deepgram.ts',t:2,i:7,o:3},
+  {f:'src/arena/arena-deepgram.types.ts',t:3,i:2,o:0},
+  {f:'src/arena/arena-entrance-css.ts',t:3,i:1,o:0},
+  {f:'src/arena/arena-entrance-render.ts',t:3,i:1,o:1},
+  {f:'src/arena/arena-entrance.ts',t:4,i:0,o:5},
+  {f:'src/arena/arena-feed-disconnect-debater.ts',t:3,i:1,o:6},
+  {f:'src/arena/arena-feed-disconnect-mod.ts',t:3,i:2,o:10},
+  {f:'src/arena/arena-feed-disconnect.ts',t:3,i:2,o:10},
+  {f:'src/arena/arena-feed-events-render.ts',t:3,i:1,o:8},
+  {f:'src/arena/arena-feed-events.ts',t:2,i:6,o:6},
+  {f:'src/arena/arena-feed-heartbeat.ts',t:3,i:4,o:3},
+  {f:'src/arena/arena-feed-machine-ads.ts',t:3,i:1,o:12},
+  {f:'src/arena/arena-feed-machine-pause.ts',t:3,i:2,o:7},
+  {f:'src/arena/arena-feed-machine-turns.ts',t:2,i:5,o:14},
+  {f:'src/arena/arena-feed-realtime.ts',t:3,i:2,o:11},
+  {f:'src/arena/arena-feed-references.ts',t:3,i:2,o:7},
+  {f:'src/arena/arena-feed-room.ts',t:2,i:8,o:18},
+  {f:'src/arena/arena-feed-spec-chat.ts',t:3,i:1,o:2},
+  {f:'src/arena/arena-feed-state.ts',t:1,i:17,o:1},
+  {f:'src/arena/arena-feed-transcript.ts',t:3,i:4,o:5},
+  {f:'src/arena/arena-feed-ui.ts',t:2,i:13,o:4},
+  {f:'src/arena/arena-feed-wiring-debater.ts',t:3,i:1,o:12},
+  {f:'src/arena/arena-feed-wiring-mod.ts',t:3,i:1,o:9},
+  {f:'src/arena/arena-feed-wiring-spectator.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-feed-wiring.ts',t:3,i:1,o:7},
+  {f:'src/arena/arena-intro-music.ts',t:3,i:2,o:1},
+  {f:'src/arena/arena-loadout-presets.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-lobby.cards.ts',t:3,i:2,o:2},
+  {f:'src/arena/arena-lobby.ts',t:4,i:0,o:18},
+  {f:'src/arena/arena-match-flow.ts',t:4,i:0,o:8},
+  {f:'src/arena/arena-match-found.ts',t:2,i:6,o:12},
+  {f:'src/arena/arena-match-timers.ts',t:3,i:3,o:1},
+  {f:'src/arena/arena-mod-debate-picker.ts',t:3,i:1,o:6},
+  {f:'src/arena/arena-mod-debate-poll.ts',t:3,i:1,o:7},
+  {f:'src/arena/arena-mod-debate-waiting.ts',t:3,i:2,o:4},
+  {f:'src/arena/arena-mod-queue-browse.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-mod-queue-status.ts',t:3,i:3,o:4},
+  {f:'src/arena/arena-mod-refs-ai.ts',t:3,i:2,o:5},
+  {f:'src/arena/arena-mod-refs-form.ts',t:3,i:1,o:6},
+  {f:'src/arena/arena-mod-refs-ruling.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-mod-refs.ts',t:2,i:5,o:3},
+  {f:'src/arena/arena-mod-scoring.ts',t:3,i:2,o:4},
+  {f:'src/arena/arena-pending-challenges.ts',t:3,i:1,o:8},
+  {f:'src/arena/arena-private-lobby.join.ts',t:3,i:2,o:10},
+  {f:'src/arena/arena-private-lobby.ts',t:3,i:1,o:8},
+  {f:'src/arena/arena-private-picker.ts',t:3,i:3,o:7},
+  {f:'src/arena/arena-queue.ts',t:2,i:6,o:9},
+  {f:'src/arena/arena-realtime-client.ts',t:3,i:1,o:1},
+  {f:'src/arena/arena-room-ai-response.ts',t:3,i:3,o:8},
+  {f:'src/arena/arena-room-ai-scoring.ts',t:3,i:2,o:4},
+  {f:'src/arena/arena-room-end-after-effects.ts',t:3,i:1,o:2},
+  {f:'src/arena/arena-room-end-finalize.ts',t:3,i:1,o:10},
+  {f:'src/arena/arena-room-end-nulled.ts',t:3,i:1,o:4},
+  {f:'src/arena/arena-room-end-render.ts',t:3,i:1,o:14},
+  {f:'src/arena/arena-room-end-scores.ts',t:3,i:1,o:4},
+  {f:'src/arena/arena-room-end-transcript.ts',t:3,i:1,o:3},
+  {f:'src/arena/arena-room-end.ts',t:2,i:6,o:15},
+  {f:'src/arena/arena-room-enter.ts',t:3,i:4,o:7},
+  {f:'src/arena/arena-room-live-audio.ts',t:3,i:2,o:7},
+  {f:'src/arena/arena-room-live-input.ts',t:3,i:1,o:5},
+  {f:'src/arena/arena-room-live-messages.ts',t:2,i:9,o:4},
+  {f:'src/arena/arena-room-live-poll.ts',t:2,i:8,o:9},
+  {f:'src/arena/arena-room-predebate.ts',t:3,i:3,o:13},
+  {f:'src/arena/arena-room-render.ts',t:3,i:1,o:16},
+  {f:'src/arena/arena-room-voicememo.ts',t:3,i:2,o:7},
+  {f:'src/arena/arena-sounds-core.ts',t:3,i:2,o:0},
+  {f:'src/arena/arena-sounds.ts',t:2,i:6,o:3},
+  {f:'src/arena/arena-state.ts',t:0,i:50,o:5},
+  {f:'src/arena/arena-types-ai-scoring.ts',t:2,i:5,o:0},
+  {f:'src/arena/arena-types-feed-list.ts',t:3,i:4,o:0},
+  {f:'src/arena/arena-types-feed-room.ts',t:2,i:14,o:0},
+  {f:'src/arena/arena-types-match.ts',t:3,i:4,o:1},
+  {f:'src/arena/arena-types-moderator.ts',t:2,i:6,o:0},
+  {f:'src/arena/arena-types-private-lobby.ts',t:3,i:3,o:0},
+  {f:'src/arena/arena-types-results.ts',t:2,i:7,o:0},
+  {f:'src/arena/arena-types.ts',t:0,i:44,o:1},
+  {f:'src/async.actions-challenge.ts',t:3,i:1,o:6},
+  {f:'src/async.actions-post.ts',t:3,i:1,o:6},
+  {f:'src/async.actions-predict.ts',t:3,i:1,o:6},
+  {f:'src/async.actions-react.ts',t:3,i:1,o:6},
+  {f:'src/async.actions.ts',t:3,i:3,o:4},
+  {f:'src/async.fetch.ts',t:3,i:3,o:5},
+  {f:'src/async.render.predictions.ts',t:3,i:1,o:3},
+  {f:'src/async.render.takes.ts',t:3,i:2,o:6},
+  {f:'src/async.render.ts',t:2,i:7,o:4},
+  {f:'src/async.render.wager.ts',t:3,i:1,o:3},
+  {f:'src/async.rivals.ts',t:3,i:3,o:4},
+  {f:'src/async.state.ts',t:2,i:12,o:1},
+  {f:'src/async.ts',t:2,i:5,o:13},
+  {f:'src/async.types.ts',t:2,i:9,o:0},
+  {f:'src/async.utils.ts',t:3,i:2,o:1},
+  {f:'src/async.wiring.ts',t:4,i:0,o:8},
+  {f:'src/auth.core.ts',t:2,i:9,o:2},
+  {f:'src/auth.follows.ts',t:3,i:3,o:3},
+  {f:'src/auth.gate.ts',t:3,i:3,o:2},
+  {f:'src/auth.moderator.ts',t:3,i:2,o:3},
+  {f:'src/auth.ops.ts',t:3,i:2,o:3},
+  {f:'src/auth.profile.ts',t:3,i:2,o:9},
+  {f:'src/auth.rivals.ts',t:3,i:3,o:3},
+  {f:'src/auth.rpc.ts',t:2,i:9,o:2},
+  {f:'src/auth.ts',t:0,i:137,o:18},
+  {f:'src/auth.types.ts',t:2,i:10,o:0},
+  {f:'src/badge.ts',t:3,i:3,o:0},
+  {f:'src/bounties.dot.ts',t:3,i:2,o:1},
+  {f:'src/bounties.render.ts',t:3,i:1,o:3},
+  {f:'src/bounties.rpc.ts',t:3,i:2,o:3},
+  {f:'src/bounties.ts',t:2,i:9,o:4},
+  {f:'src/bounties.types.ts',t:3,i:3,o:1},
+  {f:'src/cards.helpers.ts',t:3,i:1,o:2},
+  {f:'src/cards.ts',t:3,i:2,o:5},
+  {f:'src/cards.types.ts',t:2,i:6,o:0},
+  {f:'src/config.toast.ts',t:3,i:2,o:1},
+  {f:'src/config.ts',t:0,i:144,o:4},
+  {f:'src/config.types.ts',t:3,i:3,o:0},
+  {f:'src/intro-music-css.ts',t:3,i:1,o:0},
+  {f:'src/intro-music-save.ts',t:3,i:1,o:1},
+  {f:'src/intro-music.ts',t:4,i:0,o:5},
+  {f:'src/leaderboard.elo.ts',t:3,i:1,o:0},
+  {f:'src/leaderboard.fetch.ts',t:3,i:2,o:3},
+  {f:'src/leaderboard.list.ts',t:3,i:1,o:5},
+  {f:'src/leaderboard.render.ts',t:3,i:1,o:4},
+  {f:'src/leaderboard.state.ts',t:3,i:3,o:1},
+  {f:'src/leaderboard.ts',t:4,i:0,o:7},
+  {f:'src/leaderboard.types.ts',t:3,i:4,o:0},
+  {f:'src/modifiers-catalog.ts',t:3,i:2,o:2},
+  {f:'src/modifiers-handlers.ts',t:3,i:1,o:2},
+  {f:'src/modifiers-render.ts',t:3,i:3,o:2},
+  {f:'src/modifiers-rpc.ts',t:3,i:1,o:2},
+  {f:'src/modifiers.ts',t:2,i:9,o:0},
+  {f:'src/navigation.ts',t:2,i:5,o:0},
+  {f:'src/notifications.actions.ts',t:3,i:3,o:3},
+  {f:'src/notifications.panel.ts',t:3,i:2,o:5},
+  {f:'src/notifications.state.ts',t:3,i:3,o:1},
+  {f:'src/notifications.ts',t:4,i:0,o:9},
+  {f:'src/notifications.types.ts',t:2,i:6,o:0},
+  {f:'src/nudge.ts',t:2,i:11,o:1},
+  {f:'src/onboarding-drip.ts',t:3,i:1,o:2},
+  {f:'src/pages/auto-debate.render.ts',t:3,i:1,o:2},
+  {f:'src/pages/auto-debate.ts',t:4,i:0,o:5},
+  {f:'src/pages/auto-debate.types.ts',t:3,i:3,o:0},
+  {f:'src/pages/auto-debate.vote.ts',t:3,i:1,o:2},
+  {f:'src/pages/cosmetics.modal.ts',t:3,i:2,o:3},
+  {f:'src/pages/cosmetics.render.ts',t:3,i:1,o:4},
+  {f:'src/pages/cosmetics.ts',t:4,i:0,o:6},
+  {f:'src/pages/cosmetics.types.ts',t:2,i:5,o:0},
+  {f:'src/pages/debate-landing.data.ts',t:3,i:1,o:2},
+  {f:'src/pages/debate-landing.ts',t:4,i:0,o:3},
+  {f:'src/pages/debate-landing.types.ts',t:3,i:1,o:0},
+  {f:'src/pages/group-banner-css.ts',t:3,i:1,o:0},
+  {f:'src/pages/group-banner-upload.ts',t:3,i:1,o:2},
+  {f:'src/pages/group-banner.ts',t:3,i:1,o:4},
+  {f:'src/pages/groups.auditions.render.ts',t:3,i:2,o:1},
+  {f:'src/pages/groups.auditions.ts',t:3,i:3,o:6},
+  {f:'src/pages/groups.challenges.ts',t:3,i:2,o:4},
+  {f:'src/pages/groups.create.ts',t:3,i:1,o:2},
+  {f:'src/pages/groups.detail.ts',t:3,i:1,o:9},
+  {f:'src/pages/groups.feed.ts',t:3,i:1,o:4},
+  {f:'src/pages/groups.load.ts',t:3,i:1,o:3},
+  {f:'src/pages/groups.members.modal.html.ts',t:3,i:2,o:0},
+  {f:'src/pages/groups.members.modal.ts',t:3,i:2,o:6},
+  {f:'src/pages/groups.members.ts',t:3,i:3,o:8},
+  {f:'src/pages/groups.nav.ts',t:3,i:2,o:5},
+  {f:'src/pages/groups.settings.ts',t:3,i:1,o:4},
+  {f:'src/pages/groups.state.ts',t:2,i:12,o:0},
+  {f:'src/pages/groups.ts',t:4,i:0,o:11},
+  {f:'src/pages/groups.types.ts',t:2,i:8,o:0},
+  {f:'src/pages/groups.utils.ts',t:2,i:6,o:3},
+  {f:'src/pages/home.arsenal-shop-filters.ts',t:3,i:1,o:2},
+  {f:'src/pages/home.arsenal-shop-render.ts',t:3,i:1,o:6},
+  {f:'src/pages/home.arsenal-shop-sheet.ts',t:3,i:1,o:5},
+  {f:'src/pages/home.arsenal-shop-types.ts',t:2,i:5,o:1},
+  {f:'src/pages/home.arsenal-shop-wiring.ts',t:3,i:1,o:3},
+  {f:'src/pages/home.arsenal-shop.ts',t:3,i:1,o:3},
+  {f:'src/pages/home.arsenal.ts',t:3,i:1,o:4},
+  {f:'src/pages/home.depth.ts',t:4,i:0,o:2},
+  {f:'src/pages/home.feed.ts',t:3,i:2,o:5},
+  {f:'src/pages/home.invite-html.ts',t:3,i:2,o:2},
+  {f:'src/pages/home.invite-render.ts',t:3,i:1,o:4},
+  {f:'src/pages/home.invite-sheet.ts',t:3,i:1,o:7},
+  {f:'src/pages/home.invite-types.ts',t:2,i:5,o:0},
+  {f:'src/pages/home.invite-wiring.ts',t:3,i:1,o:2},
+  {f:'src/pages/home.invite.ts',t:3,i:1,o:4},
+  {f:'src/pages/home.nav.ts',t:3,i:1,o:12},
+  {f:'src/pages/home.overlay.ts',t:3,i:1,o:3},
+  {f:'src/pages/home.profile.ts',t:3,i:2,o:3},
+  {f:'src/pages/home.state.ts',t:3,i:4,o:2},
+  {f:'src/pages/home.ts',t:4,i:0,o:12},
+  {f:'src/pages/home.types.ts',t:3,i:3,o:0},
+  {f:'src/pages/login.forms.ts',t:3,i:1,o:3},
+  {f:'src/pages/login.ts',t:4,i:0,o:3},
+  {f:'src/pages/login.types.ts',t:3,i:1,o:0},
+  {f:'src/pages/plinko-auth-return.ts',t:3,i:1,o:4},
+  {f:'src/pages/plinko-helpers.ts',t:2,i:6,o:1},
+  {f:'src/pages/plinko-invite-nudge.ts',t:4,i:0,o:0},
+  {f:'src/pages/plinko-password.ts',t:3,i:1,o:0},
+  {f:'src/pages/plinko-state.ts',t:2,i:5,o:0},
+  {f:'src/pages/plinko-step1-method.ts',t:3,i:1,o:5},
+  {f:'src/pages/plinko-step2-age.ts',t:3,i:1,o:2},
+  {f:'src/pages/plinko-step3-username.ts',t:3,i:1,o:5},
+  {f:'src/pages/plinko-step4-step5.ts',t:3,i:1,o:2},
+  {f:'src/pages/plinko.ts',t:4,i:0,o:8},
+  {f:'src/pages/profile-depth.data.ts',t:3,i:4,o:1},
+  {f:'src/pages/profile-depth.render.ts',t:3,i:2,o:4},
+  {f:'src/pages/profile-depth.section.ts',t:3,i:1,o:8},
+  {f:'src/pages/profile-depth.state.ts',t:3,i:4,o:2},
+  {f:'src/pages/profile-depth.tier.ts',t:3,i:2,o:3},
+  {f:'src/pages/profile-depth.ts',t:4,i:0,o:6},
+  {f:'src/pages/profile-depth.types.ts',t:3,i:4,o:0},
+  {f:'src/pages/settings.helpers.ts',t:2,i:7,o:0},
+  {f:'src/pages/settings.load.ts',t:3,i:1,o:3},
+  {f:'src/pages/settings.moderator.ts',t:3,i:1,o:2},
+  {f:'src/pages/settings.save.ts',t:3,i:1,o:4},
+  {f:'src/pages/settings.ts',t:4,i:0,o:5},
+  {f:'src/pages/settings.wiring.ts',t:3,i:1,o:4},
+  {f:'src/pages/spectate.chat.ts',t:3,i:2,o:4},
+  {f:'src/pages/spectate.render-messages.ts',t:3,i:2,o:3},
+  {f:'src/pages/spectate.render-timeline.ts',t:3,i:1,o:4},
+  {f:'src/pages/spectate.render.ts',t:3,i:1,o:8},
+  {f:'src/pages/spectate.share.ts',t:3,i:1,o:1},
+  {f:'src/pages/spectate.state.ts',t:2,i:6,o:1},
+  {f:'src/pages/spectate.ts',t:4,i:0,o:7},
+  {f:'src/pages/spectate.types.ts',t:2,i:8,o:0},
+  {f:'src/pages/spectate.utils.ts',t:3,i:4,o:0},
+  {f:'src/pages/spectate.vote.ts',t:3,i:2,o:5},
+  {f:'src/pages/terms.ts',t:4,i:0,o:0},
+  {f:'src/payments.ts',t:3,i:1,o:3},
+  {f:'src/paywall.ts',t:4,i:0,o:3},
+  {f:'src/powerups.activation.ts',t:3,i:2,o:4},
+  {f:'src/powerups.loadout.ts',t:3,i:2,o:5},
+  {f:'src/powerups.overlays.ts',t:3,i:2,o:3},
+  {f:'src/powerups.rpc.ts',t:3,i:4,o:3},
+  {f:'src/powerups.shop.ts',t:3,i:2,o:2},
+  {f:'src/powerups.ts',t:2,i:8,o:13},
+  {f:'src/powerups.types.ts',t:2,i:12,o:0},
+  {f:'src/profile-debate-archive.css.ts',t:3,i:1,o:0},
+  {f:'src/profile-debate-archive.edit.ts',t:3,i:3,o:5},
+  {f:'src/profile-debate-archive.filter.ts',t:3,i:1,o:2},
+  {f:'src/profile-debate-archive.picker.ts',t:3,i:1,o:4},
+  {f:'src/profile-debate-archive.render.ts',t:3,i:2,o:6},
+  {f:'src/profile-debate-archive.state.ts',t:3,i:4,o:1},
+  {f:'src/profile-debate-archive.ts',t:3,i:1,o:6},
+  {f:'src/profile-debate-archive.types.ts',t:2,i:5,o:0},
+  {f:'src/reference-arsenal.armory.sheet.ts',t:3,i:1,o:5},
+  {f:'src/reference-arsenal.armory.ts',t:3,i:2,o:7},
+  {f:'src/reference-arsenal.constants.ts',t:2,i:8,o:1},
+  {f:'src/reference-arsenal.debate.ts',t:3,i:3,o:2},
+  {f:'src/reference-arsenal.forge-render.ts',t:3,i:1,o:4},
+  {f:'src/reference-arsenal.forge-submit.ts',t:3,i:4,o:3},
+  {f:'src/reference-arsenal.forge-wiring.ts',t:3,i:1,o:4},
+  {f:'src/reference-arsenal.forge.ts',t:3,i:2,o:4},
+  {f:'src/reference-arsenal.loadout.ts',t:3,i:3,o:6},
+  {f:'src/reference-arsenal.render.ts',t:3,i:3,o:5},
+  {f:'src/reference-arsenal.rpc.ts',t:2,i:6,o:2},
+  {f:'src/reference-arsenal.ts',t:2,i:7,o:18},
+  {f:'src/reference-arsenal.types.ts',t:2,i:13,o:0},
+  {f:'src/reference-arsenal.utils.ts',t:2,i:5,o:2},
+  {f:'src/rivals-presence-channel.ts',t:3,i:2,o:2},
+  {f:'src/rivals-presence-css.ts',t:3,i:1,o:0},
+  {f:'src/rivals-presence-popup.ts',t:3,i:2,o:2},
+  {f:'src/rivals-presence.ts',t:3,i:1,o:6},
+  {f:'src/scoring.ts',t:4,i:0,o:3},
+  {f:'src/share.ts',t:2,i:5,o:3},
+  {f:'src/share.ui.ts',t:4,i:0,o:3},
+  {f:'src/staking.render.ts',t:3,i:1,o:3},
+  {f:'src/staking.rpc.ts',t:3,i:3,o:3},
+  {f:'src/staking.ts',t:3,i:3,o:4},
+  {f:'src/staking.types.ts',t:3,i:4,o:0},
+  {f:'src/staking.wire.ts',t:3,i:1,o:2},
+  {f:'src/tiers.ts',t:3,i:2,o:1},
+  {f:'src/tokens.animations.ts',t:3,i:3,o:1},
+  {f:'src/tokens.balance.ts',t:3,i:4,o:3},
+  {f:'src/tokens.claims.ts',t:3,i:1,o:5},
+  {f:'src/tokens.milestones.ts',t:3,i:2,o:3},
+  {f:'src/tokens.ts',t:2,i:10,o:7},
+  {f:'src/tokens.types.ts',t:3,i:4,o:0},
+  {f:'src/tournaments.indicator.ts',t:3,i:2,o:2},
+  {f:'src/tournaments.render.ts',t:3,i:1,o:2},
+  {f:'src/tournaments.rpc.ts',t:3,i:1,o:2},
+  {f:'src/tournaments.ts',t:3,i:2,o:6},
+  {f:'src/tournaments.types.ts',t:3,i:4,o:0},
+  {f:'src/voicememo.player.ts',t:3,i:2,o:1},
+  {f:'src/voicememo.record.ts',t:3,i:3,o:1},
+  {f:'src/voicememo.sheet.ts',t:3,i:1,o:7},
+  {f:'src/voicememo.ts',t:3,i:3,o:6},
+  {f:'src/voicememo.upload.ts',t:3,i:2,o:2},
+  {f:'src/webrtc.audio.ts',t:3,i:2,o:2},
+  {f:'src/webrtc.engine.ts',t:3,i:2,o:4},
+  {f:'src/webrtc.ice.ts',t:3,i:1,o:3},
+  {f:'src/webrtc.peer.ts',t:3,i:1,o:2},
+  {f:'src/webrtc.signaling.ts',t:3,i:1,o:5},
+  {f:'src/webrtc.state.ts',t:2,i:7,o:3},
+  {f:'src/webrtc.timer.ts',t:3,i:2,o:1},
+  {f:'src/webrtc.ts',t:2,i:6,o:9},
+  {f:'src/webrtc.turn.ts',t:3,i:1,o:2},
+  {f:'src/webrtc.types.ts',t:2,i:9,o:0}
+];
+
+const CRITICAL_EDGES=[
+  ['api/profile.html.js','api/profile.css.js'],
+  ['api/profile.js','api/profile.html.js'],
+  ['src/analytics.ts','src/config.ts'],
+  ['src/analytics.utils.ts','src/config.ts'],
+  ['src/arena.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-bounty-claim.ts','src/config.ts'],
+  ['src/arena/arena-config-category.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-config-mode-select.ts','src/config.ts'],
+  ['src/arena/arena-config-round-picker.ts','src/config.ts'],
+  ['src/arena/arena-config-settings.ts','src/auth.ts'],
+  ['src/arena/arena-constants.ts','src/arena/arena-types.ts'],
+  ['src/arena/arena-core.ts','src/config.ts'],
+  ['src/arena/arena-core.utils.ts','src/config.ts'],
+  ['src/arena/arena-css.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-deepgram.token.ts','src/config.ts'],
+  ['src/arena/arena-deepgram.ts','src/arena/arena-deepgram.types.ts'],
+  ['src/arena/arena-entrance-render.ts','src/config.ts'],
+  ['src/arena/arena-entrance.ts','src/auth.ts'],
+  ['src/arena/arena-feed-disconnect-debater.ts','src/auth.ts'],
+  ['src/arena/arena-feed-disconnect-mod.ts','src/auth.ts'],
+  ['src/arena/arena-feed-disconnect.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-feed-events-render.ts','src/config.ts'],
+  ['src/arena/arena-feed-events.ts','src/auth.ts'],
+  ['src/arena/arena-feed-heartbeat.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-feed-machine-ads.ts','src/config.ts'],
+  ['src/arena/arena-feed-machine-pause.ts','src/config.ts'],
+  ['src/arena/arena-feed-machine-turns.ts','src/auth.ts'],
+  ['src/arena/arena-feed-realtime.ts','src/auth.ts'],
+  ['src/arena/arena-feed-references.ts','src/config.ts'],
+  ['src/arena/arena-feed-room.ts','src/config.ts'],
+  ['src/arena/arena-feed-spec-chat.ts','src/config.ts'],
+  ['src/arena/arena-feed-state.ts','src/arena/arena-types-feed-room.ts'],
+  ['src/arena/arena-feed-transcript.ts','src/auth.ts'],
+  ['src/arena/arena-feed-ui.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-feed-wiring-debater.ts','src/config.ts'],
+  ['src/arena/arena-feed-wiring-mod.ts','src/config.ts'],
+  ['src/arena/arena-feed-wiring-spectator.ts','src/config.ts'],
+  ['src/arena/arena-feed-wiring.ts','src/config.ts'],
+  ['src/arena/arena-intro-music.ts','src/arena/arena-sounds-core.ts'],
+  ['src/arena/arena-loadout-presets.ts','src/config.ts'],
+  ['src/arena/arena-lobby.cards.ts','src/config.ts'],
+  ['src/arena/arena-lobby.ts','src/config.ts'],
+  ['src/arena/arena-match-flow.ts','src/auth.ts'],
+  ['src/arena/arena-match-found.ts','src/config.ts'],
+  ['src/arena/arena-match-timers.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-mod-debate-picker.ts','src/config.ts'],
+  ['src/arena/arena-mod-debate-poll.ts','src/config.ts'],
+  ['src/arena/arena-mod-debate-waiting.ts','src/config.ts'],
+  ['src/arena/arena-mod-queue-browse.ts','src/config.ts'],
+  ['src/arena/arena-mod-queue-status.ts','src/config.ts'],
+  ['src/arena/arena-mod-refs-ai.ts','src/config.ts'],
+  ['src/arena/arena-mod-refs-form.ts','src/config.ts'],
+  ['src/arena/arena-mod-refs-ruling.ts','src/config.ts'],
+  ['src/arena/arena-mod-refs.ts','src/arena/arena-mod-refs-ai.ts'],
+  ['src/arena/arena-mod-scoring.ts','src/config.ts'],
+  ['src/arena/arena-pending-challenges.ts','src/config.ts'],
+  ['src/arena/arena-private-lobby.join.ts','src/config.ts'],
+  ['src/arena/arena-private-lobby.ts','src/config.ts'],
+  ['src/arena/arena-private-picker.ts','src/config.ts'],
+  ['src/arena/arena-queue.ts','src/config.ts'],
+  ['src/arena/arena-realtime-client.ts','src/webrtc.types.ts'],
+  ['src/arena/arena-room-ai-response.ts','src/config.ts'],
+  ['src/arena/arena-room-ai-scoring.ts','src/config.ts'],
+  ['src/arena/arena-room-end-after-effects.ts','src/config.ts'],
+  ['src/arena/arena-room-end-finalize.ts','src/config.ts'],
+  ['src/arena/arena-room-end-nulled.ts','src/config.ts'],
+  ['src/arena/arena-room-end-render.ts','src/config.ts'],
+  ['src/arena/arena-room-end-scores.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-room-end-transcript.ts','src/config.ts'],
+  ['src/arena/arena-room-end.ts','src/auth.ts'],
+  ['src/arena/arena-room-enter.ts','src/auth.ts'],
+  ['src/arena/arena-room-live-audio.ts','src/arena/arena-state.ts'],
+  ['src/arena/arena-room-live-input.ts','src/arena/arena-types.ts'],
+  ['src/arena/arena-room-live-messages.ts','src/config.ts'],
+  ['src/arena/arena-room-live-poll.ts','src/auth.ts'],
+  ['src/arena/arena-room-predebate.ts','src/config.ts'],
+  ['src/arena/arena-room-render.ts','src/config.ts'],
+  ['src/arena/arena-room-voicememo.ts','src/auth.ts'],
+  ['src/arena/arena-sounds.ts','src/arena/arena-sounds-core.ts'],
+  ['src/arena/arena-state.ts','src/config.ts'],
+  ['src/arena/arena-types-match.ts','src/arena/arena-types.ts'],
+  ['src/arena/arena-types.ts','src/staking.ts'],
+  ['src/async.actions-challenge.ts','src/config.ts'],
+  ['src/async.actions-post.ts','src/config.ts'],
+  ['src/async.actions-predict.ts','src/config.ts'],
+  ['src/async.actions-react.ts','src/auth.ts'],
+  ['src/async.actions.ts','src/async.actions-react.ts'],
+  ['src/async.fetch.ts','src/config.ts'],
+  ['src/async.render.predictions.ts','src/config.ts'],
+  ['src/async.render.takes.ts','src/config.ts'],
+  ['src/async.render.ts','src/async.render.takes.ts'],
+  ['src/async.render.wager.ts','src/config.ts'],
+  ['src/async.rivals.ts','src/config.ts'],
+  ['src/async.state.ts','src/async.types.ts'],
+  ['src/async.ts','src/config.ts'],
+  ['src/async.utils.ts','src/navigation.ts'],
+  ['src/async.wiring.ts','src/config.ts'],
+  ['src/auth.core.ts','src/config.ts'],
+  ['src/auth.follows.ts','src/auth.types.ts'],
+  ['src/auth.gate.ts','src/config.ts'],
+  ['src/auth.moderator.ts','src/auth.types.ts'],
+  ['src/auth.ops.ts','src/config.ts'],
+  ['src/auth.profile.ts','src/config.ts'],
+  ['src/auth.rivals.ts','src/auth.types.ts'],
+  ['src/auth.rpc.ts','src/auth.types.ts'],
+  ['src/auth.ts','src/auth.ts'],
+  ['src/bounties.dot.ts','src/auth.ts'],
+  ['src/bounties.render.ts','src/bounties.types.ts'],
+  ['src/bounties.rpc.ts','src/auth.ts'],
+  ['src/bounties.ts','src/bounties.types.ts'],
+  ['src/bounties.types.ts','src/auth.types.ts'],
+  ['src/cards.helpers.ts','src/cards.types.ts'],
+  ['src/cards.ts','src/cards.types.ts'],
+  ['src/config.toast.ts','src/config.types.ts'],
+  ['src/config.ts','src/config.types.ts'],
+  ['src/intro-music-save.ts','src/auth.ts'],
+  ['src/intro-music.ts','src/config.ts'],
+  ['src/leaderboard.fetch.ts','src/auth.ts'],
+  ['src/leaderboard.list.ts','src/config.ts'],
+  ['src/leaderboard.render.ts','src/config.ts'],
+  ['src/leaderboard.state.ts','src/leaderboard.types.ts'],
+  ['src/leaderboard.ts','src/config.ts'],
+  ['src/modifiers-catalog.ts','src/auth.ts'],
+  ['src/modifiers-handlers.ts','src/config.ts'],
+  ['src/modifiers-render.ts','src/config.ts'],
+  ['src/modifiers-rpc.ts','src/auth.ts'],
+  ['src/notifications.actions.ts','src/auth.ts'],
+  ['src/notifications.panel.ts','src/config.ts'],
+  ['src/notifications.state.ts','src/notifications.types.ts'],
+  ['src/notifications.ts','src/config.ts'],
+  ['src/nudge.ts','src/config.ts'],
+  ['src/onboarding-drip.ts','src/config.ts'],
+  ['src/pages/auto-debate.render.ts','src/config.ts'],
+  ['src/pages/auto-debate.ts','src/config.ts'],
+  ['src/pages/auto-debate.vote.ts','src/tokens.ts'],
+  ['src/pages/cosmetics.modal.ts','src/config.ts'],
+  ['src/pages/cosmetics.render.ts','src/config.ts'],
+  ['src/pages/cosmetics.ts','src/config.ts'],
+  ['src/pages/debate-landing.data.ts','src/config.ts'],
+  ['src/pages/debate-landing.ts','src/config.ts'],
+  ['src/pages/group-banner-upload.ts','src/config.ts'],
+  ['src/pages/group-banner.ts','src/config.ts'],
+  ['src/pages/groups.auditions.render.ts','src/config.ts'],
+  ['src/pages/groups.auditions.ts','src/config.ts'],
+  ['src/pages/groups.challenges.ts','src/config.ts'],
+  ['src/pages/groups.create.ts','src/auth.ts'],
+  ['src/pages/groups.detail.ts','src/auth.ts'],
+  ['src/pages/groups.feed.ts','src/config.ts'],
+  ['src/pages/groups.load.ts','src/auth.ts'],
+  ['src/pages/groups.members.modal.ts','src/config.ts'],
+  ['src/pages/groups.members.ts','src/config.ts'],
+  ['src/pages/groups.nav.ts','src/auth.ts'],
+  ['src/pages/groups.settings.ts','src/config.ts'],
+  ['src/pages/groups.ts','src/auth.ts'],
+  ['src/pages/groups.utils.ts','src/config.ts'],
+  ['src/pages/home.arsenal-shop-filters.ts','src/modifiers.ts'],
+  ['src/pages/home.arsenal-shop-render.ts','src/config.ts'],
+  ['src/pages/home.arsenal-shop-sheet.ts','src/config.ts'],
+  ['src/pages/home.arsenal-shop-types.ts','src/modifiers.ts'],
+  ['src/pages/home.arsenal-shop-wiring.ts','src/modifiers.ts'],
+  ['src/pages/home.arsenal-shop.ts','src/pages/home.arsenal-shop-types.ts'],
+  ['src/pages/home.arsenal.ts','src/reference-arsenal.ts'],
+  ['src/pages/home.depth.ts','src/config.ts'],
+  ['src/pages/home.feed.ts','src/config.ts'],
+  ['src/pages/home.invite-html.ts','src/config.ts'],
+  ['src/pages/home.invite-render.ts','src/config.ts'],
+  ['src/pages/home.invite-sheet.ts','src/config.ts'],
+  ['src/pages/home.invite-wiring.ts','src/config.ts'],
+  ['src/pages/home.invite.ts','src/auth.ts'],
+  ['src/pages/home.nav.ts','src/auth.ts'],
+  ['src/pages/home.overlay.ts','src/async.ts'],
+  ['src/pages/home.profile.ts','src/config.ts'],
+  ['src/pages/home.state.ts','src/reference-arsenal.ts'],
+  ['src/pages/home.ts','src/config.ts'],
+  ['src/pages/login.forms.ts','src/config.ts'],
+  ['src/pages/login.ts','src/config.ts'],
+  ['src/pages/plinko-auth-return.ts','src/config.ts'],
+  ['src/pages/plinko-helpers.ts','src/pages/plinko-state.ts'],
+  ['src/pages/plinko-step1-method.ts','src/config.ts'],
+  ['src/pages/plinko-step2-age.ts','src/pages/plinko-helpers.ts'],
+  ['src/pages/plinko-step3-username.ts','src/config.ts'],
+  ['src/pages/plinko-step4-step5.ts','src/auth.ts'],
+  ['src/pages/plinko.ts','src/config.ts'],
+  ['src/pages/profile-depth.data.ts','src/pages/profile-depth.types.ts'],
+  ['src/pages/profile-depth.render.ts','src/config.ts'],
+  ['src/pages/profile-depth.section.ts','src/config.ts'],
+  ['src/pages/profile-depth.state.ts','src/pages/profile-depth.data.ts'],
+  ['src/pages/profile-depth.tier.ts','src/config.ts'],
+  ['src/pages/profile-depth.ts','src/config.ts'],
+  ['src/pages/settings.load.ts','src/auth.ts'],
+  ['src/pages/settings.moderator.ts','src/auth.ts'],
+  ['src/pages/settings.save.ts','src/config.ts'],
+  ['src/pages/settings.ts','src/auth.ts'],
+  ['src/pages/settings.wiring.ts','src/config.ts'],
+  ['src/pages/spectate.chat.ts','src/auth.ts'],
+  ['src/pages/spectate.render-messages.ts','src/pages/spectate.types.ts'],
+  ['src/pages/spectate.render-timeline.ts','src/pages/spectate.types.ts'],
+  ['src/pages/spectate.render.ts','src/pages/spectate.types.ts'],
+  ['src/pages/spectate.share.ts','src/pages/spectate.types.ts'],
+  ['src/pages/spectate.state.ts','src/pages/spectate.types.ts'],
+  ['src/pages/spectate.ts','src/auth.ts'],
+  ['src/pages/spectate.vote.ts','src/auth.ts'],
+  ['src/payments.ts','src/config.ts'],
+  ['src/paywall.ts','src/config.ts'],
+  ['src/powerups.activation.ts','src/config.ts'],
+  ['src/powerups.loadout.ts','src/config.ts'],
+  ['src/powerups.overlays.ts','src/config.ts'],
+  ['src/powerups.rpc.ts','src/auth.ts'],
+  ['src/powerups.shop.ts','src/powerups.types.ts'],
+  ['src/powerups.ts','src/powerups.types.ts'],
+  ['src/profile-debate-archive.edit.ts','src/config.ts'],
+  ['src/profile-debate-archive.filter.ts','src/profile-debate-archive.types.ts'],
+  ['src/profile-debate-archive.picker.ts','src/config.ts'],
+  ['src/profile-debate-archive.render.ts','src/config.ts'],
+  ['src/profile-debate-archive.state.ts','src/profile-debate-archive.types.ts'],
+  ['src/profile-debate-archive.ts','src/auth.rpc.ts'],
+  ['src/reference-arsenal.armory.sheet.ts','src/config.ts'],
+  ['src/reference-arsenal.armory.ts','src/config.ts'],
+  ['src/reference-arsenal.constants.ts','src/reference-arsenal.types.ts'],
+  ['src/reference-arsenal.debate.ts','src/auth.ts'],
+  ['src/reference-arsenal.forge-render.ts','src/config.ts'],
+  ['src/reference-arsenal.forge-submit.ts','src/config.ts'],
+  ['src/reference-arsenal.forge-wiring.ts','src/config.ts'],
+  ['src/reference-arsenal.forge.ts','src/reference-arsenal.types.ts'],
+  ['src/reference-arsenal.loadout.ts','src/config.ts'],
+  ['src/reference-arsenal.render.ts','src/config.ts'],
+  ['src/reference-arsenal.rpc.ts','src/auth.ts'],
+  ['src/reference-arsenal.ts','src/reference-arsenal.types.ts'],
+  ['src/reference-arsenal.utils.ts','src/reference-arsenal.types.ts'],
+  ['src/rivals-presence-channel.ts','src/auth.ts'],
+  ['src/rivals-presence-popup.ts','src/config.ts'],
+  ['src/rivals-presence.ts','src/config.ts'],
+  ['src/scoring.ts','src/config.ts'],
+  ['src/share.ts','src/config.ts'],
+  ['src/share.ui.ts','src/config.ts'],
+  ['src/staking.render.ts','src/staking.types.ts'],
+  ['src/staking.rpc.ts','src/auth.ts'],
+  ['src/staking.ts','src/staking.types.ts'],
+  ['src/staking.wire.ts','src/staking.types.ts'],
+  ['src/tiers.ts','src/config.ts'],
+  ['src/tokens.animations.ts','src/config.ts'],
+  ['src/tokens.balance.ts','src/config.ts'],
+  ['src/tokens.claims.ts','src/nudge.ts'],
+  ['src/tokens.milestones.ts','src/tokens.balance.ts'],
+  ['src/tokens.ts','src/auth.ts'],
+  ['src/tournaments.indicator.ts','src/auth.ts'],
+  ['src/tournaments.render.ts','src/config.ts'],
+  ['src/tournaments.rpc.ts','src/auth.ts'],
+  ['src/tournaments.ts','src/auth.ts'],
+  ['src/voicememo.player.ts','src/config.ts'],
+  ['src/voicememo.record.ts','src/config.ts'],
+  ['src/voicememo.sheet.ts','src/config.ts'],
+  ['src/voicememo.ts','src/config.ts'],
+  ['src/voicememo.upload.ts','src/config.ts'],
+  ['src/webrtc.audio.ts','src/webrtc.types.ts'],
+  ['src/webrtc.engine.ts','src/webrtc.types.ts'],
+  ['src/webrtc.ice.ts','src/config.ts'],
+  ['src/webrtc.peer.ts','src/webrtc.state.ts'],
+  ['src/webrtc.signaling.ts','src/auth.ts'],
+  ['src/webrtc.state.ts','src/config.ts'],
+  ['src/webrtc.timer.ts','src/webrtc.state.ts'],
+  ['src/webrtc.ts','src/auth.ts'],
+  ['src/webrtc.turn.ts','src/config.ts']
+];
+
+let nodes=[], nodeMap={}, selected=null;
+let ox=0, oy=0, sc=1;
+let drag=false, dsx,dsy,dox,doy;
+
+function sn(f){return f.replace('src/arena/','').replace('src/pages/','').replace('src/','').replace('.ts','').replace('.js','');}
+
+function layout(){
+  nodes=[];nodeMap={};
+  const W=document.getElementById('cv').width;
+  const H=document.getElementById('cv').height;
+  const cx=W/2, cy=H/2+20;
+  const RINGS=[0,95,185,295,415];
+
+  NODE_DATA.forEach((nd,idx)=>{
+    const tier=nd.t;
+    const tierNodes=NODE_DATA.filter(x=>x.t===tier);
+    const ii=tierNodes.findIndex(x=>x.f===nd.f);
+    const r=RINGS[Math.min(tier,4)];
+    let x,y;
+    if(tier===0&&r===0){
+      const angle=(ii/tierNodes.length)*Math.PI*2-Math.PI/2;
+      x=cx+Math.cos(angle)*42; y=cy+Math.sin(angle)*42;
+    } else {
+      const angle=(ii/tierNodes.length)*Math.PI*2-Math.PI/2+(tier*0.25);
+      const jitter=(Math.sin(idx*7.3)*0.1+Math.cos(idx*3.7)*0.07)*r;
+      x=cx+Math.cos(angle)*(r+jitter);
+      y=cy+Math.sin(angle)*(r+jitter);
+    }
+    const node={...nd,x,y};
+    nodes.push(node);
+    nodeMap[nd.f]=node;
+  });
+}
+
+function nr(n){
+  if(n.t===0)return Math.min(20,8+n.i/11);
+  if(n.t===1)return Math.min(13,5+n.i/7);
+  if(n.t===2)return Math.min(9,4+n.i/9);
+  return 4;
+}
+
+function draw(forExport){
+  const cv=document.getElementById('cv');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(forExport){ctx.fillStyle='#0f1117';ctx.fillRect(0,0,cv.width,cv.height);}
+  ctx.save();
+  ctx.translate(ox,oy);
+  ctx.scale(sc,sc);
+
+  const CX=cv.width/2, CY=cv.height/2+20;
+  const RINGS=[0,95,185,295,415];
+  const RLABELS=['Foundation','Core','Subsystem','Feature','Leaf'];
+
+  // Ring guides
+  RINGS.forEach((r,i)=>{
+    if(r===0)return;
+    ctx.beginPath();ctx.arc(CX,CY,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+    ctx.setLineDash([3,7]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.18)';ctx.font='10px sans-serif';ctx.textAlign='center';
+    ctx.fillText(RLABELS[i],CX,CY-r+13);
+  });
+
+  // Center label
+  ctx.fillStyle='rgba(255,255,255,0.12)';ctx.font='9px sans-serif';ctx.textAlign='center';
+  ctx.fillText('339 files · 263 critical paths · Full Monty Apr 2026',CX,CY+RINGS[4]+36);
+
+  let pathNodes=new Set(),pathEdges=new Set();
+  if(selected!==null){
+    const snn=nodes[selected];
+    pathNodes.add(snn.f);
+    CRITICAL_EDGES.forEach(([a,b])=>{
+      if(a===snn.f){pathNodes.add(b);pathEdges.add(a+'→'+b);}
+      if(b===snn.f){pathNodes.add(a);pathEdges.add(a+'→'+b);}
+    });
+  }
+
+  // Edges
+  CRITICAL_EDGES.forEach(([a,b])=>{
+    const na=nodeMap[a],nb=nodeMap[b];
+    if(!na||!nb)return;
+    const hi=pathEdges.has(a+'→'+b);
+    const dim=selected!==null&&!hi;
+    ctx.globalAlpha=dim?0.04:hi?0.95:0.18;
+    const mx=(na.x+nb.x)/2+(nb.y-na.y)*0.18;
+    const my=(na.y+nb.y)/2-(nb.x-na.x)*0.18;
+    ctx.beginPath();ctx.moveTo(na.x,na.y);
+    ctx.quadraticCurveTo(mx,my,nb.x,nb.y);
+    ctx.strokeStyle=hi?TIER_COLORS[na.t]:'rgba(200,200,200,0.8)';
+    ctx.lineWidth=hi?2.5:0.7;ctx.stroke();
+    ctx.globalAlpha=1;
+  });
+
+  // Nodes
+  nodes.forEach((n,ni)=>{
+    const r=nr(n);
+    const isSel=ni===selected;
+    const inPath=pathNodes.has(n.f);
+    const dim=selected!==null&&!inPath;
+    ctx.globalAlpha=dim?0.15:1;
+    // Glow for selected
+    if(isSel){
+      ctx.beginPath();ctx.arc(n.x,n.y,r+8,0,Math.PI*2);
+      ctx.fillStyle=TIER_COLORS[n.t]+'33';ctx.fill();
+    }
+    ctx.beginPath();ctx.arc(n.x,n.y,r+(isSel?2:0),0,Math.PI*2);
+    ctx.fillStyle=TIER_COLORS[n.t];ctx.fill();
+    if(isSel||inPath){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();}
+    if(n.t<=1||(inPath&&selected!==null)){
+      ctx.fillStyle=dim?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.88)';
+      ctx.font=(n.t===0?'600 ':'')+(n.t===0?'11px':'10px')+' sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(sn(n.f),n.x,n.y+r+10);
+    }
+    ctx.globalAlpha=1;
+  });
+
+  ctx.restore();
+}
+
+function hit(ex,ey){
+  const cv=document.getElementById('cv');
+  const rect=cv.getBoundingClientRect();
+  const mx=(ex-rect.left-ox)/sc,my=(ey-rect.top-oy)/sc;
+  let best=-1,bestD=Infinity;
+  nodes.forEach((n,i)=>{
+    const d=Math.hypot(mx-n.x,my-n.y);
+    if(d<Math.max(nr(n)+8,12)&&d<bestD){bestD=d;best=i;}
+  });
+  return best;
+}
+
+function setInfo(ni){
+  const el=document.getElementById('info');
+  if(ni<0){el.innerHTML='Click any node to highlight its critical path. Drag to pan · Scroll to zoom · Double-click canvas to clear.';return;}
+  const n=nodes[ni];
+  const edge=CRITICAL_EDGES.find(([a])=>a===n.f);
+  const target=edge?sn(edge[1]):'root node';
+  el.innerHTML=`<strong>${n.f.split('/').pop()}</strong> &nbsp;·&nbsp; Tier ${n.t} ${TIER_NAMES[n.t]} &nbsp;·&nbsp; imported by <strong>${n.i}</strong> files &nbsp;·&nbsp; imports <strong>${n.o}</strong> files &nbsp;·&nbsp; critical dep → <strong>${target}</strong>`;
+}
+
+function exportPNG(){
+  const cv=document.getElementById('cv');
+  const tmp=document.createElement('canvas');
+  tmp.width=cv.width;tmp.height=cv.height;
+  const tctx=tmp.getContext('2d');
+  tctx.drawImage(cv,0,0);
+  // redraw with bg
+  const origOx=ox,origOy=oy,origSc=sc;
+  draw(true);
+  const link=document.createElement('a');
+  link.download='colosseum-critical-path.png';
+  link.href=cv.toDataURL('image/png');
+  link.click();
+  draw(false);
+}
+
+const wrap=document.getElementById('cv-wrap');
+wrap.addEventListener('mousedown',e=>{
+  const ni=hit(e.clientX,e.clientY);
+  if(ni>=0){selected=ni;setInfo(ni);draw();return;}
+  drag=true;dsx=e.clientX;dsy=e.clientY;dox=ox;doy=oy;
+});
+wrap.addEventListener('mousemove',e=>{
+  if(drag){ox=dox+(e.clientX-dsx);oy=doy+(e.clientY-dsy);draw();return;}
+  const ni=hit(e.clientX,e.clientY);
+  const tt=document.getElementById('tt');
+  const rect=wrap.getBoundingClientRect();
+  if(ni>=0){
+    const n=nodes[ni];
+    const edge=CRITICAL_EDGES.find(([a])=>a===n.f);
+    tt.style.display='block';
+    tt.style.left=Math.min(e.clientX-rect.left+14,rect.width-290)+'px';
+    tt.style.top=Math.min(e.clientY-rect.top+14,rect.height-100)+'px';
+    tt.innerHTML=`<strong>${n.f.split('/').pop()}</strong><br><span class="sub">${n.f}</span><br>Tier ${n.t} ${TIER_NAMES[n.t]} &nbsp;·&nbsp; in: ${n.i} &nbsp;·&nbsp; out: ${n.o}<br>Critical dep: <strong>${edge?edge[1].split('/').pop():'root'}</strong>`;
+  } else {tt.style.display='none';}
+});
+wrap.addEventListener('mouseup',()=>{drag=false;});
+wrap.addEventListener('mouseleave',()=>{drag=false;document.getElementById('tt').style.display='none';});
+wrap.addEventListener('dblclick',()=>{selected=null;setInfo(-1);draw();});
+wrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  sc*=e.deltaY<0?1.12:0.89;sc=Math.max(0.15,Math.min(6,sc));draw();
+},{passive:false});
+
+window.doZoom=f=>{sc=Math.max(0.15,Math.min(6,sc*f));draw();};
+window.doReset=()=>{ox=0;oy=0;sc=1;draw();};
+window.exportPNG=exportPNG;
+
+function init(){
+  const cv=document.getElementById('cv');
+  const w=wrap.offsetWidth,h=wrap.offsetHeight;
+  cv.width=w;cv.height=h;
+  layout();draw();
+}
+window.addEventListener('resize',()=>{
+  const cv=document.getElementById('cv');
+  cv.width=wrap.offsetWidth;cv.height=wrap.offsetHeight;
+  layout();draw();
+});
+init();
+</script>
+</body>
+</html>

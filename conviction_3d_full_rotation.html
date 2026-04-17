@@ -1,0 +1,353 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#060a04;font-family:'Rajdhani',sans-serif;color:#c8e88a;}
+.shell{display:grid;grid-template-rows:44px 1fr 44px;height:700px;}
+.topbar{background:#080d05;border-bottom:1px solid #1a2a0e;display:flex;align-items:center;padding:0 18px;gap:14px;}
+.tb-logo{font-family:'Share Tech Mono',monospace;font-size:11px;color:#4a7a20;letter-spacing:0.16em;}
+.tb-sep{width:1px;height:16px;background:#1a2a0e;}
+.tb-label{font-size:13px;font-weight:500;color:#c8e88a;flex:1;} 
+.tb-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a4a10;letter-spacing:0.08em;}
+.main{display:grid;grid-template-columns:148px 1fr 168px;overflow:hidden;}
+.left{background:#070c05;border-right:1px solid #1a2a0e;padding:12px 10px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.plbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#2a4a10;margin-bottom:3px;}
+.dbtn{width:100%;padding:5px 8px;background:#0a1208;border:0.5px solid #1a2a0e;border-radius:2px;color:#587040;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;text-align:left;cursor:pointer;transition:all .12s;margin-bottom:2px;}
+.dbtn:hover{border-color:#4a7a20;color:#a8d44f;}
+.dbtn.on{background:#142808;border-color:#8ebe3f;color:#8ebe3f;border-left:2px solid #8ebe3f;}
+.tchip{display:inline-block;padding:3px 7px;background:#0a1208;border:0.5px solid #1a2a0e;border-radius:2px;font-size:10px;color:#4a6a28;cursor:pointer;margin:0 2px 3px 0;transition:all .12s;}
+.tchip:hover{border-color:#4a7a20;color:#a8d44f;}
+.tchip.on{background:#142808;border-color:#8ebe3f;color:#8ebe3f;}
+.center{position:relative;background:#060a04;display:flex;align-items:center;justify-content:center;}
+canvas{display:block;cursor:grab;}
+canvas:active{cursor:grabbing;}
+.drag-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:8px;color:#1e3010;letter-spacing:0.1em;pointer-events:none;}
+.right{background:#070c05;border-left:1px solid #1a2a0e;padding:12px 10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
+.scard{background:#0a1208;border:0.5px solid #1a2a0e;border-radius:3px;padding:9px 11px;}
+.sc-lbl{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:#2a4a10;margin-bottom:3px;}
+.sc-val{font-size:20px;font-weight:600;color:#8ebe3f;line-height:1;}
+.sc-sub{font-size:10px;color:#3a5a20;margin-top:1px;}
+.ridge-item{display:flex;align-items:center;gap:7px;font-size:11px;color:#587040;padding:3px 0;border-bottom:0.5px solid #1a2a0e;}
+.ridge-item:last-child{border:none;}
+.rdot{width:7px;height:7px;border-radius:1px;flex-shrink:0;}
+.rname{flex:1;}
+.rval{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8ebe3f;}
+.botbar{background:#080d05;border-top:1px solid #1a2a0e;display:flex;align-items:center;padding:0 18px;gap:18px;}
+.bs{display:flex;gap:6px;align-items:center;}
+.bs-l{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a4a10;letter-spacing:0.1em;text-transform:uppercase;}
+.bs-v{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8ebe3f;}
+.bot-r{margin-left:auto;display:flex;gap:6px;}
+.abtn{padding:4px 13px;background:#142808;border:0.5px solid #8ebe3f;border-radius:2px;color:#8ebe3f;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;}
+.abtn:hover{background:#1e3a0e;}
+</style>
+
+<h2 class="sr-only">The Moderator — fully interactive 3D conviction surface with pitch roll and yaw drag rotation</h2>
+
+<div class="shell">
+<div class="topbar">
+  <div class="tb-logo">The Moderator // Intel</div>
+  <div class="tb-sep"></div>
+  <div class="tb-label" id="tlabel">Gun Control · Conviction Surface · Women 25–44</div>
+  <div class="tb-hint">drag to rotate · scroll to zoom</div>
+</div>
+
+<div class="main">
+<div class="left">
+  <div>
+    <div class="plbl">Demographic</div>
+    <button class="dbtn on" onclick="setDemo(this,'Women 25–44')">Women 25–44</button>
+    <button class="dbtn" onclick="setDemo(this,'Men 25–44')">Men 25–44</button>
+    <button class="dbtn" onclick="setDemo(this,'18–24 All')">18–24 All</button>
+    <button class="dbtn" onclick="setDemo(this,'45–64 All')">45–64 All</button>
+    <button class="dbtn" onclick="setDemo(this,'Conservative')">Conservative</button>
+    <button class="dbtn" onclick="setDemo(this,'Progressive')">Progressive</button>
+  </div>
+  <div>
+    <div class="plbl">Topic</div>
+    <span class="tchip on" onclick="setTopic(this,'Gun Control')">Gun Control</span>
+    <span class="tchip" onclick="setTopic(this,'Immigration')">Immigration</span>
+    <span class="tchip" onclick="setTopic(this,'Climate')">Climate</span>
+    <span class="tchip" onclick="setTopic(this,'Economy')">Economy</span>
+    <span class="tchip" onclick="setTopic(this,'Healthcare')">Healthcare</span>
+    <span class="tchip" onclick="setTopic(this,'Education')">Education</span>
+  </div>
+  <div style="margin-top:auto;">
+    <div class="plbl">Window</div>
+    <input type="range" min="30" max="365" step="30" value="90" style="width:100%;accent-color:#8ebe3f;" oninput="document.getElementById('wlbl').textContent=this.value+'d';redraw();">
+    <div id="wlbl" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a5a20;text-align:center;margin-top:2px;">90d</div>
+  </div>
+</div>
+
+<div class="center">
+  <canvas id="cv"></canvas>
+  <div class="drag-hint">drag · rotate · scroll to zoom</div>
+</div>
+
+<div class="right">
+  <div class="plbl">Surface peaks</div>
+  <div class="scard">
+    <div class="sc-lbl">Peak conviction</div>
+    <div class="sc-val" id="pv">87</div>
+    <div class="sc-sub">Safety / lives · Round 2</div>
+  </div>
+  <div class="scard">
+    <div class="sc-lbl">Win rate at peak</div>
+    <div class="sc-val" id="wv">63%</div>
+    <div class="sc-sub">FOR restrictions</div>
+  </div>
+  <div class="scard">
+    <div class="sc-lbl">Persuadability</div>
+    <div class="sc-val" id="perv">28%</div>
+    <div class="sc-sub">low — deeply held</div>
+  </div>
+  <div class="plbl" style="margin-top:4px;">Argument ridges</div>
+  <div class="ridge-item"><div class="rdot" style="background:#8ebe3f;"></div><span class="rname">Safety / lives</span><span class="rval" id="r1">87</span></div>
+  <div class="ridge-item"><div class="rdot" style="background:#d4a017;"></div><span class="rname">2nd amendment</span><span class="rval" id="r2">71</span></div>
+  <div class="ridge-item"><div class="rdot" style="background:#b87333;"></div><span class="rname">Mental health</span><span class="rval" id="r3">54</span></div>
+  <div class="ridge-item"><div class="rdot" style="background:#5a8a28;"></div><span class="rname">Data / stats</span><span class="rval" id="r4">48</span></div>
+  <div class="ridge-item"><div class="rdot" style="background:#3a5a20;"></div><span class="rname">Enforcement</span><span class="rval" id="r5">32</span></div>
+</div>
+</div>
+
+<div class="botbar">
+  <div class="bs"><span class="bs-l">Debates</span><span class="bs-v">2,841</span></div>
+  <div class="bs"><span class="bs-l">Indexed</span><span class="bs-v">14,822</span></div>
+  <div class="bs"><span class="bs-l">Sync</span><span class="bs-v">2m ago</span></div>
+  <div class="bot-r">
+    <button class="abtn" onclick="resetView()">Reset view</button>
+    <button class="abtn" onclick="sendPrompt('What does this conviction surface tell us about messaging strategy for '+currentTopic+' with '+currentDemo+'? Which argument ridge should we lead with?')">Interpret ↗</button>
+  </div>
+</div>
+</div>
+
+<script>
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let W,H;
+
+function resize(){
+  const p=cv.parentElement;
+  W=p.clientWidth; H=p.clientHeight;
+  cv.width=W; cv.height=H;
+  redraw();
+}
+
+let rotX=0.55, rotY=0.0, rotZ=0.0;
+let zoom=1.0;
+let dragging=false, lastX=0, lastY=0;
+let currentTopic='Gun Control', currentDemo='Women 25–44';
+
+const PDATA={
+  'Gun Control':  {peaks:[[87,63,28],[71,51,38],[54,40,32],[48,35,20],[32,22,14]]},
+  'Immigration':  {peaks:[[79,58,31],[68,49,35],[61,44,29],[43,30,18],[29,20,12]]},
+  'Climate':      {peaks:[[91,71,22],[74,55,28],[58,41,25],[41,28,17],[24,17,10]]},
+  'Economy':      {peaks:[[82,60,35],[70,52,40],[56,42,31],[45,32,22],[33,23,15]]},
+  'Healthcare':   {peaks:[[88,68,24],[76,57,32],[60,45,27],[44,31,19],[27,18,11]]},
+  'Education':    {peaks:[[75,54,29],[63,46,34],[51,38,28],[38,27,16],[25,17,10]]},
+};
+const DMULT={'Women 25–44':1.0,'Men 25–44':0.88,'18–24 All':0.76,'45–64 All':0.92,'Conservative':0.82,'Progressive':0.95};
+
+const GX=24,GY=20;
+
+function noise(x,y){
+  return Math.sin(x*0.9+1.1)*Math.cos(y*0.7+0.8)*3.5
+       + Math.sin(x*1.7+0.3)*Math.cos(y*1.3+1.4)*1.5
+       + Math.sin(x*3.1+2.1)*Math.cos(y*2.8+0.7)*0.8;
+}
+
+function gauss(x,y,cx,cy,h,sx,sy){
+  const dx=(x-cx)/sx, dy=(y-cy)/sy;
+  return h*Math.exp(-(dx*dx+dy*dy)*0.5);
+}
+
+function buildGrid(topic,demo){
+  const m=DMULT[demo]||1;
+  const cfg=[
+    [4, 3, 4.5, 3.2],[10,5,3.8,2.8],[16,4,3.2,2.5],
+    [6,11,3.0,2.8],[13,10,3.6,2.5],[19,8,2.8,2.2],
+    [8, 16,2.5,2.2],[15,15,2.0,2.0],[3,17,1.8,1.8],
+  ];
+  const hs=[87,71,54,68,48,39,32,29,24].map(v=>v*m/100);
+  const grid=[];
+  for(let gy=0;gy<GY;gy++){
+    grid[gy]=[];
+    for(let gx=0;gx<GX;gx++){
+      let z=noise(gx,gy)*0.5;
+      cfg.forEach(([cx,cy,sx,sy],i)=>{ z+=gauss(gx,gy,cx,cy,hs[i]||0.3,sx,sy); });
+      grid[gy][gx]=Math.max(0,z);
+    }
+  }
+  return grid;
+}
+
+function matMulVec(m,v){
+  return [
+    m[0]*v[0]+m[1]*v[1]+m[2]*v[2],
+    m[3]*v[0]+m[4]*v[1]+m[5]*v[2],
+    m[6]*v[0]+m[7]*v[1]+m[8]*v[2],
+  ];
+}
+
+function rotMatrix(rx,ry,rz){
+  const cx=Math.cos(rx),sx=Math.sin(rx);
+  const cy=Math.cos(ry),sy=Math.sin(ry);
+  const cz=Math.cos(rz),sz=Math.sin(rz);
+  const Rx=[1,0,0, 0,cx,-sx, 0,sx,cx];
+  const Ry=[cy,0,sy, 0,1,0, -sy,0,cy];
+  const Rz=[cz,-sz,0, sz,cz,0, 0,0,1];
+  function mm(a,b){
+    return [
+      a[0]*b[0]+a[1]*b[3]+a[2]*b[6], a[0]*b[1]+a[1]*b[4]+a[2]*b[7], a[0]*b[2]+a[1]*b[5]+a[2]*b[8],
+      a[3]*b[0]+a[4]*b[3]+a[5]*b[6], a[3]*b[1]+a[4]*b[4]+a[5]*b[7], a[3]*b[2]+a[4]*b[5]+a[5]*b[8],
+      a[6]*b[0]+a[7]*b[3]+a[8]*b[6], a[6]*b[1]+a[7]*b[4]+a[8]*b[7], a[6]*b[2]+a[7]*b[5]+a[8]*b[8],
+    ];
+  }
+  return mm(mm(Rz,Rx),Ry);
+}
+
+function proj3d(x,y,z,mat){
+  const cx=(GX-1)/2, cy=(GY-1)/2;
+  const scale=Math.min(W,H)*0.032*zoom;
+  const v=matMulVec(mat,[x-cx, z*2.8-(GX*0.18), y-cy]);
+  const fov=800;
+  const pz=v[2]+fov;
+  const px=W/2+v[0]*fov/pz*scale;
+  const py=H/2+v[1]*fov/pz*scale;
+  return [px,py,pz];
+}
+
+function zToColor(z,maxZ){
+  const t=Math.pow(Math.min(1,Math.max(0,z/maxZ)),0.7);
+  const stops=[
+    [6,10,4],[15,28,8],[30,55,14],[55,95,22],
+    [85,140,35],[125,175,52],[165,205,75],[200,230,105],[225,248,145],
+  ];
+  const i=Math.min(stops.length-2,Math.floor(t*(stops.length-1)));
+  const f=t*(stops.length-1)-i;
+  const a=stops[i],b=stops[i+1];
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*f)},${Math.round(a[1]+(b[1]-a[1])*f)},${Math.round(a[2]+(b[2]-a[2])*f)})`;
+}
+
+function redraw(){
+  if(!W||!H)return;
+  ctx.fillStyle='#060a04';
+  ctx.fillRect(0,0,W,H);
+
+  const grid=buildGrid(currentTopic,currentDemo);
+  const mat=rotMatrix(rotX,rotY,rotZ);
+
+  let maxZ=0;
+  for(let gy=0;gy<GY;gy++) for(let gx=0;gx<GX;gx++) if(grid[gy][gx]>maxZ) maxZ=grid[gy][gx];
+
+  const faces=[];
+  for(let gy=0;gy<GY-1;gy++){
+    for(let gx=0;gx<GX-1;gx++){
+      const z00=grid[gy][gx], z10=grid[gy][gx+1];
+      const z01=grid[gy+1][gx], z11=grid[gy+1][gx+1];
+      const avgZ=(z00+z10+z01+z11)/4;
+      const [x00,y00,d00]=proj3d(gx,gy,z00,mat);
+      const [x10,y10,d10]=proj3d(gx+1,gy,z10,mat);
+      const [x11,y11,d11]=proj3d(gx+1,gy+1,z11,mat);
+      const [x01,y01,d01]=proj3d(gx,gy+1,z01,mat);
+      const avgD=(d00+d10+d11+d01)/4;
+      faces.push({gx,gy,avgZ,avgD,pts:[[x00,y00],[x10,y10],[x11,y11],[x01,y01]]});
+    }
+  }
+
+  faces.sort((a,b)=>b.avgD-a.avgD);
+
+  faces.forEach(({avgZ,avgD,pts})=>{
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.closePath();
+    ctx.fillStyle=zToColor(avgZ,maxZ);
+    ctx.fill();
+    ctx.strokeStyle='rgba(6,10,4,0.6)';
+    ctx.lineWidth=0.35;
+    ctx.stroke();
+  });
+
+  ctx.font=`${Math.max(8,Math.round(W*0.016))}px Share Tech Mono`;
+  ctx.fillStyle='#2a4010';
+  const axX=['Safety','2nd Amend','Mental Hlth','Data/Stats','Enforcement'];
+  for(let i=0;i<5;i++){
+    const gx=Math.round(i*(GX-1)/4);
+    const [px,py]=proj3d(gx,GY-1,0,mat);
+    ctx.fillText(axX[i],px-24,py+13);
+  }
+  const axY=['Liberal','Mod-L','Center','Mod-R','Conserv'];
+  for(let j=0;j<5;j++){
+    const gy=Math.round(j*(GY-1)/4);
+    const [px,py]=proj3d(0,gy,0,mat);
+    ctx.fillText(axY[j],px-38,py+4);
+  }
+
+  updateCards();
+}
+
+function updateCards(){
+  const m=DMULT[currentDemo]||1;
+  const p=PDATA[currentTopic]||PDATA['Gun Control'];
+  document.getElementById('pv').textContent=Math.round(p.peaks[0][0]*m);
+  document.getElementById('wv').textContent=Math.round(p.peaks[0][1]*m)+'%';
+  document.getElementById('perv').textContent=Math.round(p.peaks[0][2]*m)+'%';
+  ['r1','r2','r3','r4','r5'].forEach((id,i)=>{
+    document.getElementById(id).textContent=Math.round((p.peaks[i]||p.peaks[4])[0]*m);
+  });
+}
+
+function setDemo(btn,demo){
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  currentDemo=demo;
+  document.getElementById('tlabel').textContent=currentTopic+' · Conviction Surface · '+demo;
+  redraw();
+}
+
+function setTopic(chip,topic){
+  document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('on'));
+  chip.classList.add('on');
+  currentTopic=topic;
+  document.getElementById('tlabel').textContent=topic+' · Conviction Surface · '+currentDemo;
+  redraw();
+}
+
+function resetView(){
+  rotX=0.55; rotY=0; rotZ=0; zoom=1;
+  redraw();
+}
+
+cv.addEventListener('mousedown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;});
+window.addEventListener('mouseup',()=>dragging=false);
+window.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  rotY+=dx*0.012;
+  rotX+=dy*0.012;
+  lastX=e.clientX; lastY=e.clientY;
+  redraw();
+});
+
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  zoom*=e.deltaY>0?0.92:1.08;
+  zoom=Math.max(0.3,Math.min(4,zoom));
+  redraw();
+},{passive:false});
+
+cv.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){dragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}
+},{passive:true});
+cv.addEventListener('touchend',()=>dragging=false);
+cv.addEventListener('touchmove',e=>{
+  if(!dragging||e.touches.length!==1)return;
+  const dx=e.touches[0].clientX-lastX, dy=e.touches[0].clientY-lastY;
+  rotY+=dx*0.012; rotX+=dy*0.012;
+  lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+  redraw();
+},{passive:true});
+
+window.addEventListener('resize',resize);
+setTimeout(resize,100);
+</script>

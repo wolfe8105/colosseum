@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive US State Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f7f4;
+    --surface: #ffffff;
+    --border: #e2e2dc;
+    --text: #1a1a18;
+    --text-muted: #6b6b65;
+    --text-light: #9b9b93;
+    --accent: #8ebe3f;
+    --accent-dark: #6a9a28;
+    --accent-light: #c5e88a;
+    --inactive: #f0f0eb;
+    --inactive-stroke: #d0d0c8;
+    --hover: #daf0a0;
+    --locked: #e8e8e2;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--text);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 16px; height: 16px; fill: white; }
+
+  nav { display: flex; gap: 4px; }
+
+  nav a {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  nav a:hover { background: var(--bg); color: var(--text); }
+  nav a.active { background: var(--bg); color: var(--text); }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    gap: 24px;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  .page-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
+
+  .card-title {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .map-layout {
+    display: flex;
+    gap: 0;
+  }
+
+  .map-container {
+    flex: 1;
+    padding: 24px;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  #map-svg {
+    width: 100%;
+    max-width: 860px;
+    height: auto;
+  }
+
+  .state {
+    fill: var(--inactive);
+    stroke: var(--inactive-stroke);
+    stroke-width: 0.8;
+    cursor: pointer;
+    transition: fill 0.15s ease;
+  }
+
+  .state.active {
+    fill: var(--accent);
+    stroke: #6a9a28;
+  }
+
+  .state:hover {
+    fill: var(--hover);
+  }
+
+  .state.active:hover {
+    fill: var(--accent-dark);
+  }
+
+  .state.selected {
+    fill: #2d6a00;
+    stroke: #1a4500;
+  }
+
+  .sidebar {
+    width: 240px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sidebar-label .info-icon {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--text-light);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--text-light);
+    cursor: help;
+  }
+
+  .contest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .contest-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .contest-item:hover { background: var(--bg); }
+
+  .contest-item.active {
+    background: var(--accent-light);
+  }
+
+  .contest-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .contest-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 3px 7px;
+    border-radius: 4px;
+    background: var(--text);
+    color: white;
+  }
+
+  .contest-badge.free { background: var(--text); }
+
+  .lock-icon {
+    width: 14px; height: 14px;
+    opacity: 0.3;
+  }
+
+  .state-panel {
+    padding: 20px;
+    flex: 1;
+  }
+
+  .state-panel-empty {
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .state-info { display: none; }
+  .state-info.visible { display: block; }
+
+  .state-name-display {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  .metric-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .metric-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .metric-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .metric-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .bar-a { background: #3b7dd8; }
+  .bar-b { background: #d84040; }
+
+  .metric-value {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+
+  .sample-note {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 12px;
+    line-height: 1.4;
+  }
+
+  .tooltip {
+    position: fixed;
+    background: var(--text);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+
+  .legend-dot.active { background: var(--accent); }
+  .legend-dot.inactive { background: var(--inactive); border: 1px solid var(--inactive-stroke); }
+  .legend-dot.selected { background: #2d6a00; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/></svg>
+    </div>
+    Data Explorer
+  </div>
+  <nav>
+    <a href="#">Dashboard</a>
+    <a href="#" class="active">⊕ Poll Explorer</a>
+    <a href="#">Analysis</a>
+  </nav>
+</header>
+
+<div class="main">
+  <div class="page-header">
+    <h1 class="page-title">Poll Explorer</h1>
+    <span class="page-sub">Click any highlighted state to explore data</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-label">Presidential Preview</div>
+      <div class="card-title">Select a state or region to explore the data</div>
+    </div>
+
+    <div class="map-layout">
+      <div class="map-container">
+        <svg id="map-svg" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+          <!-- States will be drawn by JS using real topology -->
+        </svg>
+      </div>
+
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">
+            Contests
+            <span class="info-icon">i</span>
+          </div>
+          <div class="contest-list">
+            <div class="contest-item active" data-contest="president">
+              <span class="contest-name">U.S. President</span>
+              <span class="contest-badge free">FREE</span>
+            </div>
+            <div class="contest-item" data-contest="senate">
+              <span class="contest-name">U.S. Senate</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+            <div class="contest-item" data-contest="house">
+              <span class="contest-name">U.S. House</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+            <div class="contest-item" data-contest="governor">
+              <span class="contest-name">Governor</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+            <div class="contest-item" data-contest="lt_governor">
+              <span class="contest-name">Lt. Governor</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+            <div class="contest-item" data-contest="state_senate">
+              <span class="contest-name">State Senate</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+            <div class="contest-item" data-contest="state_house">
+              <span class="contest-name">State House</span>
+              <svg class="lock-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11 7V5.5a3 3 0 00-6 0V7H4v7h8V7h-1zm-4-1.5a1 1 0 012 0V7H7V5.5z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-panel">
+          <div class="sidebar-label" style="margin-bottom:12px;">State Data</div>
+
+          <div class="state-panel-empty" id="empty-state">
+            Select a highlighted state on the map to view polling data.
+          </div>
+
+          <div class="state-info" id="state-data">
+            <div class="state-name-display" id="state-name-display">—</div>
+            <div class="metric-row">
+              <div class="metric">
+                <div class="metric-label">Candidate A (D)</div>
+                <div class="metric-bar-wrap">
+                  <div class="metric-bar"><div class="metric-bar-fill bar-a" id="bar-a" style="width:0%"></div></div>
+                  <div class="metric-value" id="val-a">—</div>
+                </div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Candidate B (R)</div>
+                <div class="metric-bar-wrap">
+                  <div class="metric-bar"><div class="metric-bar-fill bar-b" id="bar-b" style="width:0%"></div></div>
+                  <div class="metric-value" id="val-b">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="metric">
+              <div class="metric-label">Undecided</div>
+              <div class="metric-bar-wrap">
+                <div class="metric-bar"><div class="metric-bar-fill" id="bar-u" style="width:0%;background:#aaa"></div></div>
+                <div class="metric-value" id="val-u">—</div>
+              </div>
+            </div>
+            <div class="sample-note" id="sample-note">Sample data — replace with live data source</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot active"></div>Data available</div>
+      <div class="legend-item"><div class="legend-dot inactive"></div>No data</div>
+      <div class="legend-item"><div class="legend-dot selected"></div>Selected</div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+// States with data (green). Swap in/out any FIPS codes.
+const ACTIVE_FIPS = new Set([
+  "04","06","09","12","13","20","22","26","27","32","36","37","39","42","45","47","51","55"
+]);
+
+// Sample poll data by FIPS. Replace values with real data.
+const POLL_DATA = {
+  "04": { a: 46, b: 51, u: 3, label: "Arizona" },
+  "06": { a: 62, b: 33, u: 5, label: "California" },
+  "09": { a: 55, b: 41, u: 4, label: "Connecticut" },
+  "12": { a: 44, b: 52, u: 4, label: "Florida" },
+  "13": { a: 45, b: 52, u: 3, label: "Georgia" },
+  "20": { a: 36, b: 60, u: 4, label: "Kansas" },
+  "22": { a: 40, b: 57, u: 3, label: "Louisiana" },
+  "26": { a: 53, b: 43, u: 4, label: "Michigan" },
+  "27": { a: 51, b: 45, u: 4, label: "Minnesota" },
+  "32": { a: 48, b: 48, u: 4, label: "Nevada" },
+  "36": { a: 60, b: 36, u: 4, label: "New York" },
+  "37": { a: 48, b: 49, u: 3, label: "North Carolina" },
+  "39": { a: 46, b: 51, u: 3, label: "Ohio" },
+  "42": { a: 50, b: 47, u: 3, label: "Pennsylvania" },
+  "45": { a: 43, b: 54, u: 3, label: "South Carolina" },
+  "47": { a: 40, b: 57, u: 3, label: "Tennessee" },
+  "51": { a: 54, b: 43, u: 3, label: "Virginia" },
+  "55": { a: 49, b: 48, u: 3, label: "Wisconsin" },
+};
+
+// ─── MAP SETUP ────────────────────────────────────────────────────────────────
+const svg = d3.select("#map-svg");
+const tooltip = document.getElementById("tooltip");
+const emptyState = document.getElementById("empty-state");
+const stateData = document.getElementById("state-data");
+const stateNameDisplay = document.getElementById("state-name-display");
+const barA = document.getElementById("bar-a");
+const barB = document.getElementById("bar-b");
+const barU = document.getElementById("bar-u");
+const valA = document.getElementById("val-a");
+const valB = document.getElementById("val-b");
+const valU = document.getElementById("val-u");
+
+let selectedFips = null;
+
+function showTooltip(event, name) {
+  tooltip.textContent = name;
+  tooltip.style.opacity = "1";
+  moveTooltip(event);
+}
+
+function moveTooltip(event) {
+  tooltip.style.left = (event.clientX + 12) + "px";
+  tooltip.style.top = (event.clientY - 28) + "px";
+}
+
+function hideTooltip() {
+  tooltip.style.opacity = "0";
+}
+
+function selectState(fips, name) {
+  // Deselect previous
+  svg.selectAll(".state").classed("selected", false);
+
+  if (selectedFips === fips) {
+    selectedFips = null;
+    emptyState.style.display = "block";
+    stateData.classList.remove("visible");
+    return;
+  }
+
+  selectedFips = fips;
+  svg.select(`[data-fips="${fips}"]`).classed("selected", true);
+
+  const d = POLL_DATA[fips];
+  if (!d) return;
+
+  stateNameDisplay.textContent = name;
+  barA.style.width = d.a + "%";
+  barB.style.width = d.b + "%";
+  barU.style.width = d.u + "%";
+  valA.textContent = d.a + "%";
+  valB.textContent = d.b + "%";
+  valU.textContent = d.u + "%";
+
+  emptyState.style.display = "none";
+  stateData.classList.add("visible");
+}
+
+// Contest switcher
+document.querySelectorAll(".contest-item").forEach(el => {
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".contest-item").forEach(e => e.classList.remove("active"));
+    el.classList.add("active");
+    // If locked, show upgrade prompt (no-op here)
+  });
+});
+
+// ─── LOAD TOPOLOGY ───────────────────────────────────────────────────────────
+const projection = d3.geoAlbersUsa().scale(1100).translate([487, 295]);
+const path = d3.geoPath(projection);
+
+d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+  const states = topojson.feature(us, us.objects.states);
+
+  // State FIPS → name lookup
+  const fipsToName = {};
+  states.features.forEach(f => {
+    fipsToName[f.id.toString().padStart(2,"0")] = f.properties.name;
+  });
+
+  svg.selectAll(".state")
+    .data(states.features)
+    .join("path")
+      .attr("class", d => {
+        const fips = d.id.toString().padStart(2, "0");
+        return "state" + (ACTIVE_FIPS.has(fips) ? " active" : "");
+      })
+      .attr("data-fips", d => d.id.toString().padStart(2, "0"))
+      .attr("d", path)
+      .on("mouseenter", function(event, d) {
+        const fips = d.id.toString().padStart(2, "0");
+        const name = d.properties.name;
+        showTooltip(event, ACTIVE_FIPS.has(fips) ? name : name + " (no data)");
+      })
+      .on("mousemove", moveTooltip)
+      .on("mouseleave", hideTooltip)
+      .on("click", function(event, d) {
+        const fips = d.id.toString().padStart(2, "0");
+        if (!ACTIVE_FIPS.has(fips)) return;
+        selectState(fips, d.properties.name);
+      });
+
+  // State borders mesh
+  svg.append("path")
+    .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+    .attr("fill", "none")
+    .attr("stroke", "#d0d0c8")
+    .attr("stroke-width", "0.5")
+    .attr("d", path);
+});
+</script>
+</body>
+</html>

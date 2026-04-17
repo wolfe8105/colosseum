@@ -1,0 +1,778 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green: #8ebe3f;
+  --green-dim: #5a7f28;
+  --green-glow: #a8d44f;
+  --brass: #b8860b;
+  --brass-light: #d4a017;
+  --brass-dim: #7a5a08;
+  --copper: #b87333;
+  --dark: #0a0e06;
+  --dark2: #111608;
+  --panel: #0d1309;
+  --panel2: #141c0e;
+  --grid: #1a2412;
+  --text: #c8e88a;
+  --text-dim: #6a8840;
+  --text-brass: #d4a017;
+  --border: #2a3a1a;
+  --border-brass: #5a4010;
+  --rivet: #4a5a30;
+}
+
+body {
+  background: var(--dark);
+  font-family: 'Rajdhani', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-rows: 48px 1fr 52px;
+  grid-template-columns: 180px 1fr 200px;
+  grid-template-areas:
+    "header header header"
+    "left   center right"
+    "footer footer footer";
+  min-height: 760px;
+  border: 1px solid var(--border-brass);
+  background: var(--dark2);
+}
+
+/* ── HEADER ── */
+.header {
+  grid-area: header;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-brass);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.header-logo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--brass-light);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-brass);
+}
+
+.header-topic {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── LEFT PANEL — DIAL + GAUGES ── */
+.left-panel {
+  grid-area: left;
+  background: var(--panel);
+  border-right: 1px solid var(--border-brass);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  gap: 14px;
+}
+
+.panel-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-brass);
+  text-align: center;
+}
+
+.dial-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dial-svg {
+  cursor: pointer;
+}
+
+.dial-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  color: var(--green-glow);
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.dial-unit {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.gauge-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gauge-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.gauge-track {
+  height: 6px;
+  background: var(--grid);
+  border: 0.5px solid var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.gauge-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+.g-green { background: var(--green); }
+.g-brass { background: var(--brass-light); }
+.g-copper { background: var(--copper); }
+
+.rivet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rivet);
+  border: 0.5px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.rivet-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+}
+
+/* ── CENTER — CHART STAGE ── */
+.center-panel {
+  grid-area: center;
+  background: var(--dark2);
+  display: flex;
+  flex-direction: column;
+}
+
+.toggles-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.toggle-group-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-brass);
+  letter-spacing: 0.1em;
+  margin-right: 4px;
+}
+
+.toggle-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border: 0.5px solid var(--border);
+  background: var(--grid);
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.toggle-btn:hover { border-color: var(--green-dim); color: var(--text); }
+.toggle-btn.on { background: var(--green-dim); border-color: var(--green); color: var(--dark); font-weight: 600; }
+.toggle-btn.brass { }
+.toggle-btn.brass.on { background: var(--brass-dim); border-color: var(--brass-light); color: var(--dark); }
+
+.chart-stage {
+  flex: 1;
+  position: relative;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.stage-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.stage-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.metric-card {
+  background: var(--panel2);
+  border: 0.5px solid var(--border);
+  border-radius: 3px;
+  padding: 8px 10px;
+}
+
+.mc-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--text-brass);
+  letter-spacing: 0.1em;
+  margin-bottom: 3px;
+}
+
+.mc-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--green-glow);
+  line-height: 1;
+}
+
+.mc-unit {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.chart-area {
+  flex: 1;
+  background: var(--panel);
+  border: 0.5px solid var(--border);
+  border-radius: 3px;
+  position: relative;
+  min-height: 240px;
+}
+
+.chart-grid-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sliders-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 0 0;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.slider-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.slider-label span { color: var(--green); }
+
+input[type=range] {
+  width: 100%;
+  accent-color: var(--green);
+  cursor: pointer;
+  height: 14px;
+}
+
+/* ── RIGHT PANEL — BUTTONS ── */
+.right-panel {
+  grid-area: right;
+  background: var(--panel);
+  border-left: 1px solid var(--border-brass);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 12px;
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.btn-group-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-brass);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.data-btn {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--grid);
+  border: 0.5px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.data-btn:hover { border-color: var(--green-dim); color: var(--text); }
+.data-btn.active { background: var(--panel2); border-color: var(--green); color: var(--green-glow); border-left: 2px solid var(--green); }
+
+.btn-indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.data-btn.active .btn-indicator { background: var(--green); }
+
+.output-box {
+  margin-top: auto;
+  background: var(--dark);
+  border: 0.5px solid var(--border-brass);
+  border-radius: 3px;
+  padding: 10px;
+}
+
+.output-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--brass-light);
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.output-line {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.output-line.highlight { color: var(--green); }
+
+/* ── FOOTER ── */
+.footer {
+  grid-area: footer;
+  background: var(--panel);
+  border-top: 1px solid var(--border-brass);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
+}
+
+.footer-stat {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fs-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fs-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+}
+
+.footer-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 5px 14px;
+  background: var(--grid);
+  border: 0.5px solid var(--border-brass);
+  border-radius: 2px;
+  color: var(--text-brass);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.action-btn:hover { background: var(--brass-dim); color: var(--brass-light); }
+.action-btn.primary { background: var(--green-dim); border-color: var(--green); color: var(--dark); font-weight: 600; }
+.action-btn.primary:hover { background: var(--green); }
+</style>
+
+<h2 class="sr-only">The Moderator intelligence dashboard — interactive political data crafting interface with topic toggles, conviction dial, demographic sliders, and chart output stage</h2>
+
+<div class="dashboard">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">The Moderator // Intel</div>
+    <div class="header-divider"></div>
+    <div class="header-topic" id="active-topic">Gun Control · 90-day window · Women 25–44</div>
+    <div class="header-status">
+      <div class="pulse"></div>
+      <span>LIVE · 14,822 debates indexed</span>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="panel-label">Conviction<br>Intensity</div>
+    <div class="dial-wrap">
+      <svg class="dial-svg" width="120" height="120" viewBox="0 0 120 120" id="dial-svg">
+        <circle cx="60" cy="60" r="50" fill="#0d1309" stroke="#2a3a1a" stroke-width="1"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#1a2412" stroke-width="8" stroke-dasharray="220 360" stroke-dashoffset="-70" stroke-linecap="round"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#5a7f28" stroke-width="8" stroke-dasharray="220 360" stroke-dashoffset="-70" stroke-linecap="round" opacity="0.3"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#8ebe3f" stroke-width="8" stroke-dasharray="0 360" stroke-dashoffset="-70" stroke-linecap="round" id="dial-arc" style="transition: stroke-dasharray 0.4s ease;"/>
+        <circle cx="60" cy="60" r="18" fill="#111608" stroke="#b8860b" stroke-width="1"/>
+        <circle cx="60" cy="60" r="4" fill="#b8860b"/>
+        <line x1="60" y1="60" x2="60" y2="44" stroke="#8ebe3f" stroke-width="2" stroke-linecap="round" id="dial-needle" transform="rotate(0 60 60)" style="transition: transform 0.4s ease;"/>
+        <text x="60" y="108" text-anchor="middle" fill="#7a5a08" font-family="Share Tech Mono" font-size="7" letter-spacing="2">INTENSITY</text>
+        <text x="18" y="88" text-anchor="middle" fill="#4a5a30" font-family="Share Tech Mono" font-size="7">0</text>
+        <text x="102" y="88" text-anchor="middle" fill="#4a5a30" font-family="Share Tech Mono" font-size="7">100</text>
+      </svg>
+      <div class="dial-value" id="dial-display">73</div>
+      <div class="dial-unit">conviction score</div>
+    </div>
+
+    <div class="rivet-row">
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    </div>
+
+    <div class="panel-label" style="margin-top:4px;">Signal Gauges</div>
+
+    <div class="gauge-row">
+      <div class="gauge-label"><span>Win Rate</span><span id="g1-val">58%</span></div>
+      <div class="gauge-track" onclick="nudgeGauge('g1',this)"><div class="gauge-fill g-green" id="g1" style="width:58%"></div></div>
+    </div>
+    <div class="gauge-row">
+      <div class="gauge-label"><span>Src Density</span><span id="g2-val">3.2x</span></div>
+      <div class="gauge-track" onclick="nudgeGauge('g2',this)"><div class="gauge-fill g-brass" id="g2" style="width:64%"></div></div>
+    </div>
+    <div class="gauge-row">
+      <div class="gauge-label"><span>Persuadability</span><span id="g3-val">31%</span></div>
+      <div class="gauge-track" onclick="nudgeGauge('g3',this)"><div class="gauge-fill g-copper" id="g3" style="width:31%"></div></div>
+    </div>
+    <div class="gauge-row">
+      <div class="gauge-label"><span>Controversy</span><span id="g4-val">82%</span></div>
+      <div class="gauge-track" onclick="nudgeGauge('g4',this)"><div class="gauge-fill g-green" id="g4" style="width:82%"></div></div>
+    </div>
+
+    <div class="rivet-row" style="margin-top:auto;">
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="center-panel">
+
+    <!-- TOP TOGGLES -->
+    <div class="toggles-bar">
+      <span class="toggle-group-label">Topic</span>
+      <button class="toggle-btn on" onclick="setTopic(this,'Gun Control')">Gun Control</button>
+      <button class="toggle-btn" onclick="setTopic(this,'Immigration')">Immigration</button>
+      <button class="toggle-btn" onclick="setTopic(this,'Climate')">Climate</button>
+      <button class="toggle-btn" onclick="setTopic(this,'Economy')">Economy</button>
+      <button class="toggle-btn" onclick="setTopic(this,'Healthcare')">Healthcare</button>
+      <span class="toggle-group-label" style="margin-left:8px;">View</span>
+      <button class="toggle-btn brass on" onclick="setView(this,'Trend')">Trend</button>
+      <button class="toggle-btn brass" onclick="setView(this,'Crosstab')">Crosstab</button>
+      <button class="toggle-btn brass" onclick="setView(this,'Head-to-Head')">H2H</button>
+    </div>
+
+    <div class="chart-stage">
+      <div class="stage-header">
+        <div class="stage-title" id="stage-title">Gun Control — conviction trend</div>
+        <div class="stage-sub" id="stage-sub">FOR restrictions · Women 25–44 · 90 days</div>
+      </div>
+
+      <div class="metric-strip">
+        <div class="metric-card">
+          <div class="mc-label">Debates</div>
+          <div class="mc-value">2,841</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Win Rate</div>
+          <div class="mc-value">58<span class="mc-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Src Cited</div>
+          <div class="mc-value">3.2<span class="mc-unit">x</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Δ 30d</div>
+          <div class="mc-value" style="color:#d4a017">+6<span class="mc-unit">pt</span></div>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <svg class="chart-grid-lines" id="chart-svg" viewBox="0 0 560 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="40" y1="10" x2="40" y2="200" stroke="#1a2412" stroke-width="0.5"/>
+          <line x1="40" y1="200" x2="550" y2="200" stroke="#1a2412" stroke-width="0.5"/>
+          <line x1="40" y1="60" x2="550" y2="60" stroke="#1a2412" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="40" y1="110" x2="550" y2="110" stroke="#1a2412" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="40" y1="155" x2="550" y2="155" stroke="#1a2412" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <text x="32" y="63" fill="#4a5a30" font-size="8" text-anchor="end" font-family="Share Tech Mono">70</text>
+          <text x="32" y="113" fill="#4a5a30" font-size="8" text-anchor="end" font-family="Share Tech Mono">50</text>
+          <text x="32" y="158" fill="#4a5a30" font-size="8" text-anchor="end" font-family="Share Tech Mono">35</text>
+          <text x="75" y="213" fill="#4a5a30" font-size="8" text-anchor="middle" font-family="Share Tech Mono">Jan</text>
+          <text x="160" y="213" fill="#4a5a30" font-size="8" text-anchor="middle" font-family="Share Tech Mono">Feb</text>
+          <text x="245" y="213" fill="#4a5a30" font-size="8" text-anchor="middle" font-family="Share Tech Mono">Mar</text>
+          <text x="330" y="213" fill="#4a5a30" font-size="8" text-anchor="middle" font-family="Share Tech Mono">Apr</text>
+          <polyline id="main-line" points="75,148 100,140 130,135 160,128 190,133 220,120 250,115 280,108 310,100 340,95 370,88 400,80 430,72 460,65 490,60 520,55" fill="none" stroke="#8ebe3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="75,168 100,165 130,162 160,158 190,162 220,155 250,152 280,148 310,143 340,140 370,136 400,130 430,124 460,118 490,115 520,112" fill="none" stroke="#b87333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5,3" opacity="0.7"/>
+          <circle cx="520" cy="55" r="4" fill="#8ebe3f"/>
+          <circle cx="520" cy="112" r="3" fill="#b87333" opacity="0.7"/>
+          <text x="530" y="58" fill="#8ebe3f" font-size="9" font-family="Share Tech Mono">FOR</text>
+          <text x="530" y="115" fill="#b87333" font-size="9" font-family="Share Tech Mono">AGN</text>
+          <rect x="240" y="80" width="0" height="120" fill="#8ebe3f" opacity="0.05" id="hover-band"/>
+        </svg>
+      </div>
+
+      <div class="sliders-row">
+        <div class="slider-group">
+          <div class="slider-label">Time window <span id="sl1-val">90d</span></div>
+          <input type="range" min="30" max="365" step="30" value="90" oninput="updateSlider('sl1-val', this.value+'d'); redrawLine(this.value);">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">Min sample <span id="sl2-val">n=100</span></div>
+          <input type="range" min="50" max="500" step="50" value="100" oninput="updateSlider('sl2-val', 'n='+this.value);">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">Age band <span id="sl3-val">25–44</span></div>
+          <input type="range" min="18" max="65" step="1" value="25" oninput="updateAgeBand(this.value);">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="panel-label">Data Layer</div>
+    <div class="btn-group">
+      <div class="btn-group-label">Demographic</div>
+      <button class="data-btn active" onclick="setDem(this,'Women 25–44')">Women 25–44 <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setDem(this,'Men 25–44')">Men 25–44 <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setDem(this,'18–24 All')">18–24 All <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setDem(this,'45–64 All')">45–64 All <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setDem(this,'Conservative')">Conservative <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setDem(this,'Progressive')">Progressive <div class="btn-indicator"></div></button>
+    </div>
+
+    <div class="btn-group">
+      <div class="btn-group-label">Signal</div>
+      <button class="data-btn active" onclick="setSignal(this,'Win Rate')">Win Rate <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setSignal(this,'Src Density')">Src Density <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setSignal(this,'Persuadability')">Persuadability <div class="btn-indicator"></div></button>
+      <button class="data-btn" onclick="setSignal(this,'Controversy')">Controversy <div class="btn-indicator"></div></button>
+    </div>
+
+    <div class="output-box">
+      <div class="output-label">// Active Query</div>
+      <div class="output-line highlight" id="out-topic">topic: gun_control</div>
+      <div class="output-line" id="out-dem">demo: women_25_44</div>
+      <div class="output-line" id="out-sig">signal: win_rate</div>
+      <div class="output-line" id="out-win">window: 90d</div>
+      <div class="output-line" style="margin-top:6px;color:#5a7f28">n=2,841 debates</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-stat"><span class="fs-label">Indexed</span><span class="fs-value">14,822</span></div>
+    <div class="footer-stat"><span class="fs-label">Topics</span><span class="fs-value">47</span></div>
+    <div class="footer-stat"><span class="fs-label">Profiles</span><span class="fs-value">6,104</span></div>
+    <div class="footer-stat"><span class="fs-label">Last sync</span><span class="fs-value">2m ago</span></div>
+    <div class="footer-right">
+      <button class="action-btn" onclick="sendPrompt('Export this query as a CSV download for the current filter settings')">Export CSV</button>
+      <button class="action-btn" onclick="sendPrompt('Generate a briefing document summarizing the gun control conviction trend for women 25-44')">Briefing</button>
+      <button class="action-btn primary" onclick="sendPrompt('What does this conviction data tell us about messaging strategy for gun control with women 25-44?')">Interpret ↗</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function setDialValue(v) {
+  const pct = v / 100;
+  const arc = pct * 220;
+  document.getElementById('dial-arc').setAttribute('stroke-dasharray', arc + ' 360');
+  const angle = -110 + pct * 220;
+  document.getElementById('dial-needle').setAttribute('transform', `rotate(${angle} 60 60)`);
+  document.getElementById('dial-display').textContent = Math.round(v);
+}
+setDialValue(73);
+
+document.getElementById('dial-svg').addEventListener('click', function(e) {
+  const rect = this.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+  const normalized = ((angle + 110 + 360) % 360) / 220 * 100;
+  if (normalized >= 0 && normalized <= 100) setDialValue(normalized);
+});
+
+function nudgeGauge(id, track) {
+  const fill = document.getElementById(id);
+  const valEl = document.getElementById(id + '-val');
+  const rect = track.getBoundingClientRect();
+  const pct = Math.round(Math.random() * 30 + 40);
+  fill.style.width = pct + '%';
+  const labels = { g1: pct + '%', g2: (pct/31).toFixed(1) + 'x', g3: pct + '%', g4: pct + '%' };
+  valEl.textContent = labels[id];
+}
+
+function updateSlider(id, val) {
+  document.getElementById(id).textContent = val;
+  document.getElementById('out-win').textContent = 'window: ' + val;
+}
+
+function updateAgeBand(val) {
+  const v = parseInt(val);
+  document.getElementById('sl3-val').textContent = v + '–' + Math.min(v + 19, 65);
+}
+
+function setTopic(btn, topic) {
+  document.querySelectorAll('.toggles-bar .toggle-btn:not(.brass)').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const slug = topic.toLowerCase().replace(/ /g, '_');
+  document.getElementById('out-topic').textContent = 'topic: ' + slug;
+  document.getElementById('stage-title').textContent = topic + ' — conviction trend';
+  document.getElementById('active-topic').textContent = topic + ' · 90-day window · Women 25–44';
+  redrawLine(90);
+}
+
+function setView(btn, view) {
+  document.querySelectorAll('.toggle-btn.brass').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function setDem(btn, dem) {
+  document.querySelectorAll('.right-panel .btn-group:first-of-type .data-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const slug = dem.toLowerCase().replace(/ /g, '_').replace(/–/g, '_');
+  document.getElementById('out-dem').textContent = 'demo: ' + slug;
+  document.getElementById('stage-sub').textContent = 'FOR restrictions · ' + dem + ' · 90 days';
+  document.getElementById('active-topic').textContent = document.getElementById('stage-title').textContent.split(' —')[0] + ' · 90-day window · ' + dem;
+  redrawLine(90);
+}
+
+function setSignal(btn, sig) {
+  document.querySelectorAll('.right-panel .btn-group:last-of-type .data-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const slug = sig.toLowerCase().replace(/ /g, '_');
+  document.getElementById('out-sig').textContent = 'signal: ' + slug;
+  redrawLine(90);
+}
+
+function redrawLine(days) {
+  const line = document.getElementById('main-line');
+  const pts = [];
+  const count = Math.min(16, Math.round(days / 6));
+  const xStart = 75, xEnd = 520;
+  const step = (xEnd - xStart) / (count - 1);
+  let y = 148 + Math.random() * 20 - 10;
+  for (let i = 0; i < count; i++) {
+    y = Math.max(30, Math.min(180, y + Math.random() * 20 - 8));
+    pts.push((xStart + i * step).toFixed(0) + ',' + y.toFixed(0));
+  }
+  line.setAttribute('points', pts.join(' '));
+  const lastY = parseFloat(pts[pts.length - 1].split(',')[1]);
+  const circle = line.nextElementSibling;
+  circle.setAttribute('cx', xEnd);
+  circle.setAttribute('cy', lastY);
+  setDialValue(Math.round(100 - (lastY - 30) / 150 * 100));
+}
+</script>

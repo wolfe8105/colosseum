@@ -1,0 +1,306 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#080d05;font-family:'Rajdhani',sans-serif;color:#c8e88a;padding:0;}
+.shell{display:grid;grid-template-rows:44px 1fr 48px;min-height:700px;}
+.topbar{background:#0a0f06;border-bottom:1px solid #1e3010;display:flex;align-items:center;padding:0 20px;gap:16px;}
+.tb-logo{font-family:'Share Tech Mono',monospace;font-size:12px;color:#5a8a28;letter-spacing:0.15em;}
+.tb-sep{width:1px;height:16px;background:#1e3010;}
+.tb-topic{font-size:13px;font-weight:500;color:#c8e88a;flex:1;}
+.tb-btns{display:flex;gap:6px;}
+.tb-btn{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.1em;padding:3px 10px;border:0.5px solid #2a4010;background:#0d1a08;color:#5a8a28;cursor:pointer;border-radius:2px;text-transform:uppercase;}
+.tb-btn.on{background:#1a3a08;border-color:#8ebe3f;color:#8ebe3f;}
+.main{display:grid;grid-template-columns:160px 1fr 180px;}
+.left{background:#090e06;border-right:1px solid #1a2a10;padding:14px 12px;display:flex;flex-direction:column;gap:14px;}
+.panel-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a20;margin-bottom:4px;}
+.demo-btn{width:100%;padding:6px 10px;background:#0d1a08;border:0.5px solid #1e3010;border-radius:2px;color:#6a8a40;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;text-align:left;cursor:pointer;transition:all .15s;margin-bottom:3px;}
+.demo-btn:hover{border-color:#5a8a28;color:#c8e88a;}
+.demo-btn.on{background:#1a3008;border-color:#8ebe3f;color:#8ebe3f;border-left:2px solid #8ebe3f;}
+.topic-chip{display:inline-block;padding:3px 8px;background:#0d1a08;border:0.5px solid #1e3010;border-radius:2px;font-size:11px;color:#5a8a28;cursor:pointer;margin:0 3px 4px 0;transition:all .15s;}
+.topic-chip:hover{border-color:#5a8a28;color:#a8d44f;}
+.topic-chip.on{background:#1a3008;border-color:#8ebe3f;color:#8ebe3f;}
+.center{background:#080d05;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;}
+.chart-wrap{width:100%;max-width:580px;}
+.right{background:#090e06;border-left:1px solid #1a2a10;padding:14px 12px;display:flex;flex-direction:column;gap:10px;}
+.signal-card{background:#0d1a08;border:0.5px solid #1e3010;border-radius:3px;padding:10px 12px;}
+.sc-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:#3a5a20;margin-bottom:4px;}
+.sc-val{font-size:22px;font-weight:600;color:#8ebe3f;line-height:1;}
+.sc-sub{font-size:10px;color:#4a6a28;margin-top:2px;}
+.peak-list{display:flex;flex-direction:column;gap:4px;}
+.peak-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#6a8a40;padding:4px 0;border-bottom:0.5px solid #1a2a10;}
+.peak-item:last-child{border-bottom:none;}
+.peak-dot{width:8px;height:8px;border-radius:1px;flex-shrink:0;}
+.peak-name{flex:1;}
+.peak-val{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8ebe3f;}
+.botbar{background:#0a0f06;border-top:1px solid #1e3010;display:flex;align-items:center;padding:0 20px;gap:20px;}
+.bs{display:flex;gap:8px;align-items:center;}
+.bs-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:#3a5a20;letter-spacing:0.1em;text-transform:uppercase;}
+.bs-val{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8ebe3f;}
+.bot-right{margin-left:auto;display:flex;gap:6px;}
+.act-btn{padding:5px 14px;background:#1a3008;border:0.5px solid #8ebe3f;border-radius:2px;color:#8ebe3f;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+
+<h2 class="sr-only">The Moderator 3D conviction surface dashboard — interactive terrain chart showing debate conviction intensity by topic and demographic</h2>
+
+<div class="shell">
+<div class="topbar">
+  <div class="tb-logo">The Moderator // Intel</div>
+  <div class="tb-sep"></div>
+  <div class="tb-topic" id="active-label">Gun Control · Conviction Surface · Women 25–44</div>
+  <div class="tb-btns">
+    <button class="tb-btn on" onclick="setRotate(this,30)">Front</button>
+    <button class="tb-btn" onclick="setRotate(this,55)">Angle</button>
+    <button class="tb-btn" onclick="setRotate(this,80)">Top</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left">
+    <div>
+      <div class="panel-lbl">Demographic</div>
+      <button class="demo-btn on" onclick="setDemo(this,'Women 25–44')">Women 25–44</button>
+      <button class="demo-btn" onclick="setDemo(this,'Men 25–44')">Men 25–44</button>
+      <button class="demo-btn" onclick="setDemo(this,'18–24 All')">18–24 All</button>
+      <button class="demo-btn" onclick="setDemo(this,'45–64 All')">45–64 All</button>
+      <button class="demo-btn" onclick="setDemo(this,'Conservative')">Conservative</button>
+      <button class="demo-btn" onclick="setDemo(this,'Progressive')">Progressive</button>
+    </div>
+    <div>
+      <div class="panel-lbl">Topic</div>
+      <span class="topic-chip on" onclick="setTopic(this,'Gun Control')">Gun Control</span>
+      <span class="topic-chip" onclick="setTopic(this,'Immigration')">Immigration</span>
+      <span class="topic-chip" onclick="setTopic(this,'Climate')">Climate</span>
+      <span class="topic-chip" onclick="setTopic(this,'Economy')">Economy</span>
+      <span class="topic-chip" onclick="setTopic(this,'Healthcare')">Healthcare</span>
+      <span class="topic-chip" onclick="setTopic(this,'Education')">Education</span>
+    </div>
+    <div style="margin-top:auto;">
+      <div class="panel-lbl">Time window</div>
+      <input type="range" min="30" max="365" step="30" value="90" style="width:100%;accent-color:#8ebe3f;" oninput="updateWindow(this.value)">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#5a8a28;text-align:center;margin-top:3px;" id="win-lbl">90 days</div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="chart-wrap">
+      <canvas id="c3d" width="580" height="440" role="img" aria-label="3D surface plot showing conviction intensity peaks across debate topics and demographic segments">Interactive 3D conviction surface chart</canvas>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel-lbl">Surface Peaks</div>
+    <div class="signal-card">
+      <div class="sc-lbl">Peak conviction</div>
+      <div class="sc-val" id="peak-val">87</div>
+      <div class="sc-sub" id="peak-sub">Restrict access · Round 2</div>
+    </div>
+    <div class="signal-card">
+      <div class="sc-lbl">Win rate at peak</div>
+      <div class="sc-val" id="win-val">63%</div>
+      <div class="sc-sub">FOR restrictions</div>
+    </div>
+    <div class="signal-card">
+      <div class="sc-lbl">Persuadability</div>
+      <div class="sc-val" id="pers-val">28%</div>
+      <div class="sc-sub">low — deeply held</div>
+    </div>
+    <div class="panel-lbl" style="margin-top:4px;">Argument ridges</div>
+    <div class="peak-list">
+      <div class="peak-item"><div class="peak-dot" style="background:#8ebe3f;"></div><span class="peak-name">Safety / lives</span><span class="peak-val" id="r1">87</span></div>
+      <div class="peak-item"><div class="peak-dot" style="background:#d4a017;"></div><span class="peak-name">2nd amendment</span><span class="peak-val" id="r2">71</span></div>
+      <div class="peak-item"><div class="peak-dot" style="background:#b87333;"></div><span class="peak-name">Mental health</span><span class="peak-val" id="r3">54</span></div>
+      <div class="peak-item"><div class="peak-dot" style="background:#5a8a28;"></div><span class="peak-name">Data / statistics</span><span class="peak-val" id="r4">48</span></div>
+      <div class="peak-item"><div class="peak-dot" style="background:#3a5a20;"></div><span class="peak-name">Enforcement</span><span class="peak-val" id="r5">32</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="botbar">
+  <div class="bs"><span class="bs-lbl">Debates</span><span class="bs-val">2,841</span></div>
+  <div class="bs"><span class="bs-lbl">Indexed</span><span class="bs-val">14,822</span></div>
+  <div class="bs"><span class="bs-lbl">Sync</span><span class="bs-val">2m ago</span></div>
+  <div class="bot-right">
+    <button class="act-btn" onclick="redraw()">Refresh surface</button>
+    <button class="act-btn" onclick="sendPrompt('What does this conviction surface tell us about messaging strategy for gun control with women 25-44? Which argument ridge should we lead with?')">Interpret ↗</button>
+  </div>
+</div>
+</div>
+
+<script>
+const W=580,H=440;
+const canvas=document.getElementById('c3d');
+const ctx=canvas.getContext('2d');
+
+let rotX=30, currentTopic='Gun Control', currentDemo='Women 25–44';
+
+const PALETTES={
+  'Gun Control':   [[87,63,28],[71,51,38],[54,40,32],[48,35,20],[32,22,14]],
+  'Immigration':   [[79,58,31],[68,49,35],[61,44,29],[43,30,18],[29,20,12]],
+  'Climate':       [[91,71,22],[74,55,28],[58,41,25],[41,28,17],[24,17,10]],
+  'Economy':       [[82,60,35],[70,52,40],[56,42,31],[45,32,22],[33,23,15]],
+  'Healthcare':    [[88,68,24],[76,57,32],[60,45,27],[44,31,19],[27,18,11]],
+  'Education':     [[75,54,29],[63,46,34],[51,38,28],[38,27,16],[25,17,10]],
+};
+
+const DEMO_MULT={
+  'Women 25–44':1.0,'Men 25–44':0.88,'18–24 All':0.76,
+  '45–64 All':0.92,'Conservative':0.82,'Progressive':0.95
+};
+
+function noise(x,y,s){return Math.sin(x*s+1.3)*Math.cos(y*s*0.7+0.5);}
+
+function getZ(gx,gy,peaks){
+  let z=0;
+  peaks.forEach(([px,py,h,sx,sy])=>{
+    const dx=(gx-px)/sx, dy=(gy-py)/sy;
+    z+=h*Math.exp(-(dx*dx+dy*dy)*0.5);
+  });
+  z+=noise(gx,gy,0.3)*4+noise(gx,gy,0.7)*2;
+  return Math.max(0,z);
+}
+
+function buildPeaks(topic,demo){
+  const m=DEMO_MULT[demo]||1;
+  const base=PALETTES[topic]||PALETTES['Gun Control'];
+  return [
+    [8,4,base[0][0]*m,3.5,2.5],
+    [14,8,base[1][0]*m,3,2.2],
+    [5,11,base[2][0]*m,2.8,2],
+    [18,3,base[3][0]*m,2.5,2],
+    [11,14,base[4][0]*m,2.2,1.8],
+  ];
+}
+
+function project(gx,gy,gz,rx){
+  const GW=22,GH=18;
+  const isoX=(gx-gy)*Math.cos(rx*Math.PI/180)*16;
+  const isoY=(gx+gy)*Math.sin(rx*Math.PI/180)*9-gz*2.2;
+  return [W/2+isoX-60, H*0.62+isoY];
+}
+
+function zColor(z,maxZ,ridge){
+  const t=Math.min(1,z/maxZ);
+  const cols=[
+    [10,20,6],
+    [30,60,15],
+    [58,110,25],
+    [100,160,40],
+    [140,190,60],
+    [180,220,80],
+    [210,240,120],
+    [230,255,160],
+  ];
+  const i=Math.min(cols.length-2,Math.floor(t*(cols.length-1)));
+  const f=t*(cols.length-1)-i;
+  const c=cols[i], n=cols[i+1];
+  return `rgb(${Math.round(c[0]+(n[0]-c[0])*f)},${Math.round(c[1]+(n[1]-c[1])*f)},${Math.round(c[2]+(n[2]-c[2])*f)})`;
+}
+
+function draw(rx, topic, demo){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#080d05';
+  ctx.fillRect(0,0,W,H);
+
+  const GW=22,GH=18;
+  const peaks=buildPeaks(topic,demo);
+  let maxZ=0;
+  const grid=[];
+  for(let gy=0;gy<GH;gy++){
+    grid[gy]=[];
+    for(let gx=0;gx<GW;gx++){
+      const z=getZ(gx,gy,peaks);
+      grid[gy][gx]=z;
+      if(z>maxZ)maxZ=z;
+    }
+  }
+
+  for(let gy=GH-2;gy>=0;gy--){
+    for(let gx=0;gx<GW-1;gx++){
+      const z00=grid[gy][gx], z10=grid[gy][gx+1];
+      const z01=grid[gy+1][gx], z11=grid[gy+1][gx+1];
+      const avgZ=(z00+z10+z01+z11)/4;
+      const [x00,y00]=project(gx,gy,z00,rx);
+      const [x10,y10]=project(gx+1,gy,z10,rx);
+      const [x11,y11]=project(gx+1,gy+1,z11,rx);
+      const [x01,y01]=project(gx,gy+1,z01,rx);
+      ctx.beginPath();
+      ctx.moveTo(x00,y00);
+      ctx.lineTo(x10,y10);
+      ctx.lineTo(x11,y11);
+      ctx.lineTo(x01,y01);
+      ctx.closePath();
+      ctx.fillStyle=zColor(avgZ,maxZ);
+      ctx.fill();
+      ctx.strokeStyle='rgba(8,13,5,0.5)';
+      ctx.lineWidth=0.4;
+      ctx.stroke();
+    }
+  }
+
+  ctx.font='10px Share Tech Mono';
+  ctx.fillStyle='#3a5a20';
+  const axLabels=['Immigration','2nd Amend','Mental Health','Data/Stats','Enforcement'];
+  for(let i=0;i<5;i++){
+    const gx=i*(GW-1)/4;
+    const [ax,ay]=project(gx,GH-1,0,rx);
+    ctx.fillText(axLabels[i],ax-28,ay+14);
+  }
+
+  const demoLabels=['Lib','Mod-L','Mod','Mod-R','Con'];
+  for(let j=0;j<5;j++){
+    const gy=j*(GH-1)/4;
+    const [bx,by]=project(0,gy,0,rx);
+    ctx.fillText(demoLabels[j],bx-36,by+4);
+  }
+
+  ctx.font='9px Share Tech Mono';
+  ctx.fillStyle='#2a4010';
+  ctx.fillText('conviction →',W-90,H-8);
+}
+
+function redraw(){
+  const p=buildPeaks(currentTopic,currentDemo);
+  const m=DEMO_MULT[currentDemo]||1;
+  const pal=PALETTES[currentTopic]||PALETTES['Gun Control'];
+  document.getElementById('peak-val').textContent=Math.round(pal[0][0]*m);
+  document.getElementById('win-val').textContent=Math.round(pal[0][1]*m)+'%';
+  document.getElementById('pers-val').textContent=Math.round(pal[0][2]*m)+'%';
+  document.getElementById('r1').textContent=Math.round(pal[0][0]*m);
+  document.getElementById('r2').textContent=Math.round(pal[1][0]*m);
+  document.getElementById('r3').textContent=Math.round(pal[2][0]*m);
+  document.getElementById('r4').textContent=Math.round(pal[3][0]*m);
+  document.getElementById('r5').textContent=Math.round(pal[4][0]*m);
+  draw(rotX,currentTopic,currentDemo);
+}
+
+function setRotate(btn,angle){
+  document.querySelectorAll('.tb-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  rotX=angle;
+  redraw();
+}
+
+function setDemo(btn,demo){
+  document.querySelectorAll('.demo-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  currentDemo=demo;
+  document.getElementById('active-label').textContent=currentTopic+' · Conviction Surface · '+demo;
+  redraw();
+}
+
+function setTopic(chip,topic){
+  document.querySelectorAll('.topic-chip').forEach(c=>c.classList.remove('on'));
+  chip.classList.add('on');
+  currentTopic=topic;
+  document.getElementById('active-label').textContent=topic+' · Conviction Surface · '+currentDemo;
+  redraw();
+}
+
+function updateWindow(v){
+  document.getElementById('win-lbl').textContent=v+' days';
+  redraw();
+}
+
+redraw();
+</script>
