@@ -155,7 +155,7 @@ export function handleDeepLink(): void {
   const debate = params.get('debate');
   const challenge = params.get('from');
 
-  if (ref && /^[a-zA-Z0-9_-]{4,20}$/.test(ref)) {
+  if (ref && /^[a-z0-9]{5}$/.test(ref)) {
     localStorage.setItem('colosseum_referrer', ref);
     // F-59: If user is already authenticated (e.g. OAuth flow), attribute immediately
     const user = getCurrentUser();
