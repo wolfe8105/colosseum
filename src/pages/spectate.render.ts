@@ -128,7 +128,8 @@ export function renderSpectateView(d: SpectateDebate, messages: DebateMessage[])
       const a = sc.side_a[c.key]; const b = sc.side_b[c.key];
       html += '<div class="ai-score-criterion"><div class="ai-score-criterion-header"><span class="ai-score-criterion-label">' + c.label + '</span><span class="ai-score-criterion-nums">' + a.score + ' \u2014 ' + b.score + '</span></div>';
       html += '<div class="ai-score-bars"><div class="ai-score-bar side-a" style="width:' + (a.score * 10) + '%"></div><div class="ai-score-bar side-b" style="width:' + (b.score * 10) + '%"></div></div>';
-      html += '<div class="ai-score-reason">' + escHtml(a.reason) + '</div></div>';
+      html += '<div class="ai-score-reason side-a-reason">' + escHtml(a.reason) + '</div>';
+      html += '<div class="ai-score-reason side-b-reason">' + escHtml(b.reason) + '</div></div>';
     }
     if (sc.verdict) html += '<div class="ai-scorecard-verdict">' + escHtml(sc.verdict) + '</div>';
     html += '</div>';

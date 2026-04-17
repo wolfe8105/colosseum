@@ -643,3 +643,4 @@ Fixes applied during the Full Monty 85-batch run. Log here as batches complete s
 | Commit | ID | Severity | Fix | File |
 |---|---|---|---|---|
 | `bd4a1c6` | M-END-001 | MEDIUM | `applyEndOfDebateModifiers` — debater B branch now correctly swaps `debater_b.final_score` → `scoreA` and `debater_a.final_score` → `scoreB`. Previously both branches assigned debater A's scores, silently giving debater B the wrong modifiers on every ranked debate. | `src/arena/arena-room-end-finalize.ts` |
+| `a3f9b21` | M-R1 (Batch 04) | MEDIUM | `spectate.render.ts` — AI scorecard now renders side B per-criterion reasoning. Previously only side A reasoning was shown; side B data was in the payload but never rendered. | `src/pages/spectate.render.ts` |
