@@ -147,6 +147,8 @@ export default async function handler(req, res) {
         .map(m => `${m.role === 'user' ? 'HUMAN' : 'AI'}: ${m.content}`)
         .join('\n');
 
+      const scoreAbort = new AbortController();
+      const scoreTimeout = setTimeout(() => scoreAbort.abort(), 9000);
       try {
         const claudeRes = await fetch(CLAUDE_API_URL, {
           method: 'POST',
@@ -163,6 +165,7 @@ export default async function handler(req, res) {
               { role: 'user', content: buildScoringPrompt(safeTopic, side, historyText) },
             ],
           }),
+          signal: scoreAbort.signal,
         });
 
         if (!claudeRes.ok) {
@@ -177,7 +180,7 @@ export default async function handler(req, res) {
           const scores = JSON.parse(raw.replace(/```json|```/g, '').trim());
           return res.status(200).json({ scores });
         } catch (parseErr) {
-          console.warn('[go-respond] Score parse failed:', parseErr.message, raw?.slice(0, 200));
+          console.warn('[go-respond] Score JSON parse failed:', parseErr.message, '| raw[:200]:', raw?.slice(0, 200));
           return res.status(200).json({
             scores: { logic: 6, evidence: 5, delivery: 6, rebuttal: 5, verdict: 'Good effort — keep debating to sharpen your skills.' }
           });
@@ -185,6 +188,8 @@ export default async function handler(req, res) {
       } catch (err) {
         console.error('[go-respond] Scoring error:', err);
         return res.status(500).json({ error: 'Internal server error' });
+      } finally {
+        clearTimeout(scoreTimeout);
       }
     }
 
@@ -210,37 +215,44 @@ export default async function handler(req, res) {
       };
     }
 
-    const claudeRes = await fetch(CLAUDE_API_URL, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: buildSystemPrompt(safeTopic, side, totalRounds),
-        temperature: 0.85,
-        top_p: 0.9,
-        messages: conversationMessages,
-      }),
-    });
+    const debateAbort = new AbortController();
+    const debateTimeout = setTimeout(() => debateAbort.abort(), 9000);
+    try {
+      const claudeRes = await fetch(CLAUDE_API_URL, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: MAX_TOKENS,
+          system: buildSystemPrompt(safeTopic, side, totalRounds),
+          temperature: 0.85,
+          top_p: 0.9,
+          messages: conversationMessages,
+        }),
+        signal: debateAbort.signal,
+      });
 
-    if (!claudeRes.ok) {
-      const errText = await claudeRes.text();
-      console.error('[go-respond] Claude API error:', claudeRes.status, errText);
-      return res.status(502).json({ error: 'AI response failed' });
+      if (!claudeRes.ok) {
+        const errText = await claudeRes.text();
+        console.error('[go-respond] Claude API error:', claudeRes.status, errText);
+        return res.status(502).json({ error: 'AI response failed' });
+      }
+
+      const claudeData = await claudeRes.json();
+      const response = claudeData?.content?.[0]?.text?.trim();
+
+      if (!response) {
+        return res.status(502).json({ error: 'Empty response from AI' });
+      }
+
+      return res.status(200).json({ response });
+    } finally {
+      clearTimeout(debateTimeout);
     }
-
-    const claudeData = await claudeRes.json();
-    const response = claudeData?.content?.[0]?.text?.trim();
-
-    if (!response) {
-      return res.status(502).json({ error: 'Empty response from AI' });
-    }
-
-    return res.status(200).json({ response });
 
   } catch (err) {
     console.error('[go-respond] Unexpected error:', err);
