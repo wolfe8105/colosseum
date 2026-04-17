@@ -65,7 +65,7 @@ const STRIPE_PRICES: StripePrices = {
   creator_monthly: 'price_1T5TIDPuHT2VlOoCyuKuiBmx',
 } as const;
 
-const STRIPE_FUNCTION_URL = 'https://faomczmipsccwbhpivmp.supabase.co/functions/v1/create-checkout-session' as const;
+const STRIPE_FUNCTION_URL = import.meta.env.VITE_STRIPE_FUNCTION_URL || 'https://faomczmipsccwbhpivmp.supabase.co/functions/v1/create-checkout-session';
 
 // ============================================================
 // WEBRTC / SIGNALING
