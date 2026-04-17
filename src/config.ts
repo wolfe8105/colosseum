@@ -50,11 +50,12 @@ import type {
 import { showToast } from './config.toast';
 
 // ============================================================
-// CREDENTIALS (read from Vite env vars, fall back to defaults)
+// CREDENTIALS (read from Vite env vars — NO fallback to production values)
+// Copy .env.example to .env and fill in real values before running locally.
 // ============================================================
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'PASTE_YOUR_SUPABASE_URL_HERE';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE';
 
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51T5T9uPuHT2VlOoCgqdUqtvuez0QHuN9dKcFtYOsclcsjSoSHce8ROcw6zzF5JhPeNkiJK8cJ8DCrB8FU9jhEHwk00GAYHTzzi';
 

