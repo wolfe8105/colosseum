@@ -367,6 +367,10 @@ BEGIN
     RAISE EXCEPTION 'Claim text must be at least 5 characters';
   END IF;
 
+  -- source_url must be HTTP(S) if provided
+  IF p_source_url IS NOT NULL AND p_source_url NOT LIKE 'http://%' AND p_source_url NOT LIKE 'https://%' THEN
+    RAISE EXCEPTION 'source_url must start with http:// or https://';
+  END IF;
   -- Compute fingerprint
   v_fingerprint := _canonical_fingerprint(p_source_title, p_source_author, p_source_date, p_locator);
 
