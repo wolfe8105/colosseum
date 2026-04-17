@@ -48,6 +48,7 @@ vi.mock('../src/config.ts', () => ({
   showToast:        vi.fn(),
   friendlyError:    vi.fn((e: unknown) => String(e)),
   DEBATE: { roundDurationSec: 120, breakDurationSec: 30, defaultRounds: 5, maxSpectators: 500, minEloForRanked: 1000, startingElo: 1200, formats: ['standard', 'crossfire', 'qa_prep'] },
+  FEATURES: { liveDebates: true, asyncDebates: true, hotTakes: true, predictions: true, predictionsUI: true, cosmetics: true, leaderboard: true, notifications: true, shareLinks: true, profileDepth: true, voiceMemo: true, followsUI: true, rivals: true, arena: true, aiSparring: true, recording: false },
 }));
 
 vi.mock('../src/tokens.ts', () => ({
