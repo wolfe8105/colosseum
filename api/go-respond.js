@@ -1,14 +1,4 @@
 // Public endpoint — rate-limited by IP via Upstash Redis (10 req/60s sliding window, cross-instance).
-// THE MODERATOR — /go AI Debate Responder (Serverless Function)
-// Session 206 | Session 208: Swapped Groq → Claude API
-//
-// WHAT THIS DOES:
-// 1. Receives topic, side, round, user argument, conversation history
-// 2. Calls Claude (claude-sonnet-4-20250514) server-side
-// 3. Returns AI counter-argument
-//
-// ROUTE: /api/go-respond (called by moderator-go.html)
-//
 // ENV VARS REQUIRED: ANTHROPIC_API_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN (set in Vercel dashboard)
 
 import { Ratelimit } from '@upstash/ratelimit';

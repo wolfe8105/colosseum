@@ -66,7 +66,7 @@ Most large modules were decomposed into domain sub-files (Session 254). The barr
 | File | Purpose |
 |------|---------|
 | `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
-| `src/auth.ts` | Barrel. Sub-files: `auth.core`, `auth.follows`, `auth.moderator`, `auth.ops`, `auth.profile`, `auth.rivals`, `auth.types`. `safeRpc()` lives in `auth.core`. `noOpLock` must load before Supabase CDN. |
+| `src/auth.ts` | Barrel. Sub-files: `auth.core`, `auth.follows`, `auth.moderator`, `auth.ops`, `auth.profile`, `auth.rivals`, `auth.rpc`, `auth.types`. `safeRpc()` lives in `auth.rpc.ts` (re-exported via barrel). `noOpLock` must load before Supabase CDN. |
 | `src/async.ts` | Barrel. Sub-files: `async.actions`, `async.fetch`, `async.render`, `async.rivals`, `async.state`, `async.types`, `async.utils`. Hot takes, predictions, rivals, react toggle, challenge modal. |
 | `src/arena.ts` | Barrel. 31 sub-files under `src/arena/`. See arena section below. |
 | `src/reference-arsenal.ts` | Barrel. Sub-files: `reference-arsenal.constants`, `.debate`, `.forge`, `.loadout`, `.render`, `.rpc`, `.types`, `.utils`. 5-step forge form, reference card renderer, arsenal list. |

@@ -54,10 +54,7 @@ export function startHeartbeat(): void {
   // Send heartbeat every 10s
   const sendBeat = () => {
     if (!feedRealtimeChannel) return;
-    (feedRealtimeChannel as any).send({
-      type: 'broadcast',
-      event: 'heartbeat',
-      payload: { role: myRole, ts: Date.now() },
+    feedRealtimeChannel.send({
     });
   };
   // Send first beat immediately
@@ -84,7 +81,7 @@ export function sendGoodbye(): void {
   if (!debate || !feedRealtimeChannel) return;
   const myRole = debate.modView ? 'mod' : debate.spectatorView ? 'spec' : debate.role;
   // fire-and-forget — page is closing
-  (feedRealtimeChannel as any).send({
+  feedRealtimeChannel.send({
     type: 'broadcast',
     event: 'goodbye',
     payload: { role: myRole },

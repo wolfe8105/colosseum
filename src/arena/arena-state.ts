@@ -5,6 +5,7 @@
 import type { ArenaView, DebateMode, CurrentDebate, SelectedModerator } from './arena-types.ts';
 import type { LoadoutReference, OpponentCitedRef } from './arena-types-feed-room.ts';
 import type { EquippedItem } from '../powerups.ts';
+import type { RealtimeChannel } from '../webrtc.types.ts';
 import { DEBATE } from '../config.ts';
 
 // View & mode
@@ -72,7 +73,7 @@ export let opponentPollElapsed: number = 0;
 
 // Feed room (F-51)
 export let feedTurnTimer: ReturnType<typeof setInterval> | null = null;
-export let feedRealtimeChannel: unknown = null;
+export let feedRealtimeChannel: RealtimeChannel | null = null;
 
 // Feed room references (F-51 Phase 3)
 export let loadedRefs: LoadoutReference[] = [];
@@ -134,7 +135,7 @@ export function set_vmSeconds(v: number) { vmSeconds = v; }
 export function set_opponentPollTimer(v: ReturnType<typeof setInterval> | null) { opponentPollTimer = v; }
 export function set_opponentPollElapsed(v: number) { opponentPollElapsed = v; }
 export function set_feedTurnTimer(v: ReturnType<typeof setInterval> | null) { feedTurnTimer = v; }
-export function set_feedRealtimeChannel(v: unknown) { feedRealtimeChannel = v; }
+export function set_feedRealtimeChannel(v: RealtimeChannel | null) { feedRealtimeChannel = v; }
 export function set_loadedRefs(v: LoadoutReference[]) { loadedRefs = v; }
 export function set_opponentCitedRefs(v: OpponentCitedRef[]) { opponentCitedRefs = v; }
 export function set_challengesRemaining(v: number) { challengesRemaining = v; }

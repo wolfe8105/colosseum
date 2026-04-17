@@ -16,6 +16,7 @@
  */
 
 import { getSupabaseClient } from '../auth.ts';
+import { getAccessToken, setRealtimeAuth, createChannel, removeChannel } from './arena-realtime-client.ts';
 import {
   currentDebate, feedRealtimeChannel, set_feedRealtimeChannel,
 } from './arena-state.ts';
@@ -39,12 +40,10 @@ export async function subscribeRealtime(debateId: string): Promise<void> {
   if (!client || isPlaceholder()) return;
 
   // Set auth token before subscribing so the private channel has a valid JWT context.
-  const { data: sessionData } = await (client as any).auth.getSession();
-  const accessToken = sessionData?.session?.access_token ?? null;
-  if (accessToken) (client as any).realtime.setAuth(accessToken);
+  const accessToken = await getAccessToken(client);
+  if (accessToken) setRealtimeAuth(client, accessToken);
 
-  const channel = (client as any)
-    .channel(`feed:${debateId}`, { config: { private: true } })
+  const channel = createChannel(client, `feed:${debateId}`, { private: true })
     .on(
       'postgres_changes',
       {
@@ -84,7 +83,7 @@ export async function subscribeRealtime(debateId: string): Promise<void> {
 export function unsubscribeRealtime(): void {
   const client = getSupabaseClient();
   if (client && feedRealtimeChannel) {
-    (client as any).removeChannel(feedRealtimeChannel);
+    removeChannel(client, feedRealtimeChannel);
     set_feedRealtimeChannel(null);
   }
 }
