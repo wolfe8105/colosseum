@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 // ============================================================
 // F-47 STEP 8 — MODERATOR SCORING TESTS
 // Tests scoreModerator() from src/auth.ts.

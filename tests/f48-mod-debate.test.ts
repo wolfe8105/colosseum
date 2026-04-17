@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 // ============================================================
 // F-48 — MOD-INITIATED DEBATE TESTS
 // Tests the modView guard in endCurrentDebate() and the
