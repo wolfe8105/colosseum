@@ -30,6 +30,7 @@ import {
 } from './arena-feed-ui.ts';
 
 export function pauseFeed(debate: CurrentDebate): void {
+  if (feedPaused) return;
   set_feedPaused(true);
   set_feedPauseTimeLeft(timeLeft);
 
