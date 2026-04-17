@@ -72,6 +72,7 @@ function getNextSpeaker(currentStepIndex: number): DebateRole | null {
 
 /** Begin a specific step in the turn sequence */
 export function beginStep(stepIndex: number): void {
+  _advancing = false;
   if (stepIndex >= state.turnSequence.length) {
     endDebate();
     return;
@@ -179,8 +180,16 @@ function onStepExpired(): void {
   advanceStep();
 }
 
+// Guard against double-advance: if the timer fires at the exact moment the
+// debater clicks "Finish Turn", both onStepExpired and finishTurn call
+// advanceStep. Without this flag the stepIndex increments twice, skipping a
+// turn entirely. The flag resets at the top of beginStep.
+let _advancing = false;
+
 /** Move to the next step in the sequence */
 export function advanceStep(): void {
+  if (_advancing) return;
+  _advancing = true;
   stopWorkerTimer();
   const nextIndex = state.debateState.turn.stepIndex + 1;
   beginStep(nextIndex);

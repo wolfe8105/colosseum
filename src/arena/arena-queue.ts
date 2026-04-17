@@ -21,6 +21,7 @@ import { onMatchFound, startAIDebate } from './arena-match-found.ts';
 let consecutivePollErrors = 0;
 
 export function enterQueue(mode: DebateMode | string, topic: string): void {
+  consecutivePollErrors = 0;
   set_selectedMode(mode as DebateMode);
   set_view('queue');
   pushArenaState('queue');

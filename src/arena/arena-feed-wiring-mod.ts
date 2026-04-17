@@ -160,7 +160,13 @@ async function submitModComment(): Promise<void> {
     author_name: debate.moderatorName || 'Moderator',
   });
 
-  await writeFeedEvent('speech', text, 'mod');
+  try {
+    await writeFeedEvent('speech', text, 'mod');
+  } finally {
+    // Re-enable button regardless of success or failure — without this,
+    // any writeFeedEvent rejection leaves the button permanently disabled.
+    if (sendBtn) sendBtn.disabled = (input?.value || '').length === 0;
+  }
 }
 
 /** Pin/unpin a speech event (moderator-only). No broadcast — local state only. */
