@@ -66,6 +66,14 @@
   --mod-accent-text: #ff1a75;
   --mod-accent-primary: #ff1a75;
 
+  /* --- Debate sides & arena-specific colors --- */
+  --mod-side-a: #E7442A;
+  --mod-side-b: #4A90D9;
+  --mod-gold: #c29a58;
+  --mod-gold-bright: #F5A623;
+  --mod-error: #b71c1c;
+  --mod-error-light: #ef9a9a;
+
   /* --- Status --- */
   --mod-status-live: #ff1a75;
   --mod-status-live-bg: rgba(255,26,117,0.1);
@@ -182,6 +190,14 @@
   --mod-accent-border: rgba(230,32,94,0.25);
   --mod-accent-text: #aa1644;
   --mod-accent-primary: #e6205e;
+
+  /* --- Debate sides & arena-specific colors --- */
+  --mod-side-a: #c93820;
+  --mod-side-b: #2a72b8;
+  --mod-gold: #a07a35;
+  --mod-gold-bright: #d48a0f;
+  --mod-error: #b71c1c;
+  --mod-error-light: #c44040;
 
   /* --- Status --- */
   --mod-status-live: #e6205e;

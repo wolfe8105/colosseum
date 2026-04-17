@@ -20,7 +20,7 @@ export function injectFeedControlsCSS(): void {
     .feed-action-btn { padding:10px 16px;border-radius:var(--mod-radius-pill);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;min-height:var(--mod-touch-min); }
     .feed-action-btn:disabled { opacity:0.35;cursor:not-allowed; }
     .feed-finish-btn { border-color:var(--mod-accent-border);color:var(--mod-accent-text); }
-    .feed-concede-btn { border-color:rgba(231,68,42,0.4);color:#E7442A; /* TODO: needs CSS var token */ }
+    .feed-concede-btn { border-color:rgba(231,68,42,0.4);color:var(--mod-side-a); }
 
     /* Moderator score row */
     .feed-mod-score-row { display:flex;align-items:center;gap:6px;margin-top:8px;padding:8px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md); }
@@ -32,10 +32,10 @@ export function injectFeedControlsCSS(): void {
     /* Phase 2: Pin button (mod-only, invisible to others) */
     .feed-pin-btn { position:absolute;top:4px;right:4px;width:24px;height:24px;border:none;background:none;color:var(--mod-text-muted);font-size:13px;cursor:pointer;opacity:0.4;transition:opacity 0.15s;padding:0;line-height:24px;text-align:center; }
     .feed-pin-btn:hover { opacity:1; }
-    .feed-pin-btn.pinned { opacity:1;color:#c29a58; /* TODO: needs CSS var token */ }
+    .feed-pin-btn.pinned { opacity:1;color:var(--mod-gold); }
     /* LANDMINE [LM-CSS-003]: position:relative declared here on .feed-evt-a/b couples feed-stream selectors to the pin-button feature. If stream rules are edited without moving this, pin positioning breaks. */
     .feed-evt-a, .feed-evt-b { position:relative; }
-    .feed-evt-pinned { box-shadow:inset 0 0 0 1px rgba(194,154,88,0.4); /* TODO: needs CSS var token — #c29a58 */ }
+    .feed-evt-pinned { box-shadow:inset 0 0 0 1px rgba(194,154,88,0.4); }
 
     /* Phase 2: Score button budget badges */
     .feed-score-btn-wrap { position:relative;display:inline-flex; }

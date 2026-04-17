@@ -80,8 +80,8 @@ export async function renderBountyClaimDropdown(
       LOCK IN BOUNTY CLAIM
     </button>
     <div id="bounty-claim-error" style="font-size:11px;color:var(--mod-magenta);margin-top:6px;display:none;"></div>
-    <div id="bounty-claim-locked" style="display:none;background:rgba(245,166,35,0.12);border:1px solid #F5A623;border-radius:8px;padding:10px 12px;text-align:center;"><!-- TODO: needs CSS var token — #F5A623 -->
-      <div style="font-size:13px;color:#F5A623;font-family:var(--mod-font-display);letter-spacing:1px;">🟡 BOUNTY LOCKED</div><!-- TODO: needs CSS var token — #F5A623 -->
+    <div id="bounty-claim-locked" style="display:none;background:rgba(245,166,35,0.12);border:1px solid var(--mod-gold-bright);border-radius:8px;padding:10px 12px;text-align:center;">
+      <div style="font-size:13px;color:var(--mod-gold-bright);font-family:var(--mod-font-display);letter-spacing:1px;">🟡 BOUNTY LOCKED</div>
       <div id="bounty-claim-locked-detail" style="font-size:11px;color:var(--mod-text-muted);margin-top:4px;"></div>
     </div>
   `;
@@ -108,9 +108,9 @@ export async function renderBountyClaimDropdown(
 
     preview.textContent = `Attempt fee: ${fee} tokens (burned regardless of outcome). Win → you earn ${Math.round(amt * 0.95 * 100) / 100} tokens.`;
     lockBtn.disabled = false;
-    lockBtn.style.background = '#F5A623'; // TODO: needs CSS var token
-    lockBtn.style.color = '#0A1128'; // TODO: needs CSS var token
-    lockBtn.style.borderColor = '#F5A623'; // TODO: needs CSS var token
+    lockBtn.style.background = 'var(--mod-gold-bright)';
+    lockBtn.style.color = 'var(--mod-bg-base)';
+    lockBtn.style.borderColor = 'var(--mod-gold-bright)';
     lockBtn.style.cursor = 'pointer';
   });
 

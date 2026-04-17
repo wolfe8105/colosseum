@@ -238,7 +238,7 @@ export function onQueueTimeout(): void {
   const statusEl = document.getElementById('arena-queue-status');
   if (statusEl) {
     statusEl.textContent = 'No opponents available right now.';
-    statusEl.style.color = 'var(--mod-muted, #8890A8)';
+    statusEl.style.color = 'var(--mod-muted, var(--mod-text-muted))';
   }
 
   // Clear AI prompt if it was showing
