@@ -34,7 +34,7 @@ export async function generateScores(debate: CurrentDebate): Promise<GeneratedSc
         <div class="arena-judging">
           <div class="arena-judging-icon">\u2696\uFE0F</div>
           <div class="arena-judging-text">THE JUDGE IS REVIEWING...</div>
-          <div class="arena-judging-sub">Analyzing ${debate.messages.length} arguments across ${debate.round} rounds</div>
+          <div class="arena-judging-sub">Analyzing ${Number(debate.messages.length)} arguments across ${Number(debate.round)} rounds</div>
           <div class="arena-typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
       `;

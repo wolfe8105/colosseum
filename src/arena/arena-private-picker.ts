@@ -166,7 +166,7 @@ export function showUserSearchPicker(mode: string, topic: string): void {
             <div class="arena-user-avatar">${(u.display_name || u.username || '?')[0].toUpperCase()}</div>
             <div>
               <div class="arena-user-name">${escapeHTML(u.display_name || u.username)}</div>
-              <div class="arena-user-elo">${u.elo_rating} ELO</div>
+              <div class="arena-user-elo">${Number(u.elo_rating)} ELO</div>
             </div>
           </div>
         `).join('');
@@ -234,7 +234,7 @@ export async function showGroupLobbyPicker(mode: string, topic: string): Promise
       listEl.innerHTML = (data as { id: string; name: string; member_count: number }[]).map(g => `
         <div class="arena-group-row" data-gid="${escapeHTML(g.id)}" data-gname="${escapeHTML(g.name)}">
           <div class="arena-group-row-name">${escapeHTML(g.name)}</div>
-          <div class="arena-group-row-count">${g.member_count} members</div>
+          <div class="arena-group-row-count">${Number(g.member_count)} members</div>
         </div>
       `).join('');
       let _groupPicked = false;

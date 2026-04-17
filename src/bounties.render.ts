@@ -62,7 +62,7 @@ export async function renderProfileBountySection(
         btn.disabled = true; btn.textContent = '…';
         const result = await cancelBounty(existingBounty!.id);
         if (result.success) {
-          body.innerHTML = `<div style="font-size:12px;color:var(--mod-text-muted);text-align:center;">Bounty cancelled. ${result.refund} tokens refunded.</div>`;
+          body.innerHTML = `<div style="font-size:12px;color:var(--mod-text-muted);text-align:center;">Bounty cancelled. ${Number(result.refund)} tokens refunded.</div>`;
         } else {
           btn.disabled = false;
           btn.textContent = result.error ?? 'Error — try again';
