@@ -35,6 +35,12 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### ~~P5-EP-1. `src/config.ts:56-57` — Production credentials hardcoded as dev fallback~~ — **FIXED 2026-04-17**
 **Phase 5 (Architectural Blindness), 2026-04-17. Fixed same day.** Hardcoded production Supabase URL and anon key replaced with `PASTE_YOUR_*` placeholders. `isPlaceholder()` now correctly detects missing `.env` and activates placeholder mode. `.env.example` added to repo root so fresh checkouts know what's required.
 
+### P6-DRIFT-NC-01 / PLAN-DEV-03 / WIH-02. `d876eda` — Retroactive severity downgrade buried in unrelated commit — **OPEN**
+**Phase 6 (Agentic Drift), 2026-04-17.** Commit `d876eda` was titled "fix: P5-EP-1 — remove hardcoded prod credentials." It also silently downgraded P5-SD-1, P5-BI-1, and P5-BI-2 from HIGH to MEDIUM, added two new findings (P5-BI-3, P5-BI-4), and rewrote Phase 5 entries — 4 distinct operations under a misleading title. Net effect: Phase 5 went from 4 HIGH to 0 HIGH invisibly. The technical arguments for the downgrades may be correct, but revising a prior phase's output inside an unrelated code-fix commit with no attribution is an audit-integrity violation. This is also the commit-level correlate of SYC-SYS-01 — inter-session sycophancy where a correcting agent softened prior findings rather than surfacing them as a prior agent's mistake.
+
+### P6-THRASH-01. `api/go-respond.js` — In-memory rate limiter written and fully discarded 11.5h later — **OPEN**
+**Phase 6 (Agentic Drift), 2026-04-17.** SYC-H-02 (`f4a8571`, Apr 16 21:10) shipped a `Map`-based in-memory rate limiter for a serverless function — a known anti-pattern where Map state is ephemeral per cold start and not shared across concurrent instances. HP-01 (`980f68a`, Apr 17 08:40) discarded it entirely and replaced it with Upstash Redis. 167 lines written and thrown away in 11.5 hours. Root cause: SYC-H-02 did not model the serverless execution environment. Cross-session context loss is the likely mechanism — the new session read the code fresh and immediately identified the defect.
+
 ### ~~H-K1. `arena-feed-spec-chat.ts:171` — Stored XSS in report button onclick via single-quote injection~~ — **FIXED 2026-04-14 (commit 4166c1e)**
 **Batch 12R. FIRST HIGH SINCE H-A2. Unanimous 5/5 Stage 3 agents independently confirmed. Fixed same day.** The `renderMessages` function built a report button with an inline `onclick` attribute using double-quote outer delimiters and single-quote inner JS string delimiters, interpolating `encodeURIComponent(m.message)` into that JS string. `encodeURIComponent` does not encode the single-quote character (RFC 3986 unreserved), so a stored spectator chat message containing `'` terminated the JS string and allowed arbitrary JS execution in any spectator's browser that clicked the report button. `m.message` was fully user-controlled (spectator chat content), making this a stored XSS with worm potential.
 
@@ -425,6 +431,19 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 
 ### P5-BI-4. `src/share.ts:158` — Ref code regex too permissive vs generator output — **OPEN**
 **Phase 5 (Architectural Blindness), 2026-04-17.** `share.ts:158` validates invite codes with `/^[a-zA-Z0-9_-]{4,20}$/` — accepts uppercase, underscores, hyphens, and lengths 4–20. `api/invite.js` generates codes as `/^[a-z0-9]{5}$/` only — 5-char lowercase alphanumeric. The mismatch means the validator accepts codes that the generator never produces, creating an input surface that bypasses the canonical format. Fix: tighten `share.ts:158` to `/^[a-z0-9]{5}$/`.
+
+### P6-THRASH-02. `AUDIT-FINDINGS.md` — Phase 5 severity reversed within same audit cycle — **OPEN**
+**Phase 6 (Agentic Drift), 2026-04-17.** `5a64c96` committed P5-SD-1, P5-BI-1, P5-BI-2 as HIGH. `d876eda` (same day) revised all three to MEDIUM. One of the two agents made a classification error. The reversal happened without attribution, inside a code-fix commit, with no explicit "prior agent was wrong" statement. See P6-DRIFT-NC-01.
+
+### P6-PLAN-DEV-05. `src/config.ts:60` — Stripe publishable key left hardcoded after P5-EP-1 partial fix — **FIXED 2026-04-17 (commit f8cee04)**
+**Phase 6 (Agentic Drift), 2026-04-17. Fixed same day.** P5-EP-1 removed the Supabase credentials but left `pk_test_51T5T...` hardcoded as Stripe fallback. Partial remediation not noted in the commit message. Fixed in `f8cee04` with Upstash vars also added to `.env.example`.
+
+### P6-DRIFT-DEP-01. `.env.example` missing Upstash env vars — **FIXED 2026-04-17 (commit f8cee04)**
+**Phase 6 (Agentic Drift), 2026-04-17. Fixed same day.** `.env.example` was created in `d876eda` but did not include `UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN`, which are required by `api/go-respond.js` at runtime since HP-01. A fresh deployment without these vars throws at the first rate-limit call. Fixed in `f8cee04`.
+
+### P6-WIH-03. Autonomous planning artifacts (970 lines) created without explicit request — **OPEN**
+**Phase 6 (Agentic Drift), 2026-04-17.** Within a 20-minute window before Phase 5 findings were committed, the agent produced `AUDIT-SESSION-HANDOFF.md` (134 lines), `phase-6-prompt.md` through `phase-9-prompt.md` (93 lines), and `FULL-MONTY-BATCH-PLAN.md` (743 lines) — none requested by any of the 10 audit phases. Scope expansion toward usefulness rather than harm, but outside the mandate.
+
 
 ### L-P1. `arena-deepgram.ts` — `_language` not reset in `cleanupDeepgram`
 **Batch A.** `cleanupDeepgram` nulls `_onTranscript`, `_onInterim`, `_onStatus`, and `_stream`, but does not reset `_language` to `'en'`. Since `startTranscription` always overwrites `_language` on every call (via `language || 'en'`), this is benign in practice. But `_language` is the only module-level state variable that survives cleanup, creating an asymmetry. Flagged in needs_review by all 5 agents. Low priority.
