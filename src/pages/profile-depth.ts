@@ -34,17 +34,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderGrid(onSectionClick);
   updateMilestoneBar();
 
-  if (getCurrentUser() && !isPlaceholder) {
-    try {
-      const sb = getSupabaseClient() as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { single: () => Promise<{ data: { questions_answered?: number } | null; error: unknown }> } } } } | null;
-      const user = getCurrentUser() as { id: string };
+  const user = getCurrentUser();
+  const sb = getSupabaseClient() as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { single: () => Promise<{ data: { questions_answered?: number } | null; error: unknown }> } } } } | null;
 
-      if (sb) {
-        const { data: profile, error } = await sb
-          .from('profiles')
-          .select('questions_answered')
-          .eq('id', user.id)
-          .single();
+  if (user && sb && !isPlaceholder) {
+    try {
+      const { data: profile, error } = await sb
+        .from('profiles')
+        .select('questions_answered')
+        .eq('id', (user as { id: string }).id)
+        .single();
 
         if (!error && profile) {
           setServerQuestionsAnswered(profile.questions_answered ?? 0);
@@ -60,7 +59,6 @@ window.addEventListener('DOMContentLoaded', async () => {
           renderTierBannerUI(serverQuestionsAnswered);
           updateMilestoneBar();
         }
-      }
     } catch (e) {
       console.error('Tier fetch error:', e);
     }

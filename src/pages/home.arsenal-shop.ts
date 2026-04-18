@@ -35,7 +35,14 @@ export async function loadShopScreen(container: HTMLElement): Promise<void> {
 
   container.innerHTML = '<div class="shop-loading">Loading catalog…</div>';
 
-  const catalog = await getModifierCatalog();
+  let catalog;
+  try {
+    catalog = await getModifierCatalog();
+  } catch (e) {
+    console.error('[arsenal-shop] Failed to load catalog:', e);
+    container.innerHTML = '<div class="shop-error">Failed to load shop. Please try again.</div>';
+    return;
+  }
 
   _state.catalog = catalog;
   _state.tokenBalance = _readTokenBalance();
