@@ -1,10 +1,6 @@
-Run Full Monty audit Batch 52 from THE MODERATOR repo.
+TOKEN=$(cat .github-token | tr -d '[:space:]') && git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git && cd colosseum && git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
 
-SETUP
-=====
-git clone https://TOKEN_HERE@github.com/wolfe8105/colosseum.git
-cd colosseum
-git remote set-url origin https://TOKEN_HERE@github.com/wolfe8105/colosseum.git
+Then run Full Monty audit Batch 52.
 
 MANDATORY FILE READ VERIFICATION
 =================================
