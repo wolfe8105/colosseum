@@ -85,19 +85,30 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'PLACING STAKE...';
 
-      const result = await placeStake(debateId, selectedSide, amount);
+      try {
+        const result = await placeStake(debateId, selectedSide, amount);
 
-      if (result.success) {
-        confirmBtn.textContent = 'STAKE PLACED ✓';
-        confirmBtn.style.background = '#16a34a'; // TODO: needs CSS var token
-        if (errorEl) errorEl.style.display = 'none';
-        if (onStakePlaced) onStakePlaced(result);
-      } else {
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'CONFIRM STAKE';
+        if (result.success) {
+          confirmBtn.textContent = 'STAKE PLACED ✓';
+          confirmBtn.style.background = '#16a34a'; // TODO: needs CSS var token
+          if (errorEl) errorEl.style.display = 'none';
+          if (onStakePlaced) onStakePlaced(result);
+        } else {
+          if (errorEl) {
+            errorEl.textContent = result.error ?? 'Stake failed';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        // B39-1: re-enable button and surface error on unexpected throw
         if (errorEl) {
-          errorEl.textContent = result.error ?? 'Stake failed';
+          errorEl.textContent = 'Unexpected error. Please try again.';
           errorEl.style.display = 'block';
+        }
+      } finally {
+        if (confirmBtn.textContent === 'PLACING STAKE...') {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'CONFIRM STAKE';
         }
       }
     });
