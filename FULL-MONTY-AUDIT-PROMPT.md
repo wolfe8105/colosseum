@@ -1,87 +1,70 @@
 # Full Monty Audit — CC Run Prompt
 
-Reusable prompt for running the Full Monty 5-agent audit.
-Paste into a fresh Claude Code session with the repo cloned.
-Change the batch number on line 1 between runs (01 through 85).
+Paste into a fresh Claude Code session. **Change the batch number (two places marked ★) before pasting. That is the only edit needed.**
+
+Swap TOKEN for the GitHub token from the session handoff before pasting.
 
 ---
 
 ```
-Run Full Monty audit Batch [NN] from THE MODERATOR repo.
+/model claude-sonnet-4-5
 
-MANDATORY FIRST STEP — FILE READ VERIFICATION
-==============================================
-Every file you read must follow this exact sequence. No exceptions.
-
-  Step 1: run `wc -l <filename>` and paste the output.
-  Step 2: read the file.
-  Step 3: write "Read [N] lines of [total] total."
-
-If N ≠ total: stop. Re-read. Do not proceed on a partial read.
-This applies to every file in this session — method docs, file lists, source files, everything.
+Run Full Monty audit Batch ★NN★ from THE MODERATOR repo.
 
 SETUP
 =====
-Clone the repo and set the remote:
-  git clone https://TOKEN@github.com/wolfe8105/colosseum.git
-  git remote set-url origin https://TOKEN@github.com/wolfe8105/colosseum.git
+git clone https://TOKEN@github.com/wolfe8105/colosseum.git
+cd colosseum
+git remote set-url origin https://TOKEN@github.com/wolfe8105/colosseum.git
 
-The repo contains two documents that fully define this task:
+MANDATORY FILE READ VERIFICATION
+=================================
+Every file you read must follow this exact sequence. No exceptions.
 
-1. THE-MODERATOR-AUDIT-METHOD-V3.md
-   The four-stage audit method (Stage 1 → 1.5 → 2 → 3).
-   Read the WHOLE file before doing anything else.
-   Follow it exactly. Do not summarize and skip steps.
+  Step 1: run `wc -l <filename>` and note the total.
+  Step 2: read the file.
+  Step 3: confirm "Read [N] lines of [total] total."
 
-2. FULL-MONTY-BATCH-PLAN.md
-   The 85-batch file list. For this run, use Batch [NN] only.
-   Ignore all other batches.
+If N ≠ total: stop, re-read. Do not proceed on a partial read.
+Applies to every file this session — method docs, batch plan, source files, everything.
 
 BEFORE STARTING
 ===============
-1. Read THE-MODERATOR-AUDIT-METHOD-V3.md in full (verify line count).
-2. Read FULL-MONTY-BATCH-PLAN.md and extract the file paths under "Batch [NN]".
-3. Read AUDIT-FINDINGS.md — the pre-audit state section lists every fix
-   already applied before this audit started. Do not re-report fixed items
-   as open findings. Note them as PREVIOUSLY FIXED if you encounter them.
-4. Treat the Batch [NN] file list as your [FILE_LIST] for the v3 orchestration
-   prompt. Repo root is your working directory. Audit directory is ./audit/batch[NN]/
-   (create if it does not exist — use the batch-namespaced subdirectory so
-   parallel sessions do not collide).
-5. Follow v3's orchestration prompt using those values, then proceed through
-   Stage 1 → 1.5 → 2 → 3 per file, updating the manifest after each stage,
-   file-first order.
-
-MANIFEST PATH
-=============
-Use: audit/batch[NN]/manifest.json
-(Not audit/manifest.json — the root manifest is reserved for the old 16R run.)
-This keeps parallel batch sessions fully isolated.
-
-RESUME BEHAVIOR
-===============
-If audit/batch[NN]/manifest.json already exists, verify the file list matches
-Batch [NN]. If it matches, resume from the last completed stage. If it does not
-match, stop and report the mismatch.
+1. Read THE-MODERATOR-AUDIT-METHOD-V3.md in full (verify line count first).
+2. Read FULL-MONTY-BATCH-PLAN.md and extract the file list for Batch ★NN★ only.
+3. Read AUDIT-FINDINGS.md — do not re-report anything already listed as fixed.
+   Mark any encounter of a fixed item as PREVIOUSLY FIXED and move on.
+4. Audit directory is audit/batch★NN★/ — create it if it does not exist.
+   Manifest path: audit/batch★NN★/manifest.json
+   Do NOT use audit/manifest.json (reserved for the legacy 16R run).
+5. Follow the v3 orchestration prompt using the Batch ★NN★ file list.
+   Process file-first: Stage 1 → 1.5 → 2 → 3 for each file before moving to the next.
+   Update the manifest after every stage.
 
 WHEN DONE
 =========
 Report:
-- How many files completed all four stages
-- How many hit needs_review at stage 1.5
-- Path to audit/batch[NN]/needs-human-review.md if not empty
-- Any files where a stage errored or produced unusable output
-- Whether any findings were marked PREVIOUSLY FIXED
+- Files that completed all four stages (count and list)
+- Files that hit needs_review at Stage 1.5
+- Any stage that errored or produced unusable output
+- All findings with severity (HIGH / MEDIUM / LOW) and file + line
+- Any PREVIOUSLY FIXED encounters
 
-Do not advance to the next batch on your own. Stop after Batch [NN] and wait.
+Stop after Batch ★NN★. Do not start the next batch.
 ```
 
 ---
 
-## Notes
+## How to use
 
-- **Token is the only thing to swap in addition to batch number.** Everything else is self-contained in the repo.
-- **Batch subdirectory isolation.** Each session writes to `audit/batch[NN]/` — parallel sessions never collide on the manifest.
-- **Pre-audit state.** `AUDIT-FINDINGS.md` has a section listing all Stage 5 fixes applied before the audit. Auditors must read it so they don't re-report already-closed issues.
-- **Stop after each batch.** Keeps the feedback loop tight. Human reads Stage 3 output, then feeds the next batch.
-- **Triage is separate.** After all 85 batches complete, one dedicated triage session merges all `audit/batch*/stage3.md` outputs into `AUDIT-FINDINGS.md`. Do not run triage concurrently with active batch sessions.
+1. Copy the block above
+2. Replace both `★NN★` with the batch number (e.g. `27`)
+3. Replace `TOKEN` with the GitHub token from the session handoff
+4. Paste into a fresh Claude Code session launched with `claude --dangerously-skip-permissions`
+
+## Rules
+
+- **Sonnet only.** Opus costs ~15x more per token. The `/model` line enforces this — do not remove it.
+- **One batch per session.** Each session writes to its own `audit/batchNN/` directory. Parallel sessions never collide.
+- **Stop after each batch.** Do not let CC auto-advance. Human reviews Stage 3 output first.
+- **Triage is separate.** After all 85 batches complete, one dedicated session merges findings into `AUDIT-FINDINGS.md`. Do not run triage concurrently with active batch sessions.
