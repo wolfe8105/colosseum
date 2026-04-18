@@ -1,5 +1,5 @@
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { showToast } from '../config.ts';
+import { showToast, escapeHTML } from '../config.ts';
 import {
   view, screenEl, modQueuePollTimer,
   set_view, set_modQueuePollTimer,
@@ -80,10 +80,10 @@ export async function loadModQueue(): Promise<void> {
     const nameB = row.debater_b_name ?? 'TBD';
     return `
       <div style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-md);padding:14px 16px;margin-bottom:12px;">
-        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${row.category} · ${row.mode}</div>
-        <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px;">${row.topic}</div>
-        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">${nameA} vs ${nameB} · waiting ${waitStr}</div>
-        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${row.debate_id}" style="width:100%;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${escapeHTML(row.category)} · ${escapeHTML(row.mode)}</div>
+        <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:8px;">${escapeHTML(row.topic)}</div>
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">${escapeHTML(nameA)} vs ${escapeHTML(nameB)} · waiting ${waitStr}</div>
+        <button class="arena-secondary-btn mod-queue-claim-btn" data-debate-id="${escapeHTML(row.debate_id)}" style="width:100%;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);border-color:var(--mod-accent-primary);">REQUEST TO MOD</button>
       </div>
     `;
   }).join('');

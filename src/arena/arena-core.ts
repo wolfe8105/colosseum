@@ -38,12 +38,13 @@ export const _onPopState = () => {
   document.getElementById('arena-ruleset-overlay')?.remove();
   document.getElementById('arena-mode-overlay')?.remove();
   const rulingOverlay = document.getElementById('mod-ruling-overlay');
-  if (rulingOverlay) { clearInterval(_rulingCountdownTimer!); rulingOverlay.remove(); }
+  if (rulingOverlay) { clearInterval(_rulingCountdownTimer!); set__rulingCountdownTimer(null); rulingOverlay.remove(); }
 
   // Clean up current view state
   if (view === 'room' || view === 'preDebate') {
     clearInterval(roundTimer!);
-    clearInterval(_rulingCountdownTimer!);
+    clearInterval(_rulingCountdownTimer!); set__rulingCountdownTimer(null);
+    cleanupPendingRecording(null);
     stopReferencePoll();
     stopOpponentPoll();
     stopModStatusPoll();
