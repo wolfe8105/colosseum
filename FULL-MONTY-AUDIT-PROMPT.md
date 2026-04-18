@@ -9,13 +9,13 @@ Swap TOKEN for the GitHub token from the session handoff before pasting.
 ```
 /model claude-sonnet-4-6
 
-Run Full Monty audit Batch ★NN★ from THE MODERATOR repo.
+Run Full Monty audit Batch 26 from THE MODERATOR repo.
 
 SETUP
 =====
-git clone https://TOKEN@github.com/wolfe8105/colosseum.git
+git clone https://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@github.com/wolfe8105/colosseum.git
 cd colosseum
-git remote set-url origin https://TOKEN@github.com/wolfe8105/colosseum.git
+git remote set-url origin https://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@github.com/wolfe8105/colosseum.git
 
 MANDATORY FILE READ VERIFICATION
 =================================
@@ -34,8 +34,8 @@ BEFORE STARTING
 2. Read FULL-MONTY-BATCH-PLAN.md and extract the file list for Batch ★NN★ only.
 3. Read AUDIT-FINDINGS.md — do not re-report anything already listed as fixed.
    Mark any encounter of a fixed item as PREVIOUSLY FIXED and move on.
-4. Audit directory is audit/batch★NN★/ — create it if it does not exist.
-   Manifest path: audit/batch★NN★/manifest.json
+4. Audit directory is audit/batch26/ — create it if it does not exist.
+   Manifest path: audit/batch26/manifest.json
    Do NOT use audit/manifest.json (reserved for the legacy 16R run).
 5. Follow the v3 orchestration prompt using the Batch ★NN★ file list.
    Process file-first: Stage 1 → 1.5 → 2 → 3 for each file before moving to the next.
@@ -50,7 +50,7 @@ Report:
 - All findings with severity (HIGH / MEDIUM / LOW) and file + line
 - Any PREVIOUSLY FIXED encounters
 
-Stop after Batch ★NN★. Do not start the next batch.
+Stop after Batch 26. Do not start the next batch.
 ```
 
 ---
