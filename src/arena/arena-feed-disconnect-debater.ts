@@ -68,7 +68,9 @@ export function handleDebaterDisconnectAsViewer(debate: CurrentDebate, disconnec
     setTimeout(() => {
       document.getElementById('feed-disconnect-banner')?.remove();
       cleanupFeedRoom();
-      import('./arena-lobby.ts').then(m => m.renderLobby());
+      import('./arena-lobby.ts')
+        .then(m => m.renderLobby())
+        .catch(err => console.error('[disconnect-debater] Failed to load arena-lobby', err));
     }, 5000);
   }
   // Mod viewer: just wait — endCurrentDebate will be triggered by the remaining debater's RPC
