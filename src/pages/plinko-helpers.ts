@@ -47,7 +47,11 @@ export function clearMsg(id: string): void {
 
 export function getAge(month: number, day: number, year: number): number {
   const today = new Date();
-  const birth = new Date(year, month - 1, day);
+  // Clamp day to the actual last day of the given month to prevent silent Date overflow
+  // (e.g. Feb 31 rolling into March, which can mis-gate the 13-year-old age check)
+  const lastDay = new Date(year, month, 0).getDate();
+  const clampedDay = Math.min(day, lastDay);
+  const birth = new Date(year, month - 1, clampedDay);
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
