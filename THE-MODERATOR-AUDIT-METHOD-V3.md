@@ -462,8 +462,9 @@ Read [STAGE1_5_ANCHOR_PATH] to get the anchor list. Substitute it into
 the marked slot in the agent prompt below.
 
 Dispatch five Task tool_use blocks simultaneously in a single assistant
-message. Each agent receives the exact same prompt below, verbatim. Wait
-for all five to return.
+message. Each agent receives the exact same prompt below, verbatim. No
+agent is told about the others. No agent receives a different instruction.
+No agent is given an index or a role. Wait for all five to return.
 
 When all five return, write their outputs verbatim to [STAGE2_OUTPUT_PATH].
 
@@ -566,8 +567,9 @@ and write manifest back to disk.
 
 Dispatch five Task tool_use blocks simultaneously in a single assistant
 message. Each agent receives the exact same prompt below, verbatim, with
-[SOURCE_FILE_PATH] and [STAGE2_OUTPUT_PATH] substituted. Wait for all
-five to return.
+[SOURCE_FILE_PATH] and [STAGE2_OUTPUT_PATH] substituted. No agent is told
+about the others. No agent receives a different instruction. No agent is
+given an index or a role. Wait for all five to return.
 
 When all five return, write their outputs verbatim to [STAGE3_OUTPUT_PATH],
 formatted as:
