@@ -78,6 +78,7 @@ export async function castVote(
   });
 
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('cast_vote returned no data');
   return data as CastVoteResult;
 }
 
@@ -101,6 +102,7 @@ export async function placePrediction(
   });
 
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('place_prediction returned no data');
   return data as PlacePredictionResult;
 }
 
