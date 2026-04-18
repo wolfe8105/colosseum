@@ -60,25 +60,29 @@ export async function executePurchase(cosmeticId: string, btn: HTMLButtonElement
   btn.disabled = true;
   btn.textContent = 'Purchasing…';
 
-  const { data, error } = await safeRpc<{ new_balance: number }>('purchase_cosmetic', { p_cosmetic_id: cosmeticId });
+  try {
+    const { data, error } = await safeRpc<{ new_balance: number }>('purchase_cosmetic', { p_cosmetic_id: cosmeticId });
 
-  if (error || !data) {
-    showToast('Purchase failed. Check your token balance and try again.', 'error');
+    if (error || !data) {
+      showToast('Purchase failed. Check your token balance and try again.', 'error');
+      return;
+    }
+
+    const item = catalog.find(i => i.cosmetic_id === cosmeticId);
+    if (item) item.owned = true;
+
+    _setTokenBalance(data.new_balance);
+    const balanceEl = document.getElementById('token-balance-display');
+    if (balanceEl) balanceEl.textContent = data.new_balance.toLocaleString();
+
+    closeConfirmModal();
+    showToast(`${item?.name ?? 'Item'} added to your Armory!`, 'success');
+    _rerenderTab();
+  } finally {
+    // LM-COS-002: always re-enable button so user can retry
     btn.disabled = false;
     btn.textContent = 'Purchase';
-    return;
   }
-
-  const item = catalog.find(i => i.cosmetic_id === cosmeticId);
-  if (item) item.owned = true;
-
-  _setTokenBalance(data.new_balance);
-  const balanceEl = document.getElementById('token-balance-display');
-  if (balanceEl) balanceEl.textContent = data.new_balance.toLocaleString();
-
-  closeConfirmModal();
-  showToast(`${item?.name ?? 'Item'} added to your Armory!`, 'success');
-  _rerenderTab();
 }
 
 export async function handleEquip(cosmeticId: string, btn: HTMLElement, catalog: CosmeticItem[]): Promise<void> {
@@ -86,24 +90,28 @@ export async function handleEquip(cosmeticId: string, btn: HTMLElement, catalog:
   (btn as HTMLButtonElement).disabled = true;
   btn.textContent = '…';
 
-  const { error } = await safeRpc('equip_cosmetic', { p_cosmetic_id: cosmeticId });
+  try {
+    const { error } = await safeRpc('equip_cosmetic', { p_cosmetic_id: cosmeticId });
 
-  if (error) {
-    showToast('Could not equip item. Please try again.', 'error');
+    if (error) {
+      showToast('Could not equip item. Please try again.', 'error');
+      return;
+    }
+
+    const item = catalog.find(i => i.cosmetic_id === cosmeticId);
+    if (item) {
+      catalog.forEach(i => { if (i.category === item.category) i.equipped = false; });
+      item.owned = true;
+      item.equipped = true;
+    }
+
+    showToast(`${item?.name ?? 'Item'} equipped!`, 'success');
+    _rerenderTab();
+  } finally {
+    // LM-COS-003: re-enable button — _rerenderTab() rebuilds DOM so this is a no-op on success but guards on throw
     (btn as HTMLButtonElement).disabled = false;
     btn.textContent = 'Equip';
-    return;
   }
-
-  const item = catalog.find(i => i.cosmetic_id === cosmeticId);
-  if (item) {
-    catalog.forEach(i => { if (i.category === item.category) i.equipped = false; });
-    item.owned = true;
-    item.equipped = true;
-  }
-
-  showToast(`${item?.name ?? 'Item'} equipped!`, 'success');
-  _rerenderTab();
 }
 
 export function showInfoModal(title: string, body: string): void {

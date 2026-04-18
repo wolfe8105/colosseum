@@ -24,11 +24,13 @@ export interface PopupState {
 // ── Module-level timer handles for deregistration ────────────────────────────
 let _dismissTimer:  ReturnType<typeof setTimeout> | null = null;
 let _showNextTimer: ReturnType<typeof setTimeout> | null = null;
+let _autoTimer:     ReturnType<typeof setTimeout> | null = null;
 
 /** Cancel any in-flight dismiss/showNext timers. Call from the parent destroy(). */
 export function destroy(): void {
   if (_dismissTimer)  { clearTimeout(_dismissTimer);  _dismissTimer  = null; }
   if (_showNextTimer) { clearTimeout(_showNextTimer); _showNextTimer = null; }
+  if (_autoTimer)     { clearTimeout(_autoTimer);     _autoTimer     = null; }
 }
 
 // ============================================================
@@ -81,16 +83,17 @@ export function showNext(state: PopupState): void {
   `;
   document.body.appendChild(popup);
 
-  // Auto-dismiss after 8s
-  const timer = setTimeout(() => dismissPopup(state), 8000);
+  // Auto-dismiss after 8s — stored in module-level var so destroy() can cancel it
+  if (_autoTimer) clearTimeout(_autoTimer);
+  _autoTimer = setTimeout(() => { _autoTimer = null; dismissPopup(state); }, 8000);
 
   document.getElementById('rap-dismiss-btn')?.addEventListener('click', () => {
-    clearTimeout(timer);
+    if (_autoTimer) { clearTimeout(_autoTimer); _autoTimer = null; }
     dismissPopup(state);
   });
 
   document.getElementById('rap-challenge-btn')?.addEventListener('click', () => {
-    clearTimeout(timer);
+    if (_autoTimer) { clearTimeout(_autoTimer); _autoTimer = null; }
     dismissPopup(state);
     // Open their profile modal — challenge link (F-39) not built yet
     if (payload.user_id) {
