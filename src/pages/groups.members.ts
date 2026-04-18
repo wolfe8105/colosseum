@@ -10,7 +10,7 @@
  *   groups.challenges.ts, groups.ts
  */
 
-import { currentUser, currentGroupId, callerRole } from './groups.state.ts';
+import { currentUser, callerRole } from './groups.state.ts';
 import { escapeHTML } from '../config.ts';
 import { safeRpc } from '../auth.ts';
 import { clientRoleRank, renderEmpty } from './groups.utils.ts';
@@ -22,6 +22,8 @@ export { setGroupOpenCallback, setRefreshMembersCallback } from './groups.member
 export { _injectMemberActionsModal } from './groups.members.modal.html.ts';
 
 // ── MEMBERS LIST ──────────────────────────────────────────────────────────────
+
+let _membersListClickHandler: ((e: Event) => void) | null = null;
 
 export async function loadGroupMembers(groupId: string): Promise<void> {
   const esc = escapeHTML;
@@ -81,7 +83,9 @@ export async function loadGroupMembers(groupId: string): Promise<void> {
     }).join('');
 
     // Single delegated listener: button click opens modal, row click navigates to profile
-    document.getElementById('detail-members-list')!.addEventListener('click', (e) => {
+    const listEl = document.getElementById('detail-members-list')!;
+    if (_membersListClickHandler) listEl.removeEventListener('click', _membersListClickHandler);
+    _membersListClickHandler = (e: Event) => {
       const actionBtn = (e.target as HTMLElement).closest('[data-action="open-modal"]') as HTMLElement | null;
       if (actionBtn) {
         e.stopPropagation();
@@ -97,7 +101,8 @@ export async function loadGroupMembers(groupId: string): Promise<void> {
       if (row?.dataset.username) {
         window.location.href = '/u/' + encodeURIComponent(row.dataset.username);
       }
-    });
+    };
+    listEl.addEventListener('click', _membersListClickHandler);
 
   } catch {
     document.getElementById('detail-members-list')!.innerHTML = renderEmpty('⚠️', 'Could not load members', '');

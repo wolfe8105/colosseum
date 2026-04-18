@@ -10,8 +10,7 @@
 
 import { ready, getCurrentUser, getSupabaseClient } from '../auth.ts';
 import { setSb, setCurrentUser, currentGroupId } from './groups.state.ts';
-import { _injectMemberActionsModal, setGroupOpenCallback, setRefreshMembersCallback } from './groups.members.ts';
-import { loadGroupMembers } from './groups.members.ts';
+import { _injectMemberActionsModal, setGroupOpenCallback, setRefreshMembersCallback, loadGroupMembers } from './groups.members.ts';
 import { switchTab, switchDetailTab, filterCategory, showLobby, setNavOpenGroupCallback } from './groups.nav.ts';
 import { loadDiscover, setLoadOpenGroupCallback } from './groups.load.ts';
 import { openGroup, toggleMembership, currentGroupData } from './groups.detail.ts';
