@@ -130,5 +130,9 @@ export async function sendVoiceMemo(): Promise<void> {
   } else {
     startOpponentPoll(debate.id, side, debate.round);
   }
-  } finally { _sendingMemo = false; }
+  } finally {
+    _sendingMemo = false;
+    const sendBtnReset = document.getElementById('arena-vm-send') as HTMLButtonElement | null;
+    if (sendBtnReset) sendBtnReset.disabled = false;
+  }
 }

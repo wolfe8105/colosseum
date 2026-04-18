@@ -35,8 +35,6 @@ export function renderInvite(
     ? '<div class="invite-empty-activity">No invite activity yet. Share your link!</div>'
     : stats.activity.map(a => activityRowHtml(a)).join('');
 
-  // LANDMINE [LM-INVITE-005]: converts, total_signups, total_clicks interpolated into innerHTML
-  // without Number() casts. CLAUDE.md rule violation. (L-F7)
   container.innerHTML = `
     <div class="invite-wrap">
 
