@@ -82,14 +82,16 @@ export function wireChatUI(d: SpectateDebate): void {
           input!.value = msg;
         }
       } else {
-        // Optimistic append
+        // Optimistic append — update lastChatMessageAt so poll deduplicates on next tick
         const displayName = data?.display_name || getCurrentProfile()?.display_name || 'You';
-        state.chatMessages.push({
+        const optimisticMsg = {
           display_name: displayName,
           message: msg,
           created_at: new Date().toISOString(),
           user_id: getCurrentUser()?.id || null
-        });
+        };
+        state.chatMessages.push(optimisticMsg);
+        state.lastChatMessageAt = optimisticMsg.created_at;
         refreshChatUI();
       }
     } catch (err) {
@@ -102,8 +104,14 @@ export function wireChatUI(d: SpectateDebate): void {
     input!.focus();
   }
 
-  sendBtn.addEventListener('click', sendChat);
-  input.addEventListener('keydown', (e) => {
+  // M-B32-2: remove stale listeners before re-wiring to prevent handler stacking
+  const newSendBtn = sendBtn.cloneNode(true) as HTMLButtonElement;
+  const newInput = input.cloneNode(true) as HTMLInputElement;
+  sendBtn.replaceWith(newSendBtn);
+  input.replaceWith(newInput);
+
+  newSendBtn.addEventListener('click', sendChat);
+  newInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendChat();
@@ -129,4 +137,11 @@ export function startChatPolling(): void {
       // Silent fail on chat poll
     }
   }, 6000);
+}
+
+export function stopChatPolling(): void {
+  if (state.chatPollTimer) {
+    clearInterval(state.chatPollTimer);
+    state.chatPollTimer = null;
+  }
 }
