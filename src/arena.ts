@@ -40,7 +40,7 @@ export { init, destroy, getView, getCurrentDebate } from './arena/arena-core.ts'
 // --- Lobby ---
 export async function showPowerUpShop(): Promise<void> {
   const { showPowerUpShop: fn } = await import('./arena/arena-lobby.ts');
-  fn();
+  await fn();
 }
 
 // --- Config ---

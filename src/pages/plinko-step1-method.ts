@@ -50,18 +50,21 @@ export function attachStep1(): void {
     const btn = document.getElementById('btn-email-next') as HTMLButtonElement | null;
     if (btn) { btn.disabled = true; btn.textContent = 'CHECKING...'; }
 
-    const isPwned = await checkHIBP(password);
-    if (isPwned) {
-      showMsg('step1-msg', 'This password has appeared in a data breach. Please choose a different one.', 'error');
+    try {
+      const isPwned = await checkHIBP(password);
+      if (isPwned) {
+        showMsg('step1-msg', 'This password has appeared in a data breach. Please choose a different one.', 'error');
+        return;
+      }
+
+      set_signupMethod('email');
+      set_signupEmail(email);
+      set_signupPassword(password);
+      goToStep(2);
+    } catch {
+      // checkHIBP failure (network/timeout) — allow user to proceed
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'CONTINUE'; }
-      return;
     }
-
-    if (btn) { btn.disabled = false; btn.textContent = 'CONTINUE'; }
-
-    set_signupMethod('email');
-    set_signupEmail(email);
-    set_signupPassword(password);
-    goToStep(2);
   });
 }
