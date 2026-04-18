@@ -39,6 +39,13 @@ export async function subscribeRealtime(debateId: string): Promise<void> {
   const client = getSupabaseClient();
   if (!client || isPlaceholder()) return;
 
+  // M-P3: guard against double-subscribe — teardown any existing channel first
+  if (feedRealtimeChannel) {
+    removeChannel(client, feedRealtimeChannel);
+    set_feedRealtimeChannel(null);
+    stopHeartbeat();
+  }
+
   // Set auth token before subscribing so the private channel has a valid JWT context.
   const accessToken = await getAccessToken(client);
   if (accessToken) {
@@ -90,6 +97,7 @@ export function unsubscribeRealtime(): void {
     removeChannel(client, feedRealtimeChannel);
     set_feedRealtimeChannel(null);
   }
+  stopHeartbeat();
 }
 
 // Re-export for backward compat — callers of this module may use these
