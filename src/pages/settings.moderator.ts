@@ -48,31 +48,37 @@ export function wireModeratorToggles(): void {
     const target = e.target as HTMLInputElement;
     const enabled = target.checked;
     target.disabled = true;
-    const result = await toggleModerator(enabled);
-    if (result?.error) {
-      target.checked = !enabled;
-      toast('❌ ' + result.error);
-    } else {
-      toast(enabled ? '⚖️ Moderator mode ON' : 'Moderator mode OFF');
-      loadModeratorSettings();
+    try {
+      const result = await toggleModerator(enabled);
+      if (result?.error) {
+        target.checked = !enabled;
+        toast('❌ ' + result.error);
+      } else {
+        toast(enabled ? '⚖️ Moderator mode ON' : 'Moderator mode OFF');
+        loadModeratorSettings();
+      }
+    } finally {
+      target.disabled = false;
     }
-    target.disabled = false;
   });
 
   getEl<HTMLInputElement>('set-mod-available')?.addEventListener('change', async (e: Event) => {
     const target = e.target as HTMLInputElement;
     const available = target.checked;
     target.disabled = true;
-    const result = await toggleModAvailable(available);
-    if (result?.error) {
-      target.checked = !available;
-      toast('❌ ' + result.error);
-    } else {
-      const dot = getEl('mod-dot');
-      if (dot) dot.style.background = available ? 'var(--success)' : 'var(--white-dim)';
-      toast(available ? '🟢 Available to moderate' : '🔴 Offline');
+    try {
+      const result = await toggleModAvailable(available);
+      if (result?.error) {
+        target.checked = !available;
+        toast('❌ ' + result.error);
+      } else {
+        const dot = getEl('mod-dot');
+        if (dot) dot.style.background = available ? 'var(--success)' : 'var(--white-dim)';
+        toast(available ? '🟢 Available to moderate' : '🔴 Offline');
+      }
+    } finally {
+      target.disabled = false;
     }
-    target.disabled = false;
   });
 
   document.querySelectorAll<HTMLButtonElement>('.mod-cat-chip').forEach(chip => {
@@ -88,17 +94,20 @@ export function wireModeratorToggles(): void {
       const statusEl = getEl('mod-cat-status');
       if (statusEl) statusEl.textContent = 'Saving…';
 
-      const result = await updateModCategories(selected);
-      if (result?.error) {
-        chip.classList.toggle('selected', !isSelected);
-        if (statusEl) statusEl.textContent = '❌ ' + result.error;
-        toast('❌ ' + result.error);
-      } else {
-        if (statusEl) statusEl.textContent = selected.length === 0
-          ? 'Accepting all categories'
-          : `${selected.length} categor${selected.length === 1 ? 'y' : 'ies'} selected`;
+      try {
+        const result = await updateModCategories(selected);
+        if (result?.error) {
+          chip.classList.toggle('selected', !isSelected);
+          if (statusEl) statusEl.textContent = '❌ ' + result.error;
+          toast('❌ ' + result.error);
+        } else {
+          if (statusEl) statusEl.textContent = selected.length === 0
+            ? 'Accepting all categories'
+            : `${selected.length} categor${selected.length === 1 ? 'y' : 'ies'} selected`;
+        }
+      } finally {
+        chip.disabled = false;
       }
-      chip.disabled = false;
     });
   });
 }
