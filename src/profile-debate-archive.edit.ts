@@ -62,17 +62,22 @@ export function showEditSheet(entry: ArchiveEntry, container: HTMLElement): void
     saveBtn.disabled = true;
     saveBtn.textContent = '…';
 
-    const { error } = await safeRpc('update_archive_entry', {
-      p_entry_id: entry.entry_id,
-      p_custom_name: name,
-      p_custom_desc: desc,
-      p_hide_from_public: hide,
-    });
+    try {
+      const { error } = await safeRpc('update_archive_entry', {
+        p_entry_id: entry.entry_id,
+        p_custom_name: name,
+        p_custom_desc: desc,
+        p_hide_from_public: hide,
+      });
 
-    if (error) { showToast('Could not save', 'error'); saveBtn.disabled = false; saveBtn.textContent = 'SAVE'; return; }
-    overlay.remove();
-    showToast('Saved', 'success');
-    await loadAndRender(container);
+      if (error) { showToast('Could not save', 'error'); return; }
+      overlay.remove();
+      showToast('Saved', 'success');
+      await loadAndRender(container);
+    } finally {
+      // M-DBA-1: always re-enable save button (overlay.remove() may not have run on error/throw)
+      if (overlay.isConnected) { saveBtn.disabled = false; saveBtn.textContent = 'SAVE'; }
+    }
   });
 }
 
