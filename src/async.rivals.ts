@@ -34,8 +34,14 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
     state.wiredContainers.add(container);
   }
 
-  const rivals: RivalEntry[] =
-    ((await getMyRivals()) as unknown as RivalEntry[]) ?? [];
+  let rivals: RivalEntry[];
+  try {
+    rivals = ((await getMyRivals()) as unknown as RivalEntry[]) ?? [];
+  } catch {
+    console.warn('[Rivals] Failed to load rivals');
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mod-text-muted);">Could not load rivals. Try again later.</div>';
+    return;
+  }
 
   if (!rivals.length) {
     container.innerHTML = `
@@ -75,5 +81,10 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
 
 export async function refreshRivals(): Promise<void> {
   const container = document.getElementById('rivals-feed');
-  if (container) await renderRivals(container);
+  if (!container) return;
+  try {
+    await renderRivals(container);
+  } catch {
+    console.warn('[Rivals] refreshRivals failed silently');
+  }
 }
