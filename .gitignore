@@ -22,3 +22,4 @@ Thumbs.db
 -e 
 # Claude Code worktrees
 .claude/
+.github-token
