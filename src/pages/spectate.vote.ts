@@ -36,7 +36,17 @@ async function castVote(side: string, d: SpectateDebate): Promise<void> {
       p_debate_id: state.debateId,
       p_vote: side,
     });
-    if (error) console.warn('[Spectate] Vote error:', error.message);
+
+    // SV-2: bail on server rejection — do not nudge, claim, or update UI as if vote succeeded
+    if (error) {
+      console.warn('[Spectate] Vote rejected by server:', error.message);
+      state.voteCast = false;
+      if (btnA) btnA.disabled = false;
+      if (btnB) btnB.disabled = false;
+      btnA?.classList.remove('voted', 'selected');
+      btnB?.classList.remove('voted', 'selected');
+      return;
+    }
 
     nudge('first_vote', '🗳️ Vote cast. Your voice shapes the verdict.');
 
@@ -54,10 +64,13 @@ async function castVote(side: string, d: SpectateDebate): Promise<void> {
 
     claimVote(state.debateId!);
   } catch (err) {
-    const fva = (d.vote_count_a || 0) + (side === 'a' ? 1 : 0);
-    const fvb = (d.vote_count_b || 0) + (side === 'b' ? 1 : 0);
-    updateVoteBar(fva, fvb);
-    updatePulse(fva, fvb);
+    // SV-1: reset voteCast so user can retry after unexpected throw
+    console.warn('[Spectate] Vote error:', err);
+    state.voteCast = false;
+    if (btnA) btnA.disabled = false;
+    if (btnB) btnB.disabled = false;
+    btnA?.classList.remove('voted', 'selected');
+    btnB?.classList.remove('voted', 'selected');
   }
 }
 
