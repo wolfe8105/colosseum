@@ -49,6 +49,7 @@ export let _pendingPrivateType: 'username' | 'group' | 'code' | null = null;
 // Moderator
 export let modQueuePollTimer: ReturnType<typeof setInterval> | null = null;
 export let modStatusPollTimer: ReturnType<typeof setInterval> | null = null;
+export let modCountdownTimer: ReturnType<typeof setInterval> | null = null;
 export let modRequestModalShown: boolean = false;
 export let modDebatePollTimer: ReturnType<typeof setInterval> | null = null;
 export let modDebateId: string | null = null;
@@ -119,6 +120,7 @@ export function set_privateLobbyDebateId(v: string | null) { privateLobbyDebateI
 export function set__pendingPrivateType(v: 'username' | 'group' | 'code' | null) { _pendingPrivateType = v; }
 export function set_modQueuePollTimer(v: ReturnType<typeof setInterval> | null) { modQueuePollTimer = v; }
 export function set_modStatusPollTimer(v: ReturnType<typeof setInterval> | null) { modStatusPollTimer = v; }
+export function set_modCountdownTimer(v: ReturnType<typeof setInterval> | null) { modCountdownTimer = v; }
 export function set_modRequestModalShown(v: boolean) { modRequestModalShown = v; }
 export function set_modDebatePollTimer(v: ReturnType<typeof setInterval> | null) { modDebatePollTimer = v; }
 export function set_modDebateId(v: string | null) { modDebateId = v; }

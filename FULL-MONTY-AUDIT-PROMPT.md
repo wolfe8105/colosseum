@@ -13,9 +13,9 @@ Run Full Monty audit Batch 26 from THE MODERATOR repo.
 
 SETUP
 =====
-git clone https://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@github.com/wolfe8105/colosseum.git
+git clone https://TOKEN_HERE@github.com/wolfe8105/colosseum.git
 cd colosseum
-git remote set-url origin https://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@github.com/wolfe8105/colosseum.git
+git remote set-url origin https://TOKEN_HERE@github.com/wolfe8105/colosseum.git
 
 MANDATORY FILE READ VERIFICATION
 =================================

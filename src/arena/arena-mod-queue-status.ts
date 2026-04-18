@@ -1,13 +1,11 @@
 import { safeRpc } from '../auth.ts';
-import { showToast } from '../config.ts';
+import { showToast, escapeHTML } from '../config.ts';
 import {
-  view, currentDebate, modStatusPollTimer, modRequestModalShown,
-  set_modStatusPollTimer, set_modRequestModalShown,
+  view, currentDebate, modStatusPollTimer, modCountdownTimer, modRequestModalShown,
+  set_modStatusPollTimer, set_modCountdownTimer, set_modRequestModalShown,
 } from './arena-state.ts';
 import type { ModStatusResult } from './arena-types-moderator.ts';
 
-// LANDMINE [LM-MODQUEUE-002]: modName is rendered into innerHTML without escapeHTML()
-// — potential XSS if a moderator's display_name contains HTML characters.
 
 export function startModStatusPoll(debateId: string): void {
   stopModStatusPoll();
@@ -36,6 +34,10 @@ export function stopModStatusPoll(): void {
     clearInterval(modStatusPollTimer);
     set_modStatusPollTimer(null);
   }
+  if (modCountdownTimer) {
+    clearInterval(modCountdownTimer);
+    set_modCountdownTimer(null);
+  }
 }
 
 export function showModRequestModal(modName: string, modId: string, debateId: string): void {
@@ -50,7 +52,7 @@ export function showModRequestModal(modName: string, modId: string, debateId: st
     <div style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:var(--mod-radius-lg);padding:28px 24px;max-width:320px;width:90%;text-align:center;">
       <div style="font-size:32px;margin-bottom:12px;">🧑‍⚖️</div>
       <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:2px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:8px;">Moderator Request</div>
-      <div style="font-family:var(--mod-font-body);font-size:16px;font-weight:600;color:var(--mod-text-primary);margin-bottom:6px;">${modName}</div>
+      <div style="font-family:var(--mod-font-body);font-size:16px;font-weight:600;color:var(--mod-text-primary);margin-bottom:6px;">${escapeHTML(modName)}</div>
       <div style="font-family:var(--mod-font-body);font-size:14px;color:var(--mod-text-secondary);margin-bottom:20px;">wants to moderate this debate</div>
       <div id="mod-req-countdown" style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);margin-bottom:20px;">Auto-declining in ${secondsLeft}s</div>
       <div style="display:flex;gap:10px;">
@@ -61,23 +63,26 @@ export function showModRequestModal(modName: string, modId: string, debateId: st
   `;
   document.body.appendChild(modal);
 
-  const countdownTimer = setInterval(() => {
+  set_modCountdownTimer(setInterval(() => {
     secondsLeft--;
     const cdEl = document.getElementById('mod-req-countdown');
     if (cdEl) cdEl.textContent = `Auto-declining in ${secondsLeft}s`;
     if (secondsLeft <= 0) {
-      clearInterval(countdownTimer);
+      clearInterval(modCountdownTimer!);
+      set_modCountdownTimer(null);
       void handleModResponse(false, debateId, modal, modId, modName);
     }
-  }, 1000);
+  }, 1000));
 
   document.getElementById('mod-req-accept')?.addEventListener('click', () => {
-    clearInterval(countdownTimer);
+    clearInterval(modCountdownTimer!);
+    set_modCountdownTimer(null);
     void handleModResponse(true, debateId, modal, modId, modName);
   });
 
   document.getElementById('mod-req-decline')?.addEventListener('click', () => {
-    clearInterval(countdownTimer);
+    clearInterval(modCountdownTimer!);
+    set_modCountdownTimer(null);
     void handleModResponse(false, debateId, modal, modId, modName);
   });
 }
