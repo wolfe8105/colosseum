@@ -39,18 +39,27 @@ export function wireActivationBar(debateId: string, callbacks: ActivationCallbac
       el.disabled = true;
       el.style.opacity = '0.5';
 
-      const result = await activate(debateId, powerUpId);
-      if (!result.success) { el.disabled = false; el.style.opacity = '1'; return; }
+      try {
+        const result = await activate(debateId, powerUpId);
+        if (!result.success) { return; }
 
-      el.classList.add('used');
-      el.style.background = 'rgba(46,204,113,0.1)';
-      el.style.borderColor = 'rgba(46,204,113,0.3)';
-      const label = el.querySelector('span:last-child');
-      if (label) label.textContent = 'USED';
+        el.classList.add('used');
+        el.style.background = 'rgba(46,204,113,0.1)';
+        el.style.borderColor = 'rgba(46,204,113,0.3)';
+        const label = el.querySelector('span:last-child');
+        if (label) label.textContent = 'USED';
 
-      if (powerUpId === 'silence') callbacks.onSilence?.();
-      else if (powerUpId === 'shield') callbacks.onShield?.();
-      else if (powerUpId === 'reveal') callbacks.onReveal?.();
+        if (powerUpId === 'silence') callbacks.onSilence?.();
+        else if (powerUpId === 'shield') callbacks.onShield?.();
+        else if (powerUpId === 'reveal') callbacks.onReveal?.();
+      } catch {
+        // swallow — finally restores button
+      } finally {
+        if (!el.classList.contains('used')) {
+          el.disabled = false;
+          el.style.opacity = '1';
+        }
+      }
     });
   });
 }
