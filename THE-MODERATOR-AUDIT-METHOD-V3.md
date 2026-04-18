@@ -640,10 +640,12 @@ Process:
 
 Rules:
 
-- You are running independently. Do not reference, defer to, or summarize
-  what other agents may have said. Do not write "as Agent 03 noted" or
-  "I agree with the prior verdict" or any variation. Produce your own
-  verdicts from the source file. Every agent output must stand alone.
+- You are not told about the other agents. You do not receive a different
+  instruction from them. You are not given an index or a role. Do not
+  reference, defer to, or summarize what other agents may have said. Do
+  not write "as Agent 03 noted" or "I agree with the prior verdict"
+  or any variation. Produce your own verdicts from the source file.
+  Every agent output must stand alone.
 - Anchor every verdict to the source. Quote the relevant line,
   identifier, or structural element. Do not verdict from memory of
   Stage 2 alone.
