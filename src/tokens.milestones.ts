@@ -61,9 +61,7 @@ export function getMilestoneList(): MilestoneListItem[] {
   }));
 }
 
-// LANDMINE [LM-TOK-003]: Calls claimMilestone('verified_gladiator') when
-// completedCount >= 3 — same threshold as profile_3_sections. Awarding Verified
-// Gladiator at 3 sections may be intentional but is undocumented.
+// verified_gladiator intentionally awarded at 3 sections — same threshold as profile_3_sections by design.
 export async function checkProfileMilestones(completedCount: number): Promise<void> {
   if (!completedCount) return;
   if (completedCount >= 3)  void claimMilestone('profile_3_sections');
