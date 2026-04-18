@@ -42,7 +42,7 @@ export function renderGroupBanner(container: HTMLElement, group: GroupDetail, is
     const img = document.createElement('img');
     img.className = 'group-banner-t2';
     img.src = staticUrl; img.alt = name;
-    img.onerror = () => _renderTier1Fallback(container, emoji, name);
+    img.onerror = () => { img.remove(); _renderTier1Fallback(container, emoji, name); };
     container.appendChild(img);
   } else {
     _renderTier1Fallback(container, emoji, name);
