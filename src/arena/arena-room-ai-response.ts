@@ -29,29 +29,32 @@ export async function handleAIResponse(debate: CurrentDebate, userText: string):
   if (input) input.disabled = true;
   if (sendBtn) sendBtn.disabled = true;
 
-  const aiText = await generateAIDebateResponse(debate.topic, userText, debate.round, debate.totalRounds);
+  try {
+    const aiText = await generateAIDebateResponse(debate.topic, userText, debate.round, debate.totalRounds);
 
-  // Remove typing indicator
-  document.getElementById('arena-ai-typing')?.remove();
+    // Remove typing indicator
+    document.getElementById('arena-ai-typing')?.remove();
 
-  addMessage('b', aiText, debate.round, true);
+    addMessage('b', aiText, debate.round, true);
 
-  if (!isPlaceholder() && !debate.id.startsWith('ai-local-')) {
-    try {
-      await safeRpc('submit_debate_message', {
-        p_debate_id: debate.id,
-        p_round: debate.round,
-        p_side: 'b',
-        p_content: aiText,
-        p_is_ai: true,
-      });
-    } catch { /* warned */ }
+    if (!isPlaceholder() && !debate.id.startsWith('ai-local-')) {
+      try {
+        await safeRpc('submit_debate_message', {
+          p_debate_id: debate.id,
+          p_round: debate.round,
+          p_side: 'b',
+          p_content: aiText,
+          p_is_ai: true,
+        });
+      } catch { /* warned */ }
+    }
+
+    advanceRound();
+  } finally {
+    // M-27-1: always re-enable both input and send button
+    if (input) input.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
   }
-
-  // Re-enable input
-  if (input) input.disabled = false;
-
-  advanceRound();
 }
 
 // Session 208: Get user JWT for Edge Function auth (audit #32)
