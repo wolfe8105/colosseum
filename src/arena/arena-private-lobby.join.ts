@@ -45,7 +45,10 @@ export async function joinWithCode(code: string): Promise<void> {
       messages: [],
     };
     showMatchFound(debateData);
-  } catch {
+  } catch (err) {
+    // B44-APL-1: only fall through to join_mod_debate on RPC/network errors, not DOM/state errors
+    const isRpcError = err && typeof err === 'object' && ('message' in err || 'code' in err);
+    if (!isRpcError) { console.error('[PrivateLobby] Unexpected error in join flow:', err); throw err; }
     // join_private_lobby failed — try join_mod_debate (mod_created debates use a different RPC)
     try {
       const { data: modData, error: modError } = await safeRpc<ModDebateJoinResult>('join_mod_debate', {
