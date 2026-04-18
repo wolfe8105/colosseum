@@ -18,10 +18,12 @@ const SLOT_ID = '8647716209';
 
 // ── Module-level interval handle ──────────────────────────────────────────────
 let _interstitialTick: ReturnType<typeof setInterval> | null = null;
+let _dismiss: (() => void) | null = null;
 
 /** Cancel any running interstitial countdown tick. */
 export function destroy(): void {
-  if (_interstitialTick) { clearInterval(_interstitialTick); _interstitialTick = null; }
+  if (_dismiss) { _dismiss(); _dismiss = null; }
+  else if (_interstitialTick) { clearInterval(_interstitialTick); _interstitialTick = null; }
 }
 
 function _pushAd(): void {
@@ -104,9 +106,11 @@ export function showAdInterstitial(
 
   function dismiss(): void {
     if (_interstitialTick) { clearInterval(_interstitialTick); _interstitialTick = null; }
+    _dismiss = null;
     overlay.remove();
     onDone();
   }
+  _dismiss = dismiss;
 
   skipBtn.addEventListener('click', dismiss);
 
