@@ -42,7 +42,7 @@ export function toggleMute(): boolean {
   return state.debateState.isMuted;
 }
 
-export function getAudioLevel(stream: MediaStream): () => number {
+export function getAudioLevel(stream: MediaStream): { level: () => number; destroy: () => void } {
   const ctx = new (window.AudioContext || (window as unknown as Record<string, typeof AudioContext>)['webkitAudioContext'])();
   const source = ctx.createMediaStreamSource(stream);
   const analyser = ctx.createAnalyser();
@@ -51,10 +51,16 @@ export function getAudioLevel(stream: MediaStream): () => number {
 
   const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-  return () => {
-    analyser.getByteFrequencyData(dataArray);
-    const sum = dataArray.reduce((a, b) => a + b, 0);
-    return sum / (dataArray.length * 255);
+  return {
+    level: () => {
+      analyser.getByteFrequencyData(dataArray);
+      const sum = dataArray.reduce((a, b) => a + b, 0);
+      return sum / (dataArray.length * 255);
+    },
+    destroy: () => {
+      source.disconnect();
+      void ctx.close();
+    },
   };
 }
 
@@ -129,11 +135,21 @@ export function createWaveform(stream: MediaStream, canvasElement: HTMLCanvasEle
     }
   }
 
+  // M-B33-2: stop any running waveform before overwriting state
+  if (state.activeWaveform) {
+    state.activeWaveform.stop();
+  }
+
   draw();
   state.activeWaveform = {
     analyser,
     audioCtx,
-    stop: () => cancelAnimationFrame(rafHandle),
+    // M-B33-3: disconnect source and close AudioContext on stop
+    stop: () => {
+      cancelAnimationFrame(rafHandle);
+      source.disconnect();
+      void audioCtx.close();
+    },
   };
   return state.activeWaveform;
 }
