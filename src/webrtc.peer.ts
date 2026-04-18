@@ -13,6 +13,15 @@ import { getIceServers } from './webrtc.ice.ts';
 // ============================================================
 
 export function createPeerConnection(iceServers: RTCIceServer[]): RTCPeerConnection {
+  // M-B25-1: close any existing connection before overwriting — orphaned
+  // handlers on the old connection would otherwise cross-wire against the new one.
+  if (state.peerConnection) {
+    state.peerConnection.ontrack = null;
+    state.peerConnection.onicecandidate = null;
+    state.peerConnection.onconnectionstatechange = null;
+    state.peerConnection.close();
+  }
+  state.iceCandidateQueue = [];
   state.peerConnection = new RTCPeerConnection({ iceServers });
 
   if (state.localStream) {
@@ -65,6 +74,11 @@ export function createPeerConnection(iceServers: RTCIceServer[]): RTCPeerConnect
 
 // Session 208: ICE restart on connection failure (audit #14)
 export async function attemptIceRestart(): Promise<void> {
+  // M-B25-2: guard against double-fire — 'failed' can fire while the 3s
+  // disconnectTimer is also in flight, causing two concurrent restarts.
+  if (state.iceRestartInProgress) return;
+  state.iceRestartInProgress = true;
+
   state.iceRestartAttempts++;
 
   if (state.iceRestartAttempts > MAX_ICE_RESTART_ATTEMPTS) {
@@ -89,6 +103,7 @@ export async function attemptIceRestart(): Promise<void> {
       console.warn('[WebRTC] ICE restart offer error:', err);
     }
   }
+  state.iceRestartInProgress = false;
 }
 
 export async function createOffer(): Promise<void> {
@@ -112,6 +127,7 @@ export async function handleOffer(offer: RTCSessionDescriptionInit): Promise<voi
       createPeerConnection(servers);
     }
     await state.peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
+    await flushIceCandidateQueue();
     const answer = await state.peerConnection!.createAnswer();
     await state.peerConnection!.setLocalDescription(answer);
     signals.sendSignal?.('answer', answer);
@@ -124,6 +140,7 @@ export async function handleAnswer(answer: RTCSessionDescriptionInit): Promise<v
   try {
     if (!state.peerConnection) return;
     await state.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    await flushIceCandidateQueue();
   } catch (err) {
     console.warn('[WebRTC] handleAnswer error:', err);
   }
@@ -131,9 +148,28 @@ export async function handleAnswer(answer: RTCSessionDescriptionInit): Promise<v
 
 export async function handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
   if (!state.peerConnection) return;
+  // M-B25-3: trickle-ICE candidates arriving before setRemoteDescription
+  // would be silently dropped. Queue them and flush once remote desc is set.
+  if (!state.peerConnection.remoteDescription) {
+    state.iceCandidateQueue.push(candidate);
+    return;
+  }
   try {
     await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
   } catch (err) {
     console.warn('ICE candidate error:', err);
+  }
+}
+
+/** Flush queued ICE candidates after setRemoteDescription completes. */
+export async function flushIceCandidateQueue(): Promise<void> {
+  if (!state.peerConnection || state.iceCandidateQueue.length === 0) return;
+  const queued = state.iceCandidateQueue.splice(0);
+  for (const candidate of queued) {
+    try {
+      await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err) {
+      console.warn('[WebRTC] queued ICE candidate error:', err);
+    }
   }
 }

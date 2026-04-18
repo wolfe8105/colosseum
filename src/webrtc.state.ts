@@ -65,6 +65,8 @@ export const state = {
   fetchedIceServers: null as RTCIceServer[] | null,
   turnFetchPromise: null as Promise<RTCIceServer[] | null> | null,
   iceRestartAttempts: 0,
+  iceRestartInProgress: false,
+  iceCandidateQueue: [] as RTCIceCandidateInit[],
   disconnectTimer: null as ReturnType<typeof setTimeout> | null,
   setupTimer: null as ReturnType<typeof setTimeout> | null,
   debateState: { ...DEFAULT_DEBATE_STATE, turn: { ...DEFAULT_TURN_STATE } } as DebateState,
