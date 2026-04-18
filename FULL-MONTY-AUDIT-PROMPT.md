@@ -7,7 +7,7 @@ Swap TOKEN for the GitHub token from the session handoff before pasting.
 ---
 
 ```
-/model claude-sonnet-4-5
+/model claude-sonnet-4-6
 
 Run Full Monty audit Batch ★NN★ from THE MODERATOR repo.
 
