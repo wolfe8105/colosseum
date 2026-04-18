@@ -509,6 +509,10 @@ Each function description must cover:
 
 Rules:
 
+- You are running independently. Do not reference, defer to, or summarize
+  what other agents may have said. Do not write "as noted by Agent 01" or
+  "I agree with the prior analysis" or any variation. Produce your own
+  description from the source file. Every agent output must stand alone.
 - Describe the function, not the module. Do not write "this function is
   part of the X system" or "this function is responsible for Y."
 - Describe what, not why. Do not speculate about design rationale,
@@ -636,6 +640,10 @@ Process:
 
 Rules:
 
+- You are running independently. Do not reference, defer to, or summarize
+  what other agents may have said. Do not write "as Agent 03 noted" or
+  "I agree with the prior verdict" or any variation. Produce your own
+  verdicts from the source file. Every agent output must stand alone.
 - Anchor every verdict to the source. Quote the relevant line,
   identifier, or structural element. Do not verdict from memory of
   Stage 2 alone.
