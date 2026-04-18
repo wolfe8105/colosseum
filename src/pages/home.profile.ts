@@ -50,7 +50,7 @@ export function updateUIFromProfile(user: User | null, profile: Profile | null) 
   document.getElementById('stat-tokens')!.textContent = (profile.token_balance || 0).toLocaleString();
   document.getElementById('token-count')!.textContent = (profile.token_balance || 0).toLocaleString();
   const shopBal = document.getElementById('shop-token-balance'); if (shopBal) shopBal.textContent = (profile.token_balance || 0).toLocaleString();
-  const depth = profile.profile_depth_pct || 0;
+  const depth = Number(profile.profile_depth_pct) || 0;
   (document.getElementById('profile-depth-fill') as HTMLElement).style.width = depth + '%';
   document.getElementById('profile-depth-text')!.innerHTML = `Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a>`;
 

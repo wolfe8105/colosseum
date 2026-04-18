@@ -23,7 +23,7 @@ export function showRulingPanel(ref: ReferenceItem): void {
       <div class="mod-ruling-sub">Evidence submitted by ${escapeHTML(ref.submitter_name || 'Unknown')}</div>
       <div class="mod-ruling-timer" id="mod-ruling-timer">60s auto-allow</div>
       <div class="mod-ruling-ref">
-        <div class="mod-ruling-ref-meta">ROUND ${ref.round || '?'} \u00B7 ${sideLabel}</div>
+        <div class="mod-ruling-ref-meta">ROUND ${Number(ref.round) || '?'} \u00B7 ${sideLabel}</div>
         ${ref.url ? `<div class="mod-ruling-ref-url">${escapeHTML(ref.url)}</div>` : ''}
         ${ref.description ? `<div class="mod-ruling-ref-desc">${escapeHTML(ref.description)}</div>` : ''}
         <div class="mod-ruling-ref-side">Supports: ${sideLabel}</div>
@@ -72,8 +72,8 @@ export function showRulingPanel(ref: ReferenceItem): void {
       if (denyBtn) denyBtn.disabled = false;
     } else {
       addSystemMessage('\u2705 Evidence ALLOWED by moderator' + (reason ? ': ' + reason : ''));
+      overlay.remove();
     }
-    overlay.remove();
   });
 
   overlay.querySelector('#mod-ruling-deny')?.addEventListener('click', async () => {
@@ -94,8 +94,8 @@ export function showRulingPanel(ref: ReferenceItem): void {
       if (denyBtn) denyBtn.disabled = false;
     } else {
       addSystemMessage('\u274C Evidence DENIED by moderator' + (reason ? ': ' + reason : ''));
+      overlay.remove();
     }
-    overlay.remove();
   });
 
   // Close on backdrop tap — don't close, moderator must rule
