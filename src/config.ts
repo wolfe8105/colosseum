@@ -54,8 +54,8 @@ import { showToast } from './config.toast';
 // Copy .env.example to .env and fill in real values before running locally.
 // ============================================================
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_34A8w2reecsV3rmMe9HVrg_zsc8YAaK';
+const SUPABASE_URL = 'https://faomczmipsccwbhpivmp.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_34A8w2reecsV3rmMe9HVrg_zsc8YAaK';
 
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'PASTE_YOUR_STRIPE_PUBLISHABLE_KEY_HERE';
 
