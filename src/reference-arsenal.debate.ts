@@ -37,6 +37,7 @@ export async function citeDebateReference(
     p_side: side,
   });
   if (error) throw new Error(error.message || 'Failed to cite reference');
+  if (!data) throw new Error('cite_debate_reference returned no data');
   return data as CiteResult2;
 }
 
@@ -51,5 +52,6 @@ export async function fileReferenceChallenge(
     p_side: side,
   });
   if (error) throw new Error(error.message || 'Failed to file challenge');
+  if (!data) throw new Error('file_reference_challenge returned no data');
   return data as ChallengeResult2;
 }
