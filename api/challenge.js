@@ -15,16 +15,13 @@
 // OG tags must be baked in server-side for link previews.
 // ============================================================
 
-// LANDMINE [LM-CHALLENGE-001]: Original file used ESM `export default` syntax in a
-// Vercel Node.js serverless function. Converted to CommonJS `module.exports` during split.
-
-const { buildChallengeHtml, buildExpiredHtml } = require('./challenge.html');
+import { buildChallengeHtml, buildExpiredHtml } from './challenge.html.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const BASE_URL = 'https://themoderator.app'; // eslint-disable-line no-unused-vars
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (!SUPABASE_ANON_KEY) {
     console.error('challenge.js: SUPABASE_ANON_KEY env var not set');
     return res.status(500).send('Server configuration error');

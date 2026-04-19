@@ -3,7 +3,7 @@
 // Split from challenge.js (Session 188 — F-39)
 // ============================================================
 
-const { escapeHtml, getCategoryLabel, getModeLabel } = require('./challenge.helpers');
+import { escapeHtml, getCategoryLabel, getModeLabel } from './challenge.helpers.js';
 
 const BASE_URL = 'https://themoderator.app';
 
@@ -208,4 +208,4 @@ function buildExpiredHtml() {
 </html>`;
 }
 
-module.exports = { buildChallengeHtml, buildExpiredHtml };
+export { buildChallengeHtml, buildExpiredHtml };

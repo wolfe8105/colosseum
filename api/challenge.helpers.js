@@ -36,4 +36,4 @@ function getModeLabel(mode) {
   return map[mode] || 'Debate';
 }
 
-module.exports = { escapeHtml, getCategoryLabel, getModeLabel };
+export { escapeHtml, getCategoryLabel, getModeLabel };

@@ -8,7 +8,7 @@
  * Route: /i/:code → /api/invite?code=:code (via vercel.json rewrite)
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -16,7 +16,7 @@ const APP_BASE = 'https://themoderator.app';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const code = req.query.code;
 
   if (!code || !/^[a-z0-9]{5}$/.test(code)) {
