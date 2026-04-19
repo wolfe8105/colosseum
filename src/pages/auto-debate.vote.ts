@@ -53,5 +53,5 @@ export async function castVoteImpl(
 
   // cast_auto_debate_vote RPC not yet deployed — show optimistic result
   showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
-  claimVote(d.id);
+  claimVote(d.id).catch(e => console.warn('[auto-debate.vote] claimVote failed', e));
 }

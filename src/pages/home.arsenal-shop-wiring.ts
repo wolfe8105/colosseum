@@ -80,7 +80,7 @@ export function wireShopEvents(
   // Handler is declared `async` but never awaits anything — dead async keyword.
   // Buy button (direct tap, bypasses sheet)
   container.querySelectorAll<HTMLButtonElement>('.mod-buy-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const effectId = btn.dataset.effectId;
       if (!effectId) return;

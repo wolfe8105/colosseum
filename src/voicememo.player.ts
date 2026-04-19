@@ -46,7 +46,7 @@ export function playInline(id: string): void {
       if (el.id !== id) { el.pause(); el.currentTime = 0; }
     });
     document.querySelectorAll('.vm-inline-player button').forEach(b => { b.textContent = '▶'; });
-    void audio.play();
+    audio.play().catch(() => { btn.textContent = '▶'; });
     btn.textContent = '⏸';
     audio.onended = () => { btn.textContent = '▶'; };
   } else {
@@ -67,7 +67,10 @@ export function togglePlayback(): void {
     isPlayingState = false;
     if (playBtn) playBtn.textContent = '▶';
   } else {
-    void audioEl.play();
+    audioEl.play().catch(() => {
+      isPlayingState = false;
+      if (playBtn) playBtn.textContent = '▶';
+    });
     isPlayingState = true;
     if (playBtn) playBtn.textContent = '⏸';
     audioEl.onended = () => {
