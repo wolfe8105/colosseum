@@ -39,10 +39,9 @@ export function destroy(): void {
 
 export function dismissPopup(state: PopupState): void {
   const popup = document.getElementById('rival-alert-popup');
-  // LANDMINE [LM-RIVALS-004]: If popup is already gone, returns without setting
-  // state.active = false. Any subsequent queueAlert call sees active === true and silently
-  // queues without ever showing. Only recovery is destroy(). (catalogued M-E7)
-  if (!popup) return;
+  // M-E7 fix: always mark inactive before returning so queue doesn't deadlock
+  // if popup was already removed externally (e.g. navigation).
+  if (!popup) { state.active = false; return; }
   popup.classList.add('dismissing');
   if (_dismissTimer) clearTimeout(_dismissTimer);
   _dismissTimer = setTimeout(() => {

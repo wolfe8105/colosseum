@@ -75,7 +75,8 @@ export function showRankedPicker(): void {
             return;
           }
         } catch (e) {
-          console.warn('[Arena] Ranked check error:', e);
+          console.warn('[Arena] Ranked check error — blocking ranked entry to prevent fail-open:', e);
+          return;
         }
       }
 

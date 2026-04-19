@@ -25,11 +25,15 @@ module.exports = async function handler(req, res) {
 
   // Record the click via service-role RPC (unauthenticated — no user session yet)
   try {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-      ?? req.socket?.remoteAddress
-      ?? null;
+    // M-E8: use rightmost x-forwarded-for entry — Vercel appends the real client IP
+    // to the right of any attacker-controlled chain, so [0] is spoofable.
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded
+      ? forwarded.split(',').map(s => s.trim()).filter(Boolean).pop() ?? null
+      : req.socket?.remoteAddress ?? null;
 
-    await supabase.rpc('record_invite_click', {
+    // M-E9: fire-and-forget — click recording failure must not block the redirect
+    void supabase.rpc('record_invite_click', {
       p_ref_code:  code,
       p_device_id: null,   // client-side device ID set in localStorage by plinko.ts
       p_ip:        ip,
