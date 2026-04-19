@@ -63,9 +63,9 @@ export function renderTournamentCard(t: Tournament): string {
       <div class="tc-fill-bar">
         <div class="tc-fill-inner" style="width:${pct}%"></div>
       </div>
-      <div class="tc-fill-label">${t.player_count} / ${t.max_players} players</div>
+      <div class="tc-fill-label">${Number(t.player_count)} / ${Number(t.max_players)} players</div>
       ${t.status === 'registration' && !t.is_entered
-        ? `<button class="tc-join-btn" data-tournament-id="${escapeHTML(t.id)}" data-entry-fee="${t.entry_fee}">Join — ${Number(t.entry_fee).toLocaleString()} 🪙</button>`
+        ? `<button class="tc-join-btn" data-tournament-id="${escapeHTML(t.id)}" data-entry-fee="${Number(t.entry_fee)}">Join — ${Number(t.entry_fee).toLocaleString()} 🪙</button>`
         : t.is_entered
           ? `<div class="tc-entered-label">✓ Entered</div>`
           : ''}

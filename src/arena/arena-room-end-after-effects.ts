@@ -32,11 +32,11 @@ export function renderAfterEffects(
     return `
       <div class="ae-row">
         <span class="ae-label">${escapeHTML(label)}</span>
-        <span class="ae-raw">${d.raw_score}</span>
+        <span class="ae-raw">${Number(d.raw_score)}</span>
         <span class="ae-arrow">→</span>
         ${steps}
         <span class="ae-arrow">→</span>
-        <span class="ae-final">${d.final_score}</span>
+        <span class="ae-final">${Number(d.final_score)}</span>
       </div>`;
   }
 

@@ -138,9 +138,9 @@ export async function renderMyBountiesSection(container: HTMLElement): Promise<v
       : `<span style="color:var(--mod-text-sub);">on</span> <strong>${escapeHTML(b.target_username ?? '?')}</strong>`;
     return `
       <div class="bounty-list-row" data-bounty-id="${b.id}" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--mod-border-subtle);">
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;">${who}</div><div style="font-size:11px;color:var(--mod-text-muted);margin-top:2px;">${daysLeft}d remaining · ${b.duration_days}-day window</div></div>
-        <div style="text-align:right;flex-shrink:0;"><div style="font-family:var(--mod-font-display);font-size:16px;color:${statusColor};">${b.amount}</div><div style="font-size:10px;color:var(--mod-text-muted);letter-spacing:1px;">${b.status.toUpperCase()}</div></div>
-        ${type === 'outgoing' && b.status === 'open' ? `<button class="bounty-cancel-row-btn" data-bounty-id="${b.id}" data-amount="${b.amount}" data-duration="${b.duration_days}" style="padding:6px 10px;background:transparent;border:1px solid var(--mod-magenta);color:var(--mod-magenta);border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">CANCEL</button>` : ''}
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;">${who}</div><div style="font-size:11px;color:var(--mod-text-muted);margin-top:2px;">${Number(daysLeft)}d remaining · ${Number(b.duration_days)}-day window</div></div>
+        <div style="text-align:right;flex-shrink:0;"><div style="font-family:var(--mod-font-display);font-size:16px;color:${statusColor};">${Number(b.amount)}</div><div style="font-size:10px;color:var(--mod-text-muted);letter-spacing:1px;">${b.status.toUpperCase()}</div></div>
+        ${type === 'outgoing' && b.status === 'open' ? `<button class="bounty-cancel-row-btn" data-bounty-id="${b.id}" data-amount="${Number(b.amount)}" data-duration="${Number(b.duration_days)}" style="padding:6px 10px;background:transparent;border:1px solid var(--mod-magenta);color:var(--mod-magenta);border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">CANCEL</button>` : ''}
       </div>`;
   }
 

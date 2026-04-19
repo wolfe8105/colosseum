@@ -28,7 +28,7 @@ export function rewardRowHtml(r: InviteReward): string {
     <div class="invite-reward-row" data-reward-id="${escapeHTML(r.id)}">
       <div class="invite-reward-info">
         <span class="invite-reward-type">${escapeHTML(rewardTypeLabel(r.reward_type) ?? 'Reward')}</span>
-        <span class="invite-reward-milestone">Milestone: ${r.milestone}</span>
+        <span class="invite-reward-milestone">Milestone: ${Number(r.milestone)}</span>
         <span class="invite-reward-date">${escapeHTML(date)}</span>
       </div>
       <button class="invite-claim-btn ${r.pending_review ? 'invite-claim-btn--review' : ''}"
