@@ -1,0 +1,102 @@
+{
+  "run_id": "audit-run-20260418-batch36",
+  "created_at": "2026-04-18T00:00:00Z",
+  "files": [
+    {
+      "path": "src/pages/home.arsenal-shop-sheet.ts",
+      "sanitized": "src__pages__home.arsenal-shop-sheet.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__home.arsenal-shop-sheet.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__home.arsenal-shop-sheet.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__home.arsenal-shop-sheet.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__home.arsenal-shop-sheet.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/pages/cosmetics.modal.ts",
+      "sanitized": "src__pages__cosmetics.modal.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__cosmetics.modal.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__cosmetics.modal.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__cosmetics.modal.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__cosmetics.modal.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/pages/groups.utils.ts",
+      "sanitized": "src__pages__groups.utils.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__groups.utils.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__groups.utils.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__groups.utils.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch36/src__pages__groups.utils.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/rivals-presence-popup.ts",
+      "sanitized": "src__rivals-presence-popup.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch36/src__rivals-presence-popup.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch36/src__rivals-presence-popup.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch36/src__rivals-presence-popup.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch36/src__rivals-presence-popup.ts/stage3.md"
+      }
+    }
+  ]
+}

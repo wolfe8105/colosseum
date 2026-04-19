@@ -1,0 +1,98 @@
+{
+  "run_id": "audit-run-20260419-batch74",
+  "created_at": "2026-04-19T00:00:00Z",
+  "files": [
+    {
+      "path": "src/modifiers-handlers.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch74/src__modifiers-handlers.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch74/src__modifiers-handlers.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch74/src__modifiers-handlers.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch74/src__modifiers-handlers.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/pages/plinko-step2-age.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko-step2-age.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko-step2-age.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko-step2-age.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko-step2-age.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/pages/plinko.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch74/src__pages__plinko.ts/stage3.md"
+      }
+    },
+    {
+      "path": "src/arena/arena-room-enter.ts",
+      "stage1": {
+        "status": "done",
+        "output_path": "audit/batch74/src__arena__arena-room-enter.ts/stage1.md"
+      },
+      "stage1_5": {
+        "status": "done",
+        "output_path": "audit/batch74/src__arena__arena-room-enter.ts/stage1_5-anchor.md",
+        "arbiter_runs": 2,
+        "runs_agreed": true,
+        "reconciliation_run": false,
+        "unresolved_count": 0
+      },
+      "stage2": {
+        "status": "done",
+        "output_path": "audit/batch74/src__arena__arena-room-enter.ts/stage2.md"
+      },
+      "stage3": {
+        "status": "done",
+        "output_path": "audit/batch74/src__arena__arena-room-enter.ts/stage3.md"
+      }
+    }
+  ]
+}

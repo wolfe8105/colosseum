@@ -1,0 +1,55 @@
+# Stage 2 Outputs — arena-mod-debate-waiting.ts
+
+## Agent 01
+
+### showModDebateWaitingMod
+
+This function is called with a debate ID, join code, topic string, debate mode, and ranked flag. It reads the `screenEl` module-level variable exported from `arena-state.ts` and the DOM's `getElementById` method. It writes to module-level state by calling `set_view('modDebateWaiting')` and modifies the browser history with `history.pushState()`. It clears the screen element's innerHTML if `screenEl` exists, then creates a new div container with the class `arena-lobby arena-fade-in` and populates its innerHTML with an HTML template that includes the topic and join code (both escaped via `escapeHTML`), two debater slot labels, and a cancel button. It appends the container to `screenEl` if it exists. It then attaches a click event listener to the cancel button that calls `cancelModDebate(debateId)` with no await (fire-and-forget via `void` operator). Finally, it calls `startModDebatePoll(debateId, mode, ranked)` to initiate polling. The function returns `void`.
+
+### showModDebateWaitingDebater
+
+This function is called with a debate ID, topic string, debate mode, and ranked flag. It reads `screenEl` from module-level state and the DOM's `getElementById` method. It writes to module-level state via `set_view('modDebateWaiting')` and modifies browser history with `history.pushState()`. It clears `screenEl`'s innerHTML if it exists, creates a div container with the class `arena-lobby arena-fade-in`, and populates its innerHTML with an HTML template showing a "Waiting for Opponent" message with the topic (escaped, defaulting to 'Open Debate' if not provided) and a leave button. It appends the container to `screenEl` if it exists. It attaches an async click event listener to the leave button that calls `stopModDebatePoll()` synchronously, then dynamically imports `renderLobby` from `arena-lobby.ts` and awaits it, and calls `renderLobby()`. Finally, it calls `startModDebatePoll(debateId, mode, ranked)` to initiate polling. The function returns `void`.
+
+## Agent 02
+
+### showModDebateWaitingMod
+
+This function sets up a moderator's waiting screen for a debate to begin. It accepts parameters for the debate ID, join code, topic, debate mode, and ranked status. It calls `set_view('modDebateWaiting')` to update the module-level view state, then calls `history.pushState()` to push a browser history entry with the view name. It clears the `screenEl` DOM element if it exists by setting its innerHTML to an empty string.
+
+It then creates a new div container with the class names 'arena-lobby' and 'arena-fade-in', and populates its innerHTML with a styled layout containing: a title "Waiting for Debaters", the escaped topic as a subtitle, an escaped join code displayed prominently, instructions to share the code, two labeled slots for "Debater A" and "Debater B" (with initial placeholder text "waiting…"), and a "CANCEL" button with id 'mod-debate-cancel-btn'. It appends the container to `screenEl`. It then attaches a click listener to the cancel button that fires the `cancelModDebate()` function with the debate ID passed in, using void to suppress the promise. Finally, it calls `startModDebatePoll(debateId, mode, ranked)` with the debate ID, mode, and ranked parameters.
+
+### showModDebateWaitingDebater
+
+This function sets up a debater's waiting screen for a debate to begin. It accepts parameters for the debate ID, topic, debate mode, and ranked status. It calls `set_view('modDebateWaiting')` to update the module-level view state, then calls `history.pushState()` to push a browser history entry with the view name. It clears the `screenEl` DOM element if it exists by setting its innerHTML to an empty string.
+
+It creates a new div container with the class names 'arena-lobby' and 'arena-fade-in', and populates its innerHTML with a styled layout containing: a title "Waiting for Opponent", the escaped topic as a subtitle (or the string 'Open Debate' if topic is falsy), a message stating "You're in. Waiting for the second debater to join…", and a "LEAVE" button with id 'mod-debate-debater-cancel-btn'. It appends the container to `screenEl`. It attaches an async click listener to the leave button that calls `stopModDebatePoll()` synchronously, then dynamically imports the `renderLobby` function from './arena-lobby.ts' and awaits the import, then calls `renderLobby()` without awaiting it. Finally, it calls `startModDebatePoll(debateId, mode, ranked)` with the debate ID, mode, and ranked parameters.
+
+## Agent 03
+
+### showModDebateWaitingMod
+
+This function reads the parameters debateId, joinCode, topic, mode, and ranked. It calls set_view with the string 'modDebateWaiting' to set module-level state, then calls history.pushState to record the navigation state in the browser history. If screenEl is truthy, it clears screenEl's innerHTML. It then creates a div element with class 'arena-lobby arena-fade-in' and sets its innerHTML to a template string that includes the escaped joinCode and topic parameters via escapeHTML calls. The generated HTML displays "Waiting for Debaters", the topic, the join code, two placeholder debater slots with IDs "slot-a-name" and "slot-b-name", and a cancel button with ID "mod-debate-cancel-btn". The container is appended to screenEl. The function then retrieves the cancel button element and adds a click event listener that calls cancelModDebate with the debateId parameter (the call is wrapped in void to suppress the promise). Finally, it calls startModDebatePoll with debateId, mode, and ranked to begin polling for debate status. The function is synchronous and returns undefined.
+
+### showModDebateWaitingDebater
+
+This function reads the parameters debateId, topic, mode, and ranked. It calls set_view with the string 'modDebateWaiting' to set module-level state, then calls history.pushState to record the navigation state in the browser history. If screenEl is truthy, it clears screenEl's innerHTML. It creates a div element with class 'arena-lobby arena-fade-in' and sets its innerHTML to a template string that includes the escaped topic parameter via an escapeHTML call, with a fallback to the string 'Open Debate' if topic is falsy. The generated HTML displays "Waiting for Opponent", the topic, an informational message, and a leave button with ID "mod-debate-debater-cancel-btn". The container is appended to screenEl. The function then retrieves the leave button element and adds a click event listener that is an async function. The async listener calls stopModDebatePoll synchronously, then awaits a dynamic import of the arena-lobby.ts module, destructures renderLobby from the imported module, and calls renderLobby with no arguments. Finally, the function calls startModDebatePoll with debateId, mode, and ranked to begin polling for debate status. The function itself is synchronous and returns undefined, though the click handler is async.
+
+## Agent 04
+
+### showModDebateWaitingMod
+
+When called, this function sets the view state to `'modDebateWaiting'` by calling `set_view('modDebateWaiting')`, then pushes a browser history state with the same view identifier via `history.pushState()`. It clears the `screenEl` element's innerHTML if `screenEl` exists. It creates a new div with class `'arena-lobby arena-fade-in'` and sets its innerHTML to a templated string containing a title "Waiting for Debaters," the escaped `topic` parameter, a join code section displaying the escaped `joinCode` parameter, two debater slot placeholders (with IDs `'slot-a-name'` and `'slot-b-name'`) showing "waiting…", and a CANCEL button with ID `'mod-debate-cancel-btn'`. The container is appended to `screenEl` if it exists. It attaches a click event listener to the CANCEL button that calls `cancelModDebate(debateId)` (fire-and-forget, not awaited). Finally, it calls `startModDebatePoll(debateId, mode, ranked)`, passing the `mode` and `ranked` parameters along with the `debateId`. The function is synchronous and returns `void`.
+
+### showModDebateWaitingDebater
+
+When called, this function sets the view state to `'modDebateWaiting'` by calling `set_view('modDebateWaiting')`, then pushes a browser history state with the same view identifier via `history.pushState()`. It clears the `screenEl` element's innerHTML if `screenEl` exists. It creates a new div with class `'arena-lobby arena-fade-in'` and sets its innerHTML to a templated string containing a title "Waiting for Opponent," the escaped `topic` parameter (or the fallback string `'Open Debate'` if topic is falsy), and a message "You're in. Waiting for the second debater to join…" along with a LEAVE button with ID `'mod-debate-debater-cancel-btn'`. The container is appended to `screenEl` if it exists. It attaches an async click event listener to the LEAVE button that calls `stopModDebatePoll()` synchronously, then imports the `renderLobby` function from `'./arena-lobby.ts'` asynchronously via dynamic import, and calls `renderLobby()` (the event listener is declared async but the function does not wait for the import or call to complete in terms of click handling). Finally, it calls `startModDebatePoll(debateId, mode, ranked)`, passing the `mode` and `ranked` parameters along with the `debateId`. The function is synchronous and returns `void`.
+
+## Agent 05
+
+### showModDebateWaitingMod
+
+When called, this function invokes `set_view('modDebateWaiting')` to update the module state. It then calls `history.pushState()` to add an entry to the browser history. It clears `screenEl.innerHTML` if screenEl is truthy. It creates a new div container with class names and populates its innerHTML with a template that includes the escapeHTML-processed topic and joinCode parameters, two slot indicators initially showing "waiting…", and a cancel button. It appends the container to screenEl. It retrieves the cancel button by ID and attaches a click event listener; when the button is clicked, it invokes `cancelModDebate(debateId)` without awaiting the result (fire-and-forget via void). Finally, it calls `startModDebatePoll(debateId, mode, ranked)` synchronously. The function returns void.
+
+### showModDebateWaitingDebater
+
+When called, this function invokes `set_view('modDebateWaiting')` to update the module state. It then calls `history.pushState()` to add an entry to the browser history. It clears `screenEl.innerHTML` if screenEl is truthy. It creates a new div container with class names and populates its innerHTML with a template that includes the escapeHTML-processed topic (or 'Open Debate' as a fallback), and a leave button. It appends the container to screenEl. It retrieves the leave button by ID and attaches an async click event listener; when the button is clicked, it calls `stopModDebatePoll()` synchronously, then awaits a dynamic import of `./arena-lobby.ts` to get the `renderLobby` function, and calls `renderLobby()` synchronously. Finally, it calls `startModDebatePoll(debateId, mode, ranked)` synchronously. The function returns void.

@@ -1,0 +1,34 @@
+{
+  "run_id": "audit-run-batch68-20260419",
+  "created_at": "2026-04-19T00:00:00Z",
+  "files": [
+    {
+      "path": "src/pages/groups.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch68/src__pages__groups.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch68/src__pages__groups.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch68/src__pages__groups.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch68/src__pages__groups.types.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/plinko-password.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch68/src__pages__plinko-password.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch68/src__pages__plinko-password.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch68/src__pages__plinko-password.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch68/src__pages__plinko-password.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.forge.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch68/src__reference-arsenal.forge.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch68/src__reference-arsenal.forge.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch68/src__reference-arsenal.forge.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch68/src__reference-arsenal.forge.ts/stage3.md"}
+    },
+    {
+      "path": "src/modifiers-catalog.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch68/src__modifiers-catalog.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch68/src__modifiers-catalog.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch68/src__modifiers-catalog.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch68/src__modifiers-catalog.ts/stage3.md"}
+    }
+  ]
+}

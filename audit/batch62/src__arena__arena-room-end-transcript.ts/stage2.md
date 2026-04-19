@@ -1,0 +1,59 @@
+# Stage 2 Outputs — arena-room-end-transcript.ts
+
+## Agent 01
+
+### attachTranscriptHandler
+
+`attachTranscriptHandler` is synchronous. It accepts a single parameter, `debate`, typed as `CurrentDebate`, which is expected to carry `messages`, `role`, `opponentName`, and `topic` fields. The function queries the DOM for an element with id `arena-transcript` and attaches a `click` listener to it via optional chaining — if no such element exists at call time, the listener is silently not attached and the function returns without side effects.
+
+When the `arena-transcript` element is clicked, the listener fires. It first calls `document.getElementById('arena-transcript-overlay')?.remove()`, removing any previously mounted overlay from the DOM. It then calls `getCurrentProfile()` from the auth module to read the current user's profile from whatever in-memory or cached state that function exposes; if the profile is absent or has no `display_name`, the local variable `transcriptMyName` falls back to the string `'You'`. It reads `debate.messages` into a local `msgs` array, defaulting to an empty array if the field is falsy.
+
+A new `div` element is created in memory, assigned the id `arena-transcript-overlay` and the class `arena-transcript-overlay`. Message HTML is then built into the `msgHtml` string. If `msgs` is empty, `msgHtml` is set to a single `<div class="arena-transcript-empty">` node. Otherwise, `msgs` is iterated with `forEach`: a round-divider string is appended to `msgHtml` whenever `m.round` differs from the previous value tracked in `lastRound`, and `lastRound` is updated. For each message, `m.role === 'user'` determines whether the message belongs to the current user (`isMe`). The CSS side class is set to `debate.role` for the user's messages; for opponent messages, if `debate.role` is `'a'` the side is `'b'`, otherwise `'a'`. Both `msgName` and `m.text` are passed through `escapeHTML` before being written into the HTML string. There is no error path guarded here — if any `m.text` or `msgName` is undefined, `escapeHTML` receives `undefined` (behavior depends on that function's implementation).
+
+After the loop, `transcriptOverlay.innerHTML` is set to a bottom-sheet structure containing a header (handle, title emoji, and the `debate.topic` string passed through `escapeHTML`), and the body containing `msgHtml`. A second `click` listener is attached to `transcriptOverlay` itself: if the event target is the overlay backdrop (i.e., the click landed outside the sheet), `transcriptOverlay.remove()` is called to dismiss it. Finally, the overlay is appended to `document.body`, making it visible. The function has no return value and declares `void`. There is no try/catch, no async await, and no network or storage access.
+
+## Agent 02
+
+### attachTranscriptHandler
+
+`attachTranscriptHandler` accepts one parameter, `debate`, typed as `CurrentDebate`, and returns `void`. It is synchronous. It queries the DOM for an element with id `arena-transcript` and, if found, registers a `click` event listener on it via optional chaining (no listener is attached and no error is thrown if the element is absent).
+
+When that click fires, the listener first removes any pre-existing element with id `arena-transcript-overlay` by calling `document.getElementById('arena-transcript-overlay')?.remove()`, clearing any previously opened overlay before building a new one. It then calls `getCurrentProfile()` (imported from `auth.ts`) to read the current user's profile from module-level auth state, storing the result in a local variable; if `display_name` is falsy, the display name falls back to the string `'You'`. It reads `debate.messages` from the passed-in `debate` object, defaulting to an empty array if absent.
+
+A new `div` element is created and assigned id `arena-transcript-overlay` and CSS class `arena-transcript-overlay`. The function then builds an HTML string, `msgHtml`, by iterating over `msgs` with `forEach`. A local variable `lastRound` tracks the round boundary: each time `m.round` differs from `lastRound`, a round-separator `div` is appended and `lastRound` is updated. For each message, the side character is determined by comparing `m.role` to the string `'user'`: if equal, the side is `debate.role`; otherwise the side is whichever of `'a'` or `'b'` is not `debate.role`. The speaker name is `transcriptMyName` for `'user'` role messages and `debate.opponentName` otherwise. Both the name and message text are passed through `escapeHTML()` (imported from `config.ts`) before insertion into the markup. If `msgs` is empty the entire loop is skipped and `msgHtml` is set to a single empty-state `div`. Once `msgHtml` is fully assembled, it is set as part of a larger HTML template on `transcriptOverlay.innerHTML`; `debate.topic` is also passed through `escapeHTML()` before insertion.
+
+A second `click` listener is attached to the overlay itself; it checks whether `e.target === transcriptOverlay` (i.e., the user clicked the backdrop rather than the sheet) and calls `transcriptOverlay.remove()` if so, implementing a backdrop-dismiss behaviour. Finally, the overlay is appended to `document.body`. There is no try/catch and no async operation.
+
+## Agent 03
+
+### attachTranscriptHandler
+
+Takes a single parameter `debate` of type `CurrentDebate`. Synchronous at the top level. Reads no module-level state. Calls `document.getElementById('arena-transcript')` and, if the element exists, attaches a `click` event listener to it; if the element is absent the function returns without doing anything.
+
+When the `arena-transcript` button is clicked, the listener runs synchronously. It first calls `document.getElementById('arena-transcript-overlay')?.remove()` to destroy any previously rendered overlay. It then calls `getCurrentProfile()` (imported from `auth.ts`) to read the caller's current auth state and pulls `display_name` off the result, falling back to the string `'You'` if the profile is null or the field is absent. It reads `debate.messages` (falling back to an empty array) and creates a new `div` element with `id` of `arena-transcript-overlay` and class `arena-transcript-overlay`.
+
+Message HTML is assembled into the local string `msgHtml`. If `msgs` is empty, `msgHtml` is set to a single empty-state `div`. Otherwise `msgs` is iterated with `forEach`: for each message, if `m.round` differs from the tracked `lastRound` variable, a round-separator `div` is appended and `lastRound` is updated. For each message, `m.role === 'user'` determines whether the message belongs to the local user; the display side is `debate.role` for the user and the opposite letter (`'a'`/`'b'`) for the opponent; the display name is either `transcriptMyName` or `debate.opponentName`. Both the name and message text are passed through `escapeHTML()` before being interpolated into the `div` markup. After the loop, the assembled `msgHtml` and the debate topic (also `escapeHTML`-wrapped) are set as `innerHTML` on the overlay element via a template literal that also includes a header, handle, and title.
+
+A second `click` listener is attached to the overlay itself; it checks `e.target === transcriptOverlay` and calls `transcriptOverlay.remove()` if true, implementing a click-outside-to-dismiss pattern. Finally, `document.body.appendChild(transcriptOverlay)` mounts the overlay into the DOM.
+
+## Agent 04
+
+### attachTranscriptHandler
+
+Accepts one parameter, `debate`, typed as `CurrentDebate`. The function is synchronous and returns `void`. It reads no module-level state; all runtime data comes from the `debate` parameter and from DOM queries.
+
+On call, it queries the DOM for an element with id `arena-transcript` and, if found, attaches a `click` event listener to it. That listener fires when the user clicks the button. Inside the listener, any existing element with id `arena-transcript-overlay` is immediately removed from the DOM by calling `.remove()` on it — this prevents duplicate overlays. `getCurrentProfile()` (imported from `auth.ts`) is then called to read external auth state, and `display_name` is pulled from the result, falling back to the string `'You'` if the profile is absent or has no display name. `debate.messages` is read and assigned to `msgs`, defaulting to an empty array if falsy.
+
+A new `div` element is created, given id `arena-transcript-overlay` and class `arena-transcript-overlay`. HTML for the message list is built by iterating `msgs` with `forEach`. A `lastRound` counter, initialized to `0`, tracks round-boundary transitions: when `m.round` differs from `lastRound`, a round-divider element is appended to `msgHtml` and `lastRound` is updated to `m.round`. For each message, the speaker's side is determined by checking `m.role === 'user'`: if true, `msgSide` is set to `debate.role` and `msgName` to the resolved display name; otherwise `msgSide` is the opposite of `debate.role` (if `debate.role === 'a'` then `'b'`, else `'a'`), and `msgName` is `debate.opponentName`. Both `msgName` and `m.text` are passed through `escapeHTML()` before being inserted into the HTML string. If `msgs` is empty the loop is skipped and a single empty-state div is placed instead.
+
+After the loop, `transcriptOverlay.innerHTML` is set to a bottom-sheet scaffold containing a header (handle, title, and `debate.topic` run through `escapeHTML()`), and the assembled `msgHtml` as the body. A second `click` listener is attached to the overlay itself; it calls `transcriptOverlay.remove()` only when `e.target` is the overlay element directly (i.e., a click on the backdrop, not on the sheet content). Finally, the overlay is appended to `document.body`. There are no `try`/`catch` blocks, no `async`/`await`, and no further external calls after `getCurrentProfile()`.
+
+## Agent 05
+
+### attachTranscriptHandler
+
+Synchronous. Takes a single parameter `debate` of type `CurrentDebate`. Reads no module-level state. Looks up the element with id `arena-transcript` in the DOM and, if found, attaches a `click` event listener to it; if the element is absent the optional-chain short-circuits and nothing is registered.
+
+When that click fires: it first removes any existing element with id `arena-transcript-overlay` from the DOM (idempotent teardown of a prior overlay). It then calls `getCurrentProfile()` from `auth.ts` to read the current user's profile from external auth state, extracting `display_name` and falling back to the string `'You'` if the profile is absent or the field is falsy. It reads `debate.messages`, defaulting to an empty array if the field is nullish.
+
+A new `div` element is created, assigned id `arena-transcript-overlay` and class `arena-transcript-overlay`. HTML for the message list is built by iterating `msgs` with `forEach`: for each message, if `m.round` differs from a local `lastRound` counter, a round-separator div is appended and `lastRound` is updated. The `isMe` flag is set to `true` when `m.role === 'user'`. `msgSide` is set to `debate.role` when `isMe` is true, otherwise the opposite role (`'a'` or `'b'`). `msgName` is the local display name for the current user or `debate.opponentName` for the opponent. Both `msgName` and `m.text` are passed through `escapeHTML()` before being interpolated into the HTML string. If `msgs` is empty, a single "No messages recorded." placeholder div is produced instead of iterating. The full overlay's `innerHTML` is then set once, embedding the accumulated `msgHtml` alongside the debate topic (also `escapeHTML`-wrapped) in a bottom-sheet structure. A second `click` listener is added to `transcriptOverlay` itself: it checks whether `e.target` is the overlay element directly (i.e., a click on the backdrop rather than the sheet content) and, if so, removes the overlay from the DOM. Finally, the overlay is appended to `document.body`.

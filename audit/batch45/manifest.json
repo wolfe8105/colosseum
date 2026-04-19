@@ -1,0 +1,38 @@
+{
+  "run_id": "audit-run-20260418-batch45",
+  "created_at": "2026-04-18T00:00:00Z",
+  "files": [
+    {
+      "path": "src/arena/arena-mod-debate-waiting.ts",
+      "sanitized": "src__arena__arena-mod-debate-waiting.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch45/src__arena__arena-mod-debate-waiting.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch45/src__arena__arena-mod-debate-waiting.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch45/src__arena__arena-mod-debate-waiting.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch45/src__arena__arena-mod-debate-waiting.ts/stage3.md"}
+    },
+    {
+      "path": "src/webrtc.state.ts",
+      "sanitized": "src__webrtc.state.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch45/src__webrtc.state.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch45/src__webrtc.state.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch45/src__webrtc.state.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch45/src__webrtc.state.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/groups.auditions.render.ts",
+      "sanitized": "src__pages__groups.auditions.render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch45/src__pages__groups.auditions.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch45/src__pages__groups.auditions.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch45/src__pages__groups.auditions.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch45/src__pages__groups.auditions.render.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.invite-sheet.ts",
+      "sanitized": "src__pages__home.invite-sheet.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch45/src__pages__home.invite-sheet.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch45/src__pages__home.invite-sheet.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch45/src__pages__home.invite-sheet.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch45/src__pages__home.invite-sheet.ts/stage3.md"}
+    }
+  ]
+}

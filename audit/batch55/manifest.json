@@ -1,0 +1,34 @@
+{
+  "run_id": "audit-run-batch55-20260418",
+  "created_at": "2026-04-18T00:00:00Z",
+  "files": [
+    {
+      "path": "src/pages/plinko-helpers.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch55/src__pages__plinko-helpers.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch55/src__pages__plinko-helpers.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch55/src__pages__plinko-helpers.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch55/src__pages__plinko-helpers.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch55/src__reference-arsenal.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch55/src__reference-arsenal.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch55/src__reference-arsenal.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch55/src__reference-arsenal.ts/stage3.md"}
+    },
+    {
+      "path": "src/auth.gate.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch55/src__auth.gate.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch55/src__auth.gate.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch55/src__auth.gate.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch55/src__auth.gate.ts/stage3.md"}
+    },
+    {
+      "path": "src/webrtc.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch55/src__webrtc.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch55/src__webrtc.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0, "anchor_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch55/src__webrtc.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch55/src__webrtc.types.ts/stage3.md"}
+    }
+  ]
+}

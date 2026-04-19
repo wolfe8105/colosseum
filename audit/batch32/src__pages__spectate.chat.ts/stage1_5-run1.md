@@ -1,0 +1,16 @@
+# Anchor List — spectate.chat.ts (Arbiter Run 1)
+
+1. renderChatMessages (line 12)
+2. refreshChatUI (line 24)
+3. wireChatUI (line 38)
+4. sendChat (line 58)
+5. startChatPolling (line 114)
+
+## Resolution notes
+- header click arrow (line 41): anonymous arrow passed to addEventListener; excluded
+- setTimeout arrow (line 80): anonymous arrow passed to setTimeout; excluded
+- keydown arrow (lines 106–111): anonymous arrow passed to addEventListener; excluded
+- sendBtn click reference (line 105): reference to sendChat, not a new callable; excluded
+- setInterval async arrow (lines 116–132): anonymous async arrow passed to setInterval; excluded
+- filter arrow (line 122): anonymous arrow passed to Array.filter; excluded
+- sendChat at line 58 INCLUDED: named `async function` declaration (not an arrow), auditable logic surface with sending-guard, RPC call, and three outcome branches

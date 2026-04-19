@@ -1,0 +1,38 @@
+{
+  "run_id": "audit-run-20260418-batch39",
+  "created_at": "2026-04-18T00:00:00Z",
+  "files": [
+    {
+      "path": "src/arena/arena-constants.ts",
+      "sanitized": "src__arena__arena-constants.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-constants.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch39/src__arena__arena-constants.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-constants.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-constants.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-mod-debate-poll.ts",
+      "sanitized": "src__arena__arena-mod-debate-poll.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-mod-debate-poll.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch39/src__arena__arena-mod-debate-poll.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-mod-debate-poll.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch39/src__arena__arena-mod-debate-poll.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.arsenal.ts",
+      "sanitized": "src__pages__home.arsenal.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch39/src__pages__home.arsenal.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch39/src__pages__home.arsenal.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch39/src__pages__home.arsenal.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch39/src__pages__home.arsenal.ts/stage3.md"}
+    },
+    {
+      "path": "src/staking.wire.ts",
+      "sanitized": "src__staking.wire.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch39/src__staking.wire.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch39/src__staking.wire.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch39/src__staking.wire.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch39/src__staking.wire.ts/stage3.md"}
+    }
+  ]
+}

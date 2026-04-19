@@ -1,0 +1,38 @@
+{
+  "run_id": "audit-run-20260419-batch66",
+  "created_at": "2026-04-19T00:00:00Z",
+  "files": [
+    {
+      "path": "src/pages/groups.state.ts",
+      "sanitized": "src__pages__groups.state.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch66/src__pages__groups.state.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch66/src__pages__groups.state.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch66/src__pages__groups.state.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch66/src__pages__groups.state.ts/stage3.md"}
+    },
+    {
+      "path": "src/webrtc.ice.ts",
+      "sanitized": "src__webrtc.ice.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch66/src__webrtc.ice.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch66/src__webrtc.ice.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch66/src__webrtc.ice.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch66/src__webrtc.ice.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.invite-wiring.ts",
+      "sanitized": "src__pages__home.invite-wiring.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch66/src__pages__home.invite-wiring.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch66/src__pages__home.invite-wiring.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch66/src__pages__home.invite-wiring.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch66/src__pages__home.invite-wiring.ts/stage3.md"}
+    },
+    {
+      "path": "src/modifiers.ts",
+      "sanitized": "src__modifiers.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch66/src__modifiers.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch66/src__modifiers.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch66/src__modifiers.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch66/src__modifiers.ts/stage3.md"}
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# Anchor List — profile-depth.types.ts
+
+Source: src/pages/profile-depth.types.ts
+Produced by: stage 1.5 (arbiter + optional reconciliation)
+Unresolved items: 0
+
+(empty — no function definitions in this file)
+
+## Resolution notes
+
+Both arbiter runs agreed. Pure type-declaration module. No function definitions present.

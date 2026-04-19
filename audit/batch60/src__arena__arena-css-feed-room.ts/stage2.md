@@ -1,0 +1,31 @@
+# Stage 2 Outputs — arena-css-feed-room.ts
+
+## Agent 01
+
+### injectFeedRoomCSS
+
+`injectFeedRoomCSS` is a synchronous, void-returning function with no parameters. It calls `document.createElement('style')` to create a new HTMLStyleElement, then assigns a multiline CSS string literal directly to the element's `textContent` property. The string contains class rules for the F-51 feed room UI: `.feed-room`, `.feed-header`, `.feed-topic`, `.feed-scoreboard`, `.feed-score-side`, `.feed-score-name` (with `.feed-side-a` and `.feed-side-b` variants), `.feed-score-label`, `.feed-score-pts`, `.feed-timer-block`, `.feed-timer` (with a `.warning` variant that applies a `livePulse` keyframe animation), `.feed-round-label`, `.feed-turn-label`, `.feed-spectator-bar` (and its `.eye` child selector), and `.feed-audio-status`. After setting `textContent`, it calls `document.head.appendChild(style)` to attach the element to the document head, making the rules immediately active. There are no branches, loops, early returns, error paths, or try/catch blocks. The function reads nothing from outside its own scope and writes nothing to any variable or module-level state — its only side effect is the DOM mutation to `document.head`. No other functions are called beyond the two DOM API calls.
+
+## Agent 02
+
+### injectFeedRoomCSS
+
+This is a synchronous, void function with no parameters. It calls `document.createElement('style')` to create a new `HTMLStyleElement`, then assigns a multi-rule CSS string literal directly to that element's `textContent` property. The string contains roughly 15 CSS rule blocks covering the feed room shell (`.feed-room`), header (`.feed-header`), topic display (`.feed-topic`), scoreboard layout (`.feed-scoreboard`, `.feed-score-side`, `.feed-score-name`, `.feed-side-a`, `.feed-side-b`, `.feed-score-label`, `.feed-score-pts`), timer block (`.feed-timer-block`, `.feed-timer`, `.feed-timer.warning`, `.feed-round-label`, `.feed-turn-label`), and status bars (`.feed-spectator-bar`, `.feed-audio-status`). All color and font values reference CSS custom properties (`--mod-*` tokens) rather than hardcoded values, except for `.feed-timer.warning` which applies an `animation` referencing a keyframe named `livePulse` defined elsewhere. After setting `textContent`, it calls `document.head.appendChild(style)` to inject the element into the document head. There are no branches, loops, error paths, or try/catch blocks. The function reads nothing from external state and writes nothing except the appended DOM node.
+
+## Agent 03
+
+### injectFeedRoomCSS
+
+This is a synchronous, void function with no parameters. It calls `document.createElement('style')` to create a new `<style>` DOM element, then assigns a multi-rule CSS string literal directly to `style.textContent` — the string covers layout and typography rules for the F-51 feed room shell: `.feed-room`, `.feed-header`, `.feed-topic`, `.feed-scoreboard`, `.feed-score-side`, `.feed-score-name`, `.feed-side-a`/`.feed-side-b` name color overrides, `.feed-score-label`, `.feed-score-pts`, `.feed-timer-block`, `.feed-timer` (plus a `.warning` variant that applies a `livePulse` keyframe animation and a `--mod-side-a` color), `.feed-round-label`, `.feed-turn-label`, `.feed-spectator-bar` and its `.eye` child, and `.feed-audio-status`. After setting `textContent` it calls `document.head.appendChild(style)`, inserting the element at the end of `<head>`. There is no idempotency guard, so calling the function multiple times appends duplicate `<style>` blocks. There is no error handling; if `document.head` is null (e.g., called in a non-browser context) the `appendChild` call throws. All color and font values are CSS variable references (`--mod-*` tokens) except the keyframe animation name `livePulse`, which must be declared elsewhere to take effect on `.feed-timer.warning`.
+
+## Agent 04
+
+### injectFeedRoomCSS
+
+`injectFeedRoomCSS` is a synchronous, void-returning function that takes no arguments. It calls `document.createElement('style')` to create a new `<style>` DOM element, assigns a multi-rule CSS string to its `textContent` property, then calls `document.head.appendChild(style)` to insert the element into the document `<head>`. The CSS string defines layout and typography rules for fourteen classes: `.feed-room`, `.feed-header`, `.feed-topic`, `.feed-scoreboard`, `.feed-score-side`, `.feed-score-name`, `.feed-side-a .feed-score-name`, `.feed-side-b .feed-score-name`, `.feed-score-label`, `.feed-score-pts`, `.feed-timer-block`, `.feed-timer`, `.feed-timer.warning`, `.feed-round-label`, `.feed-turn-label`, `.feed-spectator-bar`, `.feed-spectator-bar .eye`, and `.feed-audio-status`. All color and font values reference CSS custom properties (`--mod-*` tokens) except `.feed-timer.warning`, which applies a `livePulse` keyframe animation — that animation's `@keyframes` definition is not present in this file, so it must be declared elsewhere. The function reads nothing from the DOM or external state, has no branching, and performs no asynchronous operations.
+
+## Agent 05
+
+### injectFeedRoomCSS
+
+`injectFeedRoomCSS` is a synchronous, void-returning function that takes no parameters. It calls `document.createElement('style')` to create a new `HTMLStyleElement`, assigns a multiline string literal of CSS rules to its `textContent` property, and then calls `document.head.appendChild(style)` to insert the element into the page `<head>`. The CSS string defines layout and typographic rules for ten classes: `.feed-room`, `.feed-header`, `.feed-topic`, `.feed-scoreboard`, `.feed-score-side`, `.feed-score-name`, `.feed-score-label`, `.feed-score-pts`, `.feed-timer-block`, `.feed-timer`, `.feed-timer.warning`, `.feed-round-label`, `.feed-turn-label`, `.feed-spectator-bar`, `.feed-spectator-bar .eye`, and `.feed-audio-status`. All color and font values reference CSS custom properties using the `--mod-*` token namespace; `.feed-timer.warning` additionally references a `livePulse` keyframe animation that is assumed (uncertainty: not defined in this file) to be declared elsewhere. The function has no conditional logic, no return value, no error handling, and reads no external state — it writes only to the DOM.

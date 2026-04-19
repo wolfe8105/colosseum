@@ -1,0 +1,21 @@
+# Stage 2 Outputs — arena-css-misc.ts
+
+## Agent 01
+### injectMiscCSS
+The function creates a new `<style>` element via `document.createElement('style')` and populates its `textContent` property with a CSS string containing styling rules for multiple UI components: the spectator bar (with eye icon), back button (with active state and z-index), fade-in animation and keyframes, hidden utility class, and reference submit button (with an active state visual bug noted in a comment). The function then appends this style element to the document head via `document.head.appendChild(style)`. The function is synchronous with no parameters, reads the global `document` object, writes to the DOM by adding a style node to the document head, and returns `undefined`.
+
+## Agent 02
+### injectMiscCSS
+The function reads no parameters and accesses module-level state or external state through the `document` API. It creates a new `style` element via `document.createElement('style')` and populates its `textContent` property with a CSS string containing rules for spectator bar styling, back button styling, fade-in animation, hidden utility class, and a reference submit button. The CSS string includes variable references to design tokens like `var(--mod-text-muted)`, `var(--mod-border-primary)`, and `var(--mod-radius-md)`. The function then appends the style element to `document.head` via `appendChild()`. The function is synchronous and has no return value beyond the implicit undefined return. There are no branches, error paths, or loops—execution follows a single linear path from style element creation to DOM insertion.
+
+## Agent 03
+### injectMiscCSS
+The function reads no parameters and no module-level or external state. It creates a new `<style>` DOM element, sets its `textContent` to a string containing CSS rules (covering spectator bar styling, back button styling, fade-in animation, hidden utility class, and reference submit button styling), appends the style element to `document.head`, and returns undefined. The function is synchronous. It does not call other functions and makes direct use of the DOM API: `document.createElement()`, the `textContent` property assignment, and `document.head.appendChild()`. There are no branches, loops, error handling, or early returns.
+
+## Agent 04
+### injectMiscCSS
+The function reads no parameters and accesses no module-level state. It reads external state by calling `document.createElement('style')` to obtain a new style element from the DOM. It writes external state by calling `document.head.appendChild(style)` to inject the created style element into the document head. The function calls three APIs in sequence: first `document.createElement('style')` to create a style element, then sets the `textContent` property of that element to a string containing multiple CSS rules and keyframe definitions, and finally calls `document.head.appendChild(style)` to attach the element to the DOM. The CSS rules define styles for utility classes (`arena-spectator-bar`, `arena-back-btn`, `arena-fade-in`, `arena-hidden`, `arena-ref-btn`) and a keyframe animation (`arenaFadeIn`), including responsive states like `:active` pseudo-selectors. The function contains no branches, loops, error handling, or asynchronous operations, and returns `undefined`.
+
+## Agent 05
+### injectMiscCSS
+`injectMiscCSS` is a synchronous function that reads nothing (no parameters, no module-level state dependencies, no external state reads) and writes external state via the DOM. The function creates a new `<style>` element via `document.createElement('style')`, then writes a CSS string to its `textContent` property containing rules for `.arena-spectator-bar`, `.arena-back-btn`, `.arena-fade-in`, `.arena-hidden`, and `.arena-ref-btn` classes, along with the `@keyframes arenaFadeIn` animation. The string includes a CSS variable-based color system (`var(--mod-text-muted)`, `var(--mod-border-primary)`, `var(--mod-bg-base)`, etc.) and defines styles for flex layout, positioning, animations, and interactive states like `:active`. Finally, the function appends this style element to `document.head` via `appendChild()`. The function has no branches, loops, error handling, or early returns, and returns `undefined` implicitly.

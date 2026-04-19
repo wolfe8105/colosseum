@@ -1,0 +1,38 @@
+{
+  "run_id": "audit-run-20260419-batch71",
+  "created_at": "2026-04-19T00:00:00Z",
+  "files": [
+    {
+      "path": "src/arena/arena-room-live-messages.ts",
+      "sanitized": "src__arena__arena-room-live-messages.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch71/src__arena__arena-room-live-messages.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch71/src__arena__arena-room-live-messages.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch71/src__arena__arena-room-live-messages.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch71/src__arena__arena-room-live-messages.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/settings.helpers.ts",
+      "sanitized": "src__pages__settings.helpers.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch71/src__pages__settings.helpers.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch71/src__pages__settings.helpers.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch71/src__pages__settings.helpers.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch71/src__pages__settings.helpers.ts/stage3.md"}
+    },
+    {
+      "path": "src/notifications.types.ts",
+      "sanitized": "src__notifications.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch71/src__notifications.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch71/src__notifications.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch71/src__notifications.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch71/src__notifications.types.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/spectate.share.ts",
+      "sanitized": "src__pages__spectate.share.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch71/src__pages__spectate.share.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch71/src__pages__spectate.share.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch71/src__pages__spectate.share.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch71/src__pages__spectate.share.ts/stage3.md"}
+    }
+  ]
+}

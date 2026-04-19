@@ -1,0 +1,38 @@
+{
+  "run_id": "audit-run-20260419-batch73",
+  "created_at": "2026-04-19T00:00:00Z",
+  "files": [
+    {
+      "path": "src/powerups.types.ts",
+      "sanitized": "src__powerups.types.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch73/src__powerups.types.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch73/src__powerups.types.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch73/src__powerups.types.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch73/src__powerups.types.ts/stage3.md"}
+    },
+    {
+      "path": "src/profile-debate-archive.ts",
+      "sanitized": "src__profile-debate-archive.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch73/src__profile-debate-archive.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch73/src__profile-debate-archive.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch73/src__profile-debate-archive.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch73/src__profile-debate-archive.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.constants.ts",
+      "sanitized": "src__reference-arsenal.constants.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch73/src__reference-arsenal.constants.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch73/src__reference-arsenal.constants.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch73/src__reference-arsenal.constants.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch73/src__reference-arsenal.constants.ts/stage3.md"}
+    },
+    {
+      "path": "api/invite.js",
+      "sanitized": "api__invite.js",
+      "stage1":   {"status": "done", "output_path": "audit/batch73/api__invite.js/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch73/api__invite.js/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch73/api__invite.js/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch73/api__invite.js/stage3.md"}
+    }
+  ]
+}
