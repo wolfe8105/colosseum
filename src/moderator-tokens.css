@@ -74,6 +74,14 @@
   --mod-error: #b71c1c;
   --mod-error-light: #ef9a9a;
 
+  /* --- Tier colors --- */
+  --mod-tier-0: #6b7280;
+  --mod-tier-1: #9ca3af;
+  --mod-tier-2: #3b82f6;
+  --mod-tier-3: #a855f7;
+  --mod-tier-4: #f59e0b;
+  --mod-tier-5: #ef4444;
+
   /* --- Status --- */
   --mod-status-live: #ff1a75;
   --mod-status-live-bg: rgba(255,26,117,0.1);
@@ -198,6 +206,14 @@
   --mod-gold-bright: #d48a0f;
   --mod-error: #b71c1c;
   --mod-error-light: #c44040;
+
+  /* --- Tier colors --- */
+  --mod-tier-0: #6b7280;
+  --mod-tier-1: #9ca3af;
+  --mod-tier-2: #3b82f6;
+  --mod-tier-3: #a855f7;
+  --mod-tier-4: #d97706;
+  --mod-tier-5: #dc2626;
 
   /* --- Status --- */
   --mod-status-live: #e6205e;

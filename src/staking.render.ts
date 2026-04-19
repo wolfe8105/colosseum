@@ -23,8 +23,8 @@ function _renderPoolBar(odds: Odds, totalPool: number, sideALabel: string, sideB
         <span>${escapeHTML(sideBLabel)} · ${odds.b}%</span>
       </div>
       <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--mod-bg-base);">
-        <div style="width:${odds.a}%;background:#2563eb; /* TODO: needs CSS var token */transition:width 0.4s;"></div>
-        <div style="width:${odds.b}%;background:#cc0000; /* TODO: needs CSS var token */transition:width 0.4s;"></div>
+        <div style="width:${odds.a}%;background:var(--mod-side-b);transition:width 0.4s;"></div>
+        <div style="width:${odds.b}%;background:var(--mod-side-a);transition:width 0.4s;"></div>
       </div>
     </div>`;
 }
@@ -85,8 +85,8 @@ export function renderStakingPanel(
       </div>
       ${_renderPoolBar(odds, totalPool, sideALabel, sideBLabel)}
       <div style="display:flex;gap:8px;margin:12px 0 8px;">
-        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #2563eb44; /* TODO: needs CSS var token */background:#2563eb11; /* TODO: needs CSS var token */border-radius:8px;color:#2563eb; /* TODO: needs CSS var token */font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideALabel)} · ${odds.multiplierA}x</button>
-        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid #cc000044; /* TODO: needs CSS var token */background:#cc000011; /* TODO: needs CSS var token */border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideBLabel)} · ${odds.multiplierB}x</button>
+        <button class="stake-side-btn" data-side="a" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid var(--mod-side-b)44;background:var(--mod-side-b)11;border-radius:8px;color:var(--mod-side-b);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideALabel)} · ${odds.multiplierA}x</button>
+        <button class="stake-side-btn" data-side="b" data-debate="${debateId}" style="flex:1;padding:10px;border:2px solid var(--mod-side-a)44;background:var(--mod-side-a)11;border-radius:8px;color:var(--mod-accent);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;cursor:pointer;text-transform:uppercase;transition:all 0.2s;">${escapeHTML(sideBLabel)} · ${odds.multiplierB}x</button>
       </div>
       <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
         <input type="number" id="stake-amount-input" min="1" max="${tier.stakeCap}" placeholder="Amount" style="flex:1;padding:8px 10px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:6px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;outline:none;">

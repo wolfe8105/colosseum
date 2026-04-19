@@ -2,7 +2,6 @@
  * THE MODERATOR — Power-Up Loadout Render + Wire
  * renderLoadout, wireLoadout.
  *
- * LANDMINE [LM-PU-002]: Hardcoded hex colors in inline styles — #1a1a2e, #2a2a3e, #0f0f1a.
  * LANDMINE [LM-PU-003]: wireLoadout queries .powerup-slot globally — breaks if multiple
  * loadout panels exist on the page simultaneously.
  */
@@ -26,8 +25,8 @@ export function renderLoadout(
     const next = getNextTier(questionsAnswered || 0);
     const remaining = next ? next.questionsNeeded : 0;
     return `
-      <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#8a879a;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">POWER-UPS 🔒</div>
+      <div class="powerup-loadout" style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
+        <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">POWER-UPS 🔒</div>
         <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">Answer ${remaining} more questions to unlock power-up slots.</div>
       </div>`;
   }
@@ -47,7 +46,7 @@ export function renderLoadout(
         </div>`);
     } else {
       slots.push(`
-        <div class="powerup-slot empty" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:#0f0f1a;border:1px dashed #2a2a3e;border-radius:8px;text-align:center;cursor:pointer;">
+        <div class="powerup-slot empty" data-slot="${i}" style="flex:1;min-width:60px;padding:10px 8px;background:var(--mod-bg-base);border:1px dashed var(--mod-border-primary);border-radius:8px;text-align:center;cursor:pointer;">
           <div style="font-size:24px;opacity:0.3;">+</div>
           <div style="font-family:var(--mod-font-ui);font-size:10px;color:var(--mod-text-muted);margin-top:4px;">Slot ${i}</div>
         </div>`);
@@ -57,7 +56,7 @@ export function renderLoadout(
   const invItems = (inventory || []).filter(item => item.quantity > 0).map(item => {
     const cat = CATALOG[item.power_up_id as PowerUpId];
     return `
-      <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:#0f0f1a;border:1px solid #2a2a3e;border-radius:6px;cursor:pointer;margin-bottom:4px;">
+      <div class="powerup-inv-item" data-id="${item.power_up_id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--mod-bg-base);border:1px solid var(--mod-border-primary);border-radius:6px;cursor:pointer;margin-bottom:4px;">
         <span style="font-size:20px;">${escapeHTML(item.icon ?? cat?.icon ?? '?')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);flex:1;">${escapeHTML(item.name ?? cat?.name ?? '')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">x${item.quantity}</span>
@@ -65,9 +64,9 @@ export function renderLoadout(
   });
 
   return `
-    <div class="powerup-loadout" style="background:#1a1a2e;border:1px solid #2a2a3e;border-radius:10px;padding:16px;margin:12px 0;">
+    <div class="powerup-loadout" style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">POWER-UPS</div>
+        <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">POWER-UPS</div>
         <div style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">${tier.icon} ${tier.name} · ${maxSlots} slot${maxSlots !== 1 ? 's' : ''}</div>
       </div>
       <div class="powerup-slots" style="display:flex;gap:8px;margin-bottom:8px;">${slots.join('')}</div>
@@ -88,7 +87,7 @@ export function wireLoadout(debateId: string, onEquipped?: (result: PowerUpResul
       const picker = document.getElementById('powerup-inventory-picker');
       if (picker) picker.style.display = 'block';
       document.querySelectorAll('.powerup-slot').forEach(s => {
-        (s as HTMLElement).style.borderColor = s === slot ? 'var(--mod-text-heading)' : (s.classList.contains('filled') ? 'var(--mod-text-heading)44' : '#2a2a3e');
+        (s as HTMLElement).style.borderColor = s === slot ? 'var(--mod-text-heading)' : (s.classList.contains('filled') ? 'var(--mod-text-heading)44' : 'var(--mod-border-primary)');
       });
     });
   });

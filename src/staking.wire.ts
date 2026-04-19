@@ -42,16 +42,16 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
 
       document.querySelectorAll('.stake-side-btn').forEach(b => {
         const bEl = b as HTMLElement;
-        bEl.style.borderColor = bEl.dataset.side === 'a' ? '#2563eb44' : '#cc000044'; // TODO: needs CSS var token
-        bEl.style.background = bEl.dataset.side === 'a' ? '#2563eb11' : '#cc000011'; // TODO: needs CSS var token
+        bEl.style.borderColor = bEl.dataset.side === 'a' ? 'var(--mod-side-b)44' : 'var(--mod-side-a)44';
+        bEl.style.background = bEl.dataset.side === 'a' ? 'var(--mod-side-b)11' : 'var(--mod-side-a)11';
       });
 
       if (selectedSide === 'a') {
-        el.style.borderColor = '#2563eb'; // TODO: needs CSS var token
-        el.style.background = '#2563eb33'; // TODO: needs CSS var token
+        el.style.borderColor = 'var(--mod-side-b)';
+        el.style.background = 'var(--mod-side-b)33';
       } else {
-        el.style.borderColor = '#cc0000'; // TODO: needs CSS var token
-        el.style.background = '#cc000033'; // TODO: needs CSS var token
+        el.style.borderColor = 'var(--mod-side-a)';
+        el.style.background = 'var(--mod-side-a)33';
       }
 
       _updateConfirmButton(selectedSide);

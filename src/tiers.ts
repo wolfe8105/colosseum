@@ -52,14 +52,14 @@ export const TIER_THRESHOLDS: readonly TierThreshold[] = [
   { min: 0,   tier: 0, name: 'Unranked',   icon: '🔒', maxStake: 0,       slots: 0 },
 ] as const;
 
-// TODO: needs CSS var token — all TIER_COLORS values are hardcoded
+// Tier colors use CSS custom properties defined in moderator-tokens.css
 export const TIER_COLORS: Readonly<Record<TierLevel, string>> = {
-  0: '#6b7280',
-  1: '#9ca3af',
-  2: '#3b82f6',
-  3: '#a855f7',
-  4: '#f59e0b',
-  5: '#ef4444',
+  0: 'var(--mod-tier-0)',
+  1: 'var(--mod-tier-1)',
+  2: 'var(--mod-tier-2)',
+  3: 'var(--mod-tier-3)',
+  4: 'var(--mod-tier-4)',
+  5: 'var(--mod-tier-5)',
 } as const;
 
 // ============================================================
@@ -124,7 +124,7 @@ export function getNextTier(questionsAnswered: number): NextTierInfo | null {
 /** Render a tier badge as an HTML string. */
 export function renderTierBadge(questionsAnswered: number): string {
   const t = getTier(questionsAnswered);
-  const color = TIER_COLORS[t.tier] ?? '#6b7280';
+  const color = TIER_COLORS[t.tier] ?? 'var(--mod-tier-0)';
   return '<span class="tier-badge" style="color:' + color + '; font-weight:600;">' +
     escapeHTML(t.name) + '</span>';
 }
