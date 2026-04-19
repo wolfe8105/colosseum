@@ -72,6 +72,19 @@ export function trackEvent(eventType: string, extra?: Record<string, unknown>): 
     }).catch((e) => {
       console.warn('[Analytics] event send failed:', e);
     });
+
+    // Fire to PostHog — dual-track all events automatically
+    try {
+      const ph = (window as unknown as Record<string, unknown>).posthog as {
+        capture: (event: string, props?: Record<string, unknown>) => void;
+        identify: (id: string) => void;
+      } | undefined;
+      if (ph?.capture) {
+        if (userId) ph.identify?.(userId);
+        ph.capture(eventType, metadata);
+      }
+    } catch { /* PostHog is optional — never block */ }
+
   } catch {
     // Never block the page. Never throw. Analytics is optional.
   }

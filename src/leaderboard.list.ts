@@ -35,10 +35,8 @@ export function renderList(): string {
     </div>`;
   }
 
-  // LANDMINE [LM-LB-001]: getData() returns shared object references. The sort below
-  // shallow-copies the array but objects inside are same refs as liveData/PLACEHOLDER_DATA.
-  // sorted.forEach item.rank = i+1 mutates originals. Fix: data.map(row => ({...row})).
-  const data = getData();
+  // Spread each row to avoid mutating shared objects in liveData/PLACEHOLDER_DATA.
+  const data = getData().map(row => ({ ...row }));
   const sorted = [...data].sort((a, b) => {
     if (currentTab === 'elo') return b.elo - a.elo;
     if (currentTab === 'wins') return b.wins - a.wins;

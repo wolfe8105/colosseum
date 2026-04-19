@@ -5,8 +5,8 @@
  * Extracted from staking.ts (Session 254 track).
  */
 
-import { escapeHTML,
-   getTier, canStake, getNextTier } from './tiers.ts';
+import { escapeHTML } from './config.ts';
+import { getTier, canStake, getNextTier } from './tiers.ts';
 import { getOdds } from './staking.rpc.ts';
 import type { PoolData, Odds } from './staking.types.ts';
 

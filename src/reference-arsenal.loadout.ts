@@ -28,6 +28,9 @@ export async function renderLoadoutPicker(
     arsenal = [];
   }
 
+  // Filter out frozen refs (can't be loaded)
+  arsenal = arsenal.filter(r => r.challenge_status !== 'frozen');
+
   if (arsenal.length === 0) {
     container.innerHTML = `
       <div class="ref-loadout-empty">
@@ -36,9 +39,6 @@ export async function renderLoadoutPicker(
     `;
     return;
   }
-
-  // Filter out frozen refs (can't be loaded)
-  arsenal = arsenal.filter(r => r.challenge_status !== 'frozen');
 
   arsenal.sort((a, b) => b.current_power - a.current_power || Date.parse(b.created_at) - Date.parse(a.created_at));
 

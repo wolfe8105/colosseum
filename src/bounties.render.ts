@@ -7,7 +7,8 @@
  * If two profile sheets are open concurrently, the wrong values may be read.
  */
 
-import { escapeHTML,  loadBountyDotSet } from './bounties.dot.ts';
+import { loadBountyDotSet } from './bounties.dot.ts';
+import { escapeHTML } from './config.ts';
 import { postBounty, cancelBounty, getMyBounties, bountySlotLimit } from './bounties.rpc.ts';
 import type { BountyRow } from './bounties.types.ts';
 
