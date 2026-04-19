@@ -38,8 +38,18 @@ export async function react(takeId: string): Promise<void> {
           nudge('first_vote', '\uD83D\uDDF3\uFE0F Vote cast. Your voice shapes the verdict.');
           claimReaction(takeId);
         }
+      } else {
+        // safeRpc returned { data: null, error: null } — roll back optimistic state
+        take.userReacted = !take.userReacted;
+        take.reactions += take.userReacted ? 1 : -1;
+        loadHotTakes(state.currentFilter);
       }
-    } catch { /* handled */ }
+    } catch {
+      // AR-1: roll back optimistic mutations on unexpected throw
+      take.userReacted = !take.userReacted;
+      take.reactions += take.userReacted ? 1 : -1;
+      loadHotTakes(state.currentFilter);
+    }
   }
 
   state.reactingIds.delete(takeId);
