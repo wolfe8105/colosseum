@@ -3,14 +3,11 @@
  * switchTab, switchDetailTab, filterCategory, showLobby.
  */
 
-import { safeRpc } from '../auth.ts';
 import {
   activeCategory, currentGroupId, callerRole,
   setActiveTab, setActiveDetailTab, setActiveCategory, setCurrentGroupId, setCallerRole,
 } from './groups.state.ts';
-import { renderEmpty, renderGroupList } from './groups.utils.ts';
 import { loadPendingAuditions } from './groups.auditions.ts';
-import type { GroupListItem } from './groups.types.ts';
 
 // Forward declaration — openGroup lives in groups.detail.ts but is needed here
 // for loadMyGroups/loadLeaderboard. Injected via setOpenGroupCallback.

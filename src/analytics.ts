@@ -105,7 +105,7 @@ export function checkSignup(): void {
 // WINDOW GLOBAL BRIDGE (removed in Phase 4)
 // ============================================================
 
-/** Runtime exposure: window.coloTrack = trackEvent */
+/** Analytics module export */
 export const ModeratorAnalytics = {
   trackEvent,
   checkSignup,

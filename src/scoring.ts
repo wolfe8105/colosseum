@@ -8,7 +8,6 @@
  */
 
 import { safeRpc, getIsPlaceholderMode } from './auth.ts';
-import type { SafeRpcResult } from './auth.ts';
 import { UUID_RE } from './config.ts';
 
 // ============================================================
