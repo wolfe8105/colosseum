@@ -18,6 +18,7 @@ const htmlEntries = {
   cosmetics:    resolve(__dirname, 'moderator-cosmetics.html'),
   go:           resolve(__dirname, 'moderator-go.html'),
   sourceReport: resolve(__dirname, 'moderator-source-report.html'),
+  challenge:    resolve(__dirname, 'moderator-challenge.html'),
 };
 
 export default defineConfig({
