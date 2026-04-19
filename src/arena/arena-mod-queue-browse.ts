@@ -100,21 +100,27 @@ export async function claimModRequest(debateId: string, btn: HTMLButtonElement):
   btn.disabled = true;
   btn.textContent = 'REQUESTING…';
 
-  const { error } = await safeRpc('request_to_moderate', { p_debate_id: debateId });
+  try {
+    const { error } = await safeRpc('request_to_moderate', { p_debate_id: debateId });
 
-  if (error) {
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = 'REQUEST TO MOD';
+      showToast('Another mod got there first — queue refreshed');
+      void loadModQueue();
+      return;
+    }
+
+    stopModQueuePoll();
+
+    const listEl = document.getElementById('mod-queue-list');
+    if (listEl) {
+      listEl.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;">Request sent.<br><span style="font-weight:400;color:var(--mod-text-secondary);font-size:13px;">Waiting for the debaters to accept.</span></div>`;
+    }
+  } catch {
     btn.disabled = false;
     btn.textContent = 'REQUEST TO MOD';
-    showToast('Another mod got there first — queue refreshed');
-    void loadModQueue();
-    return;
-  }
-
-  stopModQueuePoll();
-
-  const listEl = document.getElementById('mod-queue-list');
-  if (listEl) {
-    listEl.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;font-weight:600;">Request sent.<br><span style="font-weight:400;color:var(--mod-text-secondary);font-size:13px;">Waiting for the debaters to accept.</span></div>`;
+    showToast('Request failed. Please try again.');
   }
 }
 

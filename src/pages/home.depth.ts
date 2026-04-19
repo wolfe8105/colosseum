@@ -74,18 +74,23 @@ document.getElementById('bio-save-btn')!.addEventListener('click', async () => {
   const newBio = bioTextarea.value.trim();
   saveBtn.textContent = 'SAVING...';
   saveBtn.style.opacity = '0.5';
-  const result = await updateProfile({ bio: newBio });
-  saveBtn.textContent = 'SAVE';
-  saveBtn.style.opacity = '1';
-  if (saveBtn) { saveBtn.disabled = false; }
-  if (result?.success) {
-    bioEditPanel!.style.display = 'none';
-    bioDisplay!.style.display = '';
-    if (newBio) { bioDisplay!.textContent = newBio; bioDisplay!.classList.remove('placeholder'); }
-    else { bioDisplay!.textContent = 'Tap to add bio'; bioDisplay!.classList.add('placeholder'); }
-    showToast('Bio updated!', 'success');
-  } else {
+  try {
+    const result = await updateProfile({ bio: newBio });
+    if (result?.success) {
+      bioEditPanel!.style.display = 'none';
+      bioDisplay!.style.display = '';
+      if (newBio) { bioDisplay!.textContent = newBio; bioDisplay!.classList.remove('placeholder'); }
+      else { bioDisplay!.textContent = 'Tap to add bio'; bioDisplay!.classList.add('placeholder'); }
+      showToast('Bio updated!', 'success');
+    } else {
+      showToast('Failed to save bio', 'error');
+    }
+  } catch {
     showToast('Failed to save bio', 'error');
+  } finally {
+    saveBtn.textContent = 'SAVE';
+    saveBtn.style.opacity = '1';
+    if (saveBtn) { saveBtn.disabled = false; }
   }
 });
 

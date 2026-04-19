@@ -48,13 +48,18 @@ export function wireSettings(): void {
     const email = user?.email;
     if (!email) { alert('You must be logged in to reset your password.'); return; }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
-    const result = await resetPassword(email);
-    if (result.success) {
-      if (btn) btn.textContent = '✅ Reset link sent!';
-      setTimeout(() => { if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; } }, 3000);
-    } else {
+    try {
+      const result = await resetPassword(email);
+      if (result.success) {
+        if (btn) btn.textContent = '✅ Reset link sent!';
+        setTimeout(() => { if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; } }, 3000);
+      } else {
+        if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
+        alert('Failed to send reset email: ' + (result.error ?? 'Unknown error'));
+      }
+    } catch {
       if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
-      alert('Failed to send reset email: ' + (result.error ?? 'Unknown error'));
+      alert('Failed to send reset email. Please try again.');
     }
   });
 

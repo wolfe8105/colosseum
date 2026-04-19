@@ -267,12 +267,18 @@ export async function showPowerUpShop(): Promise<void> {
       const cost = Number(buttonEl.dataset.cost);
       buttonEl.disabled = true;
       buttonEl.textContent = '...';
-      const result = await buyPowerUp(id!, 1, cost);
-      if (result.success) {
-        showToast('Power-up purchased! \uD83C\uDF89');
-        showPowerUpShop(); // re-render with updated balance
-      } else {
-        showToast(result.error || 'Purchase failed');
+      try {
+        const result = await buyPowerUp(id!, 1, cost);
+        if (result.success) {
+          showToast('Power-up purchased! \uD83C\uDF89');
+          showPowerUpShop(); // re-render with updated balance
+        } else {
+          showToast(result.error || 'Purchase failed');
+          buttonEl.disabled = false;
+          buttonEl.textContent = `${cost} \uD83E\uDE99`;
+        }
+      } catch {
+        showToast('Purchase failed. Please try again.');
         buttonEl.disabled = false;
         buttonEl.textContent = `${cost} \uD83E\uDE99`;
       }
