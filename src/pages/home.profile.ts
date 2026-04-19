@@ -5,6 +5,7 @@ import { getCurrentUser, getFollowCounts, logOut } from '../auth.ts';
 import type { Profile } from '../auth.ts';
 import type { User } from '@supabase/supabase-js';
 import { escapeHTML } from '../config.ts';
+import { vgBadge } from '../badge.ts';
 
 function _renderAvatar(el: HTMLElement, profile: Profile) {
   const url = profile.avatar_url || '';
@@ -41,7 +42,7 @@ export function updateUIFromProfile(user: User | null, profile: Profile | null) 
 
   const navAvatar = document.getElementById('user-avatar-btn'); if (navAvatar) _renderNavAvatar(navAvatar, profile);
   const profileAvatar = document.getElementById('profile-avatar'); if (profileAvatar) _renderAvatar(profileAvatar, profile);
-  _set('profile-display-name', (profile.display_name || profile.username || 'GLADIATOR').toUpperCase());
+  _setHTML('profile-display-name', escapeHTML((profile.display_name || profile.username || 'GLADIATOR').toUpperCase()) + vgBadge(profile.verified_gladiator));
   const tierLabels: Record<string, string> = { free: 'FREE TIER', contender: 'CONTENDER', champion: 'CHAMPION', creator: 'CREATOR' };
   const tier = profile.subscription_tier || 'free';
   _set('profile-tier', tierLabels[tier] || 'FREE TIER');
@@ -60,7 +61,7 @@ export function updateUIFromProfile(user: User | null, profile: Profile | null) 
   _setHTML('profile-depth-text', `Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a>`);
 
   // F-45: Desktop panel
-  const dpName = document.getElementById('dp-name'); if (dpName) dpName.textContent = (profile.display_name || profile.username || 'GLADIATOR').toUpperCase();
+  const dpName = document.getElementById('dp-name'); if (dpName) dpName.innerHTML = escapeHTML((profile.display_name || profile.username || 'GLADIATOR').toUpperCase()) + vgBadge(profile.verified_gladiator);
   const dpTier = document.getElementById('dp-tier'); if (dpTier) dpTier.textContent = tierLabels[tier] || 'Free Tier';
   const dpAvatar = document.getElementById('dp-avatar'); if (dpAvatar) dpAvatar.textContent = (profile.display_name || profile.username || '?')[0].toUpperCase();
   const dpElo = document.getElementById('dp-elo'); if (dpElo) dpElo.textContent = String(profile.elo_rating || 1200);
