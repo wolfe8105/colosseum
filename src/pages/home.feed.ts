@@ -69,7 +69,7 @@ export async function renderFeed(): Promise<void> {
           <span class="mod-debater">${escapeHTML(d.debater_b_name || 'Debater B')}${bountyDot(d.debater_b_id)}</span>
         </div>
         <div class="mod-card-text" style="text-transform:none;">${escapeHTML(d.topic || 'Live Debate')}</div>
-        <div class="mod-card-meta">${d.spectator_count || 0} watching · Round ${d.current_round || 1} of ${d.max_rounds || 5}</div>
+        <div class="mod-card-meta">${Number(d.spectator_count) || 0} watching · Round ${Number(d.current_round) || 1} of ${Number(d.max_rounds) || 5}</div>
         <button class="mod-spectate-btn" data-action="spectate-live" data-debate-id="${escapeHTML(d.id)}">Watch Live</button>
       </div>`;
   }

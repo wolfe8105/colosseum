@@ -30,9 +30,9 @@ export function renderTierBannerUI(qa: number): void {
   const next = getNextTier ? getNextTier(qa) : null;
 
   const perkText = tier.maxStake > 0
-    ? 'Max stake: <span>' + (tier.maxStake === Infinity ? 'Unlimited' : tier.maxStake + ' tokens') + '</span>' +
-      (tier.slots > 0 ? ' · Power-up slots: <span>' + tier.slots + '</span>' : '')
-    : 'Answer ' + (next ? next.questionsNeeded : '10') + ' more questions to unlock token staking';
+    ? 'Max stake: <span>' + (tier.maxStake === Infinity ? 'Unlimited' : Number(tier.maxStake) + ' tokens') + '</span>' +
+      (tier.slots > 0 ? ' · Power-up slots: <span>' + Number(tier.slots) + '</span>' : '')
+    : 'Answer ' + (next ? Number(next.questionsNeeded) : '10') + ' more questions to unlock token staking';
 
   banner.innerHTML =
     '<div class="tier-header">' +
@@ -67,11 +67,11 @@ export function updateMilestoneBar(): void {
         const earned = answered >= m.threshold;
         return `<div class="milestone-pip ${earned ? 'earned' : ''}" style="left:${m.threshold}%"
                      title="${escapeHTML(m.name)} — ${escapeHTML(m.desc)}">
-          <span class="pip-icon">${earned ? '✅' : m.icon}</span>
+          <span class="pip-icon">${earned ? '✅' : escapeHTML(m.icon)}</span>
           <span class="pip-label">${escapeHTML(m.name)}</span>
         </div>`;
       }).join('')}
     </div>
-    <div class="milestone-pct">${answered} of ${totalQ} questions answered — ${pct}%</div>
+    <div class="milestone-pct">${Number(answered)} of ${Number(totalQ)} questions answered — ${Number(pct)}%</div>
   `;
 }
