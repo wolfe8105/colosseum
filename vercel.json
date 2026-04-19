@@ -3,160 +3,38 @@
     "outputDirectory": "dist",
     "framework": null,
     "rewrites": [
-        {
-            "source": "/i/:code",
-            "destination": "/api/invite?code=:code"
-        },
-        {
-            "source": "/u/:username",
-            "destination": "/api/profile?username=:username"
-        },
-        {
-            "source": "/challenge",
-            "destination": "/api/challenge"
-        },
-        {
-            "source": "/go",
-            "destination": "/moderator-go.html"
-        },
-        {
-            "source": "/debate/:id",
-            "destination": "/moderator-spectate.html?id=:id"
-        },
-        {
-            "source": "/debate",
-            "destination": "/moderator-debate-landing.html"
-        },
-        {
-            "source": "/verdict",
-            "destination": "/moderator-auto-debate.html"
-        },
-        {
-            "source": "/login",
-            "destination": "/moderator-login.html"
-        },
-        {
-            "source": "/settings",
-            "destination": "/moderator-settings.html"
-        },
-        {
-            "source": "/terms",
-            "destination": "/moderator-terms.html"
-        },
-        {
-            "source": "/privacy",
-            "destination": "/moderator-privacy.html"
-        },
-        {
-            "source": "/profile-depth",
-            "destination": "/moderator-profile-depth.html"
-        },
-        {
-            "source": "/groups",
-            "destination": "/moderator-groups.html"
-        }
+        {"source": "/i/:code","destination": "/api/invite?code=:code"},
+        {"source": "/u/:username","destination": "/api/profile?username=:username"},
+        {"source": "/challenge","destination": "/api/challenge"},
+        {"source": "/go","destination": "/moderator-go.html"},
+        {"source": "/debate/:id","destination": "/moderator-spectate.html?id=:id"},
+        {"source": "/debate","destination": "/moderator-debate-landing.html"},
+        {"source": "/verdict","destination": "/moderator-auto-debate.html"},
+        {"source": "/login","destination": "/moderator-login.html"},
+        {"source": "/settings","destination": "/moderator-settings.html"},
+        {"source": "/terms","destination": "/moderator-terms.html"},
+        {"source": "/privacy","destination": "/moderator-privacy.html"},
+        {"source": "/profile-depth","destination": "/moderator-profile-depth.html"},
+        {"source": "/groups","destination": "/moderator-groups.html"}
     ],
     "headers": [
-        {
-            "source": "/.well-known/assetlinks.json",
-            "headers": [
-                {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                },
-                {
-                    "key": "Cross-Origin-Resource-Policy",
-                    "value": "cross-origin"
-                },
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=3600"
-                }
-            ]
-        },
-        {
-            "source": "/(.*)",
-            "headers": [
-                {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                },
-                {
-                    "key": "X-Frame-Options",
-                    "value": "DENY"
-                },
-                {
-                    "key": "X-XSS-Protection",
-                    "value": "1; mode=block"
-                },
-                {
-                    "key": "Referrer-Policy",
-                    "value": "strict-origin-when-cross-origin"
-                },
-                {
-                    "key": "Permissions-Policy",
-                    "value": "microphone=(self), camera=(), geolocation=(), payment=(self)"
-                },
-                {
-                    "key": "Content-Security-Policy",
-                    "value": "default-src 'self'; script-src 'self' 'sha256-wIRzeuYQR/zwQORE2CrtbcpCo6nOJqBYnkNEBBke32o=' 'sha256-nWbVdaN3Q0jzOwOE61w6ey9Gv1M/1t7//Xs3guNc08k=' 'sha256-V7hyZi3PAHxCALjPc2ULaC1sDAUqTQT+zB+j8aVA/tI=' https://cdn.jsdelivr.net https://js.stripe.com https://unpkg.com https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://pagead2.googlesyndication.com https://us.i.posthog.com https://us-assets.i.posthog.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://cdn.jsdelivr.net https://pagead2.googlesyndication.com https://us.i.posthog.com https://us-assets.i.posthog.com; frame-src https://js.stripe.com https://hooks.stripe.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://us-assets.i.posthog.com; media-src 'self' blob: https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;"
-                },
-                {
-                    "key": "Strict-Transport-Security",
-                    "value": "max-age=31536000; includeSubDomains; preload"
-                },
-                {
-                    "key": "X-DNS-Prefetch-Control",
-                    "value": "off"
-                },
-                {
-                    "key": "X-Download-Options",
-                    "value": "noopen"
-                },
-                {
-                    "key": "X-Permitted-Cross-Domain-Policies",
-                    "value": "none"
-                },
-                {
-                    "key": "Cross-Origin-Opener-Policy",
-                    "value": "same-origin"
-                },
-                {
-                    "key": "Cross-Origin-Resource-Policy",
-                    "value": "same-origin"
-                }
-            ]
-        },
-        {
-            "source": "/(.+\\.js)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=3600, stale-while-revalidate=86400"
-                }
-            ]
-        },
-        {
-            "source": "/(.+\\.html)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "no-cache, no-store, must-revalidate"
-                }
-            ]
-        },
-        {
-            "source": "/api/(.*)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "no-store"
-                },
-                {
-                    "key": "X-Robots-Tag",
-                    "value": "noindex"
-                }
-            ]
-        }
+        {"source": "/.well-known/assetlinks.json","headers": [{"key": "Content-Type","value": "application/json"},{"key": "Cross-Origin-Resource-Policy","value": "cross-origin"},{"key": "Cache-Control","value": "public, max-age=3600"}]},
+        {"source": "/(.*)", "headers": [
+            {"key": "X-Content-Type-Options","value": "nosniff"},
+            {"key": "X-Frame-Options","value": "DENY"},
+            {"key": "X-XSS-Protection","value": "1; mode=block"},
+            {"key": "Referrer-Policy","value": "strict-origin-when-cross-origin"},
+            {"key": "Permissions-Policy","value": "microphone=(self), camera=(), geolocation=(), payment=(self)"},
+            {"key": "Content-Security-Policy","value": "default-src 'self'; script-src 'self' 'sha256-wIRzeuYQR/zwQORE2CrtbcpCo6nOJqBYnkNEBBke32o=' 'sha256-nWbVdaN3Q0jzOwOE61w6ey9Gv1M/1t7//Xs3guNc08k=' 'sha256-V7hyZi3PAHxCALjPc2ULaC1sDAUqTQT+zB+j8aVA/tI=' https://cdn.jsdelivr.net https://js.stripe.com https://unpkg.com https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://pagead2.googlesyndication.com https://us.i.posthog.com https://us-assets.i.posthog.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://cdn.jsdelivr.net https://pagead2.googlesyndication.com https://us.i.posthog.com https://us-assets.i.posthog.com; frame-src https://js.stripe.com https://hooks.stripe.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://us-assets.i.posthog.com; media-src 'self' blob: https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;"},
+            {"key": "Strict-Transport-Security","value": "max-age=31536000; includeSubDomains; preload"},
+            {"key": "X-DNS-Prefetch-Control","value": "off"},
+            {"key": "X-Download-Options","value": "noopen"},
+            {"key": "X-Permitted-Cross-Domain-Policies","value": "none"},
+            {"key": "Cross-Origin-Opener-Policy","value": "same-origin"},
+            {"key": "Cross-Origin-Resource-Policy","value": "same-origin"}
+        ]},
+        {"source": "/(.+\.js)","headers": [{"key": "Cache-Control","value": "public, max-age=3600, stale-while-revalidate=86400"}]},
+        {"source": "/(.+\.html)","headers": [{"key": "Cache-Control","value": "no-cache, no-store, must-revalidate"}]},
+        {"source": "/api/(.*)","headers": [{"key": "Cache-Control","value": "no-store"},{"key": "X-Robots-Tag","value": "noindex"}]}
     ]
 }
