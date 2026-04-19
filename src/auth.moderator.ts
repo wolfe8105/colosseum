@@ -72,6 +72,9 @@ export async function updateModCategories(categories: string[]): Promise<AuthRes
   }
 }
 
+// DEAD CODE [F-55]: submit_reference RPC retired. All citation now goes through
+// the loadout-based system (F-51 Phase 3). B19 param mismatch finding is moot.
+// Kept to avoid breaking any remaining call sites. Safe to remove when callers are cleaned up.
 export async function submitReference(
   debateId: string,
   url: string | null,
