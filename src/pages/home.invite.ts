@@ -35,7 +35,7 @@ export async function loadInviteScreen(container: HTMLElement): Promise<void> {
       rewardId,
       rewardType,
       () => { _sheetCleanup = null; },
-      () => { loadInviteScreen(container); },
+      () => { loadInviteScreen(container).catch(e => console.error('[invite] reload failed', e)); },
     ).then(cleanup => { _sheetCleanup = cleanup; }).catch(e => console.error('[invite]', e));
   });
 }

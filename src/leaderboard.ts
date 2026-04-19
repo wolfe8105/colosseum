@@ -24,7 +24,7 @@ export function init(): void {
     if (screen?.classList.contains('active') && screen.children.length === 0) {
       observer.disconnect();
       render();
-      void fetchLeaderboard().then(() => render());
+      void fetchLeaderboard().then(() => render()).catch(e => console.error('[leaderboard] fetch failed', e));
     }
   });
   const screen = document.getElementById('screen-leaderboard');

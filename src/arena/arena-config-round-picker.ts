@@ -41,7 +41,7 @@ export function wireRoundPicker(container: HTMLElement): void {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.arena-round-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      set_selectedRounds(parseInt((btn as HTMLElement).dataset.rounds ?? '4', 10));
+      set_selectedRounds(parseInt((btn as HTMLElement).dataset.rounds || '4', 10));
     });
   });
 }

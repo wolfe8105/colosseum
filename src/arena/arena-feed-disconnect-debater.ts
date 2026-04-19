@@ -22,7 +22,7 @@ export async function handleDebaterDisconnect(debate: CurrentDebate, disconnecte
     : (debate.role === 'b' ? (getCurrentProfile()?.display_name || 'You') : debate.opponentName);
 
   // Write feed event
-  void writeFeedEvent('disconnect', `${disconnectorName} disconnected.`, 'mod');
+  writeFeedEvent('disconnect', `${disconnectorName} disconnected.`, 'mod').catch(e => console.warn('[disconnect-debater] writeFeedEvent failed', e));
   addLocalSystem(`${disconnectorName} disconnected.`);
 
   // Determine outcome: was the disconnector winning?
@@ -53,7 +53,7 @@ export async function handleDebaterDisconnect(debate: CurrentDebate, disconnecte
   }
 
   // Go to end screen
-  setTimeout(() => void endCurrentDebate(), 1500);
+  setTimeout(() => endCurrentDebate().catch(e => console.error('[disconnect-debater] endCurrentDebate failed', e)), 1500);
 }
 
 export function handleDebaterDisconnectAsViewer(debate: CurrentDebate, disconnectedSide: 'a' | 'b'): void {

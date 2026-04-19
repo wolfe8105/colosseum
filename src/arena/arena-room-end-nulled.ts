@@ -34,7 +34,11 @@ export function renderNulledDebate(debate: CurrentDebate): void {
   `;
   screenEl?.appendChild(post);
   document.getElementById('arena-back-to-lobby')?.addEventListener('click', async () => {
-    const { renderLobby } = await import('./arena-lobby.ts');
-    renderLobby();
+    try {
+      const { renderLobby } = await import('./arena-lobby.ts');
+      renderLobby();
+    } catch (err) {
+      console.error('[arena-room-end-nulled] Failed to load lobby', err);
+    }
   });
 }

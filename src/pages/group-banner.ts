@@ -50,7 +50,7 @@ export function renderGroupBanner(container: HTMLElement, group: GroupDetail, is
 
   const badge = document.createElement('div');
   badge.className = 'group-banner-tier-badge';
-  badge.textContent = ['', 'TIER I', 'TIER II', 'TIER III'][tier] ?? 'TIER I';
+  badge.textContent = (['', 'TIER I', 'TIER II', 'TIER III'][tier] || 'TIER I');
   container.appendChild(badge);
 
   if (isLeader) {
