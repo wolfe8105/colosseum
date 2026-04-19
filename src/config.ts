@@ -314,7 +314,7 @@ const placeholderMode: PlaceholderMode = {
   deepgram: isPlaceholder(DEEPGRAM_API_KEY),
 } as const;
 
-const isAnyPlaceholder: boolean = placeholderMode.supabase || placeholderMode.stripe;
+const isAnyPlaceholder: boolean = placeholderMode.supabase;
 
 // ============================================================
 // NAMED EXPORTS (for TypeScript module consumers)
