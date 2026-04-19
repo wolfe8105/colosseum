@@ -1,8 +1,8 @@
 // arena-queue.ts — Queue management (enter, poll, timeout, leave)
 // Part of the arena.ts monolith split
 
-import { escapeHTML,  safeRpc, getCurrentProfile } from '../auth.ts';
-import { friendlyError, FEATURES, showToast } from '../config.ts';
+import { safeRpc, getCurrentProfile } from '../auth.ts';
+import { escapeHTML, friendlyError, FEATURES, showToast } from '../config.ts';
 import {
   view, selectedMode, selectedRanked, selectedRuleset, selectedRounds,
   selectedCategory, queuePollTimer, queueElapsedTimer, queueSeconds,

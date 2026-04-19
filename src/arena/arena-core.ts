@@ -65,7 +65,6 @@ export const _onPopState = () => {
   // All back navigation returns to lobby
   if (view !== 'lobby') void import('./arena-lobby.ts').then(({ renderLobby }) => renderLobby());
 };
-window.addEventListener('popstate', _onPopState);
 
 // ============================================================
 // INIT
@@ -73,6 +72,7 @@ window.addEventListener('popstate', _onPopState);
 
 export function init(): void {
   if (!FEATURES.arena) return;
+  window.addEventListener('popstate', _onPopState);
   injectCSS();
   set_screenEl(document.getElementById('screen-arena'));
   if (!screenEl) {
