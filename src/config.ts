@@ -55,7 +55,7 @@ import { showToast } from './config.toast';
 // ============================================================
 
 const SUPABASE_URL = 'https://faomczmipsccwbhpivmp.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_34A8w2reecsV3rmMe9HVrg_zsc8YAaK';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
 
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'PASTE_YOUR_STRIPE_PUBLISHABLE_KEY_HERE';
 
