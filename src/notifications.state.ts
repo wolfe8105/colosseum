@@ -11,7 +11,10 @@ export let panelOpen = false;
 
 export function setNotifications(n: Notification[]): void { notifications = n; }
 export function setPanelOpen(v: boolean): void { panelOpen = v; }
-export function setPollInterval(v: ReturnType<typeof setInterval> | null): void { pollInterval = v; }
+export function setPollInterval(v: ReturnType<typeof setInterval> | null): void {
+  if (pollInterval !== null) clearInterval(pollInterval);
+  pollInterval = v;
+}
 
 export function markOneRead(id: string): boolean {
   const n = notifications.find(n => n.id === id);
