@@ -34,25 +34,30 @@ function _renderNavAvatar(el: HTMLElement, profile: Profile) {
 
 export function updateUIFromProfile(user: User | null, profile: Profile | null) {
   if (!profile) return;
-  _renderNavAvatar(document.getElementById('user-avatar-btn')!, profile);
-  _renderAvatar(document.getElementById('profile-avatar')!, profile);
-  document.getElementById('profile-display-name')!.textContent = (profile.display_name || profile.username || 'GLADIATOR').toUpperCase();
+
+  // Helper: safe element setter — silently skips if element doesn't exist on current page
+  const _set = (id: string, value: string) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+  const _setHTML = (id: string, value: string) => { const el = document.getElementById(id); if (el) el.innerHTML = value; };
+
+  const navAvatar = document.getElementById('user-avatar-btn'); if (navAvatar) _renderNavAvatar(navAvatar, profile);
+  const profileAvatar = document.getElementById('profile-avatar'); if (profileAvatar) _renderAvatar(profileAvatar, profile);
+  _set('profile-display-name', (profile.display_name || profile.username || 'GLADIATOR').toUpperCase());
   const tierLabels: Record<string, string> = { free: 'FREE TIER', contender: 'CONTENDER', champion: 'CHAMPION', creator: 'CREATOR' };
   const tier = profile.subscription_tier || 'free';
-  document.getElementById('profile-tier')!.textContent = tierLabels[tier] || 'FREE TIER';
-  document.getElementById('dropdown-name')!.textContent = profile.display_name || profile.username || 'Gladiator';
-  document.getElementById('dropdown-tier')!.textContent = tierLabels[tier] || 'Free Tier';
-  document.getElementById('stat-elo')!.textContent = String(profile.elo_rating || 1200);
-  document.getElementById('stat-wins')!.textContent = String(profile.wins || 0);
-  document.getElementById('stat-losses')!.textContent = String(profile.losses || 0);
-  document.getElementById('stat-streak')!.textContent = String(profile.current_streak || 0);
-  document.getElementById('stat-debates')!.textContent = String(profile.debates_completed || 0);
-  document.getElementById('stat-tokens')!.textContent = (profile.token_balance || 0).toLocaleString();
-  document.getElementById('token-count')!.textContent = (profile.token_balance || 0).toLocaleString();
-  const shopBal = document.getElementById('shop-token-balance'); if (shopBal) shopBal.textContent = (profile.token_balance || 0).toLocaleString();
+  _set('profile-tier', tierLabels[tier] || 'FREE TIER');
+  _set('dropdown-name', profile.display_name || profile.username || 'Gladiator');
+  _set('dropdown-tier', tierLabels[tier] || 'Free Tier');
+  _set('stat-elo', String(profile.elo_rating || 1200));
+  _set('stat-wins', String(profile.wins || 0));
+  _set('stat-losses', String(profile.losses || 0));
+  _set('stat-streak', String(profile.current_streak || 0));
+  _set('stat-debates', String(profile.debates_completed || 0));
+  _set('stat-tokens', (profile.token_balance || 0).toLocaleString());
+  _set('token-count', (profile.token_balance || 0).toLocaleString());
+  _set('shop-token-balance', (profile.token_balance || 0).toLocaleString());
   const depth = Number(profile.profile_depth_pct) || 0;
-  (document.getElementById('profile-depth-fill') as HTMLElement).style.width = depth + '%';
-  document.getElementById('profile-depth-text')!.innerHTML = `Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a>`;
+  const depthFill = document.getElementById('profile-depth-fill') as HTMLElement | null; if (depthFill) depthFill.style.width = depth + '%';
+  _setHTML('profile-depth-text', `Profile ${depth}% complete — <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);">unlock rewards</a>`);
 
   // F-45: Desktop panel
   const dpName = document.getElementById('dp-name'); if (dpName) dpName.textContent = (profile.display_name || profile.username || 'GLADIATOR').toUpperCase();
@@ -78,19 +83,24 @@ export async function loadFollowCounts() {
   if (!user?.id) return;
   try {
     const counts = await getFollowCounts(user.id);
-    document.getElementById('profile-followers')!.textContent = String(counts.followers || 0);
-    document.getElementById('profile-following')!.textContent = String(counts.following || 0);
+    const followersEl = document.getElementById('profile-followers'); if (followersEl) followersEl.textContent = String(counts.followers || 0);
+    const followingEl = document.getElementById('profile-following'); if (followingEl) followingEl.textContent = String(counts.following || 0);
   } catch (e) { console.warn('[Home] follow counts render failed:', e); }
 }
 
 // User dropdown toggle
 const avatarBtn = document.getElementById('user-avatar-btn');
 const dropdown = document.getElementById('user-dropdown');
-avatarBtn!.addEventListener('click', (e) => { e.stopPropagation(); dropdown!.classList.toggle('open'); });
-document.addEventListener('click', () => { dropdown!.classList.remove('open'); });
+if (avatarBtn && dropdown) {
+  avatarBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('open'); });
+  document.addEventListener('click', () => { dropdown.classList.remove('open'); });
+}
 
 // Logout
-document.getElementById('logout-btn')!.addEventListener('click', async () => {
-  await logOut();
-  window.location.href = 'moderator-plinko.html';
-});
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    await logOut();
+    window.location.href = 'moderator-plinko.html';
+  });
+}
