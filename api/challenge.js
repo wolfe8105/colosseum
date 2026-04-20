@@ -17,13 +17,13 @@
 
 import { buildChallengeHtml, buildExpiredHtml } from './challenge.html.js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const BASE_URL = 'https://themoderator.app'; // eslint-disable-line no-unused-vars
 
 export default async function handler(req, res) {
-  if (!SUPABASE_ANON_KEY) {
-    console.error('challenge.js: SUPABASE_ANON_KEY env var not set');
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('challenge.js: SUPABASE_URL or SUPABASE_ANON_KEY env var not set');
     return res.status(500).send('Server configuration error');
   }
 
@@ -37,16 +37,24 @@ export default async function handler(req, res) {
 
   try {
     const apiUrl = `${SUPABASE_URL}/rest/v1/rpc/get_challenge_preview`;
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ p_join_code: code }),
-    });
+    const challengeAbort = new AbortController();
+    const challengeTimeout = setTimeout(() => challengeAbort.abort(), 5000);
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ p_join_code: code }),
+        signal: challengeAbort.signal,
+      });
+    } finally {
+      clearTimeout(challengeTimeout);
+    }
 
     if (!response.ok) throw new Error(`Supabase returned ${response.status}`);
 

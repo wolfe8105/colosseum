@@ -3,6 +3,7 @@
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import jwt from 'jsonwebtoken';
 
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
@@ -84,23 +85,33 @@ export default async function handler(req, res) {
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  // Validate JWT structure (3 base64url segments) without full verification —
-  // full verification would require Supabase JWT secret. This blocks anonymous
-  // callers while Supabase RLS on the client enforces real auth.
-  const jwtParts = token.split('.');
-  if (jwtParts.length !== 3) {
-    return res.status(401).json({ error: 'Invalid authentication token' });
-  }
+  // Validate JWT — full cryptographic verification if SUPABASE_JWT_SECRET is set,
+  // otherwise fall back to structure check + expiry validation.
   let userId = 'unknown';
-  try {
-    const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
-    userId = payload.sub || 'unknown';
-    // Reject expired tokens
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return res.status(401).json({ error: 'Authentication token expired' });
+  if (process.env.SUPABASE_JWT_SECRET) {
+    try {
+      const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET, {
+        algorithms: ['HS256'],
+      });
+      userId = payload.sub || 'unknown';
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
-  } catch {
-    return res.status(401).json({ error: 'Malformed authentication token' });
+  } else {
+    console.error('[go-respond] SUPABASE_JWT_SECRET not set — falling back to structure check');
+    const jwtParts = token.split('.');
+    if (jwtParts.length !== 3) {
+      return res.status(401).json({ error: 'Invalid authentication token' });
+    }
+    try {
+      const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
+      userId = payload.sub || 'unknown';
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        return res.status(401).json({ error: 'Authentication token expired' });
+      }
+    } catch {
+      return res.status(401).json({ error: 'Malformed authentication token' });
+    }
   }
 
   // IS-01 fix: use x-real-ip (set by Vercel infrastructure, not spoofable by caller)

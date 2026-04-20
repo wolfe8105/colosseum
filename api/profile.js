@@ -20,7 +20,7 @@ import { buildProfileHtml, build404Html } from './profile.html.js';
 // LANDMINE [LM-PROFILE-001]: BASE_URL is also declared in profile.html.js.
 // Both files need it independently. Consider extracting to a shared constants
 // module if a third consumer appears.
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://faomczmipsccwbhpivmp.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const BASE_URL = process.env.BASE_URL || 'https://themoderator.app';
 
@@ -31,6 +31,12 @@ const profileCache = new Map();
 const CACHE_TTL_MS = 60_000;
 
 export default async function handler(req, res) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('profile.js: SUPABASE_URL or SUPABASE_ANON_KEY env var not set');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(500).send(build404Html('error'));
+  }
+
   const { username } = req.query;
 
   // Validate username
@@ -51,13 +57,21 @@ export default async function handler(req, res) {
 
     // Query Supabase REST API directly (no SDK needed)
     const apiUrl = `${SUPABASE_URL}/rest/v1/profiles_public?username=eq.${encodeURIComponent(username)}&select=*&limit=1`;
-    const response = await fetch(apiUrl, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Accept': 'application/json',
-      },
-    });
+    const profileAbort = new AbortController();
+    const profileTimeout = setTimeout(() => profileAbort.abort(), 5000);
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Accept': 'application/json',
+        },
+        signal: profileAbort.signal,
+      });
+    } finally {
+      clearTimeout(profileTimeout);
+    }
 
     if (!response.ok) {
       throw new Error(`Supabase returned ${response.status}`);

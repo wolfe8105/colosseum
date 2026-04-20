@@ -14,9 +14,13 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const APP_BASE = 'https://themoderator.app';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 export default async function handler(req, res) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('invite.js: missing Supabase env vars');
+    return res.redirect(302, `${APP_BASE}/moderator-plinko.html`);
+  }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   const code = req.query.code;
 
   if (!code || !/^[a-z0-9]{5}$/.test(code)) {
