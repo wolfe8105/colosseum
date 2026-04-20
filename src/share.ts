@@ -113,6 +113,7 @@ export function shareResult({
 }: ShareResultParams): void {
   const url = `${getBaseUrl()}/debate/${encodeURIComponent(debateId ?? 'demo')}`;
   const text = `🏆 ${winner ?? 'Winner'} (${winnerElo ?? 1200}) won vs ${loser ?? 'Loser'} (${loserElo ?? 1200})\n"${topic ?? 'Debate'}"\n👁 ${spectators ?? 0} watched\n\n${url}`;
+  // fire-and-forget: share API failure should not block UI
   void share({ title: 'Debate Result — The Moderator', text, url });
 }
 
@@ -128,12 +129,14 @@ export function shareProfile({
   const url = `${getBaseUrl()}/u/${encodeURIComponent(username ?? userId ?? 'debater')}`;
   const name = displayName ?? username ?? 'Debater';
   const text = `🏟️ ${name} on The Moderator\nELO: ${elo ?? 1200} | W: ${wins ?? 0} | L: ${losses ?? 0} | Streak: ${streak ?? 0}\n\n${url}`;
+  // fire-and-forget: share API failure should not block UI
   void share({ title: `${name} — The Moderator`, text, url });
 }
 
 export function inviteFriend(): void {
   void getStableInviteUrl().then(url => {
     const text = `Think you can hold your own? Join me on The Moderator.\n\n${url}`;
+    // fire-and-forget: share API failure should not block UI
     void share({ title: 'Join The Moderator', text, url });
   });
 }
@@ -142,6 +145,7 @@ export function shareTake(takeId: string, takeText: string): void {
   const url = `${getBaseUrl()}/take/${encodeURIComponent(takeId)}`;
   const decoded = decodeURIComponent(takeText);
   const text = `🔥 Hot Take on The Moderator:\n"${decoded}"\n\nReact or challenge: ${url}`;
+  // fire-and-forget: share API failure should not block UI
   void share({ title: 'Hot Take — The Moderator', text, url });
 }
 

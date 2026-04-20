@@ -25,6 +25,7 @@ export function init(): void {
       if (profile.token_balance != null) _updateBalanceDisplay(profile.token_balance);
       claimDailyLogin();
       _loadMilestones();
+      // fire-and-forget: follower notification is non-critical side effect
       void _rpc('notify_followers_online', { p_user_id: user.id });
     }
   });

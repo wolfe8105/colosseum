@@ -35,7 +35,9 @@ export async function setupSignaling(debateId: string): Promise<void> {
     if (!raw || typeof raw !== 'object') return;
     const msg = raw as Record<string, unknown>;
     if (typeof msg['type'] !== 'string' || typeof msg['from'] !== 'string') return;
-    void handleSignalingMessage(msg as unknown as SignalingMessage);
+    void handleSignalingMessage(msg as unknown as SignalingMessage).catch(err =>
+      console.error('[webrtc.signaling] handleSignalingMessage fire-and-forget failed:', err)
+    );
   });
 
   state.signalingChannel.on('presence', { event: 'sync' }, () => {
@@ -45,7 +47,9 @@ export async function setupSignaling(debateId: string): Promise<void> {
 
     if (count >= 2 && state.debateState.status === 'connecting') {
       if (state.debateState.role === 'a') {
-        void createOffer();
+        void createOffer().catch(err =>
+          console.error('[webrtc.signaling] createOffer fire-and-forget failed:', err)
+        );
       }
     }
   });

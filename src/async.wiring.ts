@@ -50,6 +50,7 @@ function _wireTakeDelegation(container: HTMLElement): void {
     else if (action === 'share')
       shareTake(btn.dataset['id'] ?? '', btn.dataset['text'] ?? '');
     else if (action === 'become-mod') {
+      // fire-and-forget: moderator toggle has .then() handling success inline
       void toggleModerator(true).then((result) => {
         if (!result.error) {
           showToast('🧑‍⚖️ You are now a Moderator!', 'success');
@@ -113,7 +114,9 @@ function _wirePredictionDelegation(container: HTMLElement): void {
           showToast(`Insufficient balance (${bal.toLocaleString()} tokens)`, 'error');
           return;
         }
-        void placePrediction(debateId, pick, amount);
+        void placePrediction(debateId, pick, amount).catch(err =>
+          console.error('[async.wiring] placePrediction fire-and-forget failed:', err)
+        );
       }
     } else if (action === 'wager-cancel') {
       _hideWagerPicker();
@@ -121,6 +124,8 @@ function _wirePredictionDelegation(container: HTMLElement): void {
       void pickStandaloneQuestion(
         btn.dataset['id'] ?? '',
         btn.dataset['pick'] ?? ''
+      ).catch(err =>
+        console.error('[async.wiring] pickStandaloneQuestion fire-and-forget failed:', err)
       );
     } else if (action === 'create-prediction') {
       openCreatePredictionForm();
@@ -157,6 +162,7 @@ function _wireRivalDelegation(container: HTMLElement): void {
       else showUserProfile(btn.dataset['userId'] ?? '');
     } else if (btn.dataset['action'] === 'accept-rival') {
       respondRival(btn.dataset['id'] ?? '', true).then(() =>
+        // fire-and-forget: UI refresh after rival accept — failure is non-critical
         void refreshRivals()
       );
     }
