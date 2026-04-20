@@ -16,6 +16,7 @@ import './home.depth.ts';
 import '../tokens.ts';
 import '../notifications.ts';
 import '../leaderboard.ts';
+import '../dm/dm.ts';
 import '../scoring.ts';
 import '../tiers.ts';
 import '../paywall.ts';

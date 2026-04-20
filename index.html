@@ -51,6 +51,8 @@ html,body{height:100%;overflow:hidden}
 /* OTHER SCREENS */
 #screen-arena,#screen-profile,#screen-shop,#screen-leaderboard,#screen-search{touch-action:auto}
 #screen-search{padding:12px}
+#screen-dm{touch-action:auto}
+#screen-dm.active{display:flex}
 .section-banner{text-align:center;padding:20px 16px}
 .section-banner h2{font-family:var(--mod-font-ui);font-size:22px;letter-spacing:3px;color:var(--mod-text-heading)}
 .section-banner .subtitle{font-size:13px;color:var(--mod-text-muted);margin-top:4px}
@@ -478,6 +480,7 @@ html,body{height:100%;overflow:hidden}
   <span class="mod-title">The Moderator</span>
   <div class="mod-header-controls">
     <button class="mod-icon-btn" id="global-search-btn" data-action="global-search" title="Search">🔍</button>
+    <button class="mod-icon-btn" id="dm-btn" data-action="open-dm" title="Messages">💬<div class="notification-dot" id="dm-dot" style="display:none;"></div></button>
     <button class="mod-icon-btn" id="notif-btn" title="Notifications">🔔<div class="notification-dot" id="notif-dot" style="display:none;"></div></button>
     <div class="mod-avatar" id="user-avatar-btn" title="Account">?</div>
   </div>
@@ -617,6 +620,9 @@ html,body{height:100%;overflow:hidden}
 </div>
 
 <div class="screen" id="screen-search"></div>
+
+<!-- Direct Messages -->
+<div class="screen" id="screen-dm" style="padding-bottom:0;display:flex;flex-direction:column;"></div>
 
 <!-- ===== DESKTOP PANEL (≥1024px) ===== -->
 <aside id="desktop-panel">

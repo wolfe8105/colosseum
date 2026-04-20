@@ -14,7 +14,7 @@ import { loadFollowCounts } from './home.profile.ts';
 import { loadDebateArchive } from '../profile-debate-archive.ts';
 import { state } from './home.state.ts';
 
-const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite', 'search'];
+const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite', 'search', 'dm'];
 
 export function navigateTo(screenId: string) {
   if (!VALID_SCREENS.includes(screenId)) screenId = 'home';
@@ -49,6 +49,11 @@ export function navigateTo(screenId: string) {
   if (screenId === 'search') {
     import('../search.ts').then(({ renderSearchScreen }) => renderSearchScreen()).catch(e => console.error('[search]', e));
   }
+  if (screenId === 'dm') {
+    import('../dm/dm.ts').then(({ renderDMScreen, fetchThreads }) => {
+      void fetchThreads().then(() => renderDMScreen());
+    }).catch(e => console.error('[dm]', e));
+  }
 }
 
 // Bottom nav wiring
@@ -78,6 +83,8 @@ document.addEventListener('click', (e: Event) => {
     navigateTo('arsenal');
   } else if (action === 'global-search') {
     navigateTo('search');
+  } else if (action === 'open-dm') {
+    navigateTo('dm');
   } else if (action === 'spectate-live') {
     const debateId = el.dataset.debateId;
     if (debateId) {
