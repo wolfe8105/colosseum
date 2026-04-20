@@ -9,17 +9,9 @@ policy audit complete so the SQL layer underneath is trusted)
 
 ## SETUP
 
-Read the GitHub token from the repo README:
-```bash
-TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
-```
+The repo is already cloned at `/home/claude/colosseum`. Work from there.
+Do NOT attempt to push to GitHub — you do not have a valid token.
 
-Then clone and configure:
-```bash
-git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
-cd colosseum
-git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
-```
 
 ---
 ## MANDATORY FILE READ VERIFICATION
@@ -233,12 +225,13 @@ grep -n 'process\.env.*||.*supabase' api/*.js
 
 ---
 
-## COMMIT
+## DELIVERY
 
-```bash
-git add api/go-respond.js api/challenge.js api/profile.js api/invite.js
-git commit -m "Batch 11: JWT verify in go-respond, remove SUPABASE_URL fallbacks, invite.js env guard, AbortController timeouts"
-```
+Do NOT commit or push. Instead:
+1. Copy every patched file to `/mnt/user-data/outputs/` preserving the filename.
+2. Use `present_files` to hand them to me.
+3. I will upload them to GitHub manually.
+
 
 ---
 

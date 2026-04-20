@@ -8,17 +8,9 @@
 
 ## SETUP
 
-Read the GitHub token from the repo README:
-```bash
-TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
-```
+The repo is already cloned at `/home/claude/colosseum`. Work from there.
+Do NOT attempt to push to GitHub — you do not have a valid token.
 
-Then clone and configure:
-```bash
-git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
-cd colosseum
-git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
-```
 
 ---
 ## MANDATORY FILE READ VERIFICATION
@@ -104,13 +96,13 @@ This is the completion check for the entire SQL Layer 1A search_path work.
 
 ---
 
-## COMMIT
+## DELIVERY
 
-```bash
-git add supabase/functions/predictions.sql supabase/functions/hot-takes.sql \
-        supabase/functions/admin.sql supabase/functions/notifications.sql
-git commit -m "Batch 08: add SET search_path to all SECURITY DEFINER functions in predictions, hot-takes, admin, notifications — completes search_path Layer 1A"
-```
+Do NOT commit or push. Instead:
+1. Copy every patched file to `/mnt/user-data/outputs/` preserving the filename.
+2. Use `present_files` to hand them to me.
+3. I will upload them to GitHub manually.
+
 
 ---
 

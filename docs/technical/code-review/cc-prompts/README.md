@@ -1,47 +1,48 @@
-# Code Review Guides — colosseum / themoderator.app
+# Code Review CC Prompts — colosseum / themoderator.app
 
-Seven Word documents covering every active file type in the repo.
-All findings are based on actual file reads — every verdict maps to a specific file and line number.
+17 paste-and-go prompts for Claude Code. Each prompt patches one batch of files
+and presents the result for manual upload to GitHub.
 
-## GitHub Token
+## How it works now
 
-```
-GITHUB_TOKEN=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
-```
+1. Paste a batch prompt into Claude Code (the repo must already be cloned at `/home/claude/colosseum`).
+2. CC reads the file(s), applies the fix, runs verification, and presents the patched file(s) via `present_files`.
+3. You download the patched file(s) and upload them to GitHub manually.
+4. No git push, no PAT required. Nothing gets lost.
 
-## How to use these
-
-**Start here:** `Colosseum-Master-Review-Guide.docx`
-This is the sequenced execution plan. It tells you which order to work the individual guides and which items can be parallelized. Do not skip to an individual guide without reading the master first — the fixes have a dependency order that matters.
-
-## The documents
-
-| Document | Scope | Key finding |
-|---|---|---|
-| **Colosseum-Master-Review-Guide.docx** | All five file types, sequenced | Start here |
-| **Colosseum-JSON-Review-Checklist.docx** | 6 JSON files | Vite HIGH CVE — fix available |
-| **Colosseum-SQL-Review-Checklist.docx** | 39 SQL files | 186 SECURITY DEFINER missing search_path |
-| **Colosseum-TS-Review-Checklist.docx** | 336 TypeScript files | 2 FIX any casts, void async calls mapped |
-| **Colosseum-JS-Review-Checklist.docx** | 11 JavaScript files | JWT structure-only verification in go-respond.js |
-| **Colosseum-HTML-Review-Checklist.docx** | 15 HTML files | All security headers live in vercel.json only |
-| **TypeScript-File-Quality-HowTo-Guide.docx** | TypeScript patterns | How-to reference for TS quality patterns |
-
-## The fix order
+## Run order
 
 ```
-Layer 0 — JSON   (do first — unblocks everything)
-    └─ npm audit fix (vite CVE)
-    └─ confirm npm ci in Vercel
+Batch 01 first (JSON — unblocks everything)
 
-Layer 1 — SQL + TypeScript  (run in parallel)
-    ├─ SQL: 186 SECURITY DEFINER + search_path
-    ├─ SQL: USING(true) audit
-    └─ TS: home.feed.ts + home.depth.ts any casts
+Then parallel:
+  Track A: 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09  (SQL)
+  Track B: 10  (TypeScript — independent of SQL)
 
-Layer 2 — JS + HTML  (run in parallel, after Layer 1)
-    ├─ JS: JWT verify in go-respond.js
-    ├─ JS: remove SUPABASE_URL hardcoded fallbacks
-    └─ HTML: CSP hash audit (after TS fixes land)
+After both tracks done:
+  11 → 12 → 13 → 14 → 15 → 16 → 17  (sequential)
 ```
+
+## Status
+
+| Batch | File(s) | Status |
+|-------|---------|--------|
+| 01 | JSON configs | Done (on branch, needs merge) |
+| 02 | arena.sql | **RE-RUN NEEDED** (lost — branch never pushed) |
+| 03 | auth.sql | **RE-RUN NEEDED** (lost — branch never pushed) |
+| 04 | references.sql | Done (`8d3fc39` on keen-swanson) |
+| 05 | moderation.sql | Done (`0f787cb` on keen-swanson) |
+| 06 | groups.sql | Done (`93c932e` local — needs upload) |
+| 07 | tokens.sql | Not started |
+| 08 | predictions, hot-takes, admin, notifications | Not started |
+| 09 | RLS policy audit + migration | Not started |
+| 10 | TypeScript any casts + void async | Not started |
+| 11 | JavaScript API routes | Not started |
+| 12 | index.html OG tags | Not started |
+| 13 | moderator-groups.html OG tags | Not started |
+| 14 | settings + login OG tags | Not started |
+| 15 | terms + plinko OG tags | Not started |
+| 16 | cosmetics + privacy + profile-depth OG tags | Not started |
+| 17 | Anon key comments + CSP hash audit | Not started |
 
 Generated: April 2026

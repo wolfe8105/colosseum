@@ -8,17 +8,9 @@
 
 ## SETUP
 
-Read the GitHub token from the repo README:
-```bash
-TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
-```
+The repo is already cloned at `/home/claude/colosseum`. Work from there.
+Do NOT attempt to push to GitHub — you do not have a valid token.
 
-Then clone and configure:
-```bash
-git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
-cd colosseum
-git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
-```
 
 ---
 ## MANDATORY FILE READ VERIFICATION
@@ -119,12 +111,13 @@ git diff --stat            # should show: package.json, tsconfig.src.json, .giti
 
 ---
 
-## COMMIT
+## DELIVERY
 
-```bash
-git add package.json package-lock.json tsconfig.src.json .gitignore
-git commit -m "Batch 01: patch vite CVE, move supabase-js to deps, isolatedModules, mcp.json gitignore"
-```
+Do NOT commit or push. Instead:
+1. Copy every patched file to `/mnt/user-data/outputs/` preserving the filename.
+2. Use `present_files` to hand them to me.
+3. I will upload them to GitHub manually.
+
 
 ---
 

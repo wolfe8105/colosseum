@@ -10,17 +10,9 @@ be committed before this runs — Batch 17 is the completion and verification ba
 
 ## SETUP
 
-Read the GitHub token from the repo README:
-```bash
-TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
-```
+The repo is already cloned at `/home/claude/colosseum`. Work from there.
+Do NOT attempt to push to GitHub — you do not have a valid token.
 
-Then clone and configure:
-```bash
-git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
-cd colosseum
-git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
-```
 
 ---
 ## MANDATORY FILE READ VERIFICATION
@@ -180,16 +172,13 @@ All six checks must pass before this batch is considered complete.
 
 ---
 
-## COMMIT
+## DELIVERY
 
-```bash
-git add moderator-challenge.html moderator-source-report.html
-git commit -m "Batch 17: add anon key rotation comments — completes full code review cycle"
-```
+Do NOT commit or push. Instead:
+1. Copy every patched file to `/mnt/user-data/outputs/` preserving the filename.
+2. Use `present_files` to hand them to me.
+3. I will upload them to GitHub manually.
 
-Note: do NOT commit vercel.json unless you found and fixed a missing CSP hash.
-If vercel.json changes are needed, report them for a separate commit with
-explanation of which script required the new hash.
 
 ---
 
