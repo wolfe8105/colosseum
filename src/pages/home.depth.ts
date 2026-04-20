@@ -3,6 +3,7 @@
  * Self-wiring side-effect module — no exports.
  */
 import { getCurrentUser, getCurrentProfile, updateProfile, getFollowers, getFollowing, showUserProfile } from '../auth.ts';
+import type { FollowRow } from '../auth.types.ts';
 import { escapeHTML, showToast } from '../config.ts';
 
 function _closeSheet(overlayEl: HTMLElement | null) { if (overlayEl && overlayEl.parentNode) overlayEl.remove(); }
@@ -121,15 +122,15 @@ async function _openFollowList(type: string) {
     listEl.innerHTML = `<div class="follow-list-empty">${type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}</div>`;
     return;
   }
-  const items = result.data.map((row: any) => {
+  const items = result.data.map((row: FollowRow) => {
     const profileData = type === 'followers'
-      ? row.profiles
-      : row.profiles;
+      ? row.profiles?.[0]
+      : row.profiles?.[0];
     if (!profileData) return '';
     const name = escapeHTML(profileData.display_name || profileData.username || 'Unknown');
     const initial = escapeHTML((profileData.display_name || profileData.username || '?')[0].toUpperCase());
     const elo = Number(profileData.elo_rating) || 1200;
-    const uid = type === 'followers' ? row.follower_id : row.following_id;
+    const uid = (type === 'followers' ? row.follower_id : row.following_id) ?? '';
     return `<div class="follow-list-item" data-user-id="${escapeHTML(uid)}" data-username="${escapeHTML(profileData.username || '')}">
       <div class="fl-avatar">${initial}</div>
       <div style="flex:1;min-width:0;">

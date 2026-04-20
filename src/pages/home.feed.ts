@@ -18,7 +18,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
       .order('created_at', { ascending: false })
       .limit(5);
     if (error || !data) return [];
-    return data.map((d: any) => ({
+    return data.map((d: { id: string; topic: string; category: string; status: string; mode: string; spectator_count: number; current_round: number; max_rounds: number; debater_a: string | null; debater_b: string | null; debater_a_profile: { display_name: string | null; username: string | null } | null; debater_b_profile: { display_name: string | null; username: string | null } | null }) => ({
       id: d.id,
       topic: d.topic,
       category: d.category,
