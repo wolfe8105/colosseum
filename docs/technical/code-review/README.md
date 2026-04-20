@@ -4,7 +4,7 @@ Seven Word documents covering every active file type in the repo.
 All findings are based on actual file reads — every verdict maps to a specific file and line number.
 
 ## How to use these
-added this to prove i can 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
+GITHUB_TOKEN=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
 **Start here:** `Colosseum-Master-Review-Guide.docx`
 This is the sequenced execution plan. It tells you which order to work the individual guides and which items can be parallelized. Do not skip to an individual guide without reading the master first — the fixes have a dependency order that matters.
 
