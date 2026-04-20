@@ -26,6 +26,7 @@ export function init(): void {
       claimDailyLogin();
       _loadMilestones();
       // fire-and-forget: follower notification is non-critical side effect
+      // fire-and-forget: online notification is non-critical, failure should not block login
       void _rpc('notify_followers_online', { p_user_id: user.id });
     }
   });

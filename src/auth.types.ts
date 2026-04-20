@@ -53,6 +53,7 @@ export interface Profile {
   mod_debates_total: number;
   mod_rulings_total: number;
   mod_approval_pct: number;
+  verified_gladiator?: boolean | null;
   created_at: string;
   updated_at?: string;
   /** Profile may have additional columns not listed here */

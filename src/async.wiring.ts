@@ -56,7 +56,7 @@ function _wireTakeDelegation(container: HTMLElement): void {
           showToast('🧑‍⚖️ You are now a Moderator!', 'success');
           loadHotTakes(state.currentFilter);
         }
-      });
+      }).catch(err => console.error('[async.wiring] toggleModerator failed:', err));
     } else if (action === 'mod-signup') {
       window.location.href = 'moderator-plinko.html';
     } else if (action === 'expand') {
