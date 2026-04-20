@@ -71,7 +71,7 @@ export function renderLobby(): void {
       <div class="arena-hero-sub">Pick a mode. Find an opponent. Settle it.</div>
       <div class="arena-stat-row">
         <div class="arena-stat accent">
-          <div class="arena-stat-value"><span data-token-balance>0</span></div>
+          <div class="arena-stat-value"><span data-token-balance>${Number(profile?.token_balance) || 0}</span></div>
           <div class="arena-stat-label">Tokens</div>
         </div>
         <div class="arena-stat">

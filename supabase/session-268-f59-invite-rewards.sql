@@ -96,7 +96,7 @@ BEGIN
   END IF;
 
   -- Check onboarding gate
-  SELECT onboarding_complete, ref_code
+  SELECT (username IS NOT NULL), ref_code
   INTO v_onboarded, v_ref_code
   FROM public.profiles
   WHERE id = v_user_id;
@@ -191,7 +191,7 @@ BEGIN
   -- Block existing users (invitee already has a profile with wins/losses)
   IF EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = v_invitee_id AND (wins > 0 OR losses > 0 OR onboarding_complete = true)
+    WHERE id = v_invitee_id AND (wins > 0 OR losses > 0 OR username IS NOT NULL)
   ) THEN
     RETURN jsonb_build_object('error', 'existing_user');
   END IF;
@@ -380,14 +380,14 @@ BEGIN
 
   -- Add to inventory
   IF v_reward.reward_type IN ('legendary_powerup','mythic_powerup') THEN
-    INSERT INTO public.user_powerups (user_id, effect_id, quantity, acquisition_type)
-    VALUES (v_user_id, v_effect.id, 1, 'reward')
+    INSERT INTO public.user_powerups (user_id, effect_id, quantity)
+    VALUES (v_user_id, v_effect.id, 1)
     ON CONFLICT (user_id, effect_id)
     DO UPDATE SET quantity = user_powerups.quantity + 1;
   ELSE
     -- mythic_modifier → user_modifiers
-    INSERT INTO public.user_modifiers (user_id, effect_id, acquisition_type)
-    VALUES (v_user_id, v_effect.id, 'reward');
+    INSERT INTO public.user_modifiers (user_id, effect_id)
+    VALUES (v_user_id, v_effect.id);
   END IF;
 
   -- Mark claimed
@@ -422,6 +422,12 @@ BEGIN
   END IF;
 
   SELECT ref_code INTO v_ref_code FROM public.profiles WHERE id = v_user_id;
+
+  -- Auto-generate ref_code if user doesn't have one yet
+  IF v_ref_code IS NULL THEN
+    PERFORM get_my_invite_link();
+    SELECT ref_code INTO v_ref_code FROM public.profiles WHERE id = v_user_id;
+  END IF;
 
   SELECT
     COUNT(*) FILTER (WHERE status = 'clicked')   INTO v_total_clicks
