@@ -10,9 +10,8 @@ import type { SettingsData } from './settings.helpers.ts';
 
 const isPlaceholder: boolean = isAnyPlaceholder;
 
-// LANDMINE [LM-SET-002]: saveBtn is disabled at top and re-enabled at end on success path.
-// If updateProfile throws an unhandled exception, saveBtn stays disabled. Not try/finally.
-export function saveSettings(): void {
+// FIXED [LM-SET-002]: Now async, awaits RPCs, uses try/finally for button state.
+export async function saveSettings(): Promise<void> {
   const saveBtn = getEl<HTMLButtonElement>('save-btn');
   if (saveBtn?.disabled) return;
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Saving...'; }
@@ -58,33 +57,41 @@ export function saveSettings(): void {
 
   localStorage.setItem('colosseum_settings', JSON.stringify(settings));
 
-  if (!isPlaceholder) {
-    updateProfile({
-      display_name: settings.display_name,
-      username: settings.username,
-      bio: settings.bio,
-      preferred_language: settings.preferred_language,
-      is_private: !settings.privacy_public,
-    }).catch((err: unknown) => { console.warn('[Settings] updateProfile failed:', err); });
+  try {
+    if (!isPlaceholder) {
+      await updateProfile({
+        display_name: settings.display_name,
+        username: settings.username,
+        bio: settings.bio,
+        preferred_language: settings.preferred_language,
+        is_private: !settings.privacy_public,
+      });
 
-    safeRpc('save_user_settings', {
-      p_notif_challenge: settings.notif_challenge,
-      p_notif_debate: settings.notif_debate,
-      p_notif_follow: settings.notif_follow,
-      p_notif_reactions: settings.notif_reactions,
-      p_notif_rivals: settings.notif_rivals,
-      p_notif_economy: settings.notif_economy,
-      p_audio_sfx: settings.audio_sfx,
-      p_audio_mute: settings.audio_mute,
-      p_privacy_public: settings.privacy_public,
-      p_privacy_online: settings.privacy_online,
-      p_privacy_challenges: settings.privacy_challenges,
-    }).then((result: unknown) => {
+      const result = await safeRpc('save_user_settings', {
+        p_notif_challenge: settings.notif_challenge,
+        p_notif_debate: settings.notif_debate,
+        p_notif_follow: settings.notif_follow,
+        p_notif_reactions: settings.notif_reactions,
+        p_notif_rivals: settings.notif_rivals,
+        p_notif_economy: settings.notif_economy,
+        p_audio_sfx: settings.audio_sfx,
+        p_audio_mute: settings.audio_mute,
+        p_privacy_public: settings.privacy_public,
+        p_privacy_online: settings.privacy_online,
+        p_privacy_challenges: settings.privacy_challenges,
+      });
       const r = result as { error?: { message: string } } | null;
-      if (r?.error) console.warn('[Settings] save_user_settings RPC failed:', r.error.message);
-    }).catch((err: unknown) => { console.warn('[Settings] save_user_settings failed:', err); });
+      if (r?.error) {
+        console.warn('[Settings] save_user_settings RPC failed:', r.error.message);
+        toast('⚠️ Some settings may not have saved — try again');
+        return;
+      }
+    }
+    toast('✅ Settings saved');
+  } catch (err: unknown) {
+    console.error('[Settings] save failed:', err);
+    toast('❌ Save failed — please try again');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
   }
-
-  toast('✅ Settings saved');
-  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SAVE CHANGES'; }
 }

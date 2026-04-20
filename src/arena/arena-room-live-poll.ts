@@ -89,7 +89,11 @@ export async function submitTextArgument(): Promise<void> {
         p_side: side,
         p_content: text,
       });
-    } catch { /* warned */ }
+    } catch (err) {
+      console.error('[arena-room-live-poll] submit_debate_message failed:', err);
+      const { showToast } = await import('../config.ts');
+      showToast('Message failed to send — opponent may not receive it', 'error');
+    }
   }
 
   if (debate.mode === 'ai') {

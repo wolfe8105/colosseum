@@ -187,6 +187,12 @@ export function init(): void {
         currentUser = null;
         currentProfile = null;
         _notify(null, null);
+        // BUG-16 fix: redirect to login so user doesn't see broken null-profile app
+        if (window.location.pathname.indexOf('moderator-plinko') === -1 &&
+            window.location.pathname.indexOf('moderator-login') === -1 &&
+            window.location.pathname.indexOf('challenge') === -1) {
+          window.location.href = 'moderator-plinko.html';
+        }
       }
     });
   } catch (e) {

@@ -213,18 +213,22 @@ BEGIN
   END IF;
 
   IF p_section NOT IN ('trending','politics','sports','entertainment','music','couples_court') THEN
-    p_section := 'trending';
+    -- BUG 9 FIX: Accept valid group UUIDs as section
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM public.groups WHERE id = p_section::uuid) THEN
+        p_section := 'trending';
+      END IF;
+    EXCEPTION WHEN invalid_text_representation THEN
+      p_section := 'trending';
+    END;
   END IF;
-
-  -- Rate limit: 10 per hour
   v_allowed := check_rate_limit(v_user_id, 'hot_take', 60, 10);
   IF NOT v_allowed THEN
     RAISE LOG 'SECURITY|rate_limit_blocked|%|create_hot_take|hot_take limit exceeded', v_user_id;
     RAISE EXCEPTION 'Rate limit: max 10 hot takes per hour';
   END IF;
 
-  INSERT INTO public.hot_takes (user_id, content, section)
-  VALUES (v_user_id, trim(v_clean_content), p_section)
+  -- Rate limit: 10 per hour
   RETURNING id INTO v_take_id;
 
   -- FIXED: named parameters (LM-188 audit)
