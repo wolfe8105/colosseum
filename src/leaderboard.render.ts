@@ -5,8 +5,8 @@
 
 import { escapeHTML } from './config.ts';
 import { getCurrentProfile } from './auth.ts';
-import { currentTab, myRank, isLoading } from './leaderboard.state.ts';
-import { renderList, renderShimmer } from './leaderboard.list.ts';
+import { currentTab, myRank, isLoading, searchQuery, searchResults } from './leaderboard.state.ts';
+import { renderList, renderShimmer, renderSearchResults } from './leaderboard.list.ts';
 
 const escHtml = escapeHTML;
 
@@ -65,8 +65,19 @@ export function render(): void {
 
       <!-- Session 222: ECON-BUG-5 — Week/Month tabs removed. Re-add when time-bucketed stats exist. -->
 
+      <div style="margin-bottom:8px;">
+        <input id="lb-search-input" type="text" placeholder="Search username..." autocomplete="off" value="${escHtml(searchQuery)}" style="
+          width:100%;padding:10px 14px;border-radius:var(--mod-radius-pill);
+          border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);
+          color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:13px;
+          outline:none;box-sizing:border-box;min-height:40px;
+        ">
+      </div>
+
       <div id="lb-list">
-        ${isLoading ? renderShimmer() : renderList()}
+        ${searchResults !== null
+          ? renderSearchResults()
+          : isLoading ? renderShimmer() : renderList()}
       </div>
     </div>
   `;

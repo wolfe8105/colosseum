@@ -6,7 +6,7 @@
 import { escapeHTML } from './config.ts';
 import { vgBadge } from './badge.ts';
 import { bountyDot } from './bounties.ts';
-import { currentTab, liveData, isLoading, hasMore } from './leaderboard.state.ts';
+import { currentTab, liveData, isLoading, hasMore, searchResults } from './leaderboard.state.ts';
 import { getData } from './leaderboard.fetch.ts';
 
 const escHtml = escapeHTML;
@@ -94,4 +94,34 @@ export function renderList(): string {
         letter-spacing:1px;text-transform:uppercase;cursor:pointer;
       ">LOAD MORE</button>
     </div>` : '');
+}
+
+export function renderSearchResults(): string {
+  if (!searchResults || searchResults.length === 0) {
+    return `<div style="text-align:center;padding:40px 20px;color:var(--mod-text-sub);font-size:14px;">
+      No users found
+    </div>`;
+  }
+  const escHtml = escapeHTML;
+  return searchResults.map((p) => {
+    const safeUsername = escHtml(p.username ?? '');
+    return `
+      <div data-username="${safeUsername}" style="
+        display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
+        border-bottom:1px solid var(--mod-border-subtle);
+      ">
+        <div style="
+          width:36px;height:36px;border-radius:50%;background:var(--mod-bg-card);
+          border:2px solid var(--mod-border-primary);display:flex;align-items:center;justify-content:center;
+          font-weight:700;color:var(--mod-text-heading);font-size:13px;
+        ">${escHtml(p.user[0] ?? '')}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}${vgBadge(p.verified_gladiator)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:var(--mod-accent);">${p.elo}</div>
+          <div style="font-size:9px;color:var(--mod-text-sub);letter-spacing:1px;">ELO</div>
+        </div>
+      </div>`;
+  }).join('');
 }

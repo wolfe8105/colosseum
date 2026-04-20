@@ -1,12 +1,14 @@
 /**
  * THE MODERATOR — Leaderboard Fetch
- * fetchLeaderboard, setTab, setTime, loadMore, getData, PLACEHOLDER_DATA.
+ * fetchLeaderboard, setTab, setTime, loadMore, getData, searchLeaderboard, clearSearch, PLACEHOLDER_DATA.
  */
 
 import { safeRpc, getCurrentUser, getSupabaseClient, getIsPlaceholderMode } from './auth.ts';
 import {
   currentTab, liveData, isLoading, currentOffset, hasMore, PAGE_SIZE,
+  searchQuery, searchResults,
   setCurrentTab, setLiveData, setMyRank, setIsLoading, setCurrentOffset, setHasMore,
+  setSearchQuery, setSearchResults,
 } from './leaderboard.state.ts';
 import type { LeaderboardTab, LeaderboardTimeFilter, LeaderboardEntry, LeaderboardRpcRow } from './leaderboard.types.ts';
 
@@ -103,4 +105,41 @@ export async function loadMore(): Promise<void> {
   const { renderList } = await import('./leaderboard.list.ts');
   const lbList = document.getElementById('lb-list');
   if (lbList) lbList.innerHTML = renderList();
+}
+
+export async function searchLeaderboard(query: string): Promise<void> {
+  setSearchQuery(query);
+  if (query.length < 2) {
+    setSearchResults(null);
+    return;
+  }
+  const sb = getSupabaseClient();
+  if (!sb || getIsPlaceholderMode()) return;
+
+  try {
+    const { data, error } = await safeRpc<{ id: string; username: string; display_name: string; elo_rating: number }[]>(
+      'search_users_by_username', { p_query: query }
+    );
+    if (error || !data || (data as unknown[]).length === 0) {
+      setSearchResults([]);
+      return;
+    }
+    const results: LeaderboardEntry[] = (data as { id: string; username: string; display_name: string; elo_rating: number }[]).map((u, i) => ({
+      rank: i + 1,
+      id: u.id,
+      username: u.username ?? '',
+      user: (u.display_name || u.username || 'ANON').toUpperCase(),
+      elo: Number(u.elo_rating) || 1200,
+      wins: 0, losses: 0, streak: 0, level: 0,
+      tier: 'free',
+    }));
+    setSearchResults(results);
+  } catch {
+    setSearchResults([]);
+  }
+}
+
+export function clearSearch(): void {
+  setSearchQuery('');
+  setSearchResults(null);
 }
