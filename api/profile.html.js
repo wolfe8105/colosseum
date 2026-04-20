@@ -164,7 +164,7 @@ export function buildProfileHtml(profile) {
   <!-- CTA BUTTONS -->
   <div class="cta-row">
     <a href="${BASE_URL}/#arena" class="cta-btn cta-primary">⚔️ Challenge</a>
-    <a href="${BASE_URL}/login?returnTo=/u/${username}" class="cta-btn cta-secondary">👤 Follow</a>
+    <a href="${BASE_URL}/login?returnTo=/u/${username}" class="cta-btn cta-secondary">👤 Sign in to Follow</a>
   </div>
 
   <!-- FOOTER -->
