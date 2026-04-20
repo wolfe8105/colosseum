@@ -88,30 +88,17 @@ export default async function handler(req, res) {
   // Validate JWT — full cryptographic verification if SUPABASE_JWT_SECRET is set,
   // otherwise fall back to structure check + expiry validation.
   let userId = 'unknown';
-  if (process.env.SUPABASE_JWT_SECRET) {
-    try {
-      const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET, {
-        algorithms: ['HS256'],
-      });
-      userId = payload.sub || 'unknown';
-    } catch {
-      return res.status(401).json({ error: 'Invalid or expired authentication token' });
-    }
-  } else {
-    console.error('[go-respond] SUPABASE_JWT_SECRET not set — falling back to structure check');
-    const jwtParts = token.split('.');
-    if (jwtParts.length !== 3) {
-      return res.status(401).json({ error: 'Invalid authentication token' });
-    }
-    try {
-      const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
-      userId = payload.sub || 'unknown';
-      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-        return res.status(401).json({ error: 'Authentication token expired' });
-      }
-    } catch {
-      return res.status(401).json({ error: 'Malformed authentication token' });
-    }
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    console.error('[go-respond] FATAL: SUPABASE_JWT_SECRET not set — refusing to serve');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+  try {
+    const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET, {
+      algorithms: ['HS256'],
+    });
+    userId = payload.sub || 'unknown';
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired authentication token' });
   }
 
   // IS-01 fix: use x-real-ip (set by Vercel infrastructure, not spoofable by caller)
@@ -147,7 +134,7 @@ export default async function handler(req, res) {
       .replace(/<\/?[a-z][^>]*>/gi, '');
     const safeArg = String(userArg || '').slice(0, 2000);
 
-    const safeHistory = (messageHistory || [])
+    const safeHistory = (Array.isArray(messageHistory) ? messageHistory : [])
       .filter(m => m.role === 'user' || m.role === 'assistant')
       .map(m => ({ role: m.role, content: String(m.content || '').slice(0, 2000) }))
       .slice(-20);
