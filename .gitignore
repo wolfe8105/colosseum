@@ -23,3 +23,7 @@ Thumbs.db
 # Claude Code worktrees
 .claude/
 .github-token
+
+# MCP config files (may contain API keys)
+mcp.json
+*.mcp.json
