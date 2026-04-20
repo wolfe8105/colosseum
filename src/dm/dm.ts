@@ -195,4 +195,5 @@ export function init(): void {
 
 ready.then(() => init());
 
+export { fetchThreads };
 export const ModeratorDM = { renderDMScreen, fetchThreads, fetchUnreadCount } as const;
