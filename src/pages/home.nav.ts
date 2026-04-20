@@ -14,7 +14,7 @@ import { loadFollowCounts } from './home.profile.ts';
 import { loadDebateArchive } from '../profile-debate-archive.ts';
 import { state } from './home.state.ts';
 
-const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite'];
+const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite', 'search'];
 
 export function navigateTo(screenId: string) {
   if (!VALID_SCREENS.includes(screenId)) screenId = 'home';
@@ -46,6 +46,9 @@ export function navigateTo(screenId: string) {
     const container = document.getElementById('invite-content');
     if (container) loadInviteScreen(container);
   }
+  if (screenId === 'search') {
+    import('../search.ts').then(({ renderSearchScreen }) => renderSearchScreen()).catch(e => console.error('[search]', e));
+  }
 }
 
 // Bottom nav wiring
@@ -73,6 +76,8 @@ document.addEventListener('click', (e: Event) => {
     if (tier) subscribe(tier);
   } else if (action === 'arsenal') {
     navigateTo('arsenal');
+  } else if (action === 'global-search') {
+    navigateTo('search');
   } else if (action === 'spectate-live') {
     const debateId = el.dataset.debateId;
     if (debateId) {
