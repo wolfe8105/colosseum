@@ -52,7 +52,7 @@ html,body{height:100%;overflow:hidden}
 #screen-arena,#screen-profile,#screen-shop,#screen-leaderboard,#screen-search{touch-action:auto}
 #screen-search{padding:12px}
 #screen-dm{touch-action:auto}
-#screen-dm.active{display:flex}
+#screen-dm.active{display:flex;flex-direction:column;padding-bottom:0}
 .section-banner{text-align:center;padding:20px 16px}
 .section-banner h2{font-family:var(--mod-font-ui);font-size:22px;letter-spacing:3px;color:var(--mod-text-heading)}
 .section-banner .subtitle{font-size:13px;color:var(--mod-text-muted);margin-top:4px}
@@ -622,7 +622,7 @@ html,body{height:100%;overflow:hidden}
 <div class="screen" id="screen-search"></div>
 
 <!-- Direct Messages -->
-<div class="screen" id="screen-dm" style="padding-bottom:0;display:flex;flex-direction:column;"></div>
+<div class="screen" id="screen-dm"></div>
 
 <!-- ===== DESKTOP PANEL (≥1024px) ===== -->
 <aside id="desktop-panel">
