@@ -451,6 +451,10 @@ body {
   'use strict';
 
   var SUPABASE_URL = 'https://faomczmipsccwbhpivmp.supabase.co';
+  // ROTATION NOTE: This anon key must match src/config.ts SUPABASE_ANON_KEY.
+  // If SUPABASE_ANON_KEY is rotated in config.ts, update this file AND
+  // moderator-challenge.html at the same time.
+  // Current value verified against config.ts: 2026-04-20
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhb21jem1pcHNjY3diaHBpdm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxOTM4NzIsImV4cCI6MjA4Nzc2OTg3Mn0.d11AoWVu074DHo3vjVNNOA-1DT8KaoAXF340ysLoHYI';
 
   var sb = supabase.createClient(SUPABASE_URL, ANON_KEY);
