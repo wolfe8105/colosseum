@@ -6,7 +6,7 @@ All findings are based on actual file reads — every verdict maps to a specific
 ## GitHub Token
 
 ```
-GITHUB_TOKEN=PASTE_YOUR_TOKEN_HERE
+GITHUB_TOKEN=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
 ```
 
 ## How to use these
