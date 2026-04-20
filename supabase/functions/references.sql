@@ -36,6 +36,7 @@ CREATE OR REPLACE FUNCTION public._recompute_reference_rarity_and_power(p_ref_id
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -120,6 +121,7 @@ CREATE OR REPLACE FUNCTION public.challenge_reference(p_reference_id uuid, p_deb
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -211,6 +213,7 @@ CREATE OR REPLACE FUNCTION public.challenge_reference(p_ref_id uuid, p_grounds t
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -378,6 +381,7 @@ CREATE OR REPLACE FUNCTION public.cite_debate_reference(p_debate_id uuid, p_refe
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -550,6 +554,7 @@ CREATE OR REPLACE FUNCTION public.cite_reference(p_reference_id uuid, p_debate_i
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -568,6 +573,7 @@ CREATE OR REPLACE FUNCTION public.delete_reference(p_ref_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -626,6 +632,7 @@ CREATE OR REPLACE FUNCTION public.edit_reference(p_reference_id uuid, p_claim te
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -728,6 +735,7 @@ CREATE OR REPLACE FUNCTION public.edit_reference(p_ref_id uuid, p_source_title t
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -823,6 +831,7 @@ CREATE OR REPLACE FUNCTION public.file_reference_challenge(p_debate_id uuid, p_r
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -858,6 +867,7 @@ CREATE OR REPLACE FUNCTION public.forge_reference(p_claim text, p_url text, p_au
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -934,6 +944,7 @@ CREATE OR REPLACE FUNCTION public.forge_reference(p_source_title text, p_source_
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1030,6 +1041,7 @@ CREATE OR REPLACE FUNCTION public.get_debate_references(p_debate_id uuid)
  RETURNS TABLE(id uuid, debate_id uuid, submitter_id uuid, round integer, url text, description text, supports_side text, ruling text, ruling_reason text, ruled_by uuid, created_at timestamp with time zone, ruled_at timestamp with time zone, submitter_name text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1060,6 +1072,7 @@ CREATE OR REPLACE FUNCTION public.get_my_arsenal()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1089,6 +1102,7 @@ CREATE OR REPLACE FUNCTION public.get_reference_library(p_category text DEFAULT 
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1117,6 +1131,7 @@ CREATE OR REPLACE FUNCTION public.rule_on_reference(p_reference_id uuid, p_rulin
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1201,6 +1216,7 @@ CREATE OR REPLACE FUNCTION public.rule_on_reference(p_challenge_id uuid, p_rulin
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1312,6 +1328,7 @@ CREATE OR REPLACE FUNCTION public.second_reference(p_ref_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1387,6 +1404,7 @@ CREATE OR REPLACE FUNCTION public.submit_reference(p_debate_id uuid, p_content t
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE

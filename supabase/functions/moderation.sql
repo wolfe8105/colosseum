@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.assign_moderator(p_debate_id uuid, p_moderator
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -119,6 +120,7 @@ CREATE OR REPLACE FUNCTION public.assign_moderator(p_debate_id uuid, p_moderator
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -219,6 +221,7 @@ CREATE OR REPLACE FUNCTION public.browse_mod_queue()
  RETURNS TABLE(debate_id uuid, topic text, category text, mode text, created_at timestamp with time zone, debater_a_name text, debater_b_name text, mod_status text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -263,6 +266,7 @@ CREATE OR REPLACE FUNCTION public.cancel_mod_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -304,6 +308,7 @@ CREATE OR REPLACE FUNCTION public.check_mod_cooldown(p_moderator_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -363,6 +368,7 @@ CREATE OR REPLACE FUNCTION public.check_mod_debate(p_debate_id uuid)
  RETURNS TABLE(status text, debater_a_id uuid, debater_a_name text, debater_b_id uuid, debater_b_name text, topic text, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -418,6 +424,7 @@ CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text DEFAULT 'text'::
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -479,6 +486,7 @@ CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text DEFAULT 'text'::
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -573,6 +581,7 @@ CREATE OR REPLACE FUNCTION public.create_mod_debate(p_mode text, p_topic text DE
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -643,6 +652,7 @@ CREATE OR REPLACE FUNCTION public.get_available_moderators(p_exclude_ids uuid[] 
  RETURNS TABLE(id uuid, display_name text, username text, mod_rating numeric, mod_debates_total integer, mod_approval_pct numeric, avatar_url text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -683,6 +693,7 @@ CREATE OR REPLACE FUNCTION public.get_mod_profile(p_moderator_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -729,6 +740,7 @@ CREATE OR REPLACE FUNCTION public.join_mod_debate(p_join_code text)
  RETURNS TABLE(debate_id uuid, role text, status text, topic text, mode text, ranked boolean, moderator_name text, opponent_name text, opponent_id uuid, opponent_elo integer, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -814,6 +826,7 @@ CREATE OR REPLACE FUNCTION public.mod_null_debate(p_debate_id uuid, p_reason tex
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -870,6 +883,7 @@ CREATE OR REPLACE FUNCTION public.record_mod_dropout(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1010,6 +1024,7 @@ CREATE OR REPLACE FUNCTION public.request_mod_for_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1058,6 +1073,7 @@ CREATE OR REPLACE FUNCTION public.request_to_moderate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1123,6 +1139,7 @@ CREATE OR REPLACE FUNCTION public.respond_to_mod_request(p_debate_id uuid, p_acc
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1205,6 +1222,7 @@ CREATE OR REPLACE FUNCTION public.score_moderator(p_debate_id uuid, p_score inte
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1289,6 +1307,7 @@ CREATE OR REPLACE FUNCTION public.toggle_mod_available(p_available boolean)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1318,6 +1337,7 @@ CREATE OR REPLACE FUNCTION public.toggle_moderator_status(p_enabled boolean)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1349,6 +1369,7 @@ CREATE OR REPLACE FUNCTION public.update_mod_categories(p_categories text[])
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
