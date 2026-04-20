@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.ban_group_member(p_group_id uuid, p_user_id uu
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -75,6 +76,7 @@ CREATE OR REPLACE FUNCTION public.create_group(p_name text, p_description text D
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -122,6 +124,7 @@ CREATE OR REPLACE FUNCTION public.create_group_challenge(p_challenger_group_id u
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -208,6 +211,7 @@ CREATE OR REPLACE FUNCTION public.discover_groups(p_limit integer DEFAULT 20, p_
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -242,6 +246,7 @@ CREATE OR REPLACE FUNCTION public.get_group_challenges(p_group_id uuid, p_status
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -302,6 +307,7 @@ CREATE OR REPLACE FUNCTION public.get_group_details(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -350,6 +356,7 @@ CREATE OR REPLACE FUNCTION public.get_group_leaderboard(p_limit integer DEFAULT 
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -385,6 +392,7 @@ CREATE OR REPLACE FUNCTION public.get_group_members(p_group_id uuid, p_limit int
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -452,6 +460,7 @@ CREATE OR REPLACE FUNCTION public.get_my_groups()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -505,6 +514,7 @@ CREATE OR REPLACE FUNCTION public.join_group(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -562,6 +572,7 @@ CREATE OR REPLACE FUNCTION public.kick_group_member(p_group_id uuid, p_user_id u
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -613,6 +624,7 @@ CREATE OR REPLACE FUNCTION public.leave_group(p_group_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -669,6 +681,7 @@ CREATE OR REPLACE FUNCTION public.promote_group_member(p_group_id uuid, p_user_i
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -751,6 +764,7 @@ CREATE OR REPLACE FUNCTION public.resolve_group_challenge(p_challenge_id uuid, p
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -885,6 +899,7 @@ CREATE OR REPLACE FUNCTION public.respond_to_group_challenge(p_challenge_id uuid
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -941,6 +956,7 @@ CREATE OR REPLACE FUNCTION public.unban_group_member(p_group_id uuid, p_user_id 
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
