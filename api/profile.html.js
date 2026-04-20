@@ -88,7 +88,7 @@ export function buildProfileHtml(profile) {
 
 <!-- TOP BAR -->
 <div class="top-bar">
-  <a href="${BASE_URL}" class="logo"><span class="the">THE</span>COLOSSEUM</a>
+  <a href="${BASE_URL}" class="logo"><span class="the">THE</span>MODERATOR</a>
   <a href="${BASE_URL}/login" class="join-btn">JOIN THE ARENA</a>
 </div>
 
@@ -207,7 +207,7 @@ a{
 </style>
 </head>
 <body>
-  <h1>GLADIATOR NOT FOUND</h1>
+  <h1>DEBATER NOT FOUND</h1>
   <p>"${safe}" hasn't entered the arena yet.</p>
   <a href="${BASE_URL}">Enter The Moderator</a>
 </body>

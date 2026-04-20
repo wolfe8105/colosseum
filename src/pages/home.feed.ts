@@ -74,7 +74,17 @@ export async function renderFeed(): Promise<void> {
       </div>`;
   }
 
+  html += ModeratorAsync.getComposerHTML();
   html += '<div id="hot-takes-feed"></div>';
   feedEl.innerHTML = html;
+
+  const input = document.getElementById('hot-take-input') as HTMLInputElement | null;
+  const counter = document.getElementById('take-char-count');
+  if (input && counter) {
+    input.addEventListener('input', () => {
+      counter.textContent = input.value.length + ' / 280';
+    });
+  }
+
   ModeratorAsync.loadHotTakes('all');
 }

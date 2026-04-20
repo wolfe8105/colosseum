@@ -8,11 +8,12 @@
 export function getProfileCSS() {
   return `
 :root {
-  --bg-1:#1a2d4a;--bg-2:#2d5a8e;--bg-3:#5b8abf;--bg-4:#7aa3d4;--bg-5:#3d5a80;
-  --navy:#0a1628;--navy-light:#132240;--navy-mid:#1a2d4a;
-  --card-bg:rgba(10,17,40,0.6);--card-border:rgba(255,255,255,0.22);--card-border-hover:rgba(255,255,255,0.4);
-  --red:#cc2936;--red-hover:#e63946;--gold:#d4a843;--gold-dim:#b8922e;
-  --white:#f0f0f0;--white-dim:#a0a8b8;--success:#2ecc71;--error:#e74c3c;
+  --bg-1:#000000;--bg-2:#0a0a10;--bg-3:#161c26;--bg-4:#1c2230;--bg-5:#0e0e14;
+  --navy:#000000;--navy-light:#161c26;--navy-mid:#0a0a10;
+  --card-bg:rgba(22,28,38,0.78);--card-border:rgba(255,255,255,0.22);--card-border-hover:rgba(255,255,255,0.4);
+  --red:#ff1a75;--red-hover:#ff3d8e;--gold:#d4a843;--gold-dim:#b8922e;
+  --cyan:#00ffee;--magenta:#ff1a75;
+  --white:#e8eaf0;--white-dim:#7a8298;--success:#2ecc71;--error:#e74c3c;
   --font-display:'Cinzel',serif;--font-body:'Barlow Condensed',sans-serif;
   --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -25,8 +26,8 @@ body{
   display:flex;flex-direction:column;align-items:center;
   padding:0 0 calc(40px + var(--safe-bottom));
 }
-body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg,#1a2d4a 0%,#2d5a8e 25%,#5b8abf 50%,#7aa3d4 70%,#3d5a80 100%);z-index:-2}
-body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(212,168,67,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(204,41,54,0.04) 0%,transparent 50%);z-index:-1}
+body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg,#000000 0%,#0a0a10 25%,#161c26 50%,#0e0e14 70%,#000000 100%);z-index:-2}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(0,255,238,0.03) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(255,26,117,0.03) 0%,transparent 50%);z-index:-1}
 
 /* TOP BAR */
 .top-bar{
