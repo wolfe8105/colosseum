@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.create_prediction_question(p_topic text, p_sid
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -70,6 +71,7 @@ CREATE OR REPLACE FUNCTION public.get_debate_predictions(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -103,6 +105,7 @@ CREATE OR REPLACE FUNCTION public.get_hot_predictions(p_limit integer DEFAULT 10
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -146,6 +149,7 @@ CREATE OR REPLACE FUNCTION public.get_prediction_questions(p_limit integer DEFAU
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -184,6 +188,7 @@ CREATE OR REPLACE FUNCTION public.get_stake_pool(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -231,6 +236,7 @@ CREATE OR REPLACE FUNCTION public.pick_prediction(p_question_id uuid, p_pick tex
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -297,6 +303,7 @@ CREATE OR REPLACE FUNCTION public.place_prediction(p_debate_id uuid, p_predicted
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -382,6 +389,7 @@ CREATE OR REPLACE FUNCTION public.place_stake(p_debate_id uuid, p_side text, p_a
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -527,6 +535,7 @@ CREATE OR REPLACE FUNCTION public.settle_stakes(p_debate_id uuid, p_winner text,
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE

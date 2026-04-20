@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public._notify_user(p_user_id uuid, p_type text, p_ti
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -29,6 +30,7 @@ CREATE OR REPLACE FUNCTION public.cleanup_notifications()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -57,6 +59,7 @@ CREATE OR REPLACE FUNCTION public.mark_notifications_read(p_notification_ids uui
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -95,6 +98,7 @@ CREATE OR REPLACE FUNCTION public.notify_new_follower()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE

@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.buy_power_up(p_power_up_id text, p_quantity in
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -108,6 +109,7 @@ CREATE OR REPLACE FUNCTION public.claim_action_tokens(p_action text, p_reference
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -228,6 +230,7 @@ CREATE OR REPLACE FUNCTION public.claim_daily_tokens()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -287,6 +290,7 @@ CREATE OR REPLACE FUNCTION public.claim_debate_tokens(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -435,6 +439,7 @@ CREATE OR REPLACE FUNCTION public.credit_tokens(p_user_id uuid, p_amount integer
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -478,6 +483,7 @@ CREATE OR REPLACE FUNCTION public.debit_tokens(p_user_id uuid, p_amount integer,
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -527,6 +533,7 @@ CREATE OR REPLACE FUNCTION public.earn_tokens(p_reason text, p_reference_id uuid
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -608,6 +615,7 @@ CREATE OR REPLACE FUNCTION public.get_my_power_ups(p_debate_id uuid DEFAULT NULL
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -660,6 +668,7 @@ CREATE OR REPLACE FUNCTION public.get_my_token_summary()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -709,6 +718,7 @@ CREATE OR REPLACE FUNCTION public.pay_reference_royalties(p_debate_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -880,6 +890,7 @@ CREATE OR REPLACE FUNCTION public.purge_old_stripe_events()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN

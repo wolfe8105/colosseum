@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.auto_grant_depth_cosmetics()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -51,6 +52,7 @@ CREATE OR REPLACE FUNCTION public.check_achievements()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -136,6 +138,7 @@ CREATE OR REPLACE FUNCTION public.claim_daily_login()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -230,6 +233,7 @@ CREATE OR REPLACE FUNCTION public.claim_milestone(p_milestone_key text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -325,6 +329,7 @@ CREATE OR REPLACE FUNCTION public.claim_section_reward(p_section_id text)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -396,6 +401,7 @@ CREATE OR REPLACE FUNCTION public.declare_rival(p_target_id uuid, p_message text
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -449,6 +455,7 @@ CREATE OR REPLACE FUNCTION public.equip_cosmetic(p_cosmetic_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -509,6 +516,7 @@ CREATE OR REPLACE FUNCTION public.follow_user(p_target_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -550,6 +558,7 @@ CREATE OR REPLACE FUNCTION public.get_cosmetic_catalog()
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, unlock_type text, token_cost integer, depth_threshold numeric, unlock_condition text, asset_url text, sort_order integer, owned boolean, equipped boolean, acquired_via text, metadata jsonb)
  LANGUAGE sql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
   SELECT
@@ -579,6 +588,7 @@ CREATE OR REPLACE FUNCTION public.get_follow_counts(p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -594,6 +604,7 @@ CREATE OR REPLACE FUNCTION public.get_my_cosmetics()
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, unlock_type text, token_cost integer, depth_threshold numeric, unlock_condition text, asset_url text, sort_order integer, acquired_via text, equipped boolean, metadata jsonb, acquired_at timestamp with time zone)
  LANGUAGE sql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
   SELECT
@@ -622,6 +633,7 @@ CREATE OR REPLACE FUNCTION public.get_my_milestones()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -657,6 +669,7 @@ CREATE OR REPLACE FUNCTION public.get_my_rivals()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -696,6 +709,7 @@ CREATE OR REPLACE FUNCTION public.get_own_profile()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -725,6 +739,7 @@ CREATE OR REPLACE FUNCTION public.get_public_cosmetics(p_user_id uuid)
  RETURNS TABLE(cosmetic_id uuid, name text, category text, tier integer, asset_url text, acquired_via text, metadata jsonb, acquired_at timestamp with time zone)
  LANGUAGE sql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
   SELECT
@@ -751,6 +766,7 @@ CREATE OR REPLACE FUNCTION public.get_public_profile(p_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -884,6 +900,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -918,6 +935,7 @@ CREATE OR REPLACE FUNCTION public.increment_questions_answered(p_count integer)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -980,6 +998,7 @@ CREATE OR REPLACE FUNCTION public.is_following(p_target_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -994,6 +1013,7 @@ CREATE OR REPLACE FUNCTION public.purchase_cosmetic(p_cosmetic_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1065,6 +1085,7 @@ CREATE OR REPLACE FUNCTION public.respond_rival(p_rival_id uuid, p_accept boolea
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1107,6 +1128,7 @@ CREATE OR REPLACE FUNCTION public.save_profile_depth(p_section_id text, p_answer
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1163,6 +1185,7 @@ CREATE OR REPLACE FUNCTION public.save_user_settings(p_notif_challenge boolean D
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1217,6 +1240,7 @@ CREATE OR REPLACE FUNCTION public.search_users_by_username(p_query text)
  RETURNS TABLE(id uuid, username text, display_name text, elo_rating integer)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1235,6 +1259,7 @@ CREATE OR REPLACE FUNCTION public.set_profile_dob(p_dob date)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1264,6 +1289,7 @@ CREATE OR REPLACE FUNCTION public.soft_delete_account()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1287,6 +1313,7 @@ CREATE OR REPLACE FUNCTION public.unequip_cosmetic(p_cosmetic_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1309,6 +1336,7 @@ CREATE OR REPLACE FUNCTION public.unfollow_user(p_target_user_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1340,6 +1368,7 @@ CREATE OR REPLACE FUNCTION public.update_profile(p_display_name text DEFAULT NUL
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1419,6 +1448,7 @@ CREATE OR REPLACE FUNCTION public.update_profile(p_display_name text DEFAULT NUL
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1509,6 +1539,7 @@ CREATE OR REPLACE FUNCTION public.update_settings(p_notif_challenges boolean DEF
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE

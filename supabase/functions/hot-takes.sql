@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.cast_landing_vote(p_topic_slug text, p_side te
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -30,6 +31,7 @@ CREATE OR REPLACE FUNCTION public.cast_landing_vote(p_topic text, p_side text)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -68,6 +70,7 @@ CREATE OR REPLACE FUNCTION public.create_challenge(p_hot_take_id uuid, p_counter
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -184,6 +187,7 @@ CREATE OR REPLACE FUNCTION public.create_hot_take(p_content text, p_section text
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -250,6 +254,7 @@ CREATE OR REPLACE FUNCTION public.create_voice_take(p_section text DEFAULT 'tren
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -291,6 +296,7 @@ CREATE OR REPLACE FUNCTION public.get_landing_vote_counts(p_topic_slug text)
  RETURNS TABLE(yes_count bigint, no_count bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -308,6 +314,7 @@ CREATE OR REPLACE FUNCTION public.get_landing_votes(p_topics text[])
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -329,6 +336,7 @@ CREATE OR REPLACE FUNCTION public.get_pending_challenges()
  RETURNS TABLE(debate_id uuid, mode text, topic text, ranked boolean, challenger_name text, challenger_id uuid, challenger_elo integer, created_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -362,6 +370,7 @@ CREATE OR REPLACE FUNCTION public.react_hot_take(p_hot_take_id uuid, p_reaction_
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -441,6 +450,7 @@ CREATE OR REPLACE FUNCTION public.update_reaction_count()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN

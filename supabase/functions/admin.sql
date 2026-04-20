@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.check_rate_limit(p_user_id uuid, p_action text
  RETURNS boolean
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -57,6 +58,7 @@ CREATE OR REPLACE FUNCTION public.get_app_config()
  RETURNS jsonb
  LANGUAGE sql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
   SELECT jsonb_object_agg(key, value) FROM app_config;
@@ -67,6 +69,7 @@ CREATE OR REPLACE FUNCTION public.get_leaderboard(p_sort_by text DEFAULT 'elo'::
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -126,6 +129,7 @@ CREATE OR REPLACE FUNCTION public.log_event(p_event_type text, p_user_id uuid DE
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -143,6 +147,7 @@ CREATE OR REPLACE FUNCTION public.run_daily_snapshot()
  RETURNS integer
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -279,6 +284,7 @@ CREATE OR REPLACE FUNCTION public.submit_report(p_reported_user_id uuid DEFAULT 
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
