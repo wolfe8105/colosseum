@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.activate_power_up(p_debate_id uuid, p_power_up
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -51,6 +52,7 @@ CREATE OR REPLACE FUNCTION public.advance_round(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -114,6 +116,7 @@ CREATE OR REPLACE FUNCTION public.broadcast_feed_event()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -140,6 +143,7 @@ CREATE OR REPLACE FUNCTION public.bump_spectator_count(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -160,6 +164,7 @@ CREATE OR REPLACE FUNCTION public.calculate_elo(rating_a integer, rating_b integ
  RETURNS TABLE(new_rating_a integer, new_rating_b integer, change_a integer, change_b integer)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -219,6 +224,7 @@ CREATE OR REPLACE FUNCTION public.cancel_private_lobby(p_debate_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -245,6 +251,7 @@ CREATE OR REPLACE FUNCTION public.cast_sentiment_vote(p_debate_id uuid, p_side t
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -292,6 +299,7 @@ CREATE OR REPLACE FUNCTION public.cast_vote(p_debate_id uuid, p_voted_for text, 
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -371,6 +379,7 @@ CREATE OR REPLACE FUNCTION public.check_match_acceptance(p_debate_id uuid)
  RETURNS TABLE(player_a_ready boolean, player_b_ready boolean, status text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -396,6 +405,7 @@ CREATE OR REPLACE FUNCTION public.check_private_lobby(p_debate_id uuid)
  RETURNS TABLE(status text, opponent_id uuid, opponent_name text, opponent_elo integer, player_b_ready boolean, total_rounds integer, language text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -442,6 +452,7 @@ CREATE OR REPLACE FUNCTION public.check_queue_status()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -499,6 +510,7 @@ CREATE OR REPLACE FUNCTION public.check_ranked_eligible()
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -529,6 +541,7 @@ CREATE OR REPLACE FUNCTION public.create_ai_debate(p_category text DEFAULT NULL:
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -560,6 +573,7 @@ CREATE OR REPLACE FUNCTION public.create_debate(p_topic text, p_category text DE
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -622,6 +636,7 @@ CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -691,6 +706,7 @@ CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -760,6 +776,7 @@ CREATE OR REPLACE FUNCTION public.create_private_lobby(p_mode text, p_topic text
  RETURNS TABLE(debate_id uuid, join_code text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -834,6 +851,7 @@ CREATE OR REPLACE FUNCTION public.equip_power_up(p_debate_id uuid, p_power_up_id
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -924,6 +942,7 @@ CREATE OR REPLACE FUNCTION public.expire_stale_queue()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -937,6 +956,7 @@ CREATE OR REPLACE FUNCTION public.finalize_async_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -983,6 +1003,7 @@ CREATE OR REPLACE FUNCTION public.finalize_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1157,6 +1178,7 @@ CREATE OR REPLACE FUNCTION public.get_arena_debate_spectator(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1211,6 +1233,7 @@ CREATE OR REPLACE FUNCTION public.get_arena_feed(p_limit integer DEFAULT 20, p_c
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1262,6 +1285,7 @@ CREATE OR REPLACE FUNCTION public.get_arena_feed(p_limit integer DEFAULT 20)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1314,6 +1338,7 @@ CREATE OR REPLACE FUNCTION public.get_category_counts()
  RETURNS TABLE(section text, live_debates bigint, hot_takes bigint)
  LANGUAGE sql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
   SELECT
@@ -1349,6 +1374,7 @@ CREATE OR REPLACE FUNCTION public.get_challenge_preview(p_join_code text)
  RETURNS TABLE(debate_id uuid, topic text, category text, mode text, status text, challenger_username text, challenger_display_name text, challenger_elo integer, created_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1376,6 +1402,7 @@ CREATE OR REPLACE FUNCTION public.get_debate_messages(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1391,6 +1418,7 @@ CREATE OR REPLACE FUNCTION public.get_debate_mod_status(p_debate_id uuid)
  RETURNS TABLE(mod_status text, mod_requested_by uuid, moderator_id uuid, moderator_display_name text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1429,6 +1457,7 @@ CREATE OR REPLACE FUNCTION public.get_debate_replay_data(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1521,6 +1550,7 @@ CREATE OR REPLACE FUNCTION public.get_feed_events(p_debate_id uuid, p_after time
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1549,6 +1579,7 @@ CREATE OR REPLACE FUNCTION public.get_live_debates(p_category text DEFAULT NULL:
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1587,6 +1618,7 @@ CREATE OR REPLACE FUNCTION public.get_my_debate_loadout(p_debate_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1629,6 +1661,7 @@ CREATE OR REPLACE FUNCTION public.get_opponent_power_ups(p_debate_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1682,6 +1715,7 @@ CREATE OR REPLACE FUNCTION public.get_spectator_chat(p_debate_id uuid, p_limit i
  RETURNS TABLE(id uuid, user_id uuid, display_name text, avatar_url text, message text, created_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -1706,6 +1740,7 @@ CREATE OR REPLACE FUNCTION public.insert_feed_event(p_debate_id uuid, p_event_ty
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1799,6 +1834,7 @@ CREATE OR REPLACE FUNCTION public.join_async_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1843,6 +1879,7 @@ CREATE OR REPLACE FUNCTION public.join_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -1884,6 +1921,7 @@ CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2001,6 +2039,7 @@ CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2143,6 +2182,7 @@ CREATE OR REPLACE FUNCTION public.join_debate_queue(p_mode text, p_category text
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2267,6 +2307,7 @@ CREATE OR REPLACE FUNCTION public.join_private_lobby(p_debate_id uuid DEFAULT NU
  RETURNS TABLE(debate_id uuid, status text, topic text, mode text, opponent_name text, opponent_id uuid, opponent_elo integer, ruleset text, total_rounds integer, language text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2356,6 +2397,7 @@ CREATE OR REPLACE FUNCTION public.leave_debate_queue()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 BEGIN
@@ -2368,6 +2410,7 @@ CREATE OR REPLACE FUNCTION public.pin_feed_event(p_debate_id uuid, p_feed_event_
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2435,6 +2478,7 @@ CREATE OR REPLACE FUNCTION public.respond_to_match(p_debate_id uuid, p_accept bo
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2474,6 +2518,7 @@ CREATE OR REPLACE FUNCTION public.save_ai_scorecard(p_debate_id uuid, p_scorecar
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2513,6 +2558,7 @@ CREATE OR REPLACE FUNCTION public.save_debate_loadout(p_debate_id uuid, p_refere
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2577,6 +2623,7 @@ CREATE OR REPLACE FUNCTION public.score_debate_comment(p_debate_id uuid, p_feed_
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2742,6 +2789,7 @@ CREATE OR REPLACE FUNCTION public.send_spectator_chat(p_debate_id uuid, p_messag
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2839,6 +2887,7 @@ CREATE OR REPLACE FUNCTION public.start_debate(p_debate_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2873,6 +2922,7 @@ CREATE OR REPLACE FUNCTION public.submit_async_round(p_debate_id uuid, p_content
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -2967,6 +3017,7 @@ CREATE OR REPLACE FUNCTION public.submit_debate_message(p_debate_id uuid, p_roun
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -3012,6 +3063,7 @@ CREATE OR REPLACE FUNCTION public.update_arena_debate(p_debate_id uuid, p_status
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -3207,6 +3259,7 @@ CREATE OR REPLACE FUNCTION public.vote_arena_debate(p_debate_id uuid, p_vote tex
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
@@ -3241,6 +3294,7 @@ CREATE OR REPLACE FUNCTION public.vote_async_debate(p_debate_id uuid, p_voted_fo
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $function$
 
 DECLARE
