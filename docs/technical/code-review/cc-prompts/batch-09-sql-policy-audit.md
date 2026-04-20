@@ -8,14 +8,19 @@
 
 ## SETUP
 
+Read the GitHub token from the repo README:
 ```bash
-git clone https://GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
+```
+
+Then clone and configure:
+```bash
+git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
 cd colosseum
-git remote set-url origin https://GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
 ```
 
 ---
-
 ## MANDATORY FILE READ VERIFICATION
 
   Step 1: `wc -l <filename>`. Step 2: read file. Step 3: confirm line count.

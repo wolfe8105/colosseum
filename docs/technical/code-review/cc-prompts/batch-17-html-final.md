@@ -10,10 +10,16 @@ be committed before this runs — Batch 17 is the completion and verification ba
 
 ## SETUP
 
+Read the GitHub token from the repo README:
 ```bash
-git clone https://GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+TOKEN=$(grep "GITHUB_TOKEN=" docs/technical/code-review/README.md | cut -d'=' -f2)
+```
+
+Then clone and configure:
+```bash
+git clone https://${TOKEN}@github.com/wolfe8105/colosseum.git
 cd colosseum
-git remote set-url origin https://GITHUB_TOKEN@github.com/wolfe8105/colosseum.git
+git remote set-url origin https://${TOKEN}@github.com/wolfe8105/colosseum.git
 ```
 
 ---
