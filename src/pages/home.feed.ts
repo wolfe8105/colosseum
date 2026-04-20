@@ -7,6 +7,22 @@ import { bountyDot } from '../bounties.ts';
 import { ModeratorAsync } from '../async.ts';
 import type { LiveDebate } from './home.types.ts';
 
+/** Raw shape returned by the arena_debates Supabase query with joined profiles */
+interface ArenaDebateRow {
+  id: string;
+  topic: string;
+  category: string;
+  status: string;
+  mode: string;
+  spectator_count: number;
+  current_round: number;
+  max_rounds: number;
+  debater_a: string | null;
+  debater_b: string | null;
+  debater_a_profile: { display_name: string | null; username: string | null }[] | null;
+  debater_b_profile: { display_name: string | null; username: string | null }[] | null;
+}
+
 async function fetchLiveDebates(): Promise<LiveDebate[]> {
   const sb = getSupabaseClient();
   if (!sb || getIsPlaceholderMode()) return [];
@@ -18,7 +34,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
       .order('created_at', { ascending: false })
       .limit(5);
     if (error || !data) return [];
-    return data.map((d: { id: string; topic: string; category: string; status: string; mode: string; spectator_count: number; current_round: number; max_rounds: number; debater_a: string | null; debater_b: string | null; debater_a_profile: { display_name: string | null; username: string | null } | null; debater_b_profile: { display_name: string | null; username: string | null } | null }) => ({
+    return (data as ArenaDebateRow[]).map((d) => ({
       id: d.id,
       topic: d.topic,
       category: d.category,
@@ -29,8 +45,8 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
       max_rounds: d.max_rounds || 5,
       debater_a_id: d.debater_a ?? null,
       debater_b_id: d.debater_b ?? null,
-      debater_a_name: d.debater_a_profile?.display_name || d.debater_a_profile?.username || 'Debater A',
-      debater_b_name: d.debater_b_profile?.display_name || d.debater_b_profile?.username || 'Debater B',
+      debater_a_name: d.debater_a_profile?.[0]?.display_name || d.debater_a_profile?.[0]?.username || 'Debater A',
+      debater_b_name: d.debater_b_profile?.[0]?.display_name || d.debater_b_profile?.[0]?.username || 'Debater B',
     }));
   } catch (e) {
     console.error('fetchLiveDebates error:', e);
