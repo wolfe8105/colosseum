@@ -182,6 +182,20 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-65 | Vote velocity detection (invisible fraud) | | ✅ SHIPPED S295 | Invisible velocity analysis in `vote_arena_debate`. >5 same-side votes within 10 seconds flags the debate (`velocity_flagged_at`, `velocity_flag_count`). Logs `vote_velocity_flag` event. Zero friction — votes still go through. New index `idx_arena_votes_velocity`. New column `arena_votes.voted_at`. Admin review via query on `velocity_flagged_at IS NOT NULL`. LM-230 documents thresholds. |
 | F-66 | Friction-right security strategy | | ✅ SHIPPED S295 | Philosophy doc at `docs/technical/THE-MODERATOR-FRICTION-RIGHT-STRATEGY.md`. 4-layer defense: L1 Cloudflare Turnstile (not yet implemented — plan documented), L2 SQL depth gates (F-63/F-64 shipped), L3 invisible velocity (F-65 shipped), L4 rate_limits coverage audit (4 priority gaps identified: vote_arena_debate, spectator_chat, forge_reference, create_group). No CAPTCHAs ever. |
 
+## 3L. S295 Pat's List
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-69 | Create a reference (E2E test) | | 📋 S295 | Forge a reference via the Arsenal, verify it appears in My Arsenal, then equip it to a loadout and confirm it shows in the pre-debate loadout picker. Full round-trip test. |
+| F-70 | Social media links in profile | | 📋 S295 | Add optional social media links (Twitter/X, TikTok, Instagram, YouTube, etc.) to user profiles. Display on public profile page. Stored in `profiles` or `user_settings`. Must sanitize URLs. No auto-verification. |
+| F-71 | Adult content / pornography policy | | 📋 S295 | What is the platform policy on NSFW content in debate topics, references, link cards? Needs a clear decision and enforcement mechanism (content flag, report flow, auto-moderation, or hard block). |
+| F-72 | Minor safety — USA/EU compliance | | 📋 S295 | COPPA (USA, under 13), age gate enforcement, EU GDPR-K / Digital Services Act requirements. Current: Plinko has DOB step. Needs audit: is DOB actually enforced server-side? What data is collected on minors? Parental consent flow? |
+| F-73 | Placeholder audit — find all stubs needing real content | | 📋 S295 | Sweep all HTML/TS for placeholder text, lorem ipsum, "TODO", "FIXME", hardcoded sample data, or stub text that needs Pat to fill in real copy. Produce a checklist. |
+| F-74 | Landing page redesign — show the feed first | | 📋 S295 | Currently themoderator.app opens with "do you want to sign in." Pat wants the feed visible before login — make the first impression the content, not a gate. Feed may live in two places (pre-auth landing + post-auth home). |
+| F-75 | Login UX redesign — Google primary feels wrong | | 📋 S295 | Current login has Google OAuth as primary. Pat doesn't like it. Needs discussion: alternative layouts, email/password option prominence, Apple Sign-In, passkey option (ties to Security Roadmap Phase 1). |
+| F-76 | Google Play auto-signup flow | | 📋 S295 | When users download from Google Play, Android has a streamlined sign-up flow (Google One Tap / Credential Manager API). Can we integrate that so users are signed in immediately on first app launch? Ties to F-52 (TWA wrapper already submitted). |
+| F-77 | Create 6 link-card debates (seed content) | | 📋 S295 | Pat needs 6 debate cards posted with links: 2 from ESPN, 2 from Couples Court (CC), 1 from Twitter/X, 1 from TikTok. Uses F-62 link card + F-68 unified feed composer. Manual seed — not automated. |
+
 ---
 
 # SECTION 4: DEPENDENCY TIERS (build order)
