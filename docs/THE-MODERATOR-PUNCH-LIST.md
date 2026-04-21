@@ -147,7 +147,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
-| F-38 | Browser extension ("Take it to The Moderator") | | 🅿️ Session 182 | Concept: browser button lets users pull arguments from Reddit/Twitter into the platform for a proper debate. War Plan §4.6 + OT §8.5.4. No technical design, no wireframe, no auth flow spec. **Parked: blocked on 50+ organic users.** |
+| F-38 | Browser extension ("Take it to The Moderator") | | ❌ SCRATCHED S293 | Replaced by F-49 `/go` — guest AI sparring landing page serves the same cold-traffic funnel without requiring an install. Original concept was companion to bot army (scratched S248). |
 | F-39 | Embeddable challenge links | | ✅ Session 182 | URL you paste into Reddit, Twitter, Discord, group chats. Format: `moderator.app/challenge?topic=X&user=Y`. Other person clicks, lands on challenge page (works without auth — guest sees OG tags with topic and challenger), signs up/logs in, auto-routed into private lobby. Extends F-46 infrastructure (create_private_lobby, join_private_lobby already exist). New work: public URL format, guest landing page with OG tags, signup flow that preserves challenge context, auto-routing after auth. Every link posted anywhere = user acquisition funnel. |
 | F-40 | Mirror pages with live counts | | ❌ Session 245 | **Scratched.** Mirror deprecated. SEO cannibalization risk (second indexable property competing with main app + /u/ profiles + /go for same keywords). /go owns cold-traffic funnel. Bot army quarantined S195, no traffic pointed at mirror recently. Disaster-recovery role not worth carrying a whole separate deployment. Mirror generator (`/opt/colosseum/colosseum-mirror-generator.js`) and Cloudflare Pages deployment (`colosseum-f30.pages.dev`) to be sunset. See Land Mine Map LM-202 for deprecation entry. NT/CLAUDE.md Ring 6 framing needs cleanup (not urgent). |
 | F-41 | Celebrity/influencer challenge events | | ❌ Session 182 | **Way back burner.** Conceptual. |
@@ -213,11 +213,10 @@ Features ordered by what can go first. Check this before picking work.
 - F-03 Entrance sequence / battle animations → needs F-31 + F-21
 
 **Tier 3 — blocked by external conditions:**
-- F-38 Browser extension → needs 50+ users
 - F-42 B2B data dashboard / API → needs a buyer
 - F-41 Celebrity/influencer events → way back burner
 
-**Scratched:** F-13, F-34
+**Scratched:** F-13, F-34, F-38
 
 ---
 
