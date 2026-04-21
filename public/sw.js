@@ -1,6 +1,6 @@
 // The Moderator — Service Worker
 // Strategy: network-first for HTML, cache-first for hashed assets, network-only for APIs
-const CACHE_VERSION = 'mod-v1';
+const CACHE_VERSION = 'mod-v2';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const SHELL_CACHE = CACHE_VERSION + '-shell';
 
