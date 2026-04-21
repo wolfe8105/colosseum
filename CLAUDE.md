@@ -193,5 +193,6 @@ Notes: Knip may OOM on this repo (pre-existing oxc-parser issue) — manual grep
 - `THE-MODERATOR-LAND-MINE-MAP.md` — 194+ documented pitfalls. **Read before any SQL, schema, auth, or deployment change.**
 - `THE-MODERATOR-PUNCH-LIST.md` — single source of truth for all open work
 - `THE-MODERATOR-WAR-CHEST.md` — B2B intelligence play
+- `THE-MODERATOR-FRICTION-RIGHT-STRATEGY.md` — 4-layer security philosophy (Turnstile, depth gates, velocity, rate limits)
 - `AUDIT-FINDINGS.md` — full audit findings (63 files, 0 High, 47 Medium, 86 Low)
 - `BUG-FIX-PATTERNS.md` — all findings grouped by pattern for sweep fixes
