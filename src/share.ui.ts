@@ -38,7 +38,7 @@ export function showPostDebatePrompt(result: ShareResultParams): void {
 
   modal.innerHTML = `
     <div style="
-      background:linear-gradient(180deg,#132240 /* TODO: needs CSS var token */ 0%,var(--mod-bg-base) 100%);
+      background:linear-gradient(180deg,var(--mod-bg-card) 0%,var(--mod-bg-base) 100%);
       border-top-left-radius:20px;border-top-right-radius:20px;
       width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));
       text-align:center;

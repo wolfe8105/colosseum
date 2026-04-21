@@ -35,7 +35,7 @@ export async function uploadVoiceMemo(blob: Blob, debateId: string | null): Prom
   if (!supabase || getIsPlaceholderMode()) {
     const url = URL.createObjectURL(blob);
     _fallbackObjectURLs.push(url);
-    console.log('[PLACEHOLDER] Voice memo stored locally:', url);
+    console.debug('[PLACEHOLDER] Voice memo stored locally:', url);
     return { url, path: 'placeholder/' + Date.now() + '.webm' };
   }
 

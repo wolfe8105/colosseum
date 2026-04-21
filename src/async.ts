@@ -117,14 +117,14 @@ export function init(): void {
 
 export function getComposerHTML(): string {
   return `
-    <div style="background:#132240; /* TODO: needs CSS var token */ border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:16px;">
+    <div style="background:var(--mod-bg-card); border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:16px;">
       <textarea id="hot-take-input" placeholder="Drop a hot take..." style="
         width:100%;background:var(--mod-bg-card);border:1px solid var(--mod-border-secondary);border-radius:10px;
         color:var(--mod-text-heading);padding:12px;font-size:14px;resize:none;height:60px;
         font-family:var(--mod-font-ui);margin-bottom:8px;box-sizing:border-box;
       " maxlength="280"></textarea>
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div id="take-char-count" style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">0 / 280</div>
+        <div id="take-char-count" style="font-size:11px;color:var(--mod-text-sub);">0 / 280</div>
         <button data-action="post-take" style="
           background:var(--mod-magenta);color:var(--mod-text-on-accent);border:none;border-radius:8px;
           padding:8px 20px;font-family:var(--mod-font-display);font-size:14px;

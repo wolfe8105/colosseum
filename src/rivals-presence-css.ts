@@ -26,7 +26,7 @@ export function injectRivalsPresenceCSS(): void {
       left: 50%;
       transform: translateX(-50%);
       z-index: 99998;
-      background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%); /* TODO: needs CSS var token */
+      background: linear-gradient(135deg, var(--mod-bg-card) 0%, var(--mod-bg-card) 50%, var(--mod-bg-card) 100%);
       border: 2px solid var(--mod-magenta);
       border-radius: 14px;
       padding: 18px 20px;

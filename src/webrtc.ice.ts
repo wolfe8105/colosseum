@@ -33,7 +33,7 @@ async function fetchTurnCredentials(): Promise<RTCIceServer[] | null> {
       return null;
     }
 
-    console.log('[WebRTC] TURN credentials acquired');
+    console.debug('[WebRTC] TURN credentials acquired');
     return body.iceServers as RTCIceServer[];
   } catch (err) {
     console.warn('[WebRTC] TURN credential fetch error:', err);

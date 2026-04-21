@@ -50,12 +50,12 @@ export function renderList(): string {
     const statLabel = currentTab === 'elo' ? 'ELO' : currentTab === 'wins' ? 'WINS' : '🔥';
 
     // LANDMINE [LM-LB-003]: medalColors and tierBorderMap contain hardcoded hex — TODO comments below.
-    const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: '#a8a8a8', 3: '#b87333' }; // TODO: needs CSS var token — silver, bronze
-    const rankColor = medalColors[p.rank] ?? '#6a7a90'; // TODO: needs CSS var token
+    const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: 'var(--mod-text-sub)', 3: 'var(--mod-gold)' };
+    const rankColor = medalColors[p.rank] ?? 'var(--mod-text-sub)';
 
     const tierBorderMap: Record<string, string> = {
       creator: 'var(--mod-accent)', champion: 'var(--mod-magenta)',
-      contender: '#2a5aab', // TODO: needs CSS var token
+      contender: 'var(--mod-side-b)',
       free: 'var(--mod-border-primary)',
     };
     const tierBorder = tierBorderMap[p.tier] ?? 'var(--mod-border-primary)';
@@ -77,11 +77,11 @@ export function renderList(): string {
         ">${escHtml(p.user[0] ?? '')}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.user)}${vgBadge(p.verified_gladiator)}${bountyDot(p.id)}</div>
-          <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
+          <div style="font-size:11px;color:var(--mod-text-sub);">LVL ${Number(p.level) || 1} · ${Number(p.wins) || 0}W/${Number(p.losses) || 0}L</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:${currentTab === 'streak' && p.streak >= 5 ? 'var(--mod-magenta)' : 'var(--mod-accent)'};">${Number(stat) || 0}</div>
-          <div style="font-size:9px;color:#6a7a90; /* TODO: needs CSS var token */letter-spacing:1px;">${statLabel}</div>
+          <div style="font-size:9px;color:var(--mod-text-sub);letter-spacing:1px;">${statLabel}</div>
         </div>
       </div>`;
   }).join('')

@@ -7,7 +7,7 @@
  */
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { escapeHTML } from '../config.ts';
+import { escapeHTML, showToast } from '../config.ts';
 import { getMyPowerUps, equip } from '../powerups.ts';
 import { renderLoadoutPicker } from '../reference-arsenal.loadout.ts';
 import type { CurrentDebate } from './arena-types.ts';
@@ -219,7 +219,7 @@ async function handleSave(
 
     if (result.error || !result.data?.success) {
       const msg = result.data?.error || 'Save failed';
-      alert(msg);
+      showToast(msg, 'error');
       return;
     }
 
@@ -229,7 +229,7 @@ async function handleSave(
     renderBar(container, updated, debate, refsContainer, powerupContainer);
   } catch (e) {
     console.warn('[Presets] Save failed:', e);
-    alert('Could not save preset.');
+    showToast('Could not save preset.', 'error');
   } finally {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = saveBtnOrigText; }
   }

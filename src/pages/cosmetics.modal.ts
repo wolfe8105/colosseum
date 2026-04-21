@@ -42,7 +42,7 @@ export function openConfirmModal(cosmeticId: string, catalog: CosmeticItem[]): v
     afterEl.style.color = '';
   } else {
     afterEl.textContent = `Need ${(cost - _getTokenBalance()).toLocaleString()} more tokens`;
-    afterEl.style.color = '#e74c3c'; // TODO: needs CSS var token
+    afterEl.style.color = 'var(--mod-accent)';
   }
 
   const confirmBtn = document.getElementById('modal-confirm') as HTMLButtonElement;

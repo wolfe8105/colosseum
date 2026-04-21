@@ -34,7 +34,7 @@ export function injectCSS(): void {
 
     /* W/L badge */
     .dba-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mod-font-display); font-size: 10px; letter-spacing: 1px; }
-    .dba-badge.win  { background: rgba(22,199,132,0.15); color: #16c784; /* LANDMINE [LM-DBA-001]: TODO: needs CSS var token */ border: 1px solid rgba(22,199,132,0.3); }
+    .dba-badge.win  { background: rgba(22,199,132,0.15); color: var(--mod-cyan); border: 1px solid rgba(22,199,132,0.3); }
     .dba-badge.loss { background: rgba(204,41,54,0.12);  color: var(--mod-magenta); border: 1px solid rgba(204,41,54,0.25); }
     .dba-badge.draw { background: rgba(255,255,255,0.06); color: var(--mod-text-muted); border: 1px solid var(--mod-border-primary); }
 

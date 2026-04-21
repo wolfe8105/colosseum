@@ -14,13 +14,13 @@ export function renderShop(tokenBalance: number): string {
   const items = (Object.entries(CATALOG) as [PowerUpId, PowerUpCatalogEntry][]).map(([id, pu]) => {
     const canAfford = balance >= pu.cost;
     return `
-      <div class="powerup-shop-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:8px;margin-bottom:8px;">
+      <div class="powerup-shop-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:8px;margin-bottom:8px;">
         <div style="font-size:28px;width:40px;text-align:center;">${pu.icon}</div>
         <div style="flex:1;">
           <div style="font-family:var(--mod-font-ui);font-size:15px;font-weight:600;color:var(--mod-text-primary);">${pu.name}</div>
           <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);">${pu.desc}</div>
         </div>
-        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,var(--mod-text-heading),#B8860B)' : '#2a2a3e'} /* TODO: needs CSS var token */;color:${canAfford ? '#0f0f1a' : '#666'} /* TODO: needs CSS var token */;font-family:var(--mod-font-ui);font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${Number(pu.cost)} 🪙</button>
+        <button class="powerup-buy-btn" data-id="${id}" data-cost="${pu.cost}" ${canAfford ? '' : 'disabled'} style="padding:8px 14px;border:none;border-radius:6px;background:${canAfford ? 'linear-gradient(135deg,var(--mod-text-heading),var(--mod-gold))' : 'var(--mod-bg-card)'};color:${canAfford ? 'var(--mod-bg-base)' : 'var(--mod-text-muted)'};font-family:var(--mod-font-ui);font-size:13px;font-weight:600;cursor:${canAfford ? 'pointer' : 'default'};white-space:nowrap;">${Number(pu.cost)} 🪙</button>
       </div>`;
   });
 

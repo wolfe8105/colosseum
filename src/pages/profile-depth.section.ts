@@ -153,7 +153,7 @@ export async function saveSection(section: Section, onSectionClick: (id: string)
         const claimResult = await safeRpc('claim_section_reward', { p_section_id: section.id });
         const claimData = claimResult as { data?: { success?: boolean; power_up_name?: string } | null; error?: unknown };
         if (claimData.data?.success) {
-          console.log('Section reward claimed:', claimData.data.power_up_name);
+          console.debug('[ProfileDepth] Section reward claimed:', claimData.data.power_up_name);
         }
       }
     } catch (e) {

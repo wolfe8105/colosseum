@@ -4,6 +4,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { showToast } from '../config.ts';
 import { renderGroupBanner } from './group-banner.ts';
 import { loadGroupHotTakes } from './groups.feed.ts';
 import { loadGroupMembers } from './groups.members.ts';
@@ -122,7 +123,7 @@ export async function toggleMembership(): Promise<void> {
     }
     loadGroupMembers(currentGroupId!);
   } catch (e) {
-    alert((e as Error).message || 'Something went wrong');
+    showToast((e as Error).message || 'Something went wrong', 'error');
   } finally {
     btn.disabled = false;
   }

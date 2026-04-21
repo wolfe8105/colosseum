@@ -38,7 +38,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
   const items = (equipped || []).map(eq => {
     const cat = CATALOG[eq.power_up_id as PowerUpId];
     return `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0f0f1a; /* TODO: needs CSS var token */border:1px solid #2a2a3e; /* TODO: needs CSS var token */border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:8px;">
         <span style="font-size:22px;">${escapeHTML(eq.icon ?? cat?.icon ?? '?')}</span>
         <span style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);">${escapeHTML(eq.name ?? cat?.name ?? eq.power_up_id)}</span>
       </div>`;
@@ -48,7 +48,7 @@ export function renderRevealPopup(equipped: EquippedItem[]): void {
   popup.id = 'powerup-reveal-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--mod-bg-overlay);animation:arenaFadeIn 0.3s ease;';
   popup.innerHTML = `
-    <div style="background:#12122a; /* TODO: needs CSS var token */border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
+    <div style="background:var(--mod-bg-card);border:1px solid var(--mod-text-heading)44;border-radius:14px;padding:20px;max-width:280px;width:90%;">
       <div style="font-family:'Oswald',sans-serif;font-size:14px;color:var(--mod-text-heading);letter-spacing:2px;text-align:center;margin-bottom:12px;">👁️ OPPONENT'S LOADOUT</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${items.length > 0 ? items.join('') : '<div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);text-align:center;">No power-ups equipped</div>'}

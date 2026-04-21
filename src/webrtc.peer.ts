@@ -87,7 +87,7 @@ export async function attemptIceRestart(): Promise<void> {
     return;
   }
 
-  console.log(`[WebRTC] ICE restart attempt ${state.iceRestartAttempts}/${MAX_ICE_RESTART_ATTEMPTS}`);
+  console.debug(`[WebRTC] ICE restart attempt ${state.iceRestartAttempts}/${MAX_ICE_RESTART_ATTEMPTS}`);
   fire('reconnecting', { attempt: state.iceRestartAttempts, max: MAX_ICE_RESTART_ATTEMPTS });
 
   // Only role 'a' (the offerer) initiates ICE restart.

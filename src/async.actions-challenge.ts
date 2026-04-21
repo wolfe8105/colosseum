@@ -33,13 +33,13 @@ export function _showChallengeModal(take: HotTake): void {
   modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
 
   modal.innerHTML = `
-    <div style="background:linear-gradient(180deg,#132240 /* TODO: needs CSS var token */ 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
+    <div style="background:linear-gradient(180deg,var(--mod-bg-card) 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
       <div style="font-family:var(--mod-font-display);font-size:22px;letter-spacing:2px;color:var(--mod-magenta);text-align:center;margin-bottom:4px;">⚔️ CHALLENGE</div>
       <div style="color:var(--mod-text-sub);text-align:center;font-size:13px;margin-bottom:16px;">You disagree with ${safeUser}?</div>
       <div style="background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);border-radius:10px;padding:14px;margin-bottom:16px;">
         <div style="font-size:13px;color:var(--mod-text-heading);line-height:1.4;">"${safeText}"</div>
-        <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */ margin-top:6px;">— ${safeUser} (ELO ${Number(take.elo)})</div>
+        <div style="font-size:11px;color:var(--mod-text-sub); margin-top:6px;">— ${safeUser} (ELO ${Number(take.elo)})</div>
       </div>
       <textarea id="challenge-response" placeholder="Your counter-argument..." style="
         width:100%;background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;

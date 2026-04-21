@@ -90,7 +90,7 @@ export function wireStakingPanel(debateId: string, onStakePlaced?: (result: Stak
 
         if (result.success) {
           confirmBtn.textContent = 'STAKE PLACED ✓';
-          confirmBtn.style.background = '#16a34a'; // TODO: needs CSS var token
+          confirmBtn.style.background = 'var(--mod-cyan)';
           if (errorEl) errorEl.style.display = 'none';
           if (onStakePlaced) onStakePlaced(result);
         } else {

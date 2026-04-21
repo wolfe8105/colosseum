@@ -22,7 +22,7 @@ export function wireSettings(): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
     const meta = document.getElementById('meta-theme-color');
-    // TODO: needs CSS var token — meta theme-color requires literal hex; CSS vars not supported here
+    // meta theme-color requires literal hex; CSS vars not supported here
     if (meta) meta.setAttribute('content', isDark ? '#000000' : '#eaeef2');
   });
 
@@ -46,7 +46,7 @@ export function wireSettings(): void {
     if (btn?.disabled) return;
     const user = getCurrentUser() as { email?: string } | null;
     const email = user?.email;
-    if (!email) { alert('You must be logged in to reset your password.'); return; }
+    if (!email) { showToast('You must be logged in to reset your password.', 'error'); return; }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
     try {
       const result = await resetPassword(email);
@@ -55,11 +55,11 @@ export function wireSettings(): void {
         setTimeout(() => { if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; } }, 3000);
       } else {
         if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
-        alert('Failed to send reset email: ' + (result.error ?? 'Unknown error'));
+        showToast('Failed to send reset email: ' + (result.error ?? 'Unknown error'), 'error');
       }
     } catch {
       if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
-      alert('Failed to send reset email. Please try again.');
+      showToast('Failed to send reset email. Please try again.', 'error');
     }
   });
 

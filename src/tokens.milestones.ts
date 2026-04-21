@@ -37,7 +37,7 @@ export async function claimMilestone(key: MilestoneKey): Promise<ClaimResult | n
   milestoneClaimed.add(key);
   if (result.new_balance != null) _updateBalanceDisplay(result.new_balance);
   _milestoneToast(def.icon, def.label, result.tokens_earned ?? 0, result.freezes_earned ?? 0);
-  console.log(`[Tokens] Milestone: ${key} → +${result.tokens_earned ?? 0} tokens, +${result.freezes_earned ?? 0} freezes`);
+  console.debug(`[Tokens] Milestone: ${key} → +${result.tokens_earned ?? 0} tokens, +${result.freezes_earned ?? 0} freezes`);
   return result;
 }
 
