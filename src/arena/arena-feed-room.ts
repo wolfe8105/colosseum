@@ -20,6 +20,7 @@
  */
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
+import { get_arena_debate_spectator } from '../contracts/rpc-schemas.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import { joinDebate, leaveDebate, on as onWebRTC, off as offWebRTC } from '../webrtc.ts';
 import {
@@ -212,7 +213,7 @@ export function enterFeedRoom(debate: CurrentDebate): void {
 // ============================================================
 
 export async function enterFeedRoomAsSpectator(debateId: string): Promise<void> {
-  const { data, error } = await safeRpc('get_arena_debate_spectator', { p_debate_id: debateId });
+  const { data, error } = await safeRpc('get_arena_debate_spectator', { p_debate_id: debateId }, get_arena_debate_spectator);
   if (error || !data) {
     showToast('Could not load debate', 'error');
     return;

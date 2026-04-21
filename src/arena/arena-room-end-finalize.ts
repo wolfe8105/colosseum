@@ -3,6 +3,7 @@
 // citedRefs, aiScores) and splitting further would force passing all of that through 3+ signatures.
 
 import { safeRpc, getCurrentUser, getCurrentProfile } from '../auth.ts';
+import { apply_end_of_debate_modifiers as applyEndOfDebateModifiersSchema } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { citeReference } from '../reference-arsenal.ts';
 import { claimDebate, claimAiSparring } from '../tokens.ts';
@@ -26,7 +27,7 @@ export async function applyEndOfDebateModifiers(
 ): Promise<ModifierResult> {
   let breakdown: EndOfDebateBreakdown | null = null;
   try {
-    const { data: eodData } = await safeRpc('apply_end_of_debate_modifiers', { p_debate_id: debate.id });
+    const { data: eodData } = await safeRpc('apply_end_of_debate_modifiers', { p_debate_id: debate.id }, applyEndOfDebateModifiersSchema);
     if (eodData) {
       breakdown = eodData as EndOfDebateBreakdown;
       if (breakdown) {

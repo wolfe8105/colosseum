@@ -17,6 +17,7 @@
 
 import { safeRpc, getIsPlaceholderMode } from './auth.ts';
 import { showToast } from './config.ts';
+import { get_onboarding_progress } from './contracts/rpc-schemas.ts';
 
 // ============================================================
 // TYPES
@@ -156,7 +157,7 @@ export async function initDripCard(container: HTMLElement): Promise<void> {
   _injectCSS();
 
   try {
-    const { data, error } = await safeRpc('get_onboarding_progress');
+    const { data, error } = await safeRpc('get_onboarding_progress', {}, get_onboarding_progress);
     if (error || !data) return;
     _progress = data as DripProgress;
 

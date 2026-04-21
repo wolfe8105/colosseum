@@ -3,6 +3,7 @@
 // advanceRound calls startLiveRoundTimer, and startLiveRoundTimer calls advanceRound.
 
 import { safeRpc } from '../auth.ts';
+import { get_debate_messages } from '../contracts/rpc-schemas.ts';
 import { nudge } from '../nudge.ts';
 import {
   currentDebate, opponentPollTimer, opponentPollElapsed, roundTimer, roundTimeLeft,
@@ -40,7 +41,7 @@ export function startOpponentPoll(debateId: string, myRole: DebateRole, round: n
     }
 
     try {
-      const { data, error } = await safeRpc<unknown>('get_debate_messages', { p_debate_id: debateId });
+      const { data, error } = await safeRpc<unknown>('get_debate_messages', { p_debate_id: debateId }, get_debate_messages);
       if (error || !data) return;
 
       const msgs = (Array.isArray(data) ? data : []) as Array<{ side: string; round: number; content: string; is_ai: boolean }>;

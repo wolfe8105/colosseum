@@ -4,6 +4,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { get_group_details } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { renderGroupBanner } from './group-banner.ts';
 import { loadGroupHotTakes } from './groups.feed.ts';
@@ -36,7 +37,7 @@ export async function openGroup(groupId: string): Promise<void> {
   switchDetailTab('hot-takes');
 
   try {
-    const { data, error } = await safeRpc('get_group_details', { p_group_id: groupId });
+    const { data, error } = await safeRpc('get_group_details', { p_group_id: groupId }, get_group_details);
     if (error) throw error;
     const g = typeof data === 'string' ? JSON.parse(data) : data;
 

@@ -2,6 +2,8 @@
  * plinko-invite-nudge.ts — F-59 invite link nudge appended to step-5.
  */
 
+import { get_my_invite_link } from '../contracts/rpc-schemas.ts';
+
 export async function injectInviteNudge(): Promise<void> {
   const step5 = document.getElementById('step-5');
   if (!step5 || document.getElementById('plinko-invite-nudge')) return;
@@ -9,7 +11,7 @@ export async function injectInviteNudge(): Promise<void> {
   let inviteUrl: string | null = null;
   try {
     const { safeRpc } = await import('../auth.ts');
-    const result = await safeRpc('get_my_invite_link', {});
+    const result = await safeRpc('get_my_invite_link', {}, get_my_invite_link);
     const data = result.data as { url?: string } | null;
     inviteUrl = data?.url ?? null;
   } catch { /* non-blocking */ }

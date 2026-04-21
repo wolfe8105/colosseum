@@ -13,6 +13,7 @@
 import { APP, showToast } from './config.ts';
 import { getCurrentUser, ready } from './auth.ts';
 import { navigateTo } from './navigation.ts';
+import { get_my_invite_link } from './contracts/rpc-schemas.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -59,7 +60,7 @@ async function getStableInviteUrl(): Promise<string> {
   if (_cachedInviteUrl) return _cachedInviteUrl;
   try {
     const { safeRpc } = await import('./auth.ts');
-    const result = await safeRpc('get_my_invite_link', {});
+    const result = await safeRpc('get_my_invite_link', {}, get_my_invite_link);
     const data = result.data as { url?: string; ref_code?: string } | null;
     if (data?.url) {
       _cachedInviteUrl = data.url;

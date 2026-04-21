@@ -11,6 +11,7 @@
 // to the IIFE. Removed — all files import safeRpc directly from auth.ts.
 
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getIsPlaceholderMode } from '../auth.ts';
+import { get_arena_debate_spectator, get_debate_messages } from '../contracts/rpc-schemas.ts';
 import { nudge } from '../nudge.ts';
 import '../analytics.ts';
 import { state } from './spectate.state.ts';
@@ -24,7 +25,7 @@ async function startPolling(): Promise<void> {
   state.pollTimer = setInterval(async () => {
     try {
       let freshDebate: SpectateDebate | null = null;
-      const { data: rpcData, error: rpcErr } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId });
+      const { data: rpcData, error: rpcErr } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId }, get_arena_debate_spectator);
       if (rpcErr || !rpcData) {
         const { data: directData } = await state.sb!.from('arena_debates').select('*').eq('id', state.debateId!).single();
         if (directData) {
@@ -50,7 +51,7 @@ async function startPolling(): Promise<void> {
       // Fetch new messages
       let allMessages: DebateMessage[] = [];
       try {
-        const { data: msgData } = await safeRpc('get_debate_messages', { p_debate_id: state.debateId });
+        const { data: msgData } = await safeRpc('get_debate_messages', { p_debate_id: state.debateId }, get_debate_messages);
         allMessages = (msgData || []) as DebateMessage[];
       } catch(e) {
         const { data: directMsgs } = await state.sb!.from('debate_messages').select('*').eq('debate_id', state.debateId!).order('round').order('created_at').limit(100);
@@ -90,7 +91,7 @@ async function startPolling(): Promise<void> {
 async function loadDebate(): Promise<void> {
   try {
     let debate: SpectateDebate | null = null;
-    const { data: rpcData, error: rpcErr } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId });
+    const { data: rpcData, error: rpcErr } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId }, get_arena_debate_spectator);
 
     if (rpcErr) {
       console.warn('[Spectate] RPC error, falling back to direct query:', rpcErr.message);
@@ -165,7 +166,7 @@ async function loadDebate(): Promise<void> {
     // Load messages
     let messages: DebateMessage[] = [];
     try {
-      const { data: msgData } = await safeRpc('get_debate_messages', { p_debate_id: state.debateId });
+      const { data: msgData } = await safeRpc('get_debate_messages', { p_debate_id: state.debateId }, get_debate_messages);
       messages = (msgData || []) as DebateMessage[];
     } catch(e) {
       const { data: directMsgs } = await state.sb!
