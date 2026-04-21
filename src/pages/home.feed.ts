@@ -16,7 +16,7 @@ interface ArenaDebateRow {
   mode: string;
   spectator_count: number;
   current_round: number;
-  max_rounds: number;
+  total_rounds: number;
   debater_a: string | null;
   debater_b: string | null;
   debater_a_profile: { display_name: string | null; username: string | null }[] | null;
@@ -29,7 +29,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
   try {
     const { data, error } = await (sb as ReturnType<typeof getSupabaseClient> & { from: (t: string) => any })
       .from('arena_debates')
-      .select('id, topic, category, status, mode, spectator_count, current_round, max_rounds, debater_a, debater_b, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username)')
+      .select('id, topic, category, status, mode, spectator_count, current_round, total_rounds, debater_a, debater_b, debater_a_profile:profiles!arena_debates_debater_a_fkey(display_name, username), debater_b_profile:profiles!arena_debates_debater_b_fkey(display_name, username)')
       .in('status', ['live', 'round_break', 'voting'])
       .order('created_at', { ascending: false })
       .limit(5);
@@ -42,7 +42,7 @@ async function fetchLiveDebates(): Promise<LiveDebate[]> {
       mode: d.mode,
       spectator_count: d.spectator_count || 0,
       current_round: d.current_round || 1,
-      max_rounds: d.max_rounds || 5,
+      max_rounds: d.total_rounds || 5,
       debater_a_id: d.debater_a ?? null,
       debater_b_id: d.debater_b ?? null,
       debater_a_name: d.debater_a_profile?.[0]?.display_name || d.debater_a_profile?.[0]?.username || 'Debater A',
