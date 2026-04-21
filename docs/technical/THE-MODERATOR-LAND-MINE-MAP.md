@@ -2932,3 +2932,27 @@ FIX: Grep for 'profile_depth_pct.*25' across SQL and 'profile.*25' in TS.
   All three must agree.
 SESSION: 295.
 ```
+
+---
+
+## LM-227: F-63 spectator depth gate threshold (25%) lives in 7 places
+```
+DECISION (Session 295): Three spectator-action RPCs (cast_sentiment_tip,
+  send_spectator_chat, place_stake) now return 'profile_incomplete' error
+  if caller's profile_depth_pct < 25. Client pre-flights via isDepthBlocked()
+  in src/depth-gate.ts before hitting the server.
+PROTECTS: Dataset integrity. Prevents low-effort accounts from poisoning
+  sentiment data, chat, and stake pools.
+BITES YOU WHEN: You change the 25% threshold. Must update in SEVEN places:
+  1. check_ranked_eligible() function body (arena.sql)
+  2. join_debate_queue() function body (arena.sql) — F-64
+  3. cast_sentiment_tip() function body (session-269 / tokens.sql)
+  4. send_spectator_chat() function body (arena.sql)
+  5. place_stake() function body (predictions.sql)
+  6. src/depth-gate.ts DEPTH_THRESHOLD constant
+  7. src/arena/arena-config-settings.ts confirm dialog text (ranked picker)
+SYMPTOM: Some actions blocked at wrong threshold, or client says one number
+  while server enforces another.
+FIX: Grep for 'profile_depth_pct.*25' across SQL and 'DEPTH_THRESHOLD' in TS.
+SESSION: 295.
+```

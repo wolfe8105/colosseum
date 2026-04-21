@@ -402,11 +402,18 @@ DECLARE
   v_existing_stake UUID;
   v_pool_id UUID;
   v_tier_name TEXT;
+  v_depth_pct INTEGER;
 BEGIN
   -- 1. Auth check
   v_uid := auth.uid();
   IF v_uid IS NULL THEN
     RETURN json_build_object('success', false, 'error', 'Not authenticated');
+  END IF;
+
+  -- F-63: Spectator participation depth gate
+  SELECT COALESCE(profile_depth_pct, 0) INTO v_depth_pct FROM profiles WHERE id = v_uid;
+  IF v_depth_pct < 25 THEN
+    RETURN json_build_object('success', false, 'error', 'profile_incomplete', 'profile_pct', v_depth_pct);
   END IF;
 
   -- 2. Validate side

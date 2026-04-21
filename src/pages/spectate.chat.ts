@@ -5,6 +5,7 @@
  */
 
 import { safeRpc, getCurrentProfile, getCurrentUser } from '../auth.ts';
+import { isDepthBlocked } from '../depth-gate.ts';
 import { state } from './spectate.state.ts';
 import { escHtml, timeAgo } from './spectate.utils.ts';
 import type { SpectateDebate, SpectatorChatMessage } from './spectate.types.ts';
@@ -59,6 +60,9 @@ export function wireChatUI(d: SpectateDebate): void {
     if (sending) return;
     const msg = input!.value.trim();
     if (!msg || msg.length > 280) return;
+
+    // F-63: Depth gate — block sub-25% users from chatting
+    if (isDepthBlocked()) return;
 
     sending = true;
     sendBtn!.disabled = true;

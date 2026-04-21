@@ -2806,11 +2806,18 @@ DECLARE
   v_last_sent timestamptz;
   v_trimmed text;
   v_debate_status text;
+  v_depth_pct int;
 BEGIN
   -- Auth check
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'Not authenticated');
+  END IF;
+
+  -- F-63: Spectator participation depth gate
+  SELECT COALESCE(profile_depth_pct, 0) INTO v_depth_pct FROM profiles WHERE id = v_user_id;
+  IF v_depth_pct < 25 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'profile_incomplete', 'profile_pct', v_depth_pct);
   END IF;
 
   -- Validate debate exists and is live

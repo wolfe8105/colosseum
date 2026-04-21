@@ -7,10 +7,16 @@
 
 import { safeRpc } from './auth.ts';
 import { getBalance } from './tokens.ts';
+import { isDepthBlocked } from './depth-gate.ts';
 import type { StakeResult, PoolData, SettleResult, Odds } from './staking.types.ts';
 
 /** Place a stake on a debate side. */
 export async function placeStake(debateId: string, side: string, amount: number | string): Promise<StakeResult> {
+  // F-63: Depth gate — block sub-25% users from staking
+  if (isDepthBlocked()) {
+    return { success: false, error: 'Profile incomplete' };
+  }
+
   if (!debateId || !side) {
     return { success: false, error: 'Missing required fields' };
   }
