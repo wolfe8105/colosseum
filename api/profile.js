@@ -47,8 +47,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check in-memory cache first
-    const cached = profileCache.get(username);
+    // Check in-memory cache first (normalized to lowercase)
+    const cacheKey = username.toLowerCase();
+    const cached = profileCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
@@ -56,7 +57,9 @@ export default async function handler(req, res) {
     }
 
     // Query Supabase REST API directly (no SDK needed)
-    const apiUrl = `${SUPABASE_URL}/rest/v1/profiles_public?username=eq.${encodeURIComponent(username)}&select=*&limit=1`;
+    // Use ilike for case-insensitive username match
+    const lookupName = username.toLowerCase();
+    const apiUrl = `${SUPABASE_URL}/rest/v1/profiles_public?username=ilike.${encodeURIComponent(lookupName)}&select=*&limit=1`;
     const profileAbort = new AbortController();
     const profileTimeout = setTimeout(() => profileAbort.abort(), 5000);
     let response;
@@ -89,7 +92,7 @@ export default async function handler(req, res) {
     const html = buildProfileHtml(profile);
 
     // Populate in-memory cache
-    profileCache.set(username, { html, expiresAt: Date.now() + CACHE_TTL_MS });
+    profileCache.set(cacheKey, { html, expiresAt: Date.now() + CACHE_TTL_MS });
 
     // Cache for 5 minutes at the CDN edge — profile data doesn't change that fast
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
