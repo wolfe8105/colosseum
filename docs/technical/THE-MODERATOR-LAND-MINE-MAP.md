@@ -2296,7 +2296,14 @@ FIX: The `forge_reference` RPC (or whatever the reference creation RPC
 SESSION: 247 (rule locked).
 ```
 
-## LM-209: `profiles.is_bot` column does not exist yet — F-55 build blocker
+## LM-209: `profiles.is_bot` column does not exist yet — F-55 build blocker — ✅ RESOLVED S269
+
+```
+RESOLUTION (Session 269): `profiles.is_bot BOOLEAN DEFAULT false NOT NULL`
+  added as part of `session-269-f55-overhaul.sql`. Column is live in production.
+  `cite_debate_reference` RPC checks `profiles.is_bot = false` on both debaters.
+  F-55 shipped complete. Entry retained for historical context.
+```
 
 ```
 WHAT: LM-207 and the F-55 pending spec both require the `cite_debate_reference`

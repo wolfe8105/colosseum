@@ -180,7 +180,7 @@ async function loadBackendCounts(): Promise<void> {
 
 function spawnConfetti(): void {
   // Particle colors use design system vars via getComputedStyle at runtime
-  const colors = ['var(--mod-accent)', 'var(--mod-magenta)', '#2ecc71', '#5b8abf', 'var(--mod-text-heading)', '#e63946'];
+  const colors = ['var(--mod-accent)', 'var(--mod-magenta)', 'var(--mod-cyan)', 'var(--mod-accent-secondary)', 'var(--mod-text-heading)', 'var(--mod-status-live)'];
   for (let i = 0; i < 30; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
