@@ -7,6 +7,7 @@
  * Part of F-68 (Session 294).
  */
 import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient } from '../auth.ts';
+import { create_debate_card, cancel_debate_card, react_debate_card } from '../contracts/rpc-schemas.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import {
   renderFeedCard,
@@ -155,7 +156,7 @@ async function postDebateCard(): Promise<void> {
     if (linkUrl) params.p_link_url = linkUrl;
     if (linkPreview) params.p_link_preview = linkPreview;
 
-    const { error } = await safeRpc('create_debate_card', params);
+    const { error } = await safeRpc('create_debate_card', params, create_debate_card);
     if (error) {
       showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
@@ -194,9 +195,9 @@ async function reactToCard(debateId: string, btn: HTMLElement): Promise<void> {
   }
   btn.style.pointerEvents = 'none';
   try {
-    const { data, error } = await safeRpc<{ reacted: boolean; reaction_count: number }>('react_debate_card', {
+    const { data, error } = await safeRpc('react_debate_card', {
       p_debate_id: debateId,
-    });
+    }, react_debate_card);
     if (error) { showToast('React failed', 'error'); return; }
     const result = data as { reacted: boolean; reaction_count: number };
     btn.style.background = result.reacted ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)';
@@ -234,7 +235,7 @@ async function cancelCard(debateId: string): Promise<void> {
   if (!confirm('Cancel this post? It will be removed from the feed.')) return;
 
   try {
-    const { data, error } = await safeRpc('cancel_debate_card', { p_debate_id: debateId });
+    const { data, error } = await safeRpc('cancel_debate_card', { p_debate_id: debateId }, cancel_debate_card);
     if (error) {
       showToast('Cancel failed', 'error');
       return;

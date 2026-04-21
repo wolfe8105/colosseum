@@ -6,6 +6,7 @@
 import type { ModifierEffect, RarityTier } from '../modifiers.ts';
 import type { InviteReward } from './home.invite-types.ts';
 import { safeRpc } from '../auth.ts';
+import { claim_invite_reward } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { getModifierCatalog } from '../modifiers-catalog.ts';
 import { renderEffectCard, tierLabel } from '../modifiers-render.ts';
@@ -69,7 +70,7 @@ export async function openClaimSheet(
         const res  = await safeRpc('claim_invite_reward', {
           p_reward_id: rewardId,
           p_effect_id: effect.effect_num,
-        });
+        }, claim_invite_reward);
         const data = res.data as { ok?: boolean; error?: string; effect_name?: string } | null;
 
         if (data?.ok) {

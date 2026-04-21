@@ -7,6 +7,7 @@ import { loadHotTakes, renderPredictions, _hideWagerPicker } from './async.rende
 import { fetchStandaloneQuestions } from './async.fetch.ts';
 import { showToast } from './config.ts';
 import { safeRpc, getCurrentProfile, getSupabaseClient, getIsPlaceholderMode, requireAuth } from './auth.ts';
+import { place_prediction } from './contracts/rpc-schemas.ts';
 import { claimPrediction, updateBalance } from './tokens.ts';
 
 export async function placePrediction(debateId: string, side: string, amount: number): Promise<void> {
@@ -37,7 +38,7 @@ export async function placePrediction(debateId: string, side: string, amount: nu
       try {
         const { data, error } = await safeRpc('place_prediction', {
           p_debate_id: debateId, p_predicted_winner: side, p_amount: amount,
-        });
+        }, place_prediction);
         if (error) {
           console.error('place_prediction error:', error);
           showToast(String((error as Record<string, unknown>)?.message ?? 'Prediction failed'), 'error');

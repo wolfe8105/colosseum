@@ -559,3 +559,108 @@ export const request_audition = z.object({
   error: z.string().optional(),
   audition_id: z.string().optional(),
 }).passthrough();
+
+
+// =====================================================================
+// BATCH 5: 6 more high-risk untyped RPCs
+// =====================================================================
+
+// ── get_pending_auditions ────────────────────────────────────────
+// Called by: groups.auditions.ts:104
+// Frontend casts to: PendingAudition[]
+
+const PendingAuditionSchema = z.object({
+  id: z.string(),
+  candidate_user_id: z.string(),
+  candidate_username: z.string().nullable().optional(),
+  candidate_display_name: z.string().nullable().optional(),
+  rule: z.string(),
+  status: z.string(),
+  topic: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  ruleset: z.string().nullable().optional(),
+  total_rounds: z.number().nullable().optional(),
+  debate_id: z.string().nullable().optional(),
+  created_at: z.string(),
+}).passthrough();
+
+export const get_pending_auditions = z.array(PendingAuditionSchema);
+
+
+// ── claim_invite_reward ──────────────────────────────────────────
+// Called by: home.invite-sheet.ts:69
+// Frontend casts to: { ok?: boolean; error?: string; effect_name?: string }
+
+export const claim_invite_reward = z.object({
+  ok: z.boolean().optional(),
+  error: z.string().optional(),
+  effect_name: z.string().optional(),
+}).passthrough();
+
+
+// ── claim_section_reward ─────────────────────────────────────────
+// Called by: profile-depth.section.ts:153
+// Frontend casts to: { success?: boolean; power_up_name?: string }
+
+export const claim_section_reward = z.object({
+  success: z.boolean().optional(),
+  power_up_name: z.string().optional(),
+  error: z.string().optional(),
+}).passthrough();
+
+
+// ── increment_questions_answered ─────────────────────────────────
+// Called by: profile-depth.section.ts:140, profile-depth.ts:52
+// Frontend casts to: { ok?: boolean; questions_answered?: number }
+
+export const increment_questions_answered = z.object({
+  ok: z.boolean().optional(),
+  questions_answered: z.number().optional(),
+  error: z.string().optional(),
+}).passthrough();
+
+
+// ── create_debate_card ───────────────────────────────────────────
+// Called by: home.feed.ts:158, groups.feed.ts:91
+// Frontend only reads .error — response shape minimal
+
+export const create_debate_card = z.object({
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+  debate_id: z.string().optional(),
+}).passthrough();
+
+
+// ── cancel_debate_card ───────────────────────────────────────────
+// Called by: home.feed.ts:237
+// Frontend casts to: { success?: boolean; error?: string }
+
+export const cancel_debate_card = z.object({
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+}).passthrough();
+
+
+// =====================================================================
+// BATCH 6: 2 more high-risk untyped RPCs
+// =====================================================================
+
+// ── place_prediction ─────────────────────────────────────────────
+// Called by: async.actions-predict.ts:38
+// Frontend reads: .new_balance (among other Record<string, unknown> keys)
+
+export const place_prediction = z.object({
+  new_balance: z.number().optional(),
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+}).passthrough();
+
+
+// ── react_debate_card ────────────────────────────────────────────
+// Called by: home.feed.ts:197
+// Frontend casts to: { reacted: boolean; reaction_count: number }
+
+export const react_debate_card = z.object({
+  reacted: z.boolean(),
+  reaction_count: z.number(),
+}).passthrough();

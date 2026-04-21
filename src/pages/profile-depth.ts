@@ -8,6 +8,7 @@
  */
 
 import { ready, getCurrentUser, getIsPlaceholderMode, getSupabaseClient, safeRpc } from '../auth.ts';
+import { increment_questions_answered } from '../contracts/rpc-schemas.ts';
 import { FEATURES } from '../config.ts';
 import '../tiers.ts';
 
@@ -49,7 +50,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           setServerQuestionsAnswered(profile.questions_answered ?? 0);
 
           if (serverQuestionsAnswered === 0 && previouslyAnsweredIds.size > 0) {
-            const syncResult = await safeRpc('increment_questions_answered', { p_count: previouslyAnsweredIds.size });
+            const syncResult = await safeRpc('increment_questions_answered', { p_count: previouslyAnsweredIds.size }, increment_questions_answered);
             const syncData = syncResult as { data?: { ok?: boolean; questions_answered?: number } | null };
             if (syncData.data?.ok) {
               setServerQuestionsAnswered(syncData.data.questions_answered ?? serverQuestionsAnswered);

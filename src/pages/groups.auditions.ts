@@ -10,7 +10,7 @@
  * groups.auditions.render.ts.
  */
 import { safeRpc } from '../auth.ts';
-import { request_audition } from '../contracts/rpc-schemas.ts';
+import { request_audition, get_pending_auditions } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { currentGroupId, callerRole } from './groups.state.ts';
 import type { GroupDetail } from './groups.types.ts';
@@ -101,7 +101,7 @@ export async function loadPendingAuditions(
   container.innerHTML = '<div class="loading-state">Loading auditions…</div>';
 
   try {
-    const { data, error } = await safeRpc('get_pending_auditions', { p_group_id: groupId });
+    const { data, error } = await safeRpc('get_pending_auditions', { p_group_id: groupId }, get_pending_auditions);
     if (error) throw error;
     const auditions: PendingAudition[] = typeof data === 'string' ? JSON.parse(data) : (data ?? []);
     container.innerHTML = renderAuditionsList(auditions, myRole);

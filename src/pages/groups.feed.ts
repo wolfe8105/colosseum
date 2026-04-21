@@ -11,6 +11,7 @@
 import { currentUser } from './groups.state.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import { safeRpc } from '../auth.ts';
+import { create_debate_card } from '../contracts/rpc-schemas.ts';
 import { renderEmpty } from './groups.utils.ts';
 import { renderFeedCard, renderFeedEmpty } from '../feed-card.ts';
 import type { UnifiedFeedCard } from '../feed-card.ts';
@@ -88,7 +89,7 @@ export async function postGroupCard(groupId: string) {
   const btn = document.getElementById('group-take-post') as HTMLButtonElement | null;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
-    const { error } = await safeRpc('create_debate_card', { p_content: text, p_category: groupId });
+    const { error } = await safeRpc('create_debate_card', { p_content: text, p_category: groupId }, create_debate_card);
     if (error) {
       showToast('Post failed — try again', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'POST'; }

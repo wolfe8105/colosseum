@@ -5,6 +5,7 @@
 
 import { escapeHTML } from '../config.ts';
 import { safeRpc, getCurrentUser, getIsPlaceholderMode } from '../auth.ts';
+import { increment_questions_answered, claim_section_reward } from '../contracts/rpc-schemas.ts';
 import { checkProfileMilestones } from '../tokens.ts';
 import { SECTIONS } from './profile-depth.data.ts';
 import { renderQuestion, renderGrid } from './profile-depth.render.ts';
@@ -137,7 +138,7 @@ export async function saveSection(section: Section, onSectionClick: (id: string)
       });
 
       if (newCount > 0) {
-        const incResult = await safeRpc('increment_questions_answered', { p_count: newCount });
+        const incResult = await safeRpc('increment_questions_answered', { p_count: newCount }, increment_questions_answered);
         const incData = incResult as { data?: { ok?: boolean; questions_answered?: number } | null; error?: unknown };
         if (incData.error) {
           console.error('increment_questions_answered error:', incData.error);
@@ -150,7 +151,7 @@ export async function saveSection(section: Section, onSectionClick: (id: string)
 
       // Session 232: claim free power-up reward for completing section
       if (allAnswered) {
-        const claimResult = await safeRpc('claim_section_reward', { p_section_id: section.id });
+        const claimResult = await safeRpc('claim_section_reward', { p_section_id: section.id }, claim_section_reward);
         const claimData = claimResult as { data?: { success?: boolean; power_up_name?: string } | null; error?: unknown };
         if (claimData.data?.success) {
           console.debug('[ProfileDepth] Section reward claimed:', claimData.data.power_up_name);
