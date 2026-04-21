@@ -67,11 +67,12 @@ Most large modules were decomposed into domain sub-files (Session 254). The barr
 |------|---------|
 | `src/config.ts` | Central config, credentials, feature flags, `escapeHTML()`, `showToast()`, `friendlyError()` |
 | `src/auth.ts` | Barrel. Sub-files: `auth.core`, `auth.follows`, `auth.moderator`, `auth.ops`, `auth.profile`, `auth.rivals`, `auth.rpc`, `auth.types`. `safeRpc()` lives in `auth.rpc.ts` (re-exported via barrel). `noOpLock` must load before Supabase CDN. |
-| `src/async.ts` | Barrel. Sub-files: `async.actions`, `async.fetch`, `async.render`, `async.rivals`, `async.state`, `async.types`, `async.utils`. Hot takes, predictions, rivals, react toggle, challenge modal. |
+| `src/async.ts` | Barrel. Sub-files: `async.actions-predict`, `async.fetch`, `async.render`, `async.render.predictions`, `async.render.wager`, `async.rivals`, `async.state`, `async.types`, `async.utils`. Predictions and rivals only — hot take code removed F-68 (S294). |
 | `src/arena.ts` | Barrel. 31 sub-files under `src/arena/`. See arena section below. |
 | `src/reference-arsenal.ts` | Barrel. Sub-files: `reference-arsenal.constants`, `.debate`, `.forge`, `.loadout`, `.render`, `.rpc`, `.types`, `.utils`. 5-step forge form, reference card renderer, arsenal list. |
 | `src/webrtc.ts` | Barrel. Sub-files: `webrtc.audio`, `.engine`, `.ice`, `.peer`, `.signaling`, `.state`, `.timer`, `.turn`, `.types`. ICE restart + 30s setup timeout live. |
 | `src/tokens.ts` | Token economy: milestones, streak freeze, daily login, gold coin animation |
+| `src/feed-card.ts` | F-68 unified card renderer — one component for all card states (open, live, voting, complete). Replaces both hot take cards and arena lobby cards. |
 | `src/leaderboard.ts` | Elo/Wins/Streak tabs |
 | `src/powerups.ts` | Power-up inventory and activation |
 | `src/scoring.ts` | Elo, XP, leveling (SELECT reads only) |
@@ -129,7 +130,7 @@ Deployed RPCs are split into 10 domain files (Session 254 Track C). Use the rele
 
 ## Key Patterns
 
-- **`react_hot_take()`** is a toggle — single RPC handles both add and remove
+- **`react_debate_card()`** is a toggle — single RPC handles both add and remove (replaced `react_hot_take` in F-68)
 - **`safeRpc()`** wraps all RPC calls with 401 retry
 - **`navigation.ts`** — use register/call pattern, never `window.navigateTo`
 - **Tokens are earned only, never purchased** — prestige signal
