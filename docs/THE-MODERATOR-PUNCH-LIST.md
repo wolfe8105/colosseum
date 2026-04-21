@@ -22,7 +22,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ✅ | Session 163. Non-issue — stale Wiring Manifest reference. Arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
 | H-05 | Bot army quarantined from rename | ❌ | SCRATCHED S248. Bot army system retired in full (see F-06/Bot Army scratch note in pending spec file). Internal "Colosseum" strings in `bot-config.ts`, `bot-engine.ts`, `lib/*`, `tests/*` are irrelevant — code is inert and files are "floating in the ether" with no teardown plan. |
 | H-06 | Stripe Edge Function templates use old imports | ❌ | SCRATCHED S277. No monetization at this time. |
-| H-07 | Edge Function CORS allowlist missing mirror domain | ⏳ | OK since mirror is pure HTML. Cleanup item. |
+| H-07 | Edge Function CORS allowlist missing mirror domain | ✅ | Mirror deprecated S245 (F-40 scratched). All 5 edge functions have correct CORS for current domains (themoderator.app, the-moderator.vercel.app, localhost:3000). Closed S293. |
 | H-08 | 3 older RLS policies still have `{public}` scope | ✅ | Session 270. mod_dropout_log SELECT narrowed to authenticated + participants. debate_effect_state SELECT and debate_powerup_loadout SELECT converted to TO authenticated explicitly. |
 | H-09 | `bot-engine.js` straggler in repo root | ✅ | Session 163. Already deleted. |
 | H-10 | TS Migration Plan — remove from project knowledge | ✅ | Session 163. Removed. |

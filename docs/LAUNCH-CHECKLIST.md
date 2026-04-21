@@ -28,10 +28,7 @@
 
 ## OPEN KNOWN BUGS (low priority, no urgency)
 
-- `staking.wire.ts` — `#16a34a` success green has no CSS token equivalent. Deferred pending CSS design decision.
-- `LM-INVITE-003` — `onClaim` in `home.invite-wiring.ts` fires async `openClaimSheet` with no `.catch`. Parked.
 - `LM-PU-003` — `wireLoadout` queries `.powerup-slot` globally — breaks if two loadout panels open simultaneously. Parked.
-- `P7-AA-02` — `cast_auto_debate_vote` RPC — entire auto-debate system was retired S249. Dead code in `auto-debate.vote.ts`, harmless, can clean up whenever.
 
 ---
 
