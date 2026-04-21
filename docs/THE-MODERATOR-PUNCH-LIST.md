@@ -178,7 +178,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
 | F-63 | Spectator participation gate (25% depth) | | 📋 Specced S279 | Watch-only for logged-out and sub-25% depth users. Interactive buttons (vote, stake, tip, chat) show signup prompt or "Complete your profile" bottom sheet. SQL-level 25% depth check on `cast_sentiment_tip`, `place_stake`, `send_spectator_chat`. Closes dataset poisoning vector. |
-| F-64 | SQL-level ranked eligibility hardening | | 📋 Specced S279 | Server-side 25% depth gate in `join_debate_queue` RPC. Currently client-side advisory only. Single SQL migration, no new tables, no client changes. |
+| F-64 | SQL-level ranked eligibility hardening | | ✅ SHIPPED S295 | Server-side 25% depth gate in `join_debate_queue` RPC. RAISE EXCEPTION if p_ranked=true and profile_depth_pct < 25. Previously client-side advisory only. Single SQL migration, no new tables, no client changes. LM-226 documents the three-place threshold sync. |
 | F-65 | Vote velocity detection (invisible fraud) | | 📋 Specced S279 | Server-side invisible velocity analysis on spectator votes. Flag debates where >X votes land within Y seconds for same side. Zero user friction. Holds suspicious votes pending review or discards silently. |
 | F-66 | Friction-right security strategy | | 📋 Specced S279 | Philosophy doc, not code. 4-layer defense: L1 Cloudflare Turnstile on signup, L2 SQL depth gates (F-63/F-64), L3 invisible velocity (F-65), L4 existing `rate_limits` table coverage audit. No CAPTCHA. |
 

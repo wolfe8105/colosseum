@@ -2912,3 +2912,23 @@ RELATED: LM-201 (spectator entry — click handler in arena-lobby.ts).
 
 SESSION: 254 (Track B — bundle fix).
 ```
+
+---
+
+## LM-226: F-64 ranked eligibility is enforced in BOTH `check_ranked_eligible` AND `join_debate_queue`
+```
+DECISION (Session 295): join_debate_queue() now raises an exception
+  if p_ranked = true AND the caller's profile_depth_pct < 25.
+  This is defense in depth — the client still calls check_ranked_eligible()
+  first (advisory), but the server now enforces it at queue-join time too.
+PROTECTS: Ranked queue integrity. Prevents direct RPC bypass.
+BITES YOU WHEN: You change the 25% threshold. Must update in THREE places:
+  1. check_ranked_eligible() function body (arena.sql line ~530)
+  2. join_debate_queue() function body (arena.sql line ~2205)
+  3. Client confirm dialog text (src/arena/arena-config-settings.ts line ~71)
+SYMPTOM: Users blocked at wrong threshold, or client says one number
+  while server enforces another.
+FIX: Grep for 'profile_depth_pct.*25' across SQL and 'profile.*25' in TS.
+  All three must agree.
+SESSION: 295.
+```

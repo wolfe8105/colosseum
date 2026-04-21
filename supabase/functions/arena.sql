@@ -2197,6 +2197,13 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
 
+  -- F-64: Server-side ranked eligibility gate
+  IF COALESCE(p_ranked, false) THEN
+    IF (SELECT COALESCE(profile_depth_pct, 0) FROM profiles WHERE id = v_uid) < 25 THEN
+      RAISE EXCEPTION 'Ranked requires 25%% profile completion';
+    END IF;
+  END IF;
+
   v_ruleset := CASE WHEN p_ruleset IN ('amplified', 'unplugged') THEN p_ruleset ELSE 'amplified' END;
 
   SELECT elo_rating INTO v_elo FROM profiles WHERE id = v_uid;
