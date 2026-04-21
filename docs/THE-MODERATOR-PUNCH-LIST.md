@@ -76,6 +76,8 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-47 | Moderator Marketplace | | ✅ Session 179 | ✅ DONE. SQL Phases 1-3 ✅. Client Steps 1-6 ✅. Step 7 ✅ (renderModScoring: debaters get 👍/👎, spectators get slider 1–50, wired to score_moderator RPC). Step 8 ✅ (8 test cases in tests/f47-moderator-scoring.test.ts, all passing). |
 | F-48 | Mod-initiated debate | | ✅ Session 210 | ✅ DONE. SQL: arena_debates.debater_a DROP NOT NULL. 4 RPCs: create_mod_debate, join_mod_debate (FOR NO KEY UPDATE SKIP LOCKED), check_mod_debate, cancel_mod_debate. Client: CREATE DEBATE button in Mod Queue, showModDebatePicker (mode/category/topic/ranked/ruleset), createModDebate, showModDebateWaitingMod (join code + slot names), showModDebateWaitingDebater, startModDebatePoll (4s), onModDebateReady (mod→observer, debater→matchFound). joinWithCode falls back to join_mod_debate. F48-MOD-INITIATED-DEBATE.sql committed to repo. |
 | F-51 | Live Moderated Debate Feed | | ✅ LIVE TESTED | **THE core product feature.** Turn-based moderated debate — 4 rounds × 2min turns, one speaker at a time, live inline scoring (two-tap), references (max 5, one-and-done), 60s ad breaks between rounds, spectator sentiment gauge, Deepgram STT, concede after R1, moderator eject/null. Post-debate: vote gate → winner → archive. Phase 1 + Phase 2 code complete (S234/S235). 20/20 tests passing (S261). All deps wired S271 (WebRTC bridge, deepgram-token Edge Function, AdSense). **Live E2E test passed — 2 debaters + 1 moderator, audio, Deepgram transcription in feed, ad breaks confirmed.** |
+| F-61 | Debate card expiration + creator cancel | | 📋 Specced S279 | 30-min auto-expire on unmatched ranked cards via pg_cron (every 5 min). Creator cancel any time up to 10 sec before match. Full token refund both paths. New RPCs: `cancel_pending_debate`, `expire_stale_debates`. New column: `arena_debates.matched_at TIMESTAMPTZ`. Client: countdown timer + cancel button on creator's own pending cards. |
+| F-62 | Link card debates (Reddit-style OG preview) | | 📋 Specced S279 | Optional URL at forge time. Server scrapes OG preview (image, domain, og:title) at creation. Stored as snapshot in `arena_debates.link_preview JSONB`. New column: `arena_debates.link_url TEXT` (nullable). Preview block renders between title and metadata on card. Tap = open URL in new tab. URL locked at forge. Broken link = Reddit behavior (snapshot renders, dead URL on tap). No allowlist/blocklist at launch. |
 
 ## 3B. Token Economy / Staking
 
@@ -168,7 +170,16 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 |---|---------|----------|-------------|-------|
 | F-35.3 | Orange Dot indicator | | ✅ Session 182 | Persistent indicator on nav for unclaimed token-earning opportunities (daily login not claimed, milestone ready, streak freeze available, unread notification). Current notification bell polls every 30s for unread count — Orange Dot is a second, always-visible indicator specifically for token actions. Simple highlight, not guided walkthrough. |
 | F-50 | Moderator Discovery — 5 touchpoints | | ✅ Session 206 | The app is called The Moderator — the role should be front and center. 5 fixes: (1) Post-debate nudge in arena.ts via nudge.ts. (2) Arena lobby inline banner with one-tap toggleModerator(). (3) Home feed card at position 2 in hot takes. (4) Newsletter "Moderator Spotlight" section with top mod stats. (5) Plinko signup step 4 (opt-in, skippable) before Done step. All gated: only shows for logged-in non-moderators. Card/banner disappear once is_moderator=true. |
-| F-61 | First-time user tutorial (post-signup onboarding walkthrough) | | ⏳ | Guided walkthrough for new users after Plinko signup completes. Introduces core loop: hot takes → reactions → challenges → debates. Should highlight key UI elements (feed, arena, profile). Dismissible, never re-shows after completion. Track via `profiles` column or `localStorage` flag. Lightweight — tooltips/highlights or step-through overlay, not a video. |
+| F-67 | First-time user tutorial (post-signup onboarding walkthrough) | | ⏳ | Guided walkthrough for new users after Plinko signup completes. Introduces core loop: hot takes → reactions → challenges → debates. Should highlight key UI elements (feed, arena, profile). Dismissible, never re-shows after completion. Track via `profiles` column or `localStorage` flag. Lightweight — tooltips/highlights or step-through overlay, not a video. |
+
+## 3K. Security / Anti-Manipulation
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-63 | Spectator participation gate (25% depth) | | 📋 Specced S279 | Watch-only for logged-out and sub-25% depth users. Interactive buttons (vote, stake, tip, chat) show signup prompt or "Complete your profile" bottom sheet. SQL-level 25% depth check on `cast_sentiment_tip`, `place_stake`, `send_spectator_chat`. Closes dataset poisoning vector. |
+| F-64 | SQL-level ranked eligibility hardening | | 📋 Specced S279 | Server-side 25% depth gate in `join_debate_queue` RPC. Currently client-side advisory only. Single SQL migration, no new tables, no client changes. |
+| F-65 | Vote velocity detection (invisible fraud) | | 📋 Specced S279 | Server-side invisible velocity analysis on spectator votes. Flag debates where >X votes land within Y seconds for same side. Zero user friction. Holds suspicious votes pending review or discards silently. |
+| F-66 | Friction-right security strategy | | 📋 Specced S279 | Philosophy doc, not code. 4-layer defense: L1 Cloudflare Turnstile on signup, L2 SQL depth gates (F-63/F-64), L3 invisible velocity (F-65), L4 existing `rate_limits` table coverage audit. No CAPTCHA. |
 
 ---
 
@@ -204,7 +215,12 @@ Features ordered by what can go first. Check this before picking work.
 - F-31 Cosmetics brainstorm (design session, no code)
 - F-35.3 Orange Dot indicator
 - F-12 Seasonal token boosts (parked — use when token economy needs tuning)
-- F-61 First-time user tutorial
+- F-67 First-time user tutorial
+- F-61 Debate card expiration + creator cancel
+- F-62 Link card debates (Reddit-style OG preview)
+- F-63 Spectator participation gate
+- F-64 SQL-level ranked eligibility hardening
+- F-65 Vote velocity detection
 
 **Tier 1 — needs one Tier 0 item first:**
 - F-06 Debate analytics overlay → needs F-05 (recording)
