@@ -4,6 +4,7 @@
  */
 
 import { safeRpc } from './auth.ts';
+import { get_modifier_catalog } from './contracts/rpc-schemas.ts';
 import type { ModifierEffect } from './modifiers.ts';
 
 // LANDMINE [LM-MODS-001]: The 60-minute catalog cache never invalidates on auth
@@ -20,7 +21,7 @@ export async function getModifierCatalog(): Promise<ModifierEffect[]> {
     return _catalogCache;
   }
 
-  const result = await safeRpc('get_modifier_catalog');
+  const result = await safeRpc('get_modifier_catalog', {}, get_modifier_catalog);
   if (result.error || !Array.isArray(result.data)) {
     console.error('[Modifiers] catalog fetch failed:', result.error);
     return _catalogCache ?? [];

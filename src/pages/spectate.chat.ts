@@ -5,6 +5,7 @@
  */
 
 import { safeRpc, getCurrentProfile, getCurrentUser } from '../auth.ts';
+import { get_spectator_chat } from '../contracts/rpc-schemas.ts';
 import { isDepthBlocked } from '../depth-gate.ts';
 import { state } from './spectate.state.ts';
 import { escHtml, timeAgo } from './spectate.utils.ts';
@@ -127,7 +128,7 @@ export function startChatPolling(): void {
   if (state.chatPollTimer) clearInterval(state.chatPollTimer);
   state.chatPollTimer = setInterval(async () => {
     try {
-      const { data: rawFresh } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 });
+      const { data: rawFresh } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 }, get_spectator_chat);
       const freshChat = rawFresh as SpectatorChatMessage[] | null;
       if (!freshChat || freshChat.length === 0) return;
       const newMessages = state.lastChatMessageAt

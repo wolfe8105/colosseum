@@ -1,4 +1,5 @@
 import { safeRpc, getCurrentUser } from '../auth.ts';
+import { get_my_groups } from '../contracts/rpc-schemas.ts';
 import { escapeHTML, showToast, friendlyError } from '../config.ts';
 import {
   _pendingPrivateType, selectedCategory, selectedRanked, selectedRuleset,
@@ -227,7 +228,7 @@ export async function showGroupLobbyPicker(mode: string, topic: string): Promise
   const listEl = document.getElementById('arena-group-pick-list')!;
 
   try {
-    const { data, error } = await safeRpc<{ id: string; name: string; member_count: number }[]>('get_my_groups');
+    const { data, error } = await safeRpc<{ id: string; name: string; member_count: number }[]>('get_my_groups', {}, get_my_groups);
     if (error || !data || (data as unknown[]).length === 0) {
       listEl.innerHTML = '<div style="text-align:center;color:var(--mod-text-muted);font-size:13px;padding:20px 0;">You\'re not in any groups yet</div>';
     } else {

@@ -4,6 +4,7 @@
  */
 
 import { safeRpc } from './auth.ts';
+import { get_user_modifier_inventory } from './contracts/rpc-schemas.ts';
 import type { UserInventory } from './modifiers.ts';
 
 // LANDMINE [LM-MODS-002]: Every function casts `result.data as T` without runtime
@@ -93,7 +94,7 @@ export async function equipPowerupForDebate(
 export async function getUserInventory(debateId?: string): Promise<UserInventory | null> {
   const result = await safeRpc('get_user_modifier_inventory', {
     p_debate_id: debateId ?? null,
-  });
+  }, get_user_modifier_inventory);
   if (result.error) {
     console.error('[Modifiers] inventory fetch failed:', result.error);
     return null;

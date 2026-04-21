@@ -7,6 +7,7 @@
  *   - PROD: log violation + fall through with raw data (no user-facing crash)
  *
  * Batch 1: 6 high-risk untyped RPCs (blind `as` casts in calling code).
+ * Batch 2: 6 more high-risk untyped RPCs.
  */
 
 import { z } from 'zod';
@@ -178,3 +179,229 @@ const DebateMessageSchema = z.object({
 }).passthrough();
 
 export const get_debate_messages = z.array(DebateMessageSchema);
+
+
+// =====================================================================
+// BATCH 2: 6 more high-risk untyped RPCs
+// =====================================================================
+
+// ── get_debate_replay_data ───────────────────────────────────────
+// Called by: spectate.ts:197
+// Frontend casts to: ReplayData
+// Reads: .power_ups[], .references[], .mod_scores[], .point_awards[], .speech_events[]
+
+const ReplayPowerUpSchema = z.object({
+  power_up_id: z.string(),
+  user_id: z.string(),
+  activated_at: z.string(),
+  power_up_name: z.string(),
+  power_up_icon: z.string(),
+  user_name: z.string(),
+  side: z.string(),
+}).passthrough();
+
+const ReplayReferenceSchema = z.object({
+  id: z.string(),
+  submitter_id: z.string(),
+  round: z.number().nullable(),
+  url: z.string(),
+  description: z.string(),
+  supports_side: z.string(),
+  ruling: z.string(),
+  ruling_reason: z.string().nullable(),
+  created_at: z.string(),
+  ruled_at: z.string().nullable(),
+  submitter_name: z.string(),
+  side: z.string(),
+}).passthrough();
+
+const ReplayModScoreSchema = z.object({
+  scorer_id: z.string(),
+  scorer_role: z.string(),
+  score: z.number(),
+  created_at: z.string(),
+  scorer_name: z.string(),
+}).passthrough();
+
+const PointAwardMetaSchema = z.object({
+  scored_event_id: z.string(),
+  score_a_after: z.number(),
+  score_b_after: z.number(),
+  base_score: z.number(),
+  in_debate_multiplier: z.number(),
+  in_debate_flat: z.number(),
+  final_contribution: z.number(),
+}).passthrough();
+
+const ReplayPointAwardSchema = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  round: z.number().nullable(),
+  side: z.string(),
+  base_score: z.number(),
+  metadata: PointAwardMetaSchema,
+}).passthrough();
+
+const ReplaySpeechEventSchema = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  round: z.number().nullable(),
+  side: z.string(),
+  content: z.string().nullable(),
+  user_id: z.string().nullable(),
+  debater_name: z.string(),
+}).passthrough();
+
+export const get_debate_replay_data = z.object({
+  power_ups: z.array(ReplayPowerUpSchema),
+  references: z.array(ReplayReferenceSchema),
+  mod_scores: z.array(ReplayModScoreSchema),
+  point_awards: z.array(ReplayPointAwardSchema),
+  speech_events: z.array(ReplaySpeechEventSchema),
+}).passthrough();
+
+
+// ── get_spectator_chat ───────────────────────────────────────────
+// Called by: spectate.ts:184, spectate.chat.ts:130, arena-feed-spec-chat.ts:137
+// Frontend casts to: SpectatorChatMessage[] / SpecChatMessage[]
+// Reads: .id, .user_id, .display_name, .avatar_url, .message, .created_at
+
+const SpectatorChatMessageSchema = z.object({
+  id: z.string().optional(),        // spectate.types omits id; arena-feed-spec-chat requires it
+  user_id: z.string().nullable(),
+  display_name: z.string().nullable(),
+  avatar_url: z.string().nullable().optional(),
+  message: z.string().nullable(),
+  created_at: z.string().nullable(),
+}).passthrough();
+
+export const get_spectator_chat = z.array(SpectatorChatMessageSchema);
+
+
+// ── get_modifier_catalog ─────────────────────────────────────────
+// Called by: modifiers-catalog.ts:23
+// Frontend casts to: ModifierEffect[]
+// Reads: .id, .effect_num, .name, .description, .category, .timing, .tier_gate, .mod_cost, .pu_cost
+
+const ModifierCategorySchema = z.enum([
+  'token', 'point', 'reference', 'elo_xp', 'crowd', 'survival',
+  'self_mult', 'self_flat', 'opponent_debuff', 'cite_triggered',
+  'conditional', 'special',
+]);
+
+const ModifierTimingSchema = z.enum(['end_of_debate', 'in_debate']);
+
+const RarityTierSchema = z.enum(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
+
+const ModifierEffectSchema = z.object({
+  id: z.string(),
+  effect_num: z.number(),
+  name: z.string(),
+  description: z.string(),
+  category: ModifierCategorySchema,
+  timing: ModifierTimingSchema,
+  tier_gate: RarityTierSchema,
+  mod_cost: z.number(),
+  pu_cost: z.number(),
+}).passthrough();
+
+export const get_modifier_catalog = z.array(ModifierEffectSchema);
+
+
+// ── get_user_modifier_inventory ──────────────────────────────────
+// Called by: modifiers-rpc.ts:94
+// Frontend casts to: UserInventory
+// Reads: .unsocketed_modifiers[], .powerup_stock[], .equipped_loadout[]
+
+const OwnedModifierSchema = z.object({
+  modifier_id: z.string(),
+  effect_id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: ModifierCategorySchema,
+  timing: ModifierTimingSchema,
+  tier_gate: RarityTierSchema,
+  acquired_at: z.string(),
+  acquisition_type: z.enum(['purchase', 'drop', 'reward']),
+}).passthrough();
+
+const PowerUpStockSchema = z.object({
+  effect_id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: ModifierCategorySchema,
+  timing: ModifierTimingSchema,
+  tier_gate: RarityTierSchema,
+  quantity: z.number(),
+  pu_cost: z.number(),
+}).passthrough();
+
+const EquippedLoadoutEntrySchema = z.object({
+  effect_id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: ModifierCategorySchema,
+  timing: ModifierTimingSchema,
+  consumed: z.boolean(),
+  equipped_at: z.string(),
+}).passthrough();
+
+export const get_user_modifier_inventory = z.object({
+  unsocketed_modifiers: z.array(OwnedModifierSchema),
+  powerup_stock: z.array(PowerUpStockSchema),
+  equipped_loadout: z.array(EquippedLoadoutEntrySchema),
+});
+
+
+// ── get_my_groups ────────────────────────────────────────────────
+// Called by: groups.load.ts:33, arena-private-picker.ts:230
+// Frontend casts to: GroupListItem[] / { id, name, member_count }[]
+// Reads: .id, .name, .avatar_emoji, .description, .member_count, .elo_rating, .role, .is_member
+
+const GroupListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatar_emoji: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  category: z.string().optional(),
+  member_count: z.union([z.number(), z.string()]).optional(),
+  elo_rating: z.union([z.number(), z.string()]).optional(),
+  role: z.string().nullable().optional(),
+  rank: z.union([z.number(), z.string()]).nullable().optional(),
+  is_member: z.boolean().optional(),
+  my_role: z.string().nullable().optional(),
+}).passthrough();
+
+export const get_my_groups = z.array(GroupListItemSchema);
+
+
+// ── get_my_invite_stats ──────────────────────────────────────────
+// Called by: home.invite.ts:24
+// Frontend casts to: InviteStats
+// Reads: .ref_code, .invite_url, .total_clicks, .total_signups, .total_converts,
+//        .next_milestone, .unclaimed_rewards[], .activity[]
+
+const InviteRewardSchema = z.object({
+  id: z.string(),
+  milestone: z.number(),
+  reward_type: z.enum(['legendary_powerup', 'mythic_powerup', 'mythic_modifier']),
+  pending_review: z.boolean(),
+  awarded_at: z.string(),
+}).passthrough();
+
+const ActivityEntrySchema = z.object({
+  status: z.string(),
+  username: z.string().nullable(),
+  event_at: z.string(),
+}).passthrough();
+
+export const get_my_invite_stats = z.object({
+  ref_code: z.string().nullable(),
+  invite_url: z.string().nullable(),
+  total_clicks: z.number(),
+  total_signups: z.number(),
+  total_converts: z.number(),
+  next_milestone: z.number(),
+  unclaimed_rewards: z.array(InviteRewardSchema),
+  activity: z.array(ActivityEntrySchema),
+});

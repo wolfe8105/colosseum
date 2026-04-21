@@ -11,7 +11,7 @@
 // to the IIFE. Removed — all files import safeRpc directly from auth.ts.
 
 import { ready, getSupabaseClient, safeRpc, getCurrentUser, getIsPlaceholderMode } from '../auth.ts';
-import { get_arena_debate_spectator, get_debate_messages } from '../contracts/rpc-schemas.ts';
+import { get_arena_debate_spectator, get_debate_messages, get_debate_replay_data, get_spectator_chat } from '../contracts/rpc-schemas.ts';
 import { nudge } from '../nudge.ts';
 import '../analytics.ts';
 import { state } from './spectate.state.ts';
@@ -181,7 +181,7 @@ async function loadDebate(): Promise<void> {
 
     // Load spectator chat
     try {
-      const { data: chatData } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 });
+      const { data: chatData } = await safeRpc('get_spectator_chat', { p_debate_id: state.debateId, p_limit: 100 }, get_spectator_chat);
       state.chatMessages = (chatData || []) as any[];
       if (state.chatMessages.length > 0) {
         state.lastChatMessageAt = state.chatMessages[state.chatMessages.length - 1].created_at;
@@ -194,7 +194,7 @@ async function loadDebate(): Promise<void> {
     const isComplete = debate.status === 'complete' || debate.status === 'completed';
     if (isComplete) {
       try {
-        const { data: rpData } = await safeRpc('get_debate_replay_data', { p_debate_id: state.debateId });
+        const { data: rpData } = await safeRpc('get_debate_replay_data', { p_debate_id: state.debateId }, get_debate_replay_data);
         if (rpData) {
           state.replayData = rpData as ReplayData;
         }

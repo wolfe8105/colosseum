@@ -4,6 +4,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { get_my_groups } from '../contracts/rpc-schemas.ts';
 import { activeCategory, currentUser } from './groups.state.ts';
 import { renderEmpty, renderGroupList } from './groups.utils.ts';
 
@@ -30,7 +31,7 @@ export async function loadMyGroups(): Promise<void> {
   }
   (document.getElementById('mine-list') as HTMLElement).innerHTML = '<div class="loading-state">Loading…</div>';
   try {
-    const { data, error } = await safeRpc('get_my_groups');
+    const { data, error } = await safeRpc('get_my_groups', {}, get_my_groups);
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     if (!groups || groups.length === 0) {

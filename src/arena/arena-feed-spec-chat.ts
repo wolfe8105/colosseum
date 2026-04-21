@@ -18,6 +18,7 @@
  */
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
+import { get_spectator_chat } from '../contracts/rpc-schemas.ts';
 import { escapeHTML } from '../config.ts';
 
 // ── Module state ──────────────────────────────────────────────────────────────
@@ -137,7 +138,7 @@ async function loadMessages(): Promise<void> {
     const { data, error } = await safeRpc('get_spectator_chat', {
       p_debate_id: activeDebateId,
       p_limit: 100,
-    });
+    }, get_spectator_chat);
     if (error || !data) return;
     const msgs = (data as SpecChatMessage[]);
     if (!msgs.length) return;

@@ -7,6 +7,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { get_my_invite_stats } from '../contracts/rpc-schemas.ts';
 import type { InviteStats } from './home.invite-types.ts';
 import { renderInvite } from './home.invite-render.ts';
 import { openClaimSheet } from './home.invite-sheet.ts';
@@ -21,7 +22,7 @@ export async function loadInviteScreen(container: HTMLElement): Promise<void> {
   if (_sheetCleanup) { _sheetCleanup(); _sheetCleanup = null; }
   container.innerHTML = '<div class="invite-loading">Loading your invite stats…</div>';
 
-  const result = await safeRpc('get_my_invite_stats', {});
+  const result = await safeRpc('get_my_invite_stats', {}, get_my_invite_stats);
   const stats  = result.data as InviteStats | null;
 
   if (!stats || result.error) {
