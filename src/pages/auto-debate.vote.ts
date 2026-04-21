@@ -51,7 +51,30 @@ export async function castVoteImpl(
   if (side === 'a') btnA?.classList.add('winner');
   if (side === 'b') btnB?.classList.add('winner');
 
-  // cast_auto_debate_vote RPC not yet deployed — show optimistic result
-  showResults(d.votes_a + (side === 'a' ? 1 : 0), d.votes_b + (side === 'b' ? 1 : 0), d.vote_count + 1, d.winner, side);
+  // Show optimistic result immediately
+  const optA = d.votes_a + (side === 'a' ? 1 : 0);
+  const optB = d.votes_b + (side === 'b' ? 1 : 0);
+  showResults(optA, optB, d.vote_count + 1, d.winner, side);
+
+  // Persist vote via RPC
+  try {
+    const { data, error } = await sb.rpc('cast_auto_debate_vote', {
+      p_debate_id: d.id,
+      p_side: side,
+      p_fingerprint: getFingerprint(),
+    });
+    if (!error && data) {
+      const result = data as { success: boolean; votes_a?: number; votes_b?: number; vote_count?: number; error?: string };
+      if (result.success && result.votes_a != null) {
+        // Update with server-authoritative counts
+        showResults(result.votes_a, result.votes_b!, result.vote_count!, d.winner, side);
+      }
+      // already_voted is not an error for the user — they just see current counts
+    }
+  } catch (e) {
+    console.warn('[auto-debate.vote] cast_auto_debate_vote failed:', e);
+  }
+
+  // Claim token reward (fire-and-forget)
   claimVote(d.id).catch(e => console.warn('[auto-debate.vote] claimVote failed', e));
 }
