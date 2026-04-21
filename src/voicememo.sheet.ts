@@ -5,7 +5,8 @@
 
 import { showToast } from './config.ts';
 import { safeRpc, getIsPlaceholderMode } from './auth.ts';
-import { loadHotTakes } from './async.ts';
+// F-68: voice takes will post to create_debate_card in future; refresh is a no-op for now
+const loadHotTakes = (_section: string) => { /* stub — unified feed handles refresh */ };
 import { startRecording, stopRecording, isRecordingState, RecordingResult } from './voicememo.record.ts';
 import type { RecorderContext } from './voicememo.ts';
 import { resetPlayingState } from './voicememo.player.ts';
