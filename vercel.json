@@ -28,10 +28,6 @@
             "destination": "/moderator-debate-landing.html"
         },
         {
-            "source": "/verdict",
-            "destination": "/moderator-auto-debate.html"
-        },
-        {
             "source": "/login",
             "destination": "/moderator-login.html"
         },

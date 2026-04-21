@@ -7,6 +7,7 @@ import {
   view, selectedMode, selectedRanked, selectedRuleset, selectedRounds,
   selectedCategory, queuePollTimer, queueElapsedTimer, queueSeconds,
   queueErrorState, aiFallbackShown, _queuePollInFlight, screenEl,
+  selectedLinkUrl, selectedLinkPreview,
   set_view, set_selectedMode, set_queuePollTimer, set_queueElapsedTimer,
   set_queueSeconds, set_queueErrorState, set_aiFallbackShown,
   set__queuePollInFlight, set_selectedRuleset,
@@ -208,6 +209,8 @@ export async function joinServerQueue(mode: DebateMode, topic: string): Promise<
       p_ranked: selectedRanked,
       p_ruleset: selectedRuleset,
       p_total_rounds: selectedRounds,
+      p_link_url: selectedLinkUrl || null,
+      p_link_preview: selectedLinkPreview || null,
     });
     if (error) throw error;
     if ((data as MatchData)?.status === 'matched') {

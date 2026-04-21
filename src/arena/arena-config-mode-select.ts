@@ -5,9 +5,9 @@
 // arena-config-mode-select → arena-private-picker → arena-config-mode-select
 // Pre-existing cycle (one of 37 known in src/arena/). Do not fix here.
 
-import { getCurrentUser, getAvailableModerators } from '../auth.ts';
+import { getCurrentUser, getAvailableModerators, getSupabaseClient } from '../auth.ts';
 import { escapeHTML } from '../config.ts';
-import { set_selectedModerator, set_selectedRuleset } from './arena-state.ts';
+import { set_selectedModerator, set_selectedRuleset, set_selectedLinkUrl, set_selectedLinkPreview } from './arena-state.ts';
 import type { AvailableModerator } from './arena-types-moderator.ts';
 import { MODES } from './arena-constants.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
@@ -44,6 +44,12 @@ export function showModeSelect(): void {
       <div class="arena-topic-section">
         <div class="arena-topic-label">Topic (optional)</div>
         <input class="arena-topic-input" id="arena-topic-input" type="text" placeholder="e.g. Is AI going to take all our jobs?" maxlength="200">
+      </div>
+      <div class="arena-topic-section" id="arena-link-section">
+        <div class="arena-topic-label">Add a link (optional)</div>
+        <input class="arena-topic-input" id="arena-link-input" type="url" placeholder="Paste a URL to preview on the debate card" maxlength="2000">
+        <div id="arena-link-preview" style="display:none;"></div>
+        <div id="arena-link-error" style="display:none;color:var(--mod-status-live);font-size:12px;margin-top:4px;"></div>
       </div>
       <div class="mod-picker-section" id="mod-picker-section">
         <div class="mod-picker-label">Moderator (optional)</div>
@@ -110,6 +116,74 @@ export function showModeSelect(): void {
   // Wire close
   document.getElementById('arena-mode-backdrop')?.addEventListener('click', () => closeModeSelect());
   document.getElementById('arena-mode-cancel')?.addEventListener('click', () => closeModeSelect());
+
+  // Wire link input — scrape OG on blur/paste
+  const linkInput = document.getElementById('arena-link-input') as HTMLInputElement | null;
+  if (linkInput) {
+    let lastScrapedUrl = '';
+    const scrapeLink = async () => {
+      const url = linkInput.value.trim();
+      const previewEl = document.getElementById('arena-link-preview');
+      const errorEl = document.getElementById('arena-link-error');
+      if (!url) {
+        set_selectedLinkUrl(null);
+        set_selectedLinkPreview(null);
+        if (previewEl) previewEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
+        return;
+      }
+      if (url === lastScrapedUrl) return;
+      lastScrapedUrl = url;
+
+      // Quick URL validation
+      try { const u = new URL(url); if (u.protocol !== 'https:' && u.protocol !== 'http:') throw 0; }
+      catch { if (errorEl) { errorEl.textContent = 'Enter a valid URL'; errorEl.style.display = 'block'; } return; }
+
+      if (previewEl) { previewEl.style.display = 'block'; previewEl.innerHTML = '<div style="padding:8px;color:var(--mod-text-muted);font-size:12px;">Fetching preview…</div>'; }
+      if (errorEl) errorEl.style.display = 'none';
+
+      try {
+        const client = getSupabaseClient();
+        const session = client ? await client.auth.getSession() : null;
+        const token = session?.data?.session?.access_token;
+        if (!token) { if (errorEl) { errorEl.textContent = 'Sign in to add links'; errorEl.style.display = 'block'; } return; }
+
+        const res = await fetch(`/api/scrape-og?url=${encodeURIComponent(url)}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          set_selectedLinkUrl(null);
+          set_selectedLinkPreview(null);
+          if (previewEl) previewEl.style.display = 'none';
+          if (errorEl) { errorEl.textContent = data.error || 'Could not preview this link'; errorEl.style.display = 'block'; }
+          return;
+        }
+
+        set_selectedLinkUrl(url);
+        set_selectedLinkPreview(data);
+        if (errorEl) errorEl.style.display = 'none';
+        if (previewEl) {
+          previewEl.style.display = 'block';
+          previewEl.innerHTML = `
+            <div class="arena-link-card-preview">
+              <img src="${escapeHTML(data.image_url)}" alt="" class="arena-link-card-img" onerror="this.style.display='none'">
+              <div class="arena-link-card-meta">
+                <div class="arena-link-card-domain">${escapeHTML(data.domain || '')}</div>
+                ${data.og_title ? `<div class="arena-link-card-title">${escapeHTML(data.og_title)}</div>` : ''}
+              </div>
+            </div>`;
+        }
+      } catch {
+        set_selectedLinkUrl(null);
+        set_selectedLinkPreview(null);
+        if (previewEl) previewEl.style.display = 'none';
+        if (errorEl) { errorEl.textContent = 'Could not fetch link'; errorEl.style.display = 'block'; }
+      }
+    };
+    linkInput.addEventListener('blur', () => { void scrapeLink(); });
+    linkInput.addEventListener('paste', () => { setTimeout(() => { void scrapeLink(); }, 100); });
+  }
 }
 
 export function closeModeSelect(forward?: boolean): void {
