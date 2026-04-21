@@ -23,7 +23,6 @@ export async function joinWithCode(code: string): Promise<void> {
   }
   try {
     const { data, error } = await safeRpc<JoinPrivateLobbyResult>('join_private_lobby', {
-      p_debate_id: null,
       p_join_code: code,
     });
     if (error) throw error;
