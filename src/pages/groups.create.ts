@@ -3,6 +3,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { create_group } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { currentUser, selectedEmoji, setSelectedEmoji } from './groups.state.ts';
 
@@ -36,7 +37,7 @@ export async function submitCreateGroup(): Promise<void> {
       p_category:     (document.getElementById('group-category') as HTMLSelectElement).value,
       p_is_public:    true,
       p_avatar_emoji: selectedEmoji,
-    });
+    }, create_group);
     if (error) throw error;
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     closeCreateModal();

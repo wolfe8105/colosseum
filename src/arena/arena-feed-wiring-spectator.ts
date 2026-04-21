@@ -7,7 +7,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
-import { get_user_watch_tier } from '../contracts/rpc-schemas.ts';
+import { get_user_watch_tier, cast_sentiment_tip } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { isDepthBlocked } from '../depth-gate.ts';
 import type { CurrentDebate } from './arena-types.ts';
@@ -73,7 +73,7 @@ async function handleTip(
       p_debate_id: debate.id,
       p_side: side,
       p_amount: amount,
-    });
+    }, cast_sentiment_tip);
 
     if (error || !data) {
       console.warn('[FeedRoom] cast_sentiment_tip failed:', error);

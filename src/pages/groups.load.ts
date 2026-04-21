@@ -4,7 +4,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
-import { get_my_groups, get_group_leaderboard } from '../contracts/rpc-schemas.ts';
+import { get_my_groups, get_group_leaderboard, discover_groups } from '../contracts/rpc-schemas.ts';
 import { activeCategory, currentUser } from './groups.state.ts';
 import { renderEmpty, renderGroupList } from './groups.utils.ts';
 
@@ -15,7 +15,7 @@ export function setLoadOpenGroupCallback(fn: (id: string) => void): void { _open
 export async function loadDiscover(): Promise<void> {
   (document.getElementById('discover-list') as HTMLElement).innerHTML = '<div class="loading-state">Loading groups…</div>';
   try {
-    const { data, error } = await safeRpc('discover_groups', { p_limit: 30, p_category: activeCategory });
+    const { data, error } = await safeRpc('discover_groups', { p_limit: 30, p_category: activeCategory }, discover_groups);
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     renderGroupList('discover-list', groups || [], false, false, _openGroup!);

@@ -10,6 +10,7 @@
  * groups.auditions.render.ts.
  */
 import { safeRpc } from '../auth.ts';
+import { request_audition } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { currentGroupId, callerRole } from './groups.state.ts';
 import type { GroupDetail } from './groups.types.ts';
@@ -74,7 +75,7 @@ export async function submitAuditionRequest(): Promise<void> {
       p_category:     (document.getElementById('audition-category') as HTMLSelectElement).value || null,
       p_ruleset:      (document.getElementById('audition-ruleset') as HTMLSelectElement).value || 'amplified',
       p_total_rounds: Number((document.getElementById('audition-rounds') as HTMLSelectElement).value) || 4,
-    });
+    }, request_audition);
     if (error) throw error;
 
     closeAuditionModal();

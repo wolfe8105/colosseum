@@ -492,3 +492,70 @@ export const get_user_watch_tier = z.union([
   z.array(WatchTierRowSchema),
   WatchTierRowSchema,
 ]);
+
+
+// =====================================================================
+// BATCH 4: 6 more high-risk untyped RPCs
+// =====================================================================
+
+// ── cast_sentiment_tip ───────────────────────────────────────────
+// Called by: arena-feed-wiring-spectator.ts:72
+// Frontend casts to: { success?: boolean; error?: string; new_total_a?: number; new_total_b?: number; new_balance?: number }
+
+export const cast_sentiment_tip = z.object({
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+  new_total_a: z.number().optional(),
+  new_total_b: z.number().optional(),
+  new_balance: z.number().optional(),
+}).passthrough();
+
+
+// ── discover_groups ──────────────────────────────────────────────
+// Called by: groups.load.ts:18
+// Frontend casts to: GroupListItem[] (same shape as get_my_groups)
+
+export const discover_groups = z.array(GroupListItemSchema);
+
+
+// ── create_group ─────────────────────────────────────────────────
+// Called by: groups.create.ts:33
+// Frontend reads: .group_id
+
+export const create_group = z.object({
+  group_id: z.string().optional(),
+  error: z.string().optional(),
+  success: z.boolean().optional(),
+}).passthrough();
+
+
+// ── create_group_challenge ───────────────────────────────────────
+// Called by: groups.challenges.ts:143
+// Frontend reads: .error, or returns challenge data on success
+
+export const create_group_challenge = z.object({
+  error: z.string().optional(),
+  success: z.boolean().optional(),
+  challenge_id: z.string().optional(),
+}).passthrough();
+
+
+// ── respond_to_group_challenge ───────────────────────────────────
+// Called by: groups.challenges.ts:247
+// Frontend reads: .error
+
+export const respond_to_group_challenge = z.object({
+  error: z.string().optional(),
+  success: z.boolean().optional(),
+}).passthrough();
+
+
+// ── request_audition ─────────────────────────────────────────────
+// Called by: groups.auditions.ts:71
+// Frontend reads error via throw; success returns data object
+
+export const request_audition = z.object({
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+  audition_id: z.string().optional(),
+}).passthrough();

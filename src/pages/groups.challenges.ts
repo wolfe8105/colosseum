@@ -8,7 +8,7 @@
 import { sb, currentUser, currentGroupId, isMember } from './groups.state.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import { safeRpc } from '../auth.ts';
-import { get_group_challenges } from '../contracts/rpc-schemas.ts';
+import { get_group_challenges, create_group_challenge, respond_to_group_challenge } from '../contracts/rpc-schemas.ts';
 import { renderEmpty } from './groups.utils.ts';
 
 // ── LOCAL STATE ───────────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ export async function submitGroupChallenge() {
       p_topic:               topic,
       p_category:            (document.getElementById('gvg-category') as HTMLSelectElement).value,
       p_format:              selectedGvGFormat,
-    });
+    }, create_group_challenge);
     if (error) {
       errEl!.textContent   = error.message || 'RPC failed';
       errEl!.style.display = 'block';
@@ -247,7 +247,7 @@ export async function respondToChallenge(challengeId: string, action: string) {
     const { data, error } = await safeRpc('respond_to_group_challenge', {
       p_challenge_id: challengeId,
       p_action:       action,
-    });
+    }, respond_to_group_challenge);
     if (error) { showToast('⚠️ ' + (error.message || 'Failed'), 'error'); return; }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result?.error) { showToast('⚠️ ' + result.error, 'error'); return; }
