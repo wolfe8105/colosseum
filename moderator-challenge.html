@@ -291,7 +291,7 @@ body::before {
     if (session && session.user) {
       // Already logged in — go straight to arena with join code
       renderRedirecting(code);
-      window.location.href = '/?joinCode=' + encodeURIComponent(code);
+      window.location.href = '/index.html?screen=arena&joinCode=' + encodeURIComponent(code);
     } else {
       renderGuest(code);
     }
