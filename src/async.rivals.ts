@@ -45,7 +45,7 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
 
   if (!rivals.length) {
     container.innerHTML = `
-      <div style="text-align:center;padding:20px;color:#6a7a90; /* TODO: needs CSS var token */">
+      <div style="text-align:center;padding:20px;color:var(--mod-text-sub);">
         <div style="font-size:28px;margin-bottom:6px;">⚔️</div>
         <div style="font-size:13px;">No rivals yet. Tap a username to declare one.</div>
       </div>`;
@@ -62,11 +62,11 @@ export async function renderRivals(container: HTMLElement): Promise<void> {
       const safeId = esc(r.id);
 
       return `
-        <div style="background:#132240; /* TODO: needs CSS var token */border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+        <div style="background:var(--mod-bg-card);border:1px solid rgba(204,41,54,0.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
           <div data-action="profile" data-user-id="${safeRivalId}" data-username="${safeRivalUsername}" style="width:40px;height:40px;border-radius:50%;background:var(--mod-bg-card);border:2px solid var(--mod-magenta);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--mod-magenta);cursor:pointer;">${safeInitial}</div>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);">${safeName}</div>
-            <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */">ELO ${Number(r.rival_elo ?? 1200)} · ${Number(r.rival_wins ?? 0)}W-${Number(r.rival_losses ?? 0)}L</div>
+            <div style="font-size:11px;color:var(--mod-text-sub);">ELO ${Number(r.rival_elo ?? 1200)} · ${Number(r.rival_wins ?? 0)}W-${Number(r.rival_losses ?? 0)}L</div>
           </div>
           <div style="text-align:right;">
             ${r.status === 'pending'

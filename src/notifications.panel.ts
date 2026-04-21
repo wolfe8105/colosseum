@@ -37,7 +37,7 @@ export function renderList(filter: NotificationFilter = 'all'): void {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:13px;color:var(--mod-text-heading);margin-bottom:2px;">${escapeHTML(n.title)}</div>
           <div style="font-size:12px;color:var(--mod-text-sub);line-height:1.4;">${escapeHTML(n.body)}</div>
-          <div style="font-size:11px;color:#6a7a90; /* TODO: needs CSS var token */margin-top:4px;">${escapeHTML(displayTime)}</div>
+          <div style="font-size:11px;color:var(--mod-text-sub);margin-top:4px;">${escapeHTML(displayTime)}</div>
         </div>
         ${unreadDot}
       </div>`;
@@ -51,7 +51,7 @@ export function createPanel(): void {
   panel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;display:none;flex-direction:column;';
   panel.innerHTML = `
     <div id="notif-backdrop" style="position:absolute;inset:0;background:var(--mod-bg-overlay);"></div>
-    <div id="notif-drawer" style="position:relative;z-index:1;background:#132240; /* TODO: needs CSS var token */border-bottom-left-radius:16px;border-bottom-right-radius:16px;max-height:70vh;display:flex;flex-direction:column;transform:translateY(-100%);transition:transform 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding-top:env(safe-area-inset-top,0px);">
+    <div id="notif-drawer" style="position:relative;z-index:1;background:var(--mod-bg-card);border-bottom-left-radius:16px;border-bottom-right-radius:16px;max-height:70vh;display:flex;flex-direction:column;transform:translateY(-100%);transition:transform 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding-top:env(safe-area-inset-top,0px);">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--mod-border-secondary);">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--mod-accent);">NOTIFICATIONS</div>
         <div style="display:flex;gap:8px;">

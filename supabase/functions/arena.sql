@@ -668,7 +668,7 @@ BEGIN
   END IF;
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );
@@ -738,7 +738,7 @@ BEGIN
   END IF;
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );
@@ -813,7 +813,7 @@ BEGIN
 
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );
@@ -2197,6 +2197,13 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
 
+  -- F-64: Server-side ranked eligibility gate
+  IF COALESCE(p_ranked, false) THEN
+    IF (SELECT COALESCE(profile_depth_pct, 0) FROM profiles WHERE id = v_uid) < 25 THEN
+      RAISE EXCEPTION 'Ranked requires 25%% profile completion';
+    END IF;
+  END IF;
+
   v_ruleset := CASE WHEN p_ruleset IN ('amplified', 'unplugged') THEN p_ruleset ELSE 'amplified' END;
 
   SELECT elo_rating INTO v_elo FROM profiles WHERE id = v_uid;
@@ -2799,11 +2806,18 @@ DECLARE
   v_last_sent timestamptz;
   v_trimmed text;
   v_debate_status text;
+  v_depth_pct int;
 BEGIN
   -- Auth check
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'Not authenticated');
+  END IF;
+
+  -- F-63: Spectator participation depth gate
+  SELECT COALESCE(profile_depth_pct, 0) INTO v_depth_pct FROM profiles WHERE id = v_user_id;
+  IF v_depth_pct < 25 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'profile_incomplete', 'profile_pct', v_depth_pct);
   END IF;
 
   -- Validate debate exists and is live
@@ -3265,25 +3279,56 @@ AS $function$
 DECLARE
   v_uid uuid := auth.uid();
   v_debate RECORD;
+  v_velocity_count INT;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   IF p_vote NOT IN ('a', 'b') THEN RAISE EXCEPTION 'Invalid vote'; END IF;
 
-  -- FIX: block participants from voting in their own debate
+  -- Block participants from voting in their own debate
   SELECT debater_a, debater_b INTO v_debate FROM arena_debates WHERE id = p_debate_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Debate not found'; END IF;
   IF v_uid IN (v_debate.debater_a, v_debate.debater_b) THEN
     RAISE EXCEPTION 'Cannot vote in your own debate';
   END IF;
 
-  INSERT INTO arena_votes (debate_id, user_id, vote) VALUES (p_debate_id, v_uid, p_vote)
-  ON CONFLICT (debate_id, user_id) DO UPDATE SET vote = p_vote;
+  -- Insert/update vote (voted_at always refreshed)
+  INSERT INTO arena_votes (debate_id, user_id, vote, voted_at)
+  VALUES (p_debate_id, v_uid, p_vote, now())
+  ON CONFLICT (debate_id, user_id) DO UPDATE SET vote = p_vote, voted_at = now();
 
   -- Update cached counts
   UPDATE arena_debates SET
     vote_count_a = (SELECT count(*) FROM arena_votes WHERE debate_id = p_debate_id AND vote = 'a'),
     vote_count_b = (SELECT count(*) FROM arena_votes WHERE debate_id = p_debate_id AND vote = 'b')
   WHERE id = p_debate_id;
+
+  -- F-65: Velocity detection — flag if >5 same-side votes in 10 seconds
+  SELECT COUNT(*) INTO v_velocity_count
+  FROM arena_votes
+  WHERE debate_id = p_debate_id
+    AND vote = p_vote
+    AND voted_at > now() - interval '10 seconds';
+
+  IF v_velocity_count > 5 THEN
+    UPDATE arena_debates
+    SET velocity_flag_count = velocity_flag_count + 1,
+        velocity_flagged_at = COALESCE(velocity_flagged_at, now())
+    WHERE id = p_debate_id;
+
+    PERFORM log_event(
+      p_event_type := 'vote_velocity_flag',
+      p_user_id    := v_uid,
+      p_debate_id  := p_debate_id,
+      p_category   := NULL,
+      p_side       := p_vote,
+      p_metadata   := jsonb_build_object(
+        'velocity_count', v_velocity_count,
+        'window_seconds', 10,
+        'threshold', 5,
+        'flag_number', (SELECT velocity_flag_count FROM arena_debates WHERE id = p_debate_id)
+      )
+    );
+  END IF;
 
   RETURN json_build_object('success', true);
 END;

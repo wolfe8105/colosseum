@@ -1,25 +1,8 @@
 /**
  * THE MODERATOR — Async Module: Type Definitions
  *
- * All shared interfaces and types for the async subsystem.
- * No imports needed — pure type declarations.
+ * F-68: Hot take types removed. Only predictions, rivals remain.
  */
-
-export interface HotTake {
-  id: string;
-  user_id: string;
-  username?: string;
-  user: string;
-  elo: number;
-  tokens?: number;
-  text: string;
-  section: string;
-  reactions: number;
-  challenges: number;
-  time: string;
-  userReacted: boolean;
-  verified_gladiator?: boolean;
-}
 
 export interface Prediction {
   debate_id: string;
@@ -60,21 +43,3 @@ export interface RivalEntry {
   status: 'pending' | 'active';
   direction: 'sent' | 'received';
 }
-
-export interface ReactResult {
-  reaction_count: number;
-  reacted: boolean;
-}
-
-export interface CreateHotTakeResult {
-  id: string;
-}
-
-export type CategoryFilter =
-  | 'all'
-  | 'politics'
-  | 'sports'
-  | 'entertainment'
-  | 'trending'
-  | 'technology'
-  | string;

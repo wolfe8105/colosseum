@@ -11,7 +11,6 @@ const htmlEntries = {
   profileDepth: resolve(__dirname, 'moderator-profile-depth.html'),
   groups:       resolve(__dirname, 'moderator-groups.html'),
   spectate:     resolve(__dirname, 'moderator-spectate.html'),
-  autoDebate:   resolve(__dirname, 'moderator-auto-debate.html'),
   debateLanding:resolve(__dirname, 'moderator-debate-landing.html'),
   terms:        resolve(__dirname, 'moderator-terms.html'),
   privacy:      resolve(__dirname, 'moderator-privacy.html'),

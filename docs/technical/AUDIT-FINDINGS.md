@@ -60,11 +60,11 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ### ~~P5/P7-SD-1. `api/challenge.html.js:20` — HTML injection via unescaped `preview.topic` in server-rendered page~~ — **FIXED 2026-04-17 (commit a21984e)**
 **Phase 5 (Architectural Blindness) + Phase 7 (Red Team), 2026-04-17.** Originally downgraded HIGH→MEDIUM by this session (incorrectly). Phase 7 revalidated as HIGH: `ogDesc` lands in `content="${ogDesc}"` in server-rendered HTML — a topic containing `"` breaks out of the attribute, enabling HTML injection into the served page. `escapeHtml()` was already available on line 13 as `topic`; line 20 used raw `preview.topic` instead. **Fix:** replaced `preview.topic` with the already-escaped `topic` variable. One-character change.
 
-### P7-AA-02 / P5-BI-1. `src/pages/auto-debate.vote.ts:55` + RPC — Phantom votes, fabricated UI counts — **OPEN (HIGH)**
-**Phase 5 (Architectural Blindness) + Phase 7 (Red Team), 2026-04-17. Phase 7 upheld as HIGH — prior downgrade to MEDIUM was wrong.** `cast_auto_debate_vote` RPC confirmed absent from all SQL files — dropped in S249. Call site at line 55 silently fails; UI shows locally-incremented counts that are never persisted. No partial remediation exists. All auto-debate vote data since S249 is fabricated. Cannot be fixed with a code change — requires rebuilding the vote feature against a live RPC.
+### ~~P7-AA-02 / P5-BI-1. `src/pages/auto-debate.vote.ts:55` + RPC — Phantom votes, fabricated UI counts~~ — **RESOLVED S293 (dead code deleted)**
+**Phase 5 (Architectural Blindness) + Phase 7 (Red Team), 2026-04-17. Resolved S293 — all auto-debate files deleted (moderator-auto-debate.html + 4 src/pages/auto-debate*.ts files + vite entry). System was retired S249, tables/RPCs dropped. No code path to these files remains.**
 
-### ~~P5-BI-2~~ → **M-P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates` — OPEN (MEDIUM)**
-**Phase 5 (Architectural Blindness), 2026-04-17. Severity downgraded HIGH→MEDIUM after independent code review 2026-04-17.** The fallback path queries the dropped `auto_debates` table. The Postgres error is silent and the code falls through to placeholder card rendering — UI degrades gracefully, no crash. Off-peak users see placeholder cards instead of live content, with no error shown. Dead code removal, not urgent. Note: also supersedes M-Q3 (the `sb!` null assertion in the same branch).
+### ~~P5-BI-2~~ → **~~M-P5-BI-2. `src/arena/arena-lobby.ts:199` — Dead table query against dropped `auto_debates`~~ — RESOLVED S293**
+**Phase 5 (Architectural Blindness), 2026-04-17. Resolved — `auto_debates` query no longer present in arena-lobby.ts. Auto-debate dead code fully removed S293.**
 
 ### ~~P5-EP-1. `src/config.ts:56-57` — Production credentials hardcoded as dev fallback~~ — **FIXED 2026-04-17**
 **Phase 5 (Architectural Blindness), 2026-04-17. Fixed same day.** Hardcoded production Supabase URL and anon key replaced with `PASTE_YOUR_*` placeholders. `isPlaceholder()` now correctly detects missing `.env` and activates placeholder mode. `.env.example` added to repo root so fresh checkouts know what's required.
@@ -483,11 +483,11 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### M-Q3. `arena-lobby.ts:199` — `sb!` non-null assertion on `getSupabaseClient()` in fallback branch
 **Batch B.** In `loadLobbyFeed`, `sb` is obtained from `getSupabaseClient()` (which can return null if the client is not initialized). The fallback branch uses `sb!.from('auto_debates')` — the `!` non-null assertion bypasses TypeScript's null check and would throw a runtime exception if `sb` is null. The happy path uses a separate `safeRpc` call which handles null internally; only the fallback branch has this exposure. Agents 03 and 05 flagged in needs_review. Fix: add a null guard before `sb!.from(...)` and return early or fall through to placeholder rendering. **Note: superseded by P5-BI-2 — the table itself is dropped; the entire fallback branch should be removed.**
 
-### P5-BI-3. `src/arena/arena-feed-realtime.ts:42` — `(client as any).auth.getSession()` suppresses auth type safety — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** Type-casting `client` to `any` bypasses TypeScript's auth invariant checks. If `getSession()` is called on an uninitialized or expired client, the cast suppresses the compiler error and the failure becomes a runtime exception. Related to SYC-M-01 from earlier audit. Fix: use the typed `getSession()` call pattern from `auth.core.ts`.
+### ~~P5-BI-3. `src/arena/arena-feed-realtime.ts:42` — `(client as any).auth.getSession()` suppresses auth type safety~~ — **FIXED S291**
+**Phase 5 (Architectural Blindness), 2026-04-17. Fixed S291 cosmetic sweep.** The `as any` cast was removed. Typed auth pattern now used.
 
-### P5-BI-4. `src/share.ts:158` — Ref code regex too permissive vs generator output — **OPEN**
-**Phase 5 (Architectural Blindness), 2026-04-17.** `share.ts:158` validates invite codes with `/^[a-zA-Z0-9_-]{4,20}$/` — accepts uppercase, underscores, hyphens, and lengths 4–20. `api/invite.js` generates codes as `/^[a-z0-9]{5}$/` only — 5-char lowercase alphanumeric. The mismatch means the validator accepts codes that the generator never produces, creating an input surface that bypasses the canonical format. Fix: tighten `share.ts:158` to `/^[a-z0-9]{5}$/`.
+### ~~P5-BI-4. `src/share.ts:158` — Ref code regex too permissive vs generator output~~ — **FIXED (verified S293)**
+**Phase 5 (Architectural Blindness), 2026-04-17. Fixed.** Regex tightened to `/^[a-z0-9]{5}$/` — matches generator output exactly.
 
 ### P6-THRASH-02. `AUDIT-FINDINGS.md` — Phase 5 severity reversed within same audit cycle — **OPEN**
 **Phase 6 (Agentic Drift), 2026-04-17.** `5a64c96` committed P5-SD-1, P5-BI-1, P5-BI-2 as HIGH. `d876eda` (same day) revised all three to MEDIUM. One of the two agents made a classification error. The reversal happened without attribution, inside a code-fix commit, with no explicit "prior agent was wrong" statement. See P6-DRIFT-NC-01.

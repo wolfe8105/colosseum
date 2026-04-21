@@ -15,6 +15,8 @@ export interface ArenaFeedItem {
   debater_b_name?: string;
   ruleset?: string;
   total_rounds?: number;
+  link_url?: string | null;
+  link_preview?: { image_url: string; og_title?: string; domain?: string } | null;
 }
 
 export interface AutoDebateItem {

@@ -3,6 +3,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { showToast } from '../config.ts';
 import { currentUser, selectedEmoji, setSelectedEmoji } from './groups.state.ts';
 
 let _openGroup: ((id: string) => void) | null = null;
@@ -25,7 +26,7 @@ export function selectEmoji(el: HTMLElement): void {
 
 export async function submitCreateGroup(): Promise<void> {
   const name = (document.getElementById('group-name') as HTMLInputElement).value.trim();
-  if (!name || name.length < 2) { alert('Group name must be at least 2 characters'); return; }
+  if (!name || name.length < 2) { showToast('Group name must be at least 2 characters', 'error'); return; }
   const btn = document.getElementById('create-submit-btn') as HTMLButtonElement;
   btn.disabled = true; btn.textContent = 'CREATING…';
   try {
@@ -43,7 +44,7 @@ export async function submitCreateGroup(): Promise<void> {
     (document.getElementById('group-desc-input') as HTMLInputElement).value = '';
     if (result.group_id && _openGroup) _openGroup(result.group_id);
   } catch (e) {
-    alert((e as Error).message || 'Could not create group');
+    showToast((e as Error).message || 'Could not create group', 'error');
   } finally {
     btn.disabled = false; btn.textContent = 'CREATE GROUP';
   }

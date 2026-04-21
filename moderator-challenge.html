@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
 
@@ -291,7 +291,7 @@ body::before {
     if (session && session.user) {
       // Already logged in — go straight to arena with join code
       renderRedirecting(code);
-      window.location.href = '/?joinCode=' + encodeURIComponent(code);
+      window.location.href = '/index.html?screen=arena&joinCode=' + encodeURIComponent(code);
     } else {
       renderGuest(code);
     }

@@ -61,7 +61,7 @@ export async function oauthLogin(provider: 'google' | 'apple' | string, redirect
 export async function logOut(): Promise<AuthResult> {
   if (getIsPlaceholderMode()) return { success: true };
 
-  const notif = (window as { ColosseumNotifications?: { destroy?: () => void } }).ColosseumNotifications;
+  const notif = (window as { ModeratorNotifications?: { destroy?: () => void } }).ModeratorNotifications;
   notif?.destroy?.();
 
   try {

@@ -8,6 +8,7 @@
 
 import { safeRpc } from '../auth.ts';
 import { showToast } from '../config.ts';
+import { isDepthBlocked } from '../depth-gate.ts';
 import type { CurrentDebate } from './arena-types.ts';
 import {
   pendingSentimentA, pendingSentimentB,
@@ -39,6 +40,9 @@ export async function wireSpectatorTipButtons(debate: CurrentDebate): Promise<vo
     // Buttons stay disabled
     return;
   }
+
+  // F-63: Depth gate — block sub-25% users from tipping
+  if (isDepthBlocked()) return;
 
   // Enable tip buttons for non-Unranked watchers
   tipBtns.forEach(btn => { btn.disabled = false; });
@@ -86,6 +90,8 @@ async function handleTip(
         showToast('Watch a full debate to unlock tipping', 'error');
       } else if (result.error === 'debate_not_live') {
         showToast('Debate is no longer live', 'error');
+      } else if (result.error === 'profile_incomplete') {
+        showToast('Complete 25% of your profile to tip', 'error');
       } else {
         showToast('Tip failed', 'error');
       }

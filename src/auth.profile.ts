@@ -101,9 +101,9 @@ export async function showUserProfile(userId: string): Promise<void> {
   modal.id = 'user-profile-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:var(--mod-bg-overlay);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `
-    <div style="background:linear-gradient(180deg,#132240 /* TODO: needs CSS var token */ 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
+    <div style="background:linear-gradient(180deg,var(--mod-bg-card) 0%,var(--mod-bg-base) 100%);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
       <div style="width:40px;height:4px;background:var(--mod-bg-elevated);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="text-align:center;color:#6a7a90; /* TODO: needs CSS var token */font-size:13px;">Loading profile...</div>
+      <div style="text-align:center;color:var(--mod-text-sub);font-size:13px;">Loading profile...</div>
     </div>`;
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);

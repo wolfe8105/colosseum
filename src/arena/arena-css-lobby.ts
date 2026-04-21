@@ -51,6 +51,21 @@ export function injectLobbyCSS(): void {
     .arena-card-btn { padding: 6px 14px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-accent); background: var(--mod-accent-muted); color: var(--mod-accent-text); font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
     .arena-card-btn:active { background: rgba(231,68,42,0.2); }
 
+    /* F-62: LINK CARD PREVIEW */
+    .arena-card-link-preview { display: block; text-decoration: none; border: 1px solid var(--mod-border-subtle); border-radius: var(--mod-radius-sm); overflow: hidden; margin-bottom: 8px; background: var(--mod-bg-inset); transition: border-color var(--mod-transition-fast); }
+    .arena-card-link-preview:active { border-color: var(--mod-accent); }
+    .arena-card-link-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .arena-card-link-meta { padding: 6px 10px; }
+    .arena-card-link-domain { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--mod-text-muted); }
+    .arena-card-link-title { font-size: 12px; color: var(--mod-text-body); line-height: 1.3; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* F-62: Mode-select link input preview */
+    .arena-link-card-preview { border: 1px solid var(--mod-border-subtle); border-radius: var(--mod-radius-sm); overflow: hidden; margin-top: 6px; background: var(--mod-bg-inset); }
+    .arena-link-card-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .arena-link-card-meta { padding: 6px 10px; }
+    .arena-link-card-domain { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--mod-text-muted); }
+    .arena-link-card-title { font-size: 12px; color: var(--mod-text-body); line-height: 1.3; margin-top: 2px; }
+
     /* CHALLENGE FLOW */
     .arena-challenge-cta { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-left: var(--mod-card-bar-width) solid var(--mod-bar-accent); border-radius: var(--mod-radius-md); padding: var(--mod-space-lg); text-align: center; cursor: pointer; transition: background var(--mod-transition-fast); }
     .arena-challenge-cta:active { background: var(--mod-bg-card-hover); }

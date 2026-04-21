@@ -42,7 +42,7 @@ export function render(): void {
         </div>
         <div style="text-align:right;">
           <div style="font-family:var(--mod-font-display);font-size:20px;color:var(--mod-accent);font-weight:700;">${rankDisplay}</div>
-          <div style="font-size:10px;color:#6a7a90; /* TODO: needs CSS var token */">YOUR RANK</div>
+          <div style="font-size:10px;color:var(--mod-text-sub);">YOUR RANK</div>
         </div>
       </div>
 

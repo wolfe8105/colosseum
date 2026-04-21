@@ -123,9 +123,11 @@ async function runSearch(query: string): Promise<void> {
       userResults = (!error && data) ? data as SearchUser[] : [];
     } else if (currentSearchTab === 'takes') {
       const { data, error } = await sb
-        .from('hot_takes')
-        .select('id, body, created_at, profiles!hot_takes_user_id_fkey(username)')
-        .ilike('body', `%${query}%`)
+        .from('arena_debates')
+        .select('id, content, created_at, profiles!arena_debates_debater_a_fkey(username)')
+        .eq('status', 'open')
+        .not('content', 'is', null)
+        .ilike('content', `%${query}%`)
         .order('created_at', { ascending: false })
         .limit(15);
       if (!error && data) {
@@ -134,7 +136,7 @@ async function runSearch(query: string): Promise<void> {
           const prof = r.profiles as Record<string, unknown> | null;
           return {
             id: r.id as string,
-            body: r.body as string,
+            body: r.content as string,
             username: (prof?.username as string) ?? 'anon',
             created_at: r.created_at as string,
           };

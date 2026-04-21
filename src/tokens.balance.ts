@@ -5,6 +5,7 @@
 
 import { showToast } from './config.ts';
 import { safeRpc, getCurrentUser, getCurrentProfile, getIsPlaceholderMode } from './auth.ts';
+import { _notify } from './auth.core.ts';
 import type { ClaimResult, TokenSummary } from './tokens.types.ts';
 
 export let lastKnownBalance: number | null = null;
@@ -26,7 +27,10 @@ export function _updateBalanceDisplay(newBalance: number | null | undefined, bro
 export function updateBalance(newBalance: number): void {
   _updateBalanceDisplay(newBalance);
   const profile = getCurrentProfile();
-  if (profile) (profile as Record<string, unknown>).token_balance = newBalance;
+  if (profile) {
+    (profile as Record<string, unknown>).token_balance = newBalance;
+    _notify(getCurrentUser(), profile);
+  }
 }
 
 export async function _rpc(fnName: string, args: Record<string, unknown> = {}): Promise<ClaimResult | null> {

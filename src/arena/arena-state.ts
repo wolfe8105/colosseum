@@ -41,6 +41,10 @@ export let selectedRounds: number = DEBATE.defaultRounds;
 export let selectedCategory: string | null = null;
 export let selectedWantMod: boolean = false;
 
+// Link card (F-62)
+export let selectedLinkUrl: string | null = null;
+export let selectedLinkPreview: { image_url: string; og_title: string | null; domain: string | null } | null = null;
+
 // Private lobby
 export let privateLobbyPollTimer: ReturnType<typeof setInterval> | null = null;
 export let privateLobbyDebateId: string | null = null;
@@ -115,6 +119,8 @@ export function set_selectedRuleset(v: 'amplified' | 'unplugged') { selectedRule
 export function set_selectedRounds(v: number) { selectedRounds = v; }
 export function set_selectedCategory(v: string | null) { selectedCategory = v; }
 export function set_selectedWantMod(v: boolean) { selectedWantMod = v; }
+export function set_selectedLinkUrl(v: string | null) { selectedLinkUrl = v; }
+export function set_selectedLinkPreview(v: typeof selectedLinkPreview) { selectedLinkPreview = v; }
 export function set_privateLobbyPollTimer(v: ReturnType<typeof setInterval> | null) { privateLobbyPollTimer = v; }
 export function set_privateLobbyDebateId(v: string | null) { privateLobbyDebateId = v; }
 export function set__pendingPrivateType(v: 'username' | 'group' | 'code' | null) { _pendingPrivateType = v; }

@@ -44,7 +44,7 @@ export function _showWagerPicker(debateId: string, side: string): void {
     </div>`;
 
   // Find the prediction card and append the picker
-  const card = document.querySelector(`[data-action="predict"][data-id="${safeDebateId}"]`)?.closest('div[style*="background:#132240"]') as HTMLElement | null;
+  const card = document.querySelector(`[data-action="predict"][data-id="${safeDebateId}"]`)?.closest('div[style*="background:var(--mod-bg-card)"]') as HTMLElement | null;
   if (!card) return;
 
   // Remove existing picker from any other card

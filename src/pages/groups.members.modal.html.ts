@@ -76,7 +76,7 @@ export function _injectMemberActionsModal(): void {
         <button id="mam-kick-btn" style="
           width:100%;
           background:rgba(255,165,0,0.1);
-          color:#ffa500; /* TODO: needs CSS var token */
+          color:var(--mod-gold-bright);
           border:1px solid rgba(255,165,0,0.3);
           border-radius:8px;
           padding:10px;

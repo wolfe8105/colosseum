@@ -202,6 +202,28 @@ export function init(): void {
 }
 
 // ============================================================
+// PROFILE REFRESH (re-fetch from DB and notify all listeners)
+// ============================================================
+
+/**
+ * Re-fetches the current user's profile from the database and
+ * pushes the updated data to all onChange listeners (sidebar, etc.).
+ * Call after any action that mutates profile-level stats:
+ * debate completion, token spend/earn, ELO change, etc.
+ */
+export async function refreshProfile(): Promise<void> {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { data, error } = await supabaseClient.rpc('get_own_profile');
+    if (error) throw error;
+    currentProfile = data as Profile;
+    _notify(currentUser, currentProfile);
+  } catch (e) {
+    console.error('[auth] refreshProfile failed:', e);
+  }
+}
+
+// ============================================================
 // GETTERS (matching the IIFE getter pattern)
 // ============================================================
 

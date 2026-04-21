@@ -145,13 +145,13 @@ async function connect(): Promise<void> {
   }
 
   _ws.onopen = () => {
-    console.log('[Deepgram] WebSocket connected');
+    console.debug('[Deepgram] WebSocket connected');
     _reconnecting = false;
     emitStatus('live');
 
     // Send any buffered audio from a reconnect
     if (_audioBuffer.length > 0) {
-      console.log(`[Deepgram] Sending ${_audioBuffer.length} buffered chunks`);
+      console.debug(`[Deepgram] Sending ${_audioBuffer.length} buffered chunks`);
       for (const chunk of _audioBuffer) {
         if (_ws && _ws.readyState === WebSocket.OPEN) {
           _ws.send(chunk);
@@ -181,7 +181,7 @@ async function connect(): Promise<void> {
   };
 
   _ws.onclose = (event: CloseEvent) => {
-    console.log(`[Deepgram] WebSocket closed: code=${event.code} reason=${event.reason}`);
+    console.debug(`[Deepgram] WebSocket closed: code=${event.code} reason=${event.reason}`);
     stopRecording();
 
     if (_active && !_reconnecting) {
@@ -243,7 +243,7 @@ function startRecording(): void {
     };
 
     _recorder.start(CHUNK_INTERVAL_MS);
-    console.log(`[Deepgram] MediaRecorder started (${mimeType || 'default'}, ${CHUNK_INTERVAL_MS}ms chunks)`);
+    console.debug(`[Deepgram] MediaRecorder started (${mimeType || 'default'}, ${CHUNK_INTERVAL_MS}ms chunks)`);
   } catch (err) {
     console.error('[Deepgram] MediaRecorder start failed:', err);
     // Fall back to text-only — don't break the debate
@@ -266,7 +266,7 @@ function stopRecording(): void {
 
 function attemptReconnect(): void {
   _reconnecting = true;
-  console.log('[Deepgram] Attempting reconnect (Tier 1)...');
+  console.debug('[Deepgram] Attempting reconnect (Tier 1)...');
   // Keep MediaRecorder running — buffer audio
   // Don't stop recording, just disconnect WS and reconnect
 
@@ -292,7 +292,7 @@ function tryReconnectLoop(): void {
   // Retry every 10s while turn is active
   _reconnectTimer = setTimeout(async () => {
     if (!_active || !_reconnecting) return;
-    console.log('[Deepgram] Retry reconnect...');
+    console.debug('[Deepgram] Retry reconnect...');
     await connect();
     // If still reconnecting after connect attempt, loop
     if (_active && _reconnecting) {

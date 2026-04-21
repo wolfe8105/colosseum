@@ -2,23 +2,13 @@
  * Arsenal Shop — Bottom-sheet confirm flow
  */
 
-import type { ModifierEffect, RarityTier } from '../modifiers.ts';
+import type { ModifierEffect } from '../modifiers.ts';
 import type { ShopState } from './home.arsenal-shop-types.ts';
 import { handleBuyModifier, handleBuyPowerup } from '../modifiers-handlers.ts';
-import { tierLabel, categoryLabel } from '../modifiers-render.ts';
+import { tierLabel, categoryLabel, rarityClass } from '../modifiers-render.ts';
 import { escapeHTML } from '../config.ts';
 
 type ProductType = 'modifier' | 'powerup';
-
-// LANDMINE [LM-SHOP-005]: duplicates rarityClass exported from modifiers.ts — import instead.
-// Inline helper to avoid re-importing (mirrors modifiers.ts rarityClass)
-function rarityClass(tier: RarityTier): string {
-  const map: Record<RarityTier, string> = {
-    common: 'common', uncommon: 'uncommon', rare: 'rare',
-    legendary: 'legendary', mythic: 'mythic',
-  };
-  return map[tier] ?? 'common';
-}
 
 /**
  * Opens the purchase bottom sheet for a given effect.

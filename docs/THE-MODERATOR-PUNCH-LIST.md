@@ -22,7 +22,7 @@ These are tech debt, cleanup, and infrastructure items. None are features — th
 | H-04 | `colosseum-arena.html` in Wiring Manifest but NOT in `vite.config.ts` | ✅ | Session 163. Non-issue — stale Wiring Manifest reference. Arena is a screen inside index.html via `arena.init()`, not a separate HTML file. |
 | H-05 | Bot army quarantined from rename | ❌ | SCRATCHED S248. Bot army system retired in full (see F-06/Bot Army scratch note in pending spec file). Internal "Colosseum" strings in `bot-config.ts`, `bot-engine.ts`, `lib/*`, `tests/*` are irrelevant — code is inert and files are "floating in the ether" with no teardown plan. |
 | H-06 | Stripe Edge Function templates use old imports | ❌ | SCRATCHED S277. No monetization at this time. |
-| H-07 | Edge Function CORS allowlist missing mirror domain | ⏳ | OK since mirror is pure HTML. Cleanup item. |
+| H-07 | Edge Function CORS allowlist missing mirror domain | ✅ | Mirror deprecated S245 (F-40 scratched). All 5 edge functions have correct CORS for current domains (themoderator.app, the-moderator.vercel.app, localhost:3000). Closed S293. |
 | H-08 | 3 older RLS policies still have `{public}` scope | ✅ | Session 270. mod_dropout_log SELECT narrowed to authenticated + participants. debate_effect_state SELECT and debate_powerup_loadout SELECT converted to TO authenticated explicitly. |
 | H-09 | `bot-engine.js` straggler in repo root | ✅ | Session 163. Already deleted. |
 | H-10 | TS Migration Plan — remove from project knowledge | ✅ | Session 163. Removed. |
@@ -76,6 +76,8 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | F-47 | Moderator Marketplace | | ✅ Session 179 | ✅ DONE. SQL Phases 1-3 ✅. Client Steps 1-6 ✅. Step 7 ✅ (renderModScoring: debaters get 👍/👎, spectators get slider 1–50, wired to score_moderator RPC). Step 8 ✅ (8 test cases in tests/f47-moderator-scoring.test.ts, all passing). |
 | F-48 | Mod-initiated debate | | ✅ Session 210 | ✅ DONE. SQL: arena_debates.debater_a DROP NOT NULL. 4 RPCs: create_mod_debate, join_mod_debate (FOR NO KEY UPDATE SKIP LOCKED), check_mod_debate, cancel_mod_debate. Client: CREATE DEBATE button in Mod Queue, showModDebatePicker (mode/category/topic/ranked/ruleset), createModDebate, showModDebateWaitingMod (join code + slot names), showModDebateWaitingDebater, startModDebatePoll (4s), onModDebateReady (mod→observer, debater→matchFound). joinWithCode falls back to join_mod_debate. F48-MOD-INITIATED-DEBATE.sql committed to repo. |
 | F-51 | Live Moderated Debate Feed | | ✅ LIVE TESTED | **THE core product feature.** Turn-based moderated debate — 4 rounds × 2min turns, one speaker at a time, live inline scoring (two-tap), references (max 5, one-and-done), 60s ad breaks between rounds, spectator sentiment gauge, Deepgram STT, concede after R1, moderator eject/null. Post-debate: vote gate → winner → archive. Phase 1 + Phase 2 code complete (S234/S235). 20/20 tests passing (S261). All deps wired S271 (WebRTC bridge, deepgram-token Edge Function, AdSense). **Live E2E test passed — 2 debaters + 1 moderator, audio, Deepgram transcription in feed, ad breaks confirmed.** |
+| F-61 | Debate card expiration + creator cancel | | ✅ SHIPPED S295 | 30-min auto-expire on unmatched open cards via `expire_stale_debate_cards()` (pg_cron every 5 min — must enable + schedule). Creator cancel via `cancel_debate_card()` RPC. New column: `arena_debates.matched_at TIMESTAMPTZ` set by `accept_challenge`. Client: countdown timer on all open cards, CANCEL button on creator's own. New statuses: `cancelled`, `expired` (excluded from `get_unified_feed` by existing WHERE clause). LM-228 (expiry sync), LM-229 (status exclusion). **Pat action: enable pg_cron extension in Supabase + schedule the job.** |
+| F-62 | Link card debates (Reddit-style OG preview) | | ✅ SHIPPED S293 | Optional URL at forge time. Server scrapes OG preview (image, domain, og:title) at creation. Stored as snapshot in `arena_debates.link_preview JSONB`. New column: `arena_debates.link_url TEXT` (nullable). Preview block renders between title and metadata on card. Tap = open URL in new tab. URL locked at forge. Broken link = Reddit behavior (snapshot renders, dead URL on tap). No allowlist/blocklist at launch. |
 
 ## 3B. Token Economy / Staking
 
@@ -140,14 +142,14 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
 | F-35 | Weekly newsletter + in-app toasts | | ✅ Session 190 | **(A) Newsletter via Resend** ✅ Session 187: newsletter.ts on VPS, cron live (Thu 8PM EST). **(B) In-app nudge toasts** ✅ Session 190: nudge.ts module (suppression: once/session, 24h cooldown, 3/session cap). 8 trigger points wired: enter_debate (arena.ts), round_end (arena.ts), final_score win/loss (arena.ts), return_visit (tokens.ts), first_signup (plinko.ts), replay_entry (spectate.ts), first_vote spectate (spectate.ts), first_vote hot-take feed (async.ts — added Session 190). |
-| F-36 | 7-day onboarding drip | | 🅿️ Session 182 | Product Vision §7.1 has day-by-day design (Day 1: show up → badge, Day 2: first vote, Day 3: watch debate, escalating rewards, titles "Rookie"→"Regular"→"Gladiator"). **Parked: blocked on F-35 (delivery) + F-31 (awards/rewards defined).** |
-| F-37 | Granular notification preferences | | 🅿️ Session 182 | User control panel — toggles per notification type (DMs, tournaments, bounties, citations, marketplace, rival alerts, follow activity). Feature Room Map lists this as furniture in Settings (Room 6). **Parked: blocked on F-35 (can't control channels that don't exist yet).** |
+| F-36 | 7-day onboarding drip | | ✅ SHIPPED S274 | `onboarding_drip_log` table, 7 cosmetic rewards, drip card UI, all trigger points wired. Day 1–7 progression with escalating rewards and titles ("Rookie"→"Regular"→"Gladiator"). SQL run in Supabase. Client: `src/onboarding-drip.ts`. |
+| F-37 | Granular notification preferences | | ✅ SHIPPED S274 | `notif_rivals` + `notif_economy` toggle columns on profiles. Settings UI wired: `settings.helpers.ts`, `settings.load.ts`, `settings.save.ts`. Passed through `update_profile` RPC via `p_notif_rivals`/`p_notif_economy` params. |
 
 ## 3H. External / Growth
 
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
-| F-38 | Browser extension ("Take it to The Moderator") | | 🅿️ Session 182 | Concept: browser button lets users pull arguments from Reddit/Twitter into the platform for a proper debate. War Plan §4.6 + OT §8.5.4. No technical design, no wireframe, no auth flow spec. **Parked: blocked on 50+ organic users.** |
+| F-38 | Browser extension ("Take it to The Moderator") | | ❌ SCRATCHED S293 | Replaced by F-49 `/go` — guest AI sparring landing page serves the same cold-traffic funnel without requiring an install. Original concept was companion to bot army (scratched S248). |
 | F-39 | Embeddable challenge links | | ✅ Session 182 | URL you paste into Reddit, Twitter, Discord, group chats. Format: `moderator.app/challenge?topic=X&user=Y`. Other person clicks, lands on challenge page (works without auth — guest sees OG tags with topic and challenger), signs up/logs in, auto-routed into private lobby. Extends F-46 infrastructure (create_private_lobby, join_private_lobby already exist). New work: public URL format, guest landing page with OG tags, signup flow that preserves challenge context, auto-routing after auth. Every link posted anywhere = user acquisition funnel. |
 | F-40 | Mirror pages with live counts | | ❌ Session 245 | **Scratched.** Mirror deprecated. SEO cannibalization risk (second indexable property competing with main app + /u/ profiles + /go for same keywords). /go owns cold-traffic funnel. Bot army quarantined S195, no traffic pointed at mirror recently. Disaster-recovery role not worth carrying a whole separate deployment. Mirror generator (`/opt/colosseum/colosseum-mirror-generator.js`) and Cloudflare Pages deployment (`colosseum-f30.pages.dev`) to be sunset. See Land Mine Map LM-202 for deprecation entry. NT/CLAUDE.md Ring 6 framing needs cleanup (not urgent). |
 | F-41 | Celebrity/influencer challenge events | | ❌ Session 182 | **Way back burner.** Conceptual. |
@@ -168,6 +170,31 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 |---|---------|----------|-------------|-------|
 | F-35.3 | Orange Dot indicator | | ✅ Session 182 | Persistent indicator on nav for unclaimed token-earning opportunities (daily login not claimed, milestone ready, streak freeze available, unread notification). Current notification bell polls every 30s for unread count — Orange Dot is a second, always-visible indicator specifically for token actions. Simple highlight, not guided walkthrough. |
 | F-50 | Moderator Discovery — 5 touchpoints | | ✅ Session 206 | The app is called The Moderator — the role should be front and center. 5 fixes: (1) Post-debate nudge in arena.ts via nudge.ts. (2) Arena lobby inline banner with one-tap toggleModerator(). (3) Home feed card at position 2 in hot takes. (4) Newsletter "Moderator Spotlight" section with top mod stats. (5) Plinko signup step 4 (opt-in, skippable) before Done step. All gated: only shows for logged-in non-moderators. Card/banner disappear once is_moderator=true. |
+| F-67 | First-time user tutorial (post-signup onboarding walkthrough) | | ✅ SHIPPED S294 | 61-screen interactive user guide at `docs/the-moderator-user-guide.jsx`. Covers every screen, element, and flow in the app. 870-line React component with per-element short/long descriptions. |
+| F-68 | Unified Feed (Kill Hot Takes) | | ✅ SHIPPED S294 | Hot takes and debate cards unified into one entity. Everything is an `arena_debates` row. `status='open'` = posted opinion (was a hot take). Challenge transitions `open → pending → live`. New RPCs: `create_debate_card`, `react_debate_card`, `accept_challenge`, `get_unified_feed`. New table: `debate_reactions`. Category filter pills on home feed. Composer: "Let your opinion be heard..." 5 async hot-take files deleted, 6 trimmed (-904 lines). `hot_takes`, `hot_take_reactions`, `async_debates` tables dropped. `create_hot_take`, `react_hot_take`, `create_challenge` RPCs retired. |
+
+## 3K. Security / Anti-Manipulation
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-63 | Spectator participation gate (25% depth) | | ✅ SHIPPED S295 | SQL-level 25% depth gate on `cast_sentiment_tip`, `place_stake`, `send_spectator_chat`. Client pre-flight via `isDepthBlocked()` in `src/depth-gate.ts`. Sub-25% users see confirm dialog redirecting to profile-depth page. Server returns `profile_incomplete` error as defense in depth. LM-227 documents the 7-place threshold sync. |
+| F-64 | SQL-level ranked eligibility hardening | | ✅ SHIPPED S295 | Server-side 25% depth gate in `join_debate_queue` RPC. RAISE EXCEPTION if p_ranked=true and profile_depth_pct < 25. Previously client-side advisory only. Single SQL migration, no new tables, no client changes. LM-226 documents the three-place threshold sync. |
+| F-65 | Vote velocity detection (invisible fraud) | | ✅ SHIPPED S295 | Invisible velocity analysis in `vote_arena_debate`. >5 same-side votes within 10 seconds flags the debate (`velocity_flagged_at`, `velocity_flag_count`). Logs `vote_velocity_flag` event. Zero friction — votes still go through. New index `idx_arena_votes_velocity`. New column `arena_votes.voted_at`. Admin review via query on `velocity_flagged_at IS NOT NULL`. LM-230 documents thresholds. |
+| F-66 | Friction-right security strategy | | ✅ SHIPPED S295 | Philosophy doc at `docs/technical/THE-MODERATOR-FRICTION-RIGHT-STRATEGY.md`. 4-layer defense: L1 Cloudflare Turnstile (not yet implemented — plan documented), L2 SQL depth gates (F-63/F-64 shipped), L3 invisible velocity (F-65 shipped), L4 rate_limits coverage audit (4 priority gaps identified: vote_arena_debate, spectator_chat, forge_reference, create_group). No CAPTCHAs ever. |
+
+## 3L. S295 Pat's List
+
+| # | Feature | Priority | Spec Exists? | Notes |
+|---|---------|----------|-------------|-------|
+| F-69 | Create a reference (E2E test) | | 📋 S295 | Forge a reference via the Arsenal, verify it appears in My Arsenal, then equip it to a loadout and confirm it shows in the pre-debate loadout picker. Full round-trip test. |
+| F-70 | Social media links in profile | | 📋 S295 | Add optional social media links (Twitter/X, TikTok, Instagram, YouTube, etc.) to user profiles. Display on public profile page. Stored in `profiles` or `user_settings`. Must sanitize URLs. No auto-verification. |
+| F-71 | Adult content / pornography policy | | 📋 S295 | What is the platform policy on NSFW content in debate topics, references, link cards? Needs a clear decision and enforcement mechanism (content flag, report flow, auto-moderation, or hard block). |
+| F-72 | Minor safety — USA/EU compliance | | 📋 S295 | COPPA (USA, under 13), age gate enforcement, EU GDPR-K / Digital Services Act requirements. Current: Plinko has DOB step. Needs audit: is DOB actually enforced server-side? What data is collected on minors? Parental consent flow? |
+| F-73 | Placeholder audit — find all stubs needing real content | | 📋 S295 | Sweep all HTML/TS for placeholder text, lorem ipsum, "TODO", "FIXME", hardcoded sample data, or stub text that needs Pat to fill in real copy. Produce a checklist. |
+| F-74 | Landing page redesign — show the feed first | | 📋 S295 | Currently themoderator.app opens with "do you want to sign in." Pat wants the feed visible before login — make the first impression the content, not a gate. Feed may live in two places (pre-auth landing + post-auth home). |
+| F-75 | Login UX redesign — Google primary feels wrong | | 📋 S295 | Current login has Google OAuth as primary. Pat doesn't like it. Needs discussion: alternative layouts, email/password option prominence, Apple Sign-In, passkey option (ties to Security Roadmap Phase 1). |
+| F-76 | Google Play auto-signup flow | | 📋 S295 | When users download from Google Play, Android has a streamlined sign-up flow (Google One Tap / Credential Manager API). Can we integrate that so users are signed in immediately on first app launch? Ties to F-52 (TWA wrapper already submitted). |
+| F-77 | Create 6 link-card debates (seed content) | | 📋 S295 | Pat needs 6 debate cards posted with links: 2 from ESPN, 2 from Couples Court (CC), 1 from Twitter/X, 1 from TikTok. Uses F-62 link card + F-68 unified feed composer. Manual seed — not automated. |
 
 ---
 
@@ -203,29 +230,24 @@ Features ordered by what can go first. Check this before picking work.
 - F-31 Cosmetics brainstorm (design session, no code)
 - F-35.3 Orange Dot indicator
 - F-12 Seasonal token boosts (parked — use when token economy needs tuning)
+- F-67 First-time user tutorial
+- F-61 Debate card expiration + creator cancel
+- F-62 Link card debates (Reddit-style OG preview)
+- F-63 Spectator participation gate
+- F-64 SQL-level ranked eligibility hardening
+- F-65 Vote velocity detection
 
 **Tier 1 — needs one Tier 0 item first:**
 - F-06 Debate analytics overlay → needs F-05 (recording)
-- F-18 Audition system → needs F-17 (entry requirements)
-- F-25 Rival online alerts (email delivery) → needs F-35
-- F-26 Follow notifications → needs F-35
-- F-28 Bounty board → needs F-27 (reference library)
-- F-37 Notification preferences → needs F-35
-- F-52 TWA wrapper + Google Play → needs H-17 (real icons) + minors policy decision
 
 **Tier 2 — needs two+ Tier 0/1 items:**
 - F-03 Entrance sequence / battle animations → needs F-31 + F-21
-- F-22 GvG battle animations → needs F-03
-- F-36 Onboarding drip → needs F-35 + F-31
-- F-11 Marketplace → needs F-31 + F-27
-- F-30 Reference marketplace → needs F-27 + F-11
 
 **Tier 3 — blocked by external conditions:**
-- F-38 Browser extension → needs 50+ users
 - F-42 B2B data dashboard / API → needs a buyer
 - F-41 Celebrity/influencer events → way back burner
 
-**Scratched:** F-13, F-34
+**Scratched:** F-13, F-34, F-38
 
 ---
 

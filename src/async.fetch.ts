@@ -1,118 +1,17 @@
 /**
  * THE MODERATOR — Async Module: Data Fetching
  *
- * fetchTakes, fetchPredictions, fetchStandaloneQuestions.
- * These functions mutate state directly.
+ * F-68: fetchTakes removed. Only fetchPredictions + fetchStandaloneQuestions remain.
  */
 
 import { state } from './async.state.ts';
-import { _timeAgo } from './async.utils.ts';
 import type { StandaloneQuestion } from './async.types.ts';
 import { FEATURES } from './config.ts';
 import {
   safeRpc,
-  getCurrentUser,
   getSupabaseClient,
   getIsPlaceholderMode,
 } from './auth.ts';
-
-export async function fetchTakes(section?: string): Promise<void> {
-  if (!FEATURES.hotTakes) return;
-  const sb = getSupabaseClient();
-  if (!sb || getIsPlaceholderMode()) return;
-  try {
-    let query = (
-      sb as unknown as {
-        from: (table: string) => {
-          select: (cols: string) => {
-            order: (
-              col: string,
-              opts: { ascending: boolean }
-            ) => {
-              limit: (n: number) => {
-                eq: (col: string, val: string) => unknown;
-              } & Promise<{ data: unknown[] | null; error: unknown }>;
-            };
-          };
-        };
-      }
-    )
-      .from('hot_takes')
-      .select(
-        'id, content, section, created_at, user_id, reaction_count, challenge_count, profiles(username, elo_rating, verified_gladiator)'
-      )
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    if (section && section !== 'all') {
-      query = query.eq('section', section) as typeof query;
-    }
-
-    const { data, error } = await (query as unknown as Promise<{
-      data: unknown[] | null;
-      error: unknown;
-    }>);
-    if (error) throw error;
-
-    if (data && data.length > 0) {
-      state.hotTakes = (data as Record<string, unknown>[]).map((t) => {
-        const profiles = t['profiles'] as Record<string, unknown> | null;
-        return {
-          id: t['id'] as string,
-          user_id: t['user_id'] as string,
-          username: (profiles?.['username'] as string) || '',
-          user: ((profiles?.['username'] as string) || 'ANON').toUpperCase(),
-          elo: (profiles?.['elo_rating'] as number) || 1200,
-          verified_gladiator: (profiles?.['verified_gladiator'] as boolean) || false,
-          tokens: 0, // TODO: token balances not available from hot_takes query
-          text: t['content'] as string,
-          section: t['section'] as string,
-          reactions: (t['reaction_count'] as number) || 0,
-          challenges: (t['challenge_count'] as number) || 0,
-          time: _timeAgo(t['created_at'] as string),
-          userReacted: false,
-        };
-      });
-
-      // Load reactions for current user
-      const userId = getCurrentUser()?.id;
-      if (userId) {
-        try {
-          const reactionSb = sb as unknown as {
-            from: (table: string) => {
-              select: (cols: string) => {
-                eq: (col: string, val: string) => {
-                  in: (
-                    col: string,
-                    vals: string[]
-                  ) => Promise<{ data: Array<{ hot_take_id: string }> | null }>;
-                };
-              };
-            };
-          };
-          const { data: reacts } = await reactionSb
-            .from('hot_take_reactions')
-            .select('hot_take_id')
-            .eq('user_id', userId)
-            .in(
-              'hot_take_id',
-              state.hotTakes.map((t) => t.id)
-            );
-          if (reacts) {
-            const reactedIds = new Set(reacts.map((r) => r.hot_take_id));
-            state.hotTakes.forEach((t) => {
-              t.userReacted = reactedIds.has(t.id);
-            });
-          }
-        } catch {
-          /* non-critical */
-        }
-      }
-    }
-  } catch (e) {
-    console.error('fetchTakes error:', e);
-  }
-}
 
 export async function fetchPredictions(): Promise<void> {
   if (!FEATURES.predictions) return;

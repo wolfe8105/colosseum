@@ -23,11 +23,12 @@ export async function joinWithCode(code: string): Promise<void> {
   }
   try {
     const { data, error } = await safeRpc<JoinPrivateLobbyResult>('join_private_lobby', {
-      p_debate_id: null,
       p_join_code: code,
     });
     if (error) throw error;
-    const result = data as JoinPrivateLobbyResult;
+    // RETURNS TABLE comes back as an array from PostgREST — unwrap first row
+    const rows = data as unknown as JoinPrivateLobbyResult[];
+    const result = Array.isArray(rows) ? rows[0]! : (data as JoinPrivateLobbyResult);
     set_selectedMode(result.mode as DebateMode);
     const debateData: CurrentDebate = {
       id: result.debate_id,

@@ -2296,7 +2296,14 @@ FIX: The `forge_reference` RPC (or whatever the reference creation RPC
 SESSION: 247 (rule locked).
 ```
 
-## LM-209: `profiles.is_bot` column does not exist yet — F-55 build blocker
+## LM-209: `profiles.is_bot` column does not exist yet — F-55 build blocker — ✅ RESOLVED S269
+
+```
+RESOLUTION (Session 269): `profiles.is_bot BOOLEAN DEFAULT false NOT NULL`
+  added as part of `session-269-f55-overhaul.sql`. Column is live in production.
+  `cite_debate_reference` RPC checks `profiles.is_bot = false` on both debaters.
+  F-55 shipped complete. Entry retained for historical context.
+```
 
 ```
 WHAT: LM-207 and the F-55 pending spec both require the `cite_debate_reference`
@@ -2904,4 +2911,102 @@ RELATED: LM-201 (spectator entry — click handler in arena-lobby.ts).
   If you touch arena-lobby.ts, still import it dynamically.
 
 SESSION: 254 (Track B — bundle fix).
+```
+
+---
+
+## LM-226: F-64 ranked eligibility is enforced in BOTH `check_ranked_eligible` AND `join_debate_queue`
+```
+DECISION (Session 295): join_debate_queue() now raises an exception
+  if p_ranked = true AND the caller's profile_depth_pct < 25.
+  This is defense in depth — the client still calls check_ranked_eligible()
+  first (advisory), but the server now enforces it at queue-join time too.
+PROTECTS: Ranked queue integrity. Prevents direct RPC bypass.
+BITES YOU WHEN: You change the 25% threshold. Must update in THREE places:
+  1. check_ranked_eligible() function body (arena.sql line ~530)
+  2. join_debate_queue() function body (arena.sql line ~2205)
+  3. Client confirm dialog text (src/arena/arena-config-settings.ts line ~71)
+SYMPTOM: Users blocked at wrong threshold, or client says one number
+  while server enforces another.
+FIX: Grep for 'profile_depth_pct.*25' across SQL and 'profile.*25' in TS.
+  All three must agree.
+SESSION: 295.
+```
+
+---
+
+## LM-227: F-63 spectator depth gate threshold (25%) lives in 7 places
+```
+DECISION (Session 295): Three spectator-action RPCs (cast_sentiment_tip,
+  send_spectator_chat, place_stake) now return 'profile_incomplete' error
+  if caller's profile_depth_pct < 25. Client pre-flights via isDepthBlocked()
+  in src/depth-gate.ts before hitting the server.
+PROTECTS: Dataset integrity. Prevents low-effort accounts from poisoning
+  sentiment data, chat, and stake pools.
+BITES YOU WHEN: You change the 25% threshold. Must update in SEVEN places:
+  1. check_ranked_eligible() function body (arena.sql)
+  2. join_debate_queue() function body (arena.sql) — F-64
+  3. cast_sentiment_tip() function body (session-269 / tokens.sql)
+  4. send_spectator_chat() function body (arena.sql)
+  5. place_stake() function body (predictions.sql)
+  6. src/depth-gate.ts DEPTH_THRESHOLD constant
+  7. src/arena/arena-config-settings.ts confirm dialog text (ranked picker)
+SYMPTOM: Some actions blocked at wrong threshold, or client says one number
+  while server enforces another.
+FIX: Grep for 'profile_depth_pct.*25' across SQL and 'DEPTH_THRESHOLD' in TS.
+SESSION: 295.
+```
+
+---
+
+## LM-228: F-61 card expiry uses 30 min in SQL + client — both must agree
+```
+DECISION (Session 295): Open debate cards auto-expire after 30 minutes
+  via pg_cron job calling expire_stale_debate_cards(). Client shows
+  countdown timer based on CARD_EXPIRY_MS constant in feed-card.ts.
+PROTECTS: Feed freshness. Prevents stale open cards from cluttering feed.
+BITES YOU WHEN: You change the expiry window. Must update in TWO places:
+  1. expire_stale_debate_cards() SQL — interval '30 minutes'
+  2. src/feed-card.ts CARD_EXPIRY_MS constant (30 * 60 * 1000)
+SYMPTOM: Client countdown says "expired" but card still shows as open
+  in feed (or vice versa — card disappears before countdown hits zero).
+FIX: Grep for '30.*minute' in SQL and 'CARD_EXPIRY_MS' in TS.
+SESSION: 295.
+```
+
+---
+
+## LM-229: F-61 cancelled/expired cards excluded by get_unified_feed WHERE clause
+```
+DECISION (Session 295): get_unified_feed() WHERE clause filters
+  ad.status IN ('open','pending','live','round_break','voting','complete').
+  New statuses 'cancelled' and 'expired' are implicitly excluded.
+PROTECTS: Feed cleanliness. Cancelled/expired cards never appear.
+BITES YOU WHEN: You add a new status value that should appear in the
+  feed but forget to add it to the WHERE IN list.
+SYMPTOM: New-status cards exist in DB but never show in feed.
+FIX: Check get_unified_feed() status list when adding new arena_debates
+  status values.
+SESSION: 295.
+```
+
+---
+
+## LM-230: F-65 velocity thresholds live only in vote_arena_debate SQL
+```
+DECISION (Session 295): vote_arena_debate() checks for >5 same-side
+  votes within 10 seconds. If triggered, flags the debate (sets
+  velocity_flagged_at and increments velocity_flag_count) and logs
+  a 'vote_velocity_flag' event. Votes are NOT blocked — zero friction.
+PROTECTS: Vote integrity. Detects coordinated vote manipulation.
+BITES YOU WHEN: You change the threshold (5) or window (10s).
+  Only one place: vote_arena_debate() function body in arena.sql.
+  The legacy cast_vote() and vote_async_debate() are NOT protected
+  (legacy paths — cast_vote uses the old debates table).
+SYMPTOM: False positives (too aggressive) or missed manipulation
+  (too lenient). Check event_log for 'vote_velocity_flag' events.
+FIX: Adjust the two constants in vote_arena_debate():
+  - v_velocity_count > 5  (threshold)
+  - interval '10 seconds' (window)
+SESSION: 295.
 ```

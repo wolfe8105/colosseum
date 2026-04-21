@@ -47,7 +47,7 @@ export function renderStakingPanel(
   if (userStake) {
     const stakedSideLabel = userStake.side === 'a' ? sideALabel : sideBLabel;
     return `
-      <div class="staking-panel staking-placed" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
+      <div class="staking-panel staking-placed" style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">YOUR STAKE</div>
         <div style="font-family:var(--mod-font-ui);font-size:16px;color:var(--mod-text-primary);margin-bottom:12px;">
           <span style="color:var(--mod-text-heading);font-weight:700;">${userStake.amount} tokens</span>
@@ -62,8 +62,8 @@ export function renderStakingPanel(
     const next = getNextTier(questionsAnswered || 0);
     const remaining = next ? next.questionsNeeded : 0;
     return `
-      <div class="staking-panel staking-locked" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
-        <div style="font-family:var(--mod-font-ui);font-size:14px;color:#8a879a; /* TODO: needs CSS var token */letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">TOKEN STAKING 🔒</div>
+      <div class="staking-panel staking-locked" style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;opacity:0.7;">
+        <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">TOKEN STAKING 🔒</div>
         <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-muted);">
           Answer ${remaining} more profile questions to unlock staking.
           <a href="moderator-profile-depth.html" style="color:var(--mod-text-heading);text-decoration:none;">Complete your profile →</a>
@@ -78,7 +78,7 @@ export function renderStakingPanel(
   if (tier.stakeCap >= 100) quickAmounts.push(100);
 
   return `
-    <div class="staking-panel staking-active" style="background:#1a1a2e; /* TODO: needs CSS var token */border:1px solid var(--mod-text-heading)44;border-radius:10px;padding:16px;margin:12px 0;">
+    <div class="staking-panel staking-active" style="background:var(--mod-bg-card);border:1px solid var(--mod-border-primary);border-radius:10px;padding:16px;margin:12px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-family:var(--mod-font-ui);font-size:14px;color:var(--mod-text-heading);letter-spacing:1px;text-transform:uppercase;">STAKE TOKENS</div>
         <div style="font-family:var(--mod-font-ui);font-size:11px;color:var(--mod-text-muted);">${tier.icon} ${tier.name} · Max ${tier.stakeCap}</div>

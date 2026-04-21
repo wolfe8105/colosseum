@@ -5,7 +5,7 @@ import { destroy as destroyArena, showPowerUpShop } from '../arena.ts';
 import { registerNavigate } from '../navigation.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
-import { getCurrentProfile, getCurrentUser } from '../auth.ts';
+import { getCurrentProfile, getCurrentUser, refreshProfile } from '../auth.ts';
 import { ModeratorAsync } from '../async.ts';
 import { renderFeed } from './home.feed.ts';
 import { loadArsenalScreen } from './home.arsenal.ts';
@@ -31,9 +31,11 @@ export function navigateTo(screenId: string) {
   const btn = document.querySelector(`.bottom-nav-btn[data-screen="${screenId}"]`); if (btn) btn.classList.add('active');
 
   if (screenId === 'home') {
+    void refreshProfile();
     renderFeed().catch(e => console.error('renderFeed error:', e));
   }
   if (screenId === 'profile') {
+    void refreshProfile();
     ModeratorAsync?.renderRivals?.(document.getElementById('rivals-feed')!);
     loadFollowCounts();
     const archiveEl = document.getElementById('profile-debate-archive');

@@ -24,9 +24,21 @@ export function renderArenaFeedCard(d: ArenaFeedItem, _type: string): string {
     ? `data-debate-id="${encodeURIComponent(d.id)}"`
     : `data-link="${isAuto ? '/verdict?id=' + encodeURIComponent(d.id) : '/debate/' + encodeURIComponent(d.id)}"`;
 
+  // F-62: Link card preview block
+  const lp = d.link_preview as { image_url?: string; og_title?: string; domain?: string } | null;
+  const linkBlock = (d.link_url && lp?.image_url) ? `
+    <a href="${escapeHTML(d.link_url)}" target="_blank" rel="noopener" class="arena-card-link-preview" onclick="event.stopPropagation()">
+      <img src="${escapeHTML(lp.image_url)}" alt="" class="arena-card-link-img" onerror="this.parentElement.style.display='none'">
+      <div class="arena-card-link-meta">
+        ${lp.domain ? `<span class="arena-card-link-domain">${escapeHTML(lp.domain)}</span>` : ''}
+        ${lp.og_title ? `<span class="arena-card-link-title">${escapeHTML(lp.og_title)}</span>` : ''}
+      </div>
+    </a>` : '';
+
   return `<div class="arena-card ${cardClass}" ${cardAttr}>
     <div class="arena-card-top">${badge}${rulesetBadge}${roundsBadge}<span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span></div>
     <div class="arena-card-topic">${escapeHTML(d.topic || 'Untitled Debate')}</div>
+    ${linkBlock}
     <div class="arena-card-vs">
       <span>${escapeHTML(d.debater_a_name || 'Side A')}</span>
       <span class="vs">VS</span>

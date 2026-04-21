@@ -1,12 +1,18 @@
 /**
  * Home — Category overlay and pull-to-refresh
+ *
+ * F-68: Hot takes section replaced with unified feed cards.
+ * Predictions still use ModeratorAsync (separate concern).
  */
 // LM-HOME-001: DOM refs are grabbed locally per file via getElementById().
 // Do not share or re-export DOM elements through state.ts.
 
 import { ModeratorAsync } from '../async.ts';
+import { safeRpc, getCurrentUser } from '../auth.ts';
 import { state, CATEGORIES } from './home.state.ts';
 import type { Category } from './home.types.ts';
+import { renderFeedCard, renderFeedEmpty } from '../feed-card.ts';
+import type { UnifiedFeedCard } from '../feed-card.ts';
 
 const overlay = document.getElementById('categoryOverlay');
 const overlayTitle = document.getElementById('overlayTitle');
@@ -39,23 +45,20 @@ export async function openCategory(cat: Category) {
 
   overlay!.classList.add('open');
 
+  // F-68: Load unified feed cards instead of hot takes
   try {
-    await ModeratorAsync.fetchTakes(cat.id);
-    takesTab!.innerHTML = ModeratorAsync.getComposerHTML();
-    const feedDiv = document.createElement('div');
-    feedDiv.id = 'hot-takes-feed';
-    takesTab!.appendChild(feedDiv);
-    ModeratorAsync.loadHotTakes(cat.id);
+    const { data, error } = await safeRpc<UnifiedFeedCard[]>('get_unified_feed', {
+      p_limit: 30,
+      p_category: cat.id,
+    });
 
-    const input = document.getElementById('hot-take-input') as HTMLInputElement | null;
-    const counter = document.getElementById('take-char-count');
-    if (input && counter) {
-      input.addEventListener('input', () => {
-        counter.textContent = input.value.length + ' / 280';
-      });
+    if (error || !data || (data as UnifiedFeedCard[]).length === 0) {
+      takesTab!.innerHTML = renderFeedEmpty();
+    } else {
+      takesTab!.innerHTML = (data as UnifiedFeedCard[]).map(c => renderFeedCard(c)).join('');
     }
   } catch (e) {
-    takesTab!.innerHTML = '<div class="placeholder-text"><span class="emoji">⚠️</span>Failed to load hot takes. Pull down to retry.</div>';
+    takesTab!.innerHTML = '<div class="placeholder-text"><span class="emoji">⚠️</span>Failed to load feed. Pull down to retry.</div>';
   }
 
   try {
@@ -83,8 +86,7 @@ let overlayStartY = 0;
 overlay!.addEventListener('touchstart', (e) => { overlayStartY = (e as TouchEvent).touches[0].clientY; }, { passive: true });
 overlay!.addEventListener('touchend', (e) => { if ((e as TouchEvent).changedTouches[0].clientY - overlayStartY > 100) overlay!.classList.remove('open'); });
 
-// LM-HOME-004: PTR lives here because it shares overlayContent, state.currentOverlayCat,
-// and the same ModeratorAsync calls as openCategory. Not worth a separate file.
+// LM-HOME-004: PTR lives here because it shares overlayContent, state.currentOverlayCat.
 export function initPullToRefresh() {
   const PTR_THRESHOLD = 64;
   const PTR_MAX = 90;
@@ -145,13 +147,25 @@ export function initPullToRefresh() {
     ptr.style.transform = 'translateY(0)';
     ptr.style.opacity = '1';
     try {
-      await ModeratorAsync.fetchTakes(state.currentOverlayCat.id);
-      ModeratorAsync.loadHotTakes(state.currentOverlayCat.id);
+      // F-68: Refresh unified feed for this category
+      const cat = state.currentOverlayCat;
+      const takesTab = document.getElementById('overlay-takes-tab');
+      if (takesTab && cat) {
+        const { data } = await safeRpc<UnifiedFeedCard[]>('get_unified_feed', {
+          p_limit: 30,
+          p_category: cat.id,
+        });
+        if (data && (data as UnifiedFeedCard[]).length > 0) {
+          takesTab.innerHTML = (data as UnifiedFeedCard[]).map(c => renderFeedCard(c)).join('');
+        } else {
+          takesTab.innerHTML = renderFeedEmpty();
+        }
+      }
       await ModeratorAsync.fetchPredictions();
       await ModeratorAsync.fetchStandaloneQuestions?.();
       const predsTab = document.getElementById('overlay-predictions-tab');
       if (predsTab) ModeratorAsync.renderPredictions(predsTab);
-    } catch (e) { console.warn('[Home] predictions render failed:', e); }
+    } catch (e) { console.warn('[Home] refresh failed:', e); }
     (ptr.querySelector('.ptr-spinner') as HTMLElement).classList.remove('spinning');
     ptr.style.opacity = '0';
     ptr.style.transform = 'translateY(-100%)';
