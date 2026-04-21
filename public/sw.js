@@ -1,6 +1,6 @@
 // The Moderator — Service Worker
 // Strategy: network-first for HTML, cache-first for hashed assets, network-only for APIs
-const CACHE_VERSION = 'mod-v2';
+const CACHE_VERSION = 'mod-v3';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const SHELL_CACHE = CACHE_VERSION + '-shell';
 
@@ -35,14 +35,8 @@ function isFont(url) {
   );
 }
 
-// Install: cache the offline fallback shell
+// Install: activate immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) => {
-      // Cache just the entry page as offline fallback
-      return cache.addAll(['/']);
-    })
-  );
   // Activate immediately — don't wait for old tabs to close
   self.skipWaiting();
 });
@@ -108,27 +102,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML navigation: network-first, fall back to cache
-  if (isNavigation(event.request)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache the fresh HTML for offline fallback
-          const clone = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => {
-            cache.put(event.request, clone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Offline: serve cached version if available
-          return caches.match(event.request).then((cached) => {
-            return cached || caches.match('/');
-          });
-        })
-    );
-    return;
-  }
+  // HTML navigation: always go to network, never cache
+  // CSP headers live on the HTML response — caching HTML means caching stale security policy.
+  // Offline fallback isn't useful for a live debate app (you need internet to debate).
+  if (isNavigation(event.request)) return;
 
   // Icons, images, other same-origin assets: network-first with cache fallback
   if (url.origin === self.location.origin) {
