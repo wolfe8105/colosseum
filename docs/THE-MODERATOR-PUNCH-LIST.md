@@ -140,8 +140,8 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 | # | Feature | Priority | Spec Exists? | Notes |
 |---|---------|----------|-------------|-------|
 | F-35 | Weekly newsletter + in-app toasts | | ✅ Session 190 | **(A) Newsletter via Resend** ✅ Session 187: newsletter.ts on VPS, cron live (Thu 8PM EST). **(B) In-app nudge toasts** ✅ Session 190: nudge.ts module (suppression: once/session, 24h cooldown, 3/session cap). 8 trigger points wired: enter_debate (arena.ts), round_end (arena.ts), final_score win/loss (arena.ts), return_visit (tokens.ts), first_signup (plinko.ts), replay_entry (spectate.ts), first_vote spectate (spectate.ts), first_vote hot-take feed (async.ts — added Session 190). |
-| F-36 | 7-day onboarding drip | | 🅿️ Session 182 | Product Vision §7.1 has day-by-day design (Day 1: show up → badge, Day 2: first vote, Day 3: watch debate, escalating rewards, titles "Rookie"→"Regular"→"Gladiator"). **Parked: blocked on F-35 (delivery) + F-31 (awards/rewards defined).** |
-| F-37 | Granular notification preferences | | 🅿️ Session 182 | User control panel — toggles per notification type (DMs, tournaments, bounties, citations, marketplace, rival alerts, follow activity). Feature Room Map lists this as furniture in Settings (Room 6). **Parked: blocked on F-35 (can't control channels that don't exist yet).** |
+| F-36 | 7-day onboarding drip | | ✅ SHIPPED S274 | `onboarding_drip_log` table, 7 cosmetic rewards, drip card UI, all trigger points wired. Day 1–7 progression with escalating rewards and titles ("Rookie"→"Regular"→"Gladiator"). SQL run in Supabase. Client: `src/onboarding-drip.ts`. |
+| F-37 | Granular notification preferences | | ✅ SHIPPED S274 | `notif_rivals` + `notif_economy` toggle columns on profiles. Settings UI wired: `settings.helpers.ts`, `settings.load.ts`, `settings.save.ts`. Passed through `update_profile` RPC via `p_notif_rivals`/`p_notif_economy` params. |
 
 ## 3H. External / Growth
 
@@ -208,19 +208,9 @@ Features ordered by what can go first. Check this before picking work.
 
 **Tier 1 — needs one Tier 0 item first:**
 - F-06 Debate analytics overlay → needs F-05 (recording)
-- F-18 Audition system → needs F-17 (entry requirements)
-- F-25 Rival online alerts (email delivery) → needs F-35
-- F-26 Follow notifications → needs F-35
-- F-28 Bounty board → needs F-27 (reference library)
-- F-37 Notification preferences → needs F-35
-- F-52 TWA wrapper + Google Play → needs H-17 (real icons) + minors policy decision
 
 **Tier 2 — needs two+ Tier 0/1 items:**
 - F-03 Entrance sequence / battle animations → needs F-31 + F-21
-- F-22 GvG battle animations → needs F-03
-- F-36 Onboarding drip → needs F-35 + F-31
-- F-11 Marketplace → needs F-31 + F-27
-- F-30 Reference marketplace → needs F-27 + F-11
 
 **Tier 3 — blocked by external conditions:**
 - F-38 Browser extension → needs 50+ users
