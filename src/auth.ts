@@ -18,7 +18,7 @@
  */
 
 // --- Core ---
-export { isUUID, onChange, init,
+export { isUUID, onChange, init, refreshProfile,
          getCurrentUser, getCurrentProfile, getIsPlaceholderMode,
          getSupabaseClient, getAccessToken, ready } from './auth.core.ts';
 
@@ -60,7 +60,7 @@ export type { SafeRpcResult, AuthResult, Profile, PublicProfile,
 // ============================================================
 
 import { getCurrentUser, getCurrentProfile, getIsPlaceholderMode, getSupabaseClient,
-         ready, init, onChange } from './auth.core.ts';
+         ready, init, onChange, refreshProfile } from './auth.core.ts';
 import { safeRpc } from './auth.rpc.ts';
 import { requireAuth } from './auth.gate.ts';
 import { signUp, logIn, oauthLogin, logOut, resetPassword, updatePassword } from './auth.ops.ts';
@@ -108,6 +108,7 @@ const auth = {
   safeRpc,
   requireAuth,
   onChange,
+  refreshProfile,
 } as const;
 
 export default auth;
