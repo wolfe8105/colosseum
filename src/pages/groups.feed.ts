@@ -99,7 +99,8 @@ export async function postGroupHotTake(groupId: string) {
     showToast('🔥 Hot take posted', 'success');
     loadGroupHotTakes(groupId);
   } catch (e) {
-    showToast('Post failed — try again', 'error');
+    showToast('Connection lost — try again', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
   }
   if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
 }

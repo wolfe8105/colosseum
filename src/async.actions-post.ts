@@ -48,6 +48,7 @@ export async function postTake(): Promise<void> {
           console.error('create_hot_take error:', error);
           state.hotTakes = snapshot;
           loadHotTakes(state.currentFilter);
+          input.value = text;
           showToast('Post failed — try again', 'error');
         } else if (data && (data as CreateHotTakeResult).id) {
           newTake.id = (data as CreateHotTakeResult).id;
@@ -56,7 +57,8 @@ export async function postTake(): Promise<void> {
       } catch {
         state.hotTakes = snapshot;
         loadHotTakes(state.currentFilter);
-        showToast('Post failed — try again', 'error');
+        input.value = text;
+        showToast('Connection lost — try again', 'error');
       }
     }
   } finally { state.postingInFlight = false; }
