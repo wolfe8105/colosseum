@@ -150,7 +150,9 @@ export function startPrivateLobbyPoll(debateId: string, mode: string, topic: str
     try {
       const { data, error } = await safeRpc<CheckPrivateLobbyResult>('check_private_lobby', { p_debate_id: debateId });
       if (error || !data) return;
-      const result = data as CheckPrivateLobbyResult;
+      // RETURNS TABLE comes back as an array from PostgREST — unwrap first row
+      const rows = data as unknown as CheckPrivateLobbyResult[];
+      const result = Array.isArray(rows) ? rows[0]! : (data as CheckPrivateLobbyResult);
       if (result.status === 'matched' && result.player_b_ready && result.opponent_id) {
         clearInterval(privateLobbyPollTimer!);
         set_privateLobbyPollTimer(null);
