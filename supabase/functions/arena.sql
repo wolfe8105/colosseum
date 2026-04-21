@@ -668,7 +668,7 @@ BEGIN
   END IF;
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );
@@ -738,7 +738,7 @@ BEGIN
   END IF;
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );
@@ -813,7 +813,7 @@ BEGIN
 
   IF p_visibility = 'code' THEN
     LOOP
-      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 6));
+      v_candidate := upper(substring(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 5));
       EXIT WHEN NOT EXISTS (
         SELECT 1 FROM arena_debates ad WHERE ad.join_code = v_candidate
       );

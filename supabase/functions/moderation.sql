@@ -454,7 +454,7 @@ BEGIN
   END IF;
 
   LOOP
-    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 5));
     EXIT WHEN NOT EXISTS (
       SELECT 1 FROM arena_debates ad
       WHERE ad.join_code = v_join_code
@@ -525,7 +525,7 @@ BEGIN
 
   -- Generate unique 6-char join code (retry on collision)
   LOOP
-    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    v_join_code := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 5));
     EXIT WHEN NOT EXISTS (
       SELECT 1 FROM arena_debates ad
       WHERE ad.join_code = v_join_code
@@ -602,7 +602,7 @@ BEGIN
 
   -- Generate unique 6-char alphanumeric join code
   LOOP
-    v_code := upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+    v_code := upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 5));
     EXIT WHEN NOT EXISTS (
       SELECT 1 FROM arena_debates
       WHERE arena_debates.join_code = v_code
