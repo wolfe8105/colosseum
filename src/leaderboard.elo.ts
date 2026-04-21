@@ -3,9 +3,6 @@
  * showEloExplainer — the Elo rating explainer modal.
  */
 
-// LANDMINE [LM-LB-002]: Multiple hardcoded hex colors (#12122A, #e0e4ec, #4caf50,
-// #2a5aab, #6a7a90) — no CSS var equivalents exist yet. TODO comments inline below.
-
 export function showEloExplainer(): void {
   document.getElementById('elo-explainer-modal')?.remove();
 

@@ -1,9 +1,6 @@
 /**
  * THE MODERATOR — Power-Up Shop Render
  * renderShop — static HTML from CATALOG.
- *
- * LANDMINE [LM-PU-001]: Multiple hardcoded hex/rgba colors in inline styles.
- * #1a1a2e, #2a2a3e, #0f0f1a, #666, #0f0f1a — no CSS var token equivalents yet.
  */
 
 import { CATALOG } from './powerups.types.ts';

@@ -7,9 +7,7 @@
  * Extracted from reference-arsenal.render.ts (Session 254 track).
  */
 
-// LANDMINE [LM-ARMORY-001]: safeRpc is imported but never used in this file.
-// Pre-existing dead import — do not remove without confirming no barrel side-effects.
-import { safeRpc, getCurrentUser } from './auth.ts'; // eslint-disable-line @typescript-eslint/no-unused-vars
+import { getCurrentUser } from './auth.ts';
 import { escapeHTML } from './config.ts';
 import { SOURCE_TYPES, RARITY_COLORS, CATEGORIES, CATEGORY_LABELS } from './reference-arsenal.constants.ts';
 import { getLibrary, getTrendingReferences } from './reference-arsenal.rpc.ts';

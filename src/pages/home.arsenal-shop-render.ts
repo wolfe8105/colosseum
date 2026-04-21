@@ -40,8 +40,6 @@ export function renderShop(
 ): void {
   const filtered = applyFilters(state.catalog, state);
 
-  // LANDMINE [LM-SHOP-006]: tokenBalance interpolated directly into innerHTML without Number() cast.
-  // CLAUDE.md requires Number() for all numeric values in innerHTML. (L-F5)
   container.innerHTML = `
     <div class="shop-wrap">
 
@@ -56,7 +54,7 @@ export function renderShop(
       <!-- Token balance pill -->
       <div class="shop-balance-pill">
         <span class="shop-balance-pill__icon">🪙</span>
-        <span class="shop-balance-pill__val" id="shop-balance-display">${state.tokenBalance}</span>
+        <span class="shop-balance-pill__val" id="shop-balance-display">${Number(state.tokenBalance)}</span>
         <span class="shop-balance-pill__lbl">tokens</span>
       </div>
 

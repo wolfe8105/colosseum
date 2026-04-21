@@ -2,7 +2,6 @@
  * THE MODERATOR — Bounty Render
  * renderProfileBountySection, renderMyBountiesSection.
  *
- * LANDMINE [LM-BNT-001]: #F5A623 gold color used in inline styles — no CSS var token.
  * LANDMINE [LM-BNT-002]: renderProfileBountySection reads its own form inputs by DOM ID.
  * If two profile sheets are open concurrently, the wrong values may be read.
  */

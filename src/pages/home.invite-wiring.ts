@@ -37,9 +37,7 @@ export function wireInviteScreen(
     });
   }
 
-  // Claim buttons
-  // LANDMINE [LM-INVITE-003]: onClaim triggers openClaimSheet (async) with no .catch() propagation.
-  // If openClaimSheet rejects before rendering the sheet, the rejection is unhandled. (L-F9)
+  // Claim buttons — onClaim is .catch()-guarded in the orchestrator (home.invite.ts:39)
   container.querySelectorAll<HTMLButtonElement>('.invite-claim-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', () => {
       const rewardId   = btn.dataset.rewardId;

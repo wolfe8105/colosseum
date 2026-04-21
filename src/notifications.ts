@@ -65,6 +65,6 @@ export function init(): void {
 
 const notificationsModule = { init, open: open_panel, close: close_panel, markRead: (id: string) => { import('./notifications.actions.ts').then(m => m.markRead(id)); }, markAllRead: () => { import('./notifications.actions.ts').then(m => m.markAllRead()); }, destroy } as const;
 export default notificationsModule;
-(window as any).ColosseumNotifications = notificationsModule;
+(window as any).ModeratorNotifications = notificationsModule;
 
 ready.then(() => init()).catch(() => init());

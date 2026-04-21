@@ -2,8 +2,6 @@
  * THE MODERATOR — Power-Up Visual Overlays
  * renderSilenceOverlay, renderRevealPopup, renderShieldIndicator,
  * removeShieldIndicator, hasMultiplier.
- *
- * LANDMINE [LM-PU-004]: Hardcoded hex #0f0f1a, #2a2a3e, #12122a in inline styles.
  */
 
 import { escapeHTML } from './config.ts';

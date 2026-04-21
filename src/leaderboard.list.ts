@@ -49,7 +49,6 @@ export function renderList(): string {
     const stat = currentTab === 'elo' ? p.elo : currentTab === 'wins' ? p.wins : p.streak;
     const statLabel = currentTab === 'elo' ? 'ELO' : currentTab === 'wins' ? 'WINS' : '🔥';
 
-    // LANDMINE [LM-LB-003]: medalColors and tierBorderMap contain hardcoded hex — TODO comments below.
     const medalColors: Record<number, string> = { 1: 'var(--mod-accent)', 2: 'var(--mod-text-sub)', 3: 'var(--mod-gold)' };
     const rankColor = medalColors[p.rank] ?? 'var(--mod-text-sub)';
 

@@ -168,6 +168,7 @@ Organized by area. Priority column is empty — Pat decides priority, not the do
 |---|---------|----------|-------------|-------|
 | F-35.3 | Orange Dot indicator | | ✅ Session 182 | Persistent indicator on nav for unclaimed token-earning opportunities (daily login not claimed, milestone ready, streak freeze available, unread notification). Current notification bell polls every 30s for unread count — Orange Dot is a second, always-visible indicator specifically for token actions. Simple highlight, not guided walkthrough. |
 | F-50 | Moderator Discovery — 5 touchpoints | | ✅ Session 206 | The app is called The Moderator — the role should be front and center. 5 fixes: (1) Post-debate nudge in arena.ts via nudge.ts. (2) Arena lobby inline banner with one-tap toggleModerator(). (3) Home feed card at position 2 in hot takes. (4) Newsletter "Moderator Spotlight" section with top mod stats. (5) Plinko signup step 4 (opt-in, skippable) before Done step. All gated: only shows for logged-in non-moderators. Card/banner disappear once is_moderator=true. |
+| F-61 | First-time user tutorial (post-signup onboarding walkthrough) | | ⏳ | Guided walkthrough for new users after Plinko signup completes. Introduces core loop: hot takes → reactions → challenges → debates. Should highlight key UI elements (feed, arena, profile). Dismissible, never re-shows after completion. Track via `profiles` column or `localStorage` flag. Lightweight — tooltips/highlights or step-through overlay, not a video. |
 
 ---
 
@@ -203,6 +204,7 @@ Features ordered by what can go first. Check this before picking work.
 - F-31 Cosmetics brainstorm (design session, no code)
 - F-35.3 Orange Dot indicator
 - F-12 Seasonal token boosts (parked — use when token economy needs tuning)
+- F-61 First-time user tutorial
 
 **Tier 1 — needs one Tier 0 item first:**
 - F-06 Debate analytics overlay → needs F-05 (recording)
