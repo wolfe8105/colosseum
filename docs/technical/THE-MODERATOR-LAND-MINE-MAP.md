@@ -2989,3 +2989,24 @@ FIX: Check get_unified_feed() status list when adding new arena_debates
   status values.
 SESSION: 295.
 ```
+
+---
+
+## LM-230: F-65 velocity thresholds live only in vote_arena_debate SQL
+```
+DECISION (Session 295): vote_arena_debate() checks for >5 same-side
+  votes within 10 seconds. If triggered, flags the debate (sets
+  velocity_flagged_at and increments velocity_flag_count) and logs
+  a 'vote_velocity_flag' event. Votes are NOT blocked — zero friction.
+PROTECTS: Vote integrity. Detects coordinated vote manipulation.
+BITES YOU WHEN: You change the threshold (5) or window (10s).
+  Only one place: vote_arena_debate() function body in arena.sql.
+  The legacy cast_vote() and vote_async_debate() are NOT protected
+  (legacy paths — cast_vote uses the old debates table).
+SYMPTOM: False positives (too aggressive) or missed manipulation
+  (too lenient). Check event_log for 'vote_velocity_flag' events.
+FIX: Adjust the two constants in vote_arena_debate():
+  - v_velocity_count > 5  (threshold)
+  - interval '10 seconds' (window)
+SESSION: 295.
+```
