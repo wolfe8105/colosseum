@@ -13,6 +13,7 @@ import {
   renderFeedEmpty,
   renderModeratorCard,
   injectOpenCardCSS,
+  startFeedCountdowns,
 } from '../feed-card.ts';
 import type { UnifiedFeedCard } from '../feed-card.ts';
 import { enterFeedRoomAsSpectator } from '../arena/arena-feed-room.ts';
@@ -228,6 +229,31 @@ async function challengeCard(debateId: string): Promise<void> {
   navigateTo('arena', { challengeDebateId: debateId });
 }
 
+// F-61: Creator cancel own open card
+async function cancelCard(debateId: string): Promise<void> {
+  if (!confirm('Cancel this post? It will be removed from the feed.')) return;
+
+  try {
+    const { data, error } = await safeRpc('cancel_debate_card', { p_debate_id: debateId });
+    if (error) {
+      showToast('Cancel failed', 'error');
+      return;
+    }
+    const result = data as { success?: boolean; error?: string } | null;
+    if (result && result.success === false) {
+      showToast(result.error || 'Cancel failed', 'error');
+      return;
+    }
+    // Remove card from local state and re-render
+    feedCards = feedCards.filter(c => c.id !== debateId);
+    renderCards();
+    showToast('Post cancelled', 'success');
+  } catch (e) {
+    console.warn('[Feed] cancel_debate_card error:', e);
+    showToast('Cancel failed', 'error');
+  }
+}
+
 // ============================================================
 // RENDER
 // ============================================================
@@ -318,6 +344,7 @@ export async function renderFeed(): Promise<void> {
   }
 
   renderCards();
+  startFeedCountdowns();
   _wireFeedDelegation(feedEl);
 }
 
@@ -354,6 +381,14 @@ function _wireFeedDelegation(container: HTMLElement): void {
     if (challengeBtn) {
       const id = challengeBtn.dataset.id;
       if (id) void challengeCard(id);
+      return;
+    }
+
+    // F-61: Cancel own open card
+    const cancelBtn = target.closest('[data-action="cancel-card"]') as HTMLElement | null;
+    if (cancelBtn) {
+      const id = cancelBtn.dataset.id;
+      if (id) void cancelCard(id);
       return;
     }
 

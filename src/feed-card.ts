@@ -91,13 +91,21 @@ function _renderOpenCard(card: UnifiedFeedCard): string {
 
   const reactedClass = card.userReacted ? 'background:var(--mod-accent-muted);border-color:rgba(204,41,54,0.3);color:var(--mod-magenta);' : 'background:var(--mod-bg-subtle);border-color:var(--mod-border-secondary);color:var(--mod-text-sub);';
 
-  return `<div class="arena-card card-open" data-card-id="${esc(card.id)}" data-status="open">
+  // F-61: Countdown timer for open cards (30 min expiry)
+  const countdownBlock = _renderCountdown(card.created_at);
+
+  // F-61: Cancel button for creator's own open cards
+  const cancelBtn = isOwn
+    ? `<button data-action="cancel-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);color:var(--mod-text-muted);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;margin-left:auto;min-height:var(--mod-touch-min);">✕ CANCEL</button>`
+    : '';
+
+  return `<div class="arena-card card-open" data-card-id="${esc(card.id)}" data-status="open" data-created="${esc(card.created_at)}">
     <div class="arena-card-top">
       <div style="display:flex;gap:6px;align-items:center;">
         <span class="arena-card-badge" style="background:rgba(59,199,148,0.15);color:var(--mod-status-open);border:1px solid rgba(59,199,148,0.3);">OPEN</span>
         <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
       </div>
-      <span class="arena-card-meta">${esc(time)}</span>
+      <span class="arena-card-meta feed-card-countdown" data-expires="${esc(card.created_at)}">${countdownBlock}</span>
     </div>
     <div class="arena-card-topic">${cardText}</div>
     ${linkBlock}
@@ -108,7 +116,7 @@ function _renderOpenCard(card: UnifiedFeedCard): string {
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <button data-action="react-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;${reactedClass}border:1px solid;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;min-height:var(--mod-touch-min);">🔥 ${Number(card.reaction_count)}</button>
-      ${!isOwn ? `<button data-action="challenge-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:rgba(59,199,148,0.1);border:1px solid rgba(59,199,148,0.3);color:var(--mod-status-open);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;min-height:var(--mod-touch-min);">⚔️ CHALLENGE</button>` : ''}
+      ${!isOwn ? `<button data-action="challenge-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:rgba(59,199,148,0.1);border:1px solid rgba(59,199,148,0.3);color:var(--mod-status-open);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;min-height:var(--mod-touch-min);">⚔️ CHALLENGE</button>` : cancelBtn}
     </div>
   </div>`;
 }
@@ -259,6 +267,46 @@ function _timeAgo(dateStr: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(dateStr).toLocaleDateString();
+}
+
+// ============================================================
+// F-61: Countdown timer for open cards (30 min expiry)
+// ============================================================
+
+const CARD_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
+function _renderCountdown(createdAt: string): string {
+  const created = new Date(createdAt).getTime();
+  const expires = created + CARD_EXPIRY_MS;
+  const remaining = Math.max(0, expires - Date.now());
+  if (remaining === 0) return 'expired';
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  return `${mins}:${secs.toString().padStart(2, '0')} left`;
+}
+
+let _countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Start a 1-second interval that updates all visible countdown elements. */
+export function startFeedCountdowns(): void {
+  stopFeedCountdowns();
+  _countdownTimer = setInterval(() => {
+    const els = document.querySelectorAll('.feed-card-countdown[data-expires]');
+    els.forEach(el => {
+      const created = (el as HTMLElement).dataset.expires;
+      if (created) {
+        (el as HTMLElement).textContent = _renderCountdown(created);
+      }
+    });
+  }, 1000);
+}
+
+/** Stop the countdown interval. */
+export function stopFeedCountdowns(): void {
+  if (_countdownTimer) {
+    clearInterval(_countdownTimer);
+    _countdownTimer = null;
+  }
 }
 
 // ============================================================

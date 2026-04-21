@@ -2956,3 +2956,36 @@ SYMPTOM: Some actions blocked at wrong threshold, or client says one number
 FIX: Grep for 'profile_depth_pct.*25' across SQL and 'DEPTH_THRESHOLD' in TS.
 SESSION: 295.
 ```
+
+---
+
+## LM-228: F-61 card expiry uses 30 min in SQL + client — both must agree
+```
+DECISION (Session 295): Open debate cards auto-expire after 30 minutes
+  via pg_cron job calling expire_stale_debate_cards(). Client shows
+  countdown timer based on CARD_EXPIRY_MS constant in feed-card.ts.
+PROTECTS: Feed freshness. Prevents stale open cards from cluttering feed.
+BITES YOU WHEN: You change the expiry window. Must update in TWO places:
+  1. expire_stale_debate_cards() SQL — interval '30 minutes'
+  2. src/feed-card.ts CARD_EXPIRY_MS constant (30 * 60 * 1000)
+SYMPTOM: Client countdown says "expired" but card still shows as open
+  in feed (or vice versa — card disappears before countdown hits zero).
+FIX: Grep for '30.*minute' in SQL and 'CARD_EXPIRY_MS' in TS.
+SESSION: 295.
+```
+
+---
+
+## LM-229: F-61 cancelled/expired cards excluded by get_unified_feed WHERE clause
+```
+DECISION (Session 295): get_unified_feed() WHERE clause filters
+  ad.status IN ('open','pending','live','round_break','voting','complete').
+  New statuses 'cancelled' and 'expired' are implicitly excluded.
+PROTECTS: Feed cleanliness. Cancelled/expired cards never appear.
+BITES YOU WHEN: You add a new status value that should appear in the
+  feed but forget to add it to the WHERE IN list.
+SYMPTOM: New-status cards exist in DB but never show in feed.
+FIX: Check get_unified_feed() status list when adding new arena_debates
+  status values.
+SESSION: 295.
+```
