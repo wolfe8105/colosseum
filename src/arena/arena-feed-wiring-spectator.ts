@@ -7,6 +7,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { get_user_watch_tier } from '../contracts/rpc-schemas.ts';
 import { showToast } from '../config.ts';
 import { isDepthBlocked } from '../depth-gate.ts';
 import type { CurrentDebate } from './arena-types.ts';
@@ -25,7 +26,7 @@ export async function wireSpectatorTipButtons(debate: CurrentDebate): Promise<vo
   // Fetch watch tier
   let tier = 'Unranked';
   try {
-    const { data, error } = await safeRpc('get_user_watch_tier', {});
+    const { data, error } = await safeRpc('get_user_watch_tier', {}, get_user_watch_tier);
     if (!error && data && Array.isArray(data) && data[0]) {
       tier = (data[0] as { tier: string }).tier;
     } else if (!error && data && typeof data === 'object' && 'tier' in data) {

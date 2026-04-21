@@ -1,0 +1,35 @@
+{
+  "run_id": "audit-run-20260417-batch23",
+  "created_at": "2026-04-17T00:00:00Z",
+  "batch": 23,
+  "files": [
+    {
+      "path": "src/tiers.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch23/src__tiers.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch23/src__tiers.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch23/src__tiers.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch23/src__tiers.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.profile.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch23/src__pages__home.profile.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch23/src__pages__home.profile.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch23/src__pages__home.profile.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch23/src__pages__home.profile.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-mod-refs-ruling.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch23/src__arena__arena-mod-refs-ruling.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch23/src__arena__arena-mod-refs-ruling.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch23/src__arena__arena-mod-refs-ruling.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch23/src__arena__arena-mod-refs-ruling.ts/stage3.md"}
+    },
+    {
+      "path": "src/async.state.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch23/src__async.state.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch23/src__async.state.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch23/src__async.state.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch23/src__async.state.ts/stage3.md"}
+    }
+  ]
+}

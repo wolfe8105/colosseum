@@ -1,0 +1,39 @@
+{
+  "run_id": "audit-run-20260417-batch20",
+  "created_at": "2026-04-17T00:00:00Z",
+  "batch": 20,
+  "files": [
+    {
+      "path": "src/arena/arena-feed-references.ts",
+      "sanitized": "src__arena__arena-feed-references.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch20/src__arena__arena-feed-references.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch20/src__arena__arena-feed-references.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch20/src__arena__arena-feed-references.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch20/src__arena__arena-feed-references.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/groups.detail.ts",
+      "sanitized": "src__pages__groups.detail.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch20/src__pages__groups.detail.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch20/src__pages__groups.detail.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch20/src__pages__groups.detail.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch20/src__pages__groups.detail.ts/stage3.md"}
+    },
+    {
+      "path": "src/share.ts",
+      "sanitized": "src__share.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch20/src__share.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch20/src__share.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch20/src__share.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch20/src__share.ts/stage3.md"}
+    },
+    {
+      "path": "src/async.wiring.ts",
+      "sanitized": "src__async.wiring.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch20/src__async.wiring.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch20/src__async.wiring.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch20/src__async.wiring.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch20/src__async.wiring.ts/stage3.md"}
+    }
+  ]
+}

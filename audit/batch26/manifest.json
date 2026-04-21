@@ -1,0 +1,34 @@
+{
+  "run_id": "audit-run-batch26-20260418",
+  "created_at": "2026-04-18T00:00:00Z",
+  "files": [
+    {
+      "path": "src/arena/arena-mod-queue-status.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-mod-queue-status.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch26/src__arena__arena-mod-queue-status.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-mod-queue-status.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-mod-queue-status.ts/stage3.md"}
+    },
+    {
+      "path": "src/reference-arsenal.render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch26/src__reference-arsenal.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch26/src__reference-arsenal.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch26/src__reference-arsenal.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch26/src__reference-arsenal.render.ts/stage3.md"}
+    },
+    {
+      "path": "src/intro-music.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch26/src__intro-music.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch26/src__intro-music.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch26/src__intro-music.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch26/src__intro-music.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-css-post-debate.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-css-post-debate.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch26/src__arena__arena-css-post-debate.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-css-post-debate.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch26/src__arena__arena-css-post-debate.ts/stage3.md"}
+    }
+  ]
+}

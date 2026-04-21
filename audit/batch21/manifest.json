@@ -1,0 +1,39 @@
+{
+  "run_id": "audit-run-20260418-batch21",
+  "created_at": "2026-04-18T00:00:00Z",
+  "batch": 21,
+  "files": [
+    {
+      "path": "src/profile-debate-archive.render.ts",
+      "sanitized": "src__profile-debate-archive.render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch21/src__profile-debate-archive.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch21/src__profile-debate-archive.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch21/src__profile-debate-archive.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch21/src__profile-debate-archive.render.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-feed-wiring.ts",
+      "sanitized": "src__arena__arena-feed-wiring.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch21/src__arena__arena-feed-wiring.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch21/src__arena__arena-feed-wiring.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch21/src__arena__arena-feed-wiring.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch21/src__arena__arena-feed-wiring.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/cosmetics.render.ts",
+      "sanitized": "src__pages__cosmetics.render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch21/src__pages__cosmetics.render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch21/src__pages__cosmetics.render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch21/src__pages__cosmetics.render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch21/src__pages__cosmetics.render.ts/stage3.md"}
+    },
+    {
+      "path": "src/async.ts",
+      "sanitized": "src__async.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch21/src__async.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch21/src__async.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch21/src__async.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch21/src__async.ts/stage3.md"}
+    }
+  ]
+}

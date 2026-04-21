@@ -1,8 +1,8 @@
 # Audit Findings — Consolidated
 
 **Source:** Four-stage code audit method v3 runs (see `THE-MODERATOR-AUDIT-METHOD-V3.md`).
-**Coverage:** 52 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R, 15R, 16R). **AUDIT PLAN COMPLETE — 57/57 coverage.**
-**Last updated:** 2026-04-15, end of Batch 16R. Original 57-file audit plan closed.
+**Coverage:** 52 of 57 files audited (Batches 1–6 partial, 4, 7R, 8R, 8Rc, 9R, 10R, 11R, 12R, 13R, 14R, 15R, 16R). **AUDIT PLAN COMPLETE — 57/57 coverage.** Full Monty run in progress (85 batches, 338 files).
+**Last updated:** 2026-04-19, end of Full Monty Batch 63.
 
 ---
 
@@ -106,6 +106,9 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ---
 
 ## MEDIUM severity — real bugs, schedule fixes
+
+### M-NS-1. `notifications.state.ts:14` — `setPollInterval` overwrites interval handle without `clearInterval`
+**Batch 63.** Unanimous 5/5 Stage 3 agents. `setPollInterval` stores the incoming handle into `pollInterval` with a plain assignment — no `clearInterval` call on the existing handle before overwriting. If a caller passes a new handle (or `null`) without first calling `clearInterval(pollInterval)`, the old timer leaks and runs forever in the background. The CLAUDE.md rule is "every polling interval must be clearable via a `destroy()` function" — the spirit is clean timer lifecycle management. Requires checking callers in `notifications.ts` to confirm they always clear before replacing. Fix options: (a) add `if (pollInterval) clearInterval(pollInterval)` before the assignment inside `setPollInterval`, or (b) confirm callers always clear and document the contract.
 
 ### M-A1. `arena-feed-machine.ts` — `pauseFeed` race condition (~line 463)
 **Batch 1.** Calls `unpauseFeed()` synchronously before the `insert_feed_event` and `rule_on_reference` RPC promises resolve. Real bug — feed unpaused before its causes have actually completed.
@@ -233,6 +236,21 @@ Historical damage scope: exactly 1 complete debate existed in production at fix 
 ---
 
 ## LOW severity — defensive coding gaps, dead code, smells
+
+### L-NS-1. `notifications.state.ts:12` — `setNotifications` accepts `null`/`undefined` without guard
+**Batch 63.** Unanimous 5/5 Stage 3 agents. The function does a plain `notifications = n` with no runtime null check. TypeScript enforces `Notification[]` at compile time, but a JavaScript caller or a loosely-typed code path could pass `null` or `undefined`, silently corrupting the module-level array. Any subsequent `.find`, `.filter`, or `.forEach` on `notifications` would then throw a TypeError. Low risk in a fully-TypeScript project, but a one-line guard (`if (!Array.isArray(n)) return`) would make this defensive.
+
+### L-NS-2. `notifications.state.ts` — `setNotifications` does not re-sync `unreadCount`
+**Batch 63.** `setNotifications` replaces the `notifications` array without calling `computeUnreadCount()`. After every `setNotifications` call the displayed unread count is stale until the caller explicitly calls `computeUnreadCount()`. This is a sequencing contract that is not enforced or documented. The fix is either to call `computeUnreadCount()` at the end of `setNotifications`, or to document that callers must sequence the two calls. `markOneRead` and `markAllAsRead` maintain `unreadCount` incrementally, creating two divergent strategies that can drift if callers are not careful.
+
+### L-WT-1. `webrtc.timer.ts` — `createTimerWorker` has no error handling; CSP rejection propagates uncaught
+**Batch 63.** Agents 03 and 05. `createTimerWorker` calls `new Blob(...)`, `URL.createObjectURL(...)`, and `new Worker(url)` with no try/catch. In a CSP-restricted environment that disallows `blob:` URLs (e.g., a strict `worker-src` directive), `new Worker(url)` throws and the exception propagates uncaught through `startWorkerTimer` to its caller. No agent flags this as a code defect per se — it's a missing error-handling gap. The only callsite is `startWorkerTimer`; callers have no way to recover.
+
+### L-WT-2. `webrtc.timer.ts` — Worker emits two messages at expiry in the same `tick()` call
+**Batch 63.** Agents 04 and 05. When the timer expires (`remaining <= 0`), the `tick()` function inside `TIMER_WORKER_CODE` fires both `self.postMessage({ remaining: 0 })` and `self.postMessage({ expired: true })` in the same invocation — two sequential `postMessage` calls, not one. Any caller registering an `onmessage` handler via `startWorkerTimer` will receive two events at expiry: first `{ remaining: 0 }` then `{ expired: true }`. Callers must handle both; accidentally treating the first message as the terminal event and tearing down state before the second fires could cause a dropped-message or double-action. No agent confirmed this is a current caller bug — just an implicit contract that could surprise future maintainers.
+
+### L-TK-1. `tokens.ts` — `init` auto-invokes at module load AND is exported; double-call registers duplicate `onChange` listener
+**Batch 63.** Agent 04. The module unconditionally calls `init()` at lines 46–50 (DOMContentLoaded or immediate). `init` is also exported. If any consumer calls `tokens.init()` (or calls it via the `tokens` default export if `init` is a property of that object), `onChange` registers a second listener. The next auth state change then fires `claimDailyLogin`, `_loadMilestones`, and `_rpc('notify_followers_online', ...)` twice. Whether `_initBroadcast` is idempotent against double-call is unknown from this file alone. Low risk in practice — external callers typically do not re-invoke barrel init functions — but the pattern is fragile.
 
 ### L-A12. `arena-room-end.ts` — `update_arena_debate` accepts client-provided scores in PvP (downgraded from H-A1)
 **Batch 2. SQL inspected 2026-04-13.** The original HIGH finding claimed AI debates were deterministically broken by a last-write-wins race. **SQL inspection overturned this.** The function uses `SELECT ... FOR UPDATE` to serialize concurrent calls and short-circuits on a second call via `IF v_debate.status = 'complete' AND p_status = 'complete' THEN ... 'already_finalized'`, so there is no race. In PvP the server computes the winner from `vote_count_a`/`vote_count_b` and ignores client-provided `p_winner`. In AI mode there is only one client, so no race is possible.
@@ -535,18 +553,24 @@ Concrete failure modes: withdraw with `currentGroupId = null` throws at the non-
 ### L-E6. `arena-loadout-presets.ts` — `applyPreset` redundant dynamic import of `auth.ts`
 **Batch 6.** Line 166 does `(await import('./auth.ts')).getCurrentProfile()` but `auth.ts` is already statically imported. `getCurrentProfile` could be added to the static import at line 9. Purely cosmetic. (The `powerups.ts` dynamic import is *not* redundant — `renderLoadout`/`wireLoadout` aren't in the static import list.)
 
+### L-B51-1. `groups.nav.ts` — Dead imports: `safeRpc`, `renderEmpty`, `renderGroupList`, `GroupListItem`
+**Full Monty Batch 51.** Four symbols imported at lines 6 and 11–13 are never called or referenced in any function body in this file: `safeRpc` (line 6), `renderEmpty` (line 11), `renderGroupList` (line 11), `GroupListItem` (type, line 13). Same family as L-A6, L-H1. ESLint `no-unused-vars` / `@typescript-eslint/no-unused-vars` would catch these automatically.
+
+### L-B51-2. `groups.nav.ts` — Dynamic imports with no `.catch()` in `switchTab` and `filterCategory`
+**Full Monty Batch 51.** Three dynamic import chains have no error handler: `switchTab` line 28 (`import('./groups.load.ts').then(({ loadMyGroups }) => loadMyGroups())`), `switchTab` line 29 (`import('./groups.load.ts').then(({ loadLeaderboard }) => loadLeaderboard())`), `filterCategory` line 49 (`import('./groups.load.ts').then(({ loadDiscover }) => loadDiscover())`). Any module load failure (network error, parse error, chunk 404) becomes an unhandled promise rejection with no user feedback. Same family as L-C6. Fix: add `.catch(err => console.error('groups.load import failed:', err))` to each chain.
+
 ---
 
 ## Cross-cutting patterns
 
 These are not individual findings but families that recur across files. Worth single sweep PRs rather than file-by-file fixes.
 
-1. **Unawaited promises with no `.catch`** — M-C5, L-C6, M-B3, L-E1. Promises started bare; throws become unhandled rejections. Pattern: bare `someAsync()` instead of `someAsync().catch(e => console.error(...))`.
+1. **Unawaited promises with no `.catch`** — M-C5, L-C6, M-B3, L-E1, L-B51-2. Promises started bare; throws become unhandled rejections. Pattern: bare `someAsync()` instead of `someAsync().catch(e => console.error(...))`.
 2. **Silent catch blocks** — M-B3, M-C6, M-E9 (misleading comment). `catch { /* warned */ }` or `catch(() => {})`. Loses diagnostic signal.
 3. **Asymmetric null guards** — L-C1, plus several Batch 1 findings. Some DOM reads in a function are guarded, others are not, with no clear reason. Either guard all or none.
 4. **Disable-button-no-finally pattern** — M-B5, M-C2, M-D1, M-E1, M-F1, M-F3, **M-J3 (`selectBountyClaim` in arena-bounty-claim)**. **SEVEN confirmed instances across SEVEN different files.** Disable button → do work → rejection path never re-enables. Grep-sweep PR is overdue.
 5. **Hardcoded hex colors** — L-A3, L-A7. Violates CLAUDE.md token policy. Should be enforceable via a lint rule.
-6. **Dead imports** — L-A6 and others. Easy to clean up; ESLint rule would catch all of them.
+6. **Dead imports** — L-A6 and others, L-B51-1. Easy to clean up; ESLint rule would catch all of them.
 7. **CLAUDE.md rule violations and Stage 2 errors caught by Stage 3 verifier** — M-D2 (missing `Number()` cast), M-E4 (missing `escapeHTML()`), L-F5, L-F7 (more Number() misses), **M-H2 (`d.winner` property-not-exist TypeScript error — Stage 2 Agent 04 also had wrong RPC param names `p_name`/`p_desc` caught in `_showEditSheet`)**, **M-I2 (`setInterval` with no `destroy()` in `arena-ads.ts`), M-I3 (`renderList` rank mutation on shared objects — all 5 Stage 2 agents missed it)**, **M-J4 (bounty option content innerHTML without escapeHTML), H-K1 (stored XSS in spec-chat report button via single-quote injection)**. Stage 3 continues to catch real bugs that all 5 Stage 2 agents miss or misdescribe. **Critically, H-K1 is the first High since H-A2 and is an actually exploitable stored XSS** — the Stage 3 verifier found it because all 5 agents independently confirmed the `encodeURIComponent` doesn't-encode-single-quotes mechanic. Strong argument for keeping the verifier stage even if we compress elsewhere.
 8. **Unanimous Stage 2 misdescription** — **M-E5** (`_buildRivalSet` stale set on error path), **M-I3** (`renderList` rank mutation on shared `liveData`/`PLACEHOLDER_DATA` objects). Two cases in the audit where all 5 Stage 2 agents described the same thing wrong in the same way. Caught by Stage 3's consensus verification against source. Fits the general pattern that the verifier pass matters most on **counterintuitive control flow** where the intuitive reading is wrong — in both cases the intuitive read is "shallow copy, no shared mutation" or "await failure, clear state" and the actual behavior inverts that.
 
@@ -575,6 +599,7 @@ These are not individual findings but families that recur across files. Worth si
 | 16R | 3 (`arena-entrance`, `async.fetch`, `spectate.types`) | done | 0 | 0 | 4 |
 | A | 7 (`arena-deepgram.types`, `arena-deepgram.token`, `arena-deepgram`, `arena-feed-realtime`, `arena-feed-heartbeat`, `arena-feed-disconnect`, `arena-lobby.cards`) | done | 0 | 3 | 4 |
 | B | 4 (`arena-lobby`, `arena-private-lobby`, `arena-private-lobby.join`, `arena-pending-challenges`) | done | 0 | 3 | 4 |
+| 51 (Full Monty) | 4 (`voicememo.sheet`, `groups.nav`, `reference-arsenal.types`, `reference-arsenal.forge-submit`) | done | 0 | 0 | 2 |
 
 ‡ `arena-sounds.ts` was re-audited in 14R (overlap with 11R). **Both runs agreed: no code bugs.** 11R reported "all PASS, no findings." 14R reported "25 PASS, 0 FAIL" with 6 needs_review observations — but those are design-limitation notes (synthesized tracks can't be stopped, noise/osc gain asymmetry, haptics coupled to SFX toggle, etc.), not bugs. This is a **positive** audit-method data point, unlike the 10R/11R divergence on `arena-core.ts`: two independent 5-agent runs on a pure-code-quality question (does this code have bugs?) reached the same answer. The verbosity difference between runs is real, but the verdict is consistent.
 
@@ -599,6 +624,8 @@ These are not individual findings but families that recur across files. Worth si
 **Batch 10R notes:** 5 Medium + 7 Low. Real finds: M-J1 init co-execution of joinCode+spectate, M-J2 module-load popstate registration, M-J3 selectBountyClaim rejection leaves button disabled (**seventh** disable-button-no-finally instance), M-J4 bounty option content XSS missing escapeHTML, M-J5 _attemptFeePaid singleton not reset. Low findings across both files.
 
 **Batch 7R notes:** `auth.types.ts` and `arena-room-setup.ts` clean. `spectate.ts` two Lows (ascending inconsistency, live-redirect skips RPCs). `auth.profile.ts` has the headline Medium — M-G1, `currentProfile` undeclared inside `showUserProfile`, all 5 agents flagged, bounty section may receive `undefined` at runtime.
+
+**Batch 51 notes (Full Monty, 2026-04-18):** 4 files. `voicememo.sheet.ts` — 5 functions, all unanimous PASS, no findings. Clean file with correct try/finally+revoke pattern on the `send` path. `groups.nav.ts` — 5 functions, all PASS, 2 Lows: L-B51-1 (4 dead imports: `safeRpc`, `renderEmpty`, `renderGroupList`, `GroupListItem`) and L-B51-2 (3 dynamic import chains with no `.catch()` in `switchTab` and `filterCategory` — L-C6 family). Orchestrator cross-check caught both; all 5 Stage 3 agents missed them. `reference-arsenal.types.ts` — pure type-declaration module, 11 interfaces + 4 type aliases, zero functions, empty anchor list (identical handling to `spectate.types.ts` in Batch 16R). `reference-arsenal.forge-submit.ts` — 1 function (`_submitForge`), all 5 Stage 3 agents unanimous PASS. The `showToast` XSS concern (all 5 agents independently raised `result.existing_name` without `escapeHTML()`) resolved via orchestrator cross-check of `src/config.toast.ts` — line 57 uses `toast.textContent = msg`, not `innerHTML`. False positive dismissed.
 
 **Last updated:** 2026-04-15, end of Batch 16R. Original 57-file audit plan closed.
 

@@ -8,6 +8,7 @@
 import { sb, currentUser, currentGroupId, isMember } from './groups.state.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import { safeRpc } from '../auth.ts';
+import { get_group_challenges } from '../contracts/rpc-schemas.ts';
 import { renderEmpty } from './groups.utils.ts';
 
 // ── LOCAL STATE ───────────────────────────────────────────────────────────────
@@ -176,7 +177,7 @@ export async function loadGroupChallenges(groupId: string) {
   const container = document.getElementById('detail-challenges');
   if (!container) return;
   try {
-    const { data, error } = await safeRpc('get_group_challenges', { p_group_id: groupId, p_limit: 10 });
+    const { data, error } = await safeRpc('get_group_challenges', { p_group_id: groupId, p_limit: 10 }, get_group_challenges);
     if (error) throw error;
     const challenges = typeof data === 'string' ? JSON.parse(data) : data;
     if (!challenges || challenges.length === 0) {

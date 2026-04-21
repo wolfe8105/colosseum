@@ -1,0 +1,34 @@
+{
+  "run_id": "audit-run-20260417-batch16",
+  "created_at": "2026-04-17T00:00:00Z",
+  "files": [
+    {
+      "path": "src/pages/profile-depth.section.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch16/src__pages__profile-depth.section.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch16/src__pages__profile-depth.section.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "in_progress", "output_path": "audit/batch16/src__pages__profile-depth.section.ts/stage2.md"},
+      "stage3":   {"status": "pending", "output_path": "audit/batch16/src__pages__profile-depth.section.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.depth.ts",
+      "stage1":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.depth.ts/stage1.md"},
+      "stage1_5": {"status": "pending", "output_path": "audit/batch16/src__pages__home.depth.ts/stage1_5-anchor.md", "arbiter_runs": 0, "runs_agreed": null, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.depth.ts/stage2.md"},
+      "stage3":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.depth.ts/stage3.md"}
+    },
+    {
+      "path": "src/pages/home.overlay.ts",
+      "stage1":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.overlay.ts/stage1.md"},
+      "stage1_5": {"status": "pending", "output_path": "audit/batch16/src__pages__home.overlay.ts/stage1_5-anchor.md", "arbiter_runs": 0, "runs_agreed": null, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.overlay.ts/stage2.md"},
+      "stage3":   {"status": "pending", "output_path": "audit/batch16/src__pages__home.overlay.ts/stage3.md"}
+    },
+    {
+      "path": "src/webrtc.engine.ts",
+      "stage1":   {"status": "pending", "output_path": "audit/batch16/src__webrtc.engine.ts/stage1.md"},
+      "stage1_5": {"status": "pending", "output_path": "audit/batch16/src__webrtc.engine.ts/stage1_5-anchor.md", "arbiter_runs": 0, "runs_agreed": null, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "pending", "output_path": "audit/batch16/src__webrtc.engine.ts/stage2.md"},
+      "stage3":   {"status": "pending", "output_path": "audit/batch16/src__webrtc.engine.ts/stage3.md"}
+    }
+  ]
+}

@@ -13,6 +13,7 @@
 import { currentUser, callerRole } from './groups.state.ts';
 import { escapeHTML } from '../config.ts';
 import { safeRpc } from '../auth.ts';
+import { get_group_members } from '../contracts/rpc-schemas.ts';
 import { clientRoleRank, renderEmpty } from './groups.utils.ts';
 import { openMemberActionsModal } from './groups.members.modal.ts';
 import type { GroupMember } from './groups.types.ts';
@@ -28,7 +29,7 @@ let _membersListClickHandler: ((e: Event) => void) | null = null;
 export async function loadGroupMembers(groupId: string): Promise<void> {
   const esc = escapeHTML;
   try {
-    const { data, error } = await safeRpc('get_group_members', { p_group_id: groupId, p_limit: 50 });
+    const { data, error } = await safeRpc('get_group_members', { p_group_id: groupId, p_limit: 50 }, get_group_members);
     if (error) throw error;
     const members: GroupMember[] = typeof data === 'string' ? JSON.parse(data) : data;
 

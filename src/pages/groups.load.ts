@@ -4,7 +4,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
-import { get_my_groups } from '../contracts/rpc-schemas.ts';
+import { get_my_groups, get_group_leaderboard } from '../contracts/rpc-schemas.ts';
 import { activeCategory, currentUser } from './groups.state.ts';
 import { renderEmpty, renderGroupList } from './groups.utils.ts';
 
@@ -47,7 +47,7 @@ export async function loadMyGroups(): Promise<void> {
 export async function loadLeaderboard(): Promise<void> {
   (document.getElementById('leaderboard-list') as HTMLElement).innerHTML = '<div class="loading-state">Loading rankings…</div>';
   try {
-    const { data, error } = await safeRpc('get_group_leaderboard', { p_limit: 20 });
+    const { data, error } = await safeRpc('get_group_leaderboard', { p_limit: 20 }, get_group_leaderboard);
     if (error) throw error;
     const groups = typeof data === 'string' ? JSON.parse(data) : data;
     renderGroupList('leaderboard-list', groups || [], false, true, _openGroup!);

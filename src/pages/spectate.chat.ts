@@ -5,7 +5,7 @@
  */
 
 import { safeRpc, getCurrentProfile, getCurrentUser } from '../auth.ts';
-import { get_spectator_chat } from '../contracts/rpc-schemas.ts';
+import { get_spectator_chat, send_spectator_chat } from '../contracts/rpc-schemas.ts';
 import { isDepthBlocked } from '../depth-gate.ts';
 import { state } from './spectate.state.ts';
 import { escHtml, timeAgo } from './spectate.utils.ts';
@@ -73,7 +73,7 @@ export function wireChatUI(d: SpectateDebate): void {
       const { data: rawData, error } = await safeRpc('send_spectator_chat', {
         p_debate_id: state.debateId,
         p_message: msg
-      });
+      }, send_spectator_chat);
       const data = rawData as { success?: boolean; error?: string; display_name?: string } | null;
 
       if (error) {

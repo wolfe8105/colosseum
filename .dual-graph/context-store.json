@@ -1,0 +1,4 @@
+[
+  {"type": "fact", "content": "Batch 26 audit complete: 4 files, 2 findings (1 medium, 1 low)", "tags": ["audit", "batch26"], "files": ["src/arena/arena-mod-queue-status.ts", "src/reference-arsenal.render.ts", "src/intro-music.ts", "src/arena/arena-css-post-debate.ts"], "date": "2026-04-18"},
+  {"type": "decision", "content": "modName XSS in arena-mod-queue-status.ts is medium severity finding", "tags": ["xss", "security", "batch26"], "files": ["src/arena/arena-mod-queue-status.ts"], "date": "2026-04-18"}
+]

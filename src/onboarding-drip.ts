@@ -17,7 +17,7 @@
 
 import { safeRpc, getIsPlaceholderMode } from './auth.ts';
 import { showToast } from './config.ts';
-import { get_onboarding_progress } from './contracts/rpc-schemas.ts';
+import { get_onboarding_progress, complete_onboarding_day } from './contracts/rpc-schemas.ts';
 
 // ============================================================
 // TYPES
@@ -181,7 +181,7 @@ export async function triggerDripDay(day: number): Promise<void> {
   _claimedThisSession.add(day);
 
   try {
-    const { data, error } = await safeRpc('complete_onboarding_day', { p_day: day });
+    const { data, error } = await safeRpc('complete_onboarding_day', { p_day: day }, complete_onboarding_day);
     if (error) return;
     const result = data as { success: boolean; cosmetic_name?: string; already_done?: boolean } | null;
     if (!result?.success || result.already_done) return;

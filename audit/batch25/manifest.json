@@ -1,0 +1,34 @@
+{
+  "run_id": "audit-run-batch25-20260417",
+  "created_at": "2026-04-17T00:00:00Z",
+  "files": [
+    {
+      "path": "src/modifiers-render.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch25/src__modifiers-render.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch25/src__modifiers-render.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch25/src__modifiers-render.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch25/src__modifiers-render.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-config-category.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-config-category.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch25/src__arena__arena-config-category.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-config-category.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-config-category.ts/stage3.md"}
+    },
+    {
+      "path": "src/arena/arena-feed-ui.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-feed-ui.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch25/src__arena__arena-feed-ui.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-feed-ui.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch25/src__arena__arena-feed-ui.ts/stage3.md"}
+    },
+    {
+      "path": "src/webrtc.peer.ts",
+      "stage1":   {"status": "done", "output_path": "audit/batch25/src__webrtc.peer.ts/stage1.md"},
+      "stage1_5": {"status": "done", "output_path": "audit/batch25/src__webrtc.peer.ts/stage1_5-anchor.md", "arbiter_runs": 2, "runs_agreed": true, "reconciliation_run": false, "unresolved_count": 0},
+      "stage2":   {"status": "done", "output_path": "audit/batch25/src__webrtc.peer.ts/stage2.md"},
+      "stage3":   {"status": "done", "output_path": "audit/batch25/src__webrtc.peer.ts/stage3.md"}
+    }
+  ]
+}

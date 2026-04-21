@@ -405,3 +405,90 @@ export const get_my_invite_stats = z.object({
   unclaimed_rewards: z.array(InviteRewardSchema),
   activity: z.array(ActivityEntrySchema),
 });
+
+
+// =====================================================================
+// BATCH 3: 6 more high-risk untyped RPCs
+// =====================================================================
+
+// ── send_spectator_chat ──────────────────────────────────────────
+// Called by: arena-feed-spec-chat.ts:217, spectate.chat.ts:73
+// Frontend casts to: { success?: boolean; error?: string; display_name?: string }
+
+export const send_spectator_chat = z.object({
+  success: z.boolean().optional(),
+  error: z.string().optional(),
+  display_name: z.string().optional(),
+}).passthrough();
+
+
+// ── complete_onboarding_day ──────────────────────────────────────
+// Called by: onboarding-drip.ts:184
+// Frontend casts to: { success: boolean; cosmetic_name?: string; already_done?: boolean }
+
+export const complete_onboarding_day = z.object({
+  success: z.boolean(),
+  cosmetic_name: z.string().optional(),
+  already_done: z.boolean().optional(),
+}).passthrough();
+
+
+// ── get_group_challenges ─────────────────────────────────────────
+// Called by: groups.challenges.ts:179
+// Frontend casts to: Record<string, unknown>[]
+
+const GroupChallengeSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  challenger_group_id: z.string().nullable().optional(),
+  defender_group_id: z.string().nullable().optional(),
+  challenger_name: z.string().nullable().optional(),
+  defender_name: z.string().nullable().optional(),
+  challenger_emoji: z.string().nullable().optional(),
+  defender_emoji: z.string().nullable().optional(),
+  challenger_elo: z.union([z.number(), z.string()]).nullable().optional(),
+  defender_elo: z.union([z.number(), z.string()]).nullable().optional(),
+}).passthrough();
+
+export const get_group_challenges = z.array(GroupChallengeSchema);
+
+
+// ── get_group_leaderboard ────────────────────────────────────────
+// Called by: groups.load.ts:50
+// Frontend casts to: GroupListItem[] (same shape as get_my_groups)
+
+export const get_group_leaderboard = z.array(GroupListItemSchema);
+
+
+// ── get_group_members ────────────────────────────────────────────
+// Called by: groups.members.ts:31
+// Frontend casts to: GroupMember[]
+
+const GroupMemberSchema = z.object({
+  user_id: z.string(),
+  role: z.string(),
+  joined_at: z.string().optional(),
+  username: z.string().nullable().optional(),
+  display_name: z.string().nullable().optional(),
+  avatar_url: z.string().nullable().optional(),
+  elo_rating: z.union([z.number(), z.string()]).optional(),
+  wins: z.union([z.number(), z.string()]).optional(),
+  losses: z.union([z.number(), z.string()]).optional(),
+  level: z.union([z.number(), z.string()]).optional(),
+}).passthrough();
+
+export const get_group_members = z.array(GroupMemberSchema);
+
+
+// ── get_user_watch_tier ──────────────────────────────────────────
+// Called by: arena-feed-wiring-spectator.ts:28
+// Frontend handles both array-of-one and single-row shapes
+
+const WatchTierRowSchema = z.object({
+  tier: z.string(),
+}).passthrough();
+
+export const get_user_watch_tier = z.union([
+  z.array(WatchTierRowSchema),
+  WatchTierRowSchema,
+]);

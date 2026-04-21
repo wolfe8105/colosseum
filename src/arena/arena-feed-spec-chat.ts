@@ -18,7 +18,7 @@
  */
 
 import { safeRpc, getCurrentProfile } from '../auth.ts';
-import { get_spectator_chat } from '../contracts/rpc-schemas.ts';
+import { get_spectator_chat, send_spectator_chat } from '../contracts/rpc-schemas.ts';
 import { escapeHTML } from '../config.ts';
 
 // ── Module state ──────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ async function handleSend(): Promise<void> {
     const { data, error } = await safeRpc('send_spectator_chat', {
       p_debate_id: activeDebateId,
       p_message: text,
-    });
+    }, send_spectator_chat);
 
     if (error || !data || !(data as { success: boolean }).success) {
       const msg = (data as { error?: string })?.error || 'Could not send';
