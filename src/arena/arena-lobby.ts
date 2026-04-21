@@ -110,7 +110,7 @@ export function renderLobby(): void {
       <div class="arena-section-title"><span class="section-dot gold-dot"></span> OPEN CHALLENGES</div>
       <div class="arena-challenge-cta" id="arena-challenge-cta">
         <div class="arena-challenge-text">DISAGREE WITH SOMEONE?</div>
-        <div class="arena-challenge-sub">Find a hot take you hate \u2192 challenge them to debate it</div>
+        <div class="arena-challenge-sub">Find an opinion you disagree with \u2192 challenge them to debate it</div>
       </div>
     </div>
     <div class="arena-section" id="arena-unplugged-section">
