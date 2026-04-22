@@ -145,9 +145,9 @@ export function inviteFriend(): void {
 export function shareTake(takeId: string, takeText: string): void {
   const url = `${getBaseUrl()}/take/${encodeURIComponent(takeId)}`;
   const decoded = decodeURIComponent(takeText);
-  const text = `🔥 Hot Take on The Moderator:\n"${decoded}"\n\nReact or challenge: ${url}`;
+  const text = `🔥 Take on The Moderator:\n"${decoded}"\n\nReact or challenge: ${url}`;
   // fire-and-forget: share API failure should not block UI
-  void share({ title: 'Hot Take — The Moderator', text, url });
+  void share({ title: 'The Moderator', text, url });
 }
 
 // ============================================================

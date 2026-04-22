@@ -49,7 +49,7 @@ export function renderSearchScreen(): void {
   container.innerHTML = `
     <div style="text-align:center;padding:16px 0 12px;">
       <div style="font-family:var(--mod-font-display);font-size:24px;letter-spacing:3px;color:var(--mod-accent);font-weight:700;">🔍 SEARCH</div>
-      <div style="color:var(--mod-text-sub);font-size:13px;">Find users, hot takes, and groups.</div>
+      <div style="color:var(--mod-text-sub);font-size:13px;">Find users, posts, and groups.</div>
     </div>
 
     <div style="margin-bottom:12px;">

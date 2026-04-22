@@ -78,7 +78,7 @@ if (topicSlug && !DEBATES[topicSlug] && customTitle) {
     category: cat, catIcon, catLabel,
     yesVotes: 0, noVotes: 0,
     takes: [
-      { author: 'The Moderator', text: 'This debate was started from ' + (source === 'telegram' || source === 'telegram-inline' ? 'Telegram' : 'a shared link') + '. Cast your vote and drop a hot take!', fire: 1, swords: 0 },
+      { author: 'The Moderator', text: 'This debate was started from ' + (source === 'telegram' || source === 'telegram-inline' ? 'Telegram' : 'a shared link') + '. Cast your vote and drop your take!', fire: 1, swords: 0 },
     ]
   };
 }

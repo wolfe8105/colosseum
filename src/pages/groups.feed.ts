@@ -18,7 +18,7 @@ import type { UnifiedFeedCard } from '../feed-card.ts';
 
 // ── GROUP FEED ──────────────────────────────────────────────────────────────
 export async function loadGroupFeed(groupId: string) {
-  const container = document.getElementById('detail-hot-takes');
+  const container = document.getElementById('detail-feed');
   if (!container) return;
 
   try {

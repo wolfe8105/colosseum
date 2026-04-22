@@ -30,11 +30,11 @@ export async function openGroup(groupId: string): Promise<void> {
   (document.getElementById('detail-desc') as HTMLElement).textContent    = '';
   (document.getElementById('detail-members') as HTMLElement).textContent = '—';
   (document.getElementById('detail-elo') as HTMLElement).textContent     = '—';
-  (document.getElementById('detail-hot-takes') as HTMLElement).innerHTML     = '<div class="loading-state">Loading hot takes…</div>';
+  (document.getElementById('detail-feed') as HTMLElement).innerHTML     = '<div class="loading-state">Loading feed…</div>';
   (document.getElementById('detail-challenges') as HTMLElement).innerHTML    = '<div class="loading-state">Loading challenges…</div>';
   (document.getElementById('detail-members-list') as HTMLElement).innerHTML  = '<div class="loading-state">Loading members…</div>';
   (document.getElementById('gvg-challenge-btn') as HTMLElement).style.display = 'none';
-  switchDetailTab('hot-takes');
+  switchDetailTab('feed');
 
   try {
     const { data, error } = await safeRpc('get_group_details', { p_group_id: groupId }, get_group_details);

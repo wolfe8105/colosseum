@@ -8,7 +8,7 @@ import { _milestoneToast } from './tokens.animations.ts';
 import type { MilestoneKey, MilestoneDefinition, MilestoneListItem, ClaimResult } from './tokens.types.ts';
 
 export const MILESTONES: Readonly<Record<MilestoneKey, MilestoneDefinition>> = {
-  first_hot_take:     { tokens: 25,  label: 'First Hot Take',     icon: '🔥' },
+  first_hot_take:     { tokens: 25,  label: 'First Post',        icon: '🔥' },
   first_debate:       { tokens: 50,  label: 'First Debate',       icon: '⚔️' },
   first_vote:         { tokens: 10,  label: 'First Vote',         icon: '🗳️' },
   first_reaction:     { tokens: 5,   label: 'First Reaction',     icon: '👊' },

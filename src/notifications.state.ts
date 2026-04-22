@@ -34,11 +34,11 @@ export function computeUnreadCount(): void {
 export function getPlaceholderNotifs(): Notification[] {
   return [
     { id: '1', type: 'challenge',  title: 'IRONMIND challenged you',         body: '"LeBron is NOT the GOAT" — accept?',                read: false },
-    { id: '2', type: 'reaction',   title: '🔥 Your hot take is on fire',     body: '247 reactions on "NBA play-in is the best thing..."', read: false },
+    { id: '2', type: 'reaction',   title: '🔥 Your post is on fire',     body: '247 reactions on "NBA play-in is the best thing..."', read: false },
     { id: '3', type: 'result',     title: 'Debate result: YOU WON',          body: 'vs FACTCHECKER — ELO +18 (now 1,218)',                read: false },
     { id: '4', type: 'stake_won',  title: '🪙 Stake Won!',                   body: 'You won 45 tokens on "Is crypto dead?"',             read: false },
     { id: '5', type: 'tier_up',    title: '🏅 Tier Up!',                     body: 'You reached Spectator+! New perks unlocked.',        read: false },
     { id: '6', type: 'follow',     title: 'SHARPSHOOTER followed you',       body: 'ELO 1,654 — 42 wins',                                read: true  },
-    { id: '7', type: 'system',     title: 'Welcome to The Moderator',        body: 'Post a hot take, watch a debate, or start one.',     read: true  },
+    { id: '7', type: 'system',     title: 'Welcome to The Moderator',        body: 'Post to the feed, watch a debate, or start one.',     read: true  },
   ];
 }

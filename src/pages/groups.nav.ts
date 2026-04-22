@@ -28,11 +28,11 @@ export function switchTab(tab: string): void {
 
 export function switchDetailTab(tab: string): void {
   setActiveDetailTab(tab);
-  const tabs = ['hot-takes', 'challenges', 'members', 'auditions'];
+  const tabs = ['feed', 'challenges', 'members', 'auditions'];
   document.querySelectorAll('#detail-tabs .tab-btn').forEach((b, i) => {
     b.classList.toggle('active', tabs[i] === tab);
   });
-  (document.getElementById('detail-hot-takes') as HTMLElement).style.display    = tab === 'hot-takes'  ? 'block' : 'none';
+  (document.getElementById('detail-feed') as HTMLElement).style.display    = tab === 'feed'  ? 'block' : 'none';
   (document.getElementById('detail-challenges') as HTMLElement).style.display   = tab === 'challenges' ? 'block' : 'none';
   (document.getElementById('detail-members-list') as HTMLElement).style.display = tab === 'members'    ? 'block' : 'none';
   (document.getElementById('detail-auditions') as HTMLElement).style.display    = tab === 'auditions'  ? 'block' : 'none';

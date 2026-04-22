@@ -11,7 +11,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 export let sb: SupabaseClient | null = null;
 export let currentUser: User | null = null;
 export let activeTab = 'discover';
-export let activeDetailTab = 'hot-takes';
+export let activeDetailTab = 'feed';
 export let activeCategory: string | null = null;
 export let selectedEmoji = '⚔️';
 export let currentGroupId: string | null = null;

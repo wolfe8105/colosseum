@@ -58,7 +58,7 @@ export function showPrivateLobbyPicker(): void {
         <div class="arena-private-card-icon">\uD83D\uDD11</div>
         <div>
           <div class="arena-private-card-name">SHAREABLE JOIN CODE</div>
-          <div class="arena-private-card-desc">Get a 6-character code — share it anywhere</div>
+          <div class="arena-private-card-desc">Get a 5-character code — share it anywhere</div>
         </div>
       </div>
       ${roundPickerHTML()}

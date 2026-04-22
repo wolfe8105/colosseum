@@ -84,7 +84,7 @@ function render(): void {
 
   // Hot Takes
   if (debate.takes?.length) {
-    html += `<div class="section-label">🔥 Hot Takes</div><div class="takes-list">`;
+    html += `<div class="section-label">🔥 Takes</div><div class="takes-list">`;
     debate.takes.forEach(t => {
       html += `<div class="take-card">
         <a href="/u/${encodeURIComponent(t.author)}" class="take-author" style="text-decoration:none;color:inherit;cursor:pointer;">@${escapeHTML(t.author)}</a>

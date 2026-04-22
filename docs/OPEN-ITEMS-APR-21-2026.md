@@ -73,7 +73,7 @@ These were formalized in Session 295 and added to the punch list. None have been
 
 ---
 
-## PRIORITY 4: F-68 Cosmetic Cleanup (Hot Takes Naming)
+## ~~PRIORITY 4: F-68 Cosmetic Cleanup (Hot Takes Naming)~~ ✅ DONE
 
 F-68 (unified feed) shipped in Session 294. Hot takes are dead as a concept — tables dropped, RPCs retired, 904 lines deleted. But several UI strings and code identifiers still say "hot takes." These are all simple find-and-replace tasks.
 
@@ -89,7 +89,7 @@ F-68 (unified feed) shipped in Session 294. Hot takes are dead as a concept — 
 
 ---
 
-## PRIORITY 5: Challenge Page Cosmetic Issues
+## ~~PRIORITY 5: Challenge Page Cosmetic Issues~~ ✅ DONE
 
 Found during Session 295 live testing. These don't block anything but look bad.
 

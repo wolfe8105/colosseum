@@ -9,7 +9,7 @@
  *   triggerDripDay(1) — on signup  (plinko.ts)
  *   triggerDripDay(2) — on first vote
  *   triggerDripDay(3) — on spectate complete
- *   triggerDripDay(4) — on first hot take
+ *   triggerDripDay(4) — on first post
  *   triggerDripDay(5) — on first debate complete
  *   triggerDripDay(6) — on profile 3+ sections filled
  *   triggerDripDay(7) — on first debate WIN
@@ -41,7 +41,7 @@ const DAYS: readonly DripDayDef[] = [
   { day: 1, icon: '🏟️', action: 'Show up',              reward: 'Newcomer badge' },
   { day: 2, icon: '🗳️', action: 'Cast your first vote', reward: 'Voter badge' },
   { day: 3, icon: '👁️', action: 'Watch a full debate',  reward: 'Spectator badge' },
-  { day: 4, icon: '🔥', action: 'Post a hot take',      reward: 'Hothead badge' },
+  { day: 4, icon: '🔥', action: 'Post to the feed',      reward: 'Hothead badge' },
   { day: 5, icon: '⚔️', action: 'Complete a debate',    reward: 'Rookie title' },
   { day: 6, icon: '📝', action: 'Fill 3+ profile fields', reward: 'Regular title' },
   { day: 7, icon: '🏆', action: 'Win a debate',         reward: '🎖️ Gladiator title' },

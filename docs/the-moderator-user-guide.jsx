@@ -199,24 +199,24 @@ const SCREENS = [
   { id: "M", route: "/privacy", title: "/privacy", subtitle: "Privacy Policy", heroTag: "Your data.", heroDesc: "Static legal page. No interactive elements.", intro: "Read-only privacy policy page.", emoji: "🔒",
     elements: []
   },
-  { id: "N", route: "/home", title: "Home Feed", subtitle: "Main Screen", heroTag: "Home base.", heroDesc: "Where users spend most of their time. Hot takes, predictions, live debates, and the composer for new content.", intro: "Main screen of the app. Global header and bottom nav persist across N through S.", emoji: "🏠",
+  { id: "N", route: "/home", title: "Home Feed", subtitle: "Main Screen", heroTag: "Home base.", heroDesc: "Where users spend most of their time. Posts, predictions, live debates, and the composer for new content.", intro: "Main screen of the app. Global header and bottom nav persist across N through S.", emoji: "🏠",
     elements: [
       { id: "N1", name: "🪙 Token display", type: "display", loc: "Header (left)", short: "Shows your current token balance. Tap for details.", long: "Tokens are in-app currency. Earned by completing profile, winning debates, milestones, daily logins. Spent on power-ups, staking, predictions. Orange dot indicates unclaimed opportunities." },
       { id: "N2", name: "🔔 Notification bell", type: "button", loc: "Header (center-right)", short: "Opens the Notification Panel (Screen AV).", long: "Badge count of unread notifications. Polls every 30 seconds. Challenges, debate results, follower activity, reactions, token rewards." },
       { id: "N3", name: "Avatar button", type: "button", loc: "Header (right)", short: "Opens User Dropdown (Screen AW).", long: "Shows your avatar. Dropdown has quick links to Groups, Settings, Complete Profile, Log Out." },
-      { id: "N4", name: "☰ Feed tab", type: "button", loc: "Bottom nav", short: "Go to Home Feed (this screen).", long: "Main content feed. Hot takes, live debate cards, predictions. Default landing after login." },
+      { id: "N4", name: "☰ Feed tab", type: "button", loc: "Bottom nav", short: "Go to Home Feed (this screen).", long: "Main content feed. Posts, live debate cards, predictions. Default landing after login." },
       { id: "N5", name: "⚔ Arena tab", type: "button", loc: "Bottom nav", short: "Go to Arena Lobby (Screen O).", long: "Where debates happen. Matchmaking, private debates, spectator feeds, power-up shop." },
       { id: "N6", name: "★ Ranks tab", type: "button", loc: "Bottom nav", short: "Go to Leaderboard (Screen R).", long: "Global rankings by Elo, wins, streak." },
       { id: "N7", name: "◉ Groups tab", type: "button", loc: "Bottom nav", short: "Go to Groups page.", long: "Navigates to separate page (moderator-groups.html)." },
       { id: "N8", name: "● Profile tab", type: "button", loc: "Bottom nav", short: "Go to your Profile (Screen P).", long: "View/edit profile, bio, avatar. Access settings, power-ups, arsenal, cosmetics." },
-      { id: "N9", name: "Hot take cards", type: "display", loc: "Feed", short: "Tap to expand the full hot take.", long: "Short-form opinion posts. Show author name, avatar, text (truncated if long), action buttons. Seeds of debates — disagreements lead to challenges." },
-      { id: "N10", name: "🔥 React button", type: "button", loc: "Hot take card", short: "Toggle your reaction on a hot take.", long: "One-tap reaction. \"This is fire\" / \"I agree\" signal. Tap once to react, again to unreact. Count visible to all. Contributes to feed visibility." },
-      { id: "N11", name: "⚔️ BET. button", type: "button", loc: "Hot take card", short: "Challenge the author to a debate.", long: "Opens Challenge Modal (Screen AZ). Write a response and issue a formal challenge. If accepted, enter the arena. Primary way debates emerge organically — the \"emergence engine.\"" },
-      { id: "N12", name: "↗ Share button", type: "button", loc: "Hot take card", short: "Share this hot take externally.", long: "Opens share options. Each shared link is a potential new user funnel." },
+      { id: "N9", name: "Feed cards", type: "display", loc: "Feed", short: "Tap to expand the full post.", long: "Short-form opinion posts. Show author name, avatar, text (truncated if long), action buttons. Seeds of debates — disagreements lead to challenges." },
+      { id: "N10", name: "🔥 React button", type: "button", loc: "Feed card", short: "Toggle your reaction on a post.", long: "One-tap reaction. \"This is fire\" / \"I agree\" signal. Tap once to react, again to unreact. Count visible to all. Contributes to feed visibility." },
+      { id: "N11", name: "⚔️ BET. button", type: "button", loc: "Feed card", short: "Challenge the author to a debate.", long: "Opens Challenge Modal (Screen AZ). Write a response and issue a formal challenge. If accepted, enter the arena. Primary way debates emerge organically — the \"emergence engine.\"" },
+      { id: "N12", name: "↗ Share button", type: "button", loc: "Feed card", short: "Share this post externally.", long: "Opens share options. Each shared link is a potential new user funnel." },
       { id: "N13", name: "🧑‍⚖️ Become a Moderator button", type: "button", loc: "Feed section", short: "Toggle moderator opt-in.", long: "If not a moderator: shows \"Become a Moderator\" for one-tap opt-in. If already: shows status. One of 5 moderator discovery touchpoints." },
-      { id: "N14", name: "Author name/avatar", type: "link", loc: "Hot take card", short: "Tap to view the author's profile.", long: "Every hot take shows who posted it. Navigate to their public profile to follow, challenge, or check stats." },
+      { id: "N14", name: "Author name/avatar", type: "link", loc: "Feed card", short: "Tap to view the author's profile.", long: "Every post shows who posted it. Navigate to their public profile to follow, challenge, or check stats." },
       { id: "N15", name: "Live debate cards — Watch Live", type: "button", loc: "Feed", short: "Jump into a live debate as a spectator.", long: "Takes you to Spectator View (Screen X). Watch real time, chat with spectators, vote on who's winning." },
-      { id: "N16", name: "Pull-to-refresh", type: "gesture", loc: "Top of feed", short: "Swipe down to refresh the feed.", long: "Standard mobile gesture. Refreshes hot takes, predictions, live debate listings." },
+      { id: "N16", name: "Pull-to-refresh", type: "gesture", loc: "Top of feed", short: "Swipe down to refresh the feed.", long: "Standard mobile gesture. Refreshes posts, predictions, live debate listings." },
       { id: "N17", name: "Prediction — Side A pick", type: "button", loc: "Prediction card", short: "Predict Side A will win.", long: "Predictions are wagering markets. Pick a side and wager tokens. If your side wins, payout based on odds." },
       { id: "N18", name: "Prediction — Side B pick", type: "button", loc: "Prediction card", short: "Predict Side B will win.", long: "Same as N17 for other side. Predictions use text values ('a'/'b'). Wagers 1-500 tokens. Changing prediction refunds previous wager." },
       { id: "N19", name: "➕ CREATE PREDICTION", type: "button", loc: "Predictions section", short: "Create a new prediction market.", long: "Opens Prediction Creation Modal (Screen BA). Define topic, two sides, goes live in feed." },
@@ -224,9 +224,9 @@ const SCREENS = [
       { id: "N21", name: "Quick amount buttons", type: "button", loc: "Wager picker", short: "Preset wager amounts.", long: "Common wager values for fast betting." },
       { id: "N22", name: "CONFIRM WAGER button", type: "button", loc: "Wager picker", short: "Submit prediction and lock in wager.", long: "Tokens deducted immediately. Can change prediction before debate starts — get refund and pay net difference." },
       { id: "N23", name: "✕ Cancel wager", type: "button", loc: "Wager picker", short: "Close wager picker without betting.", long: "No tokens deducted. Can come back later while market is open." },
-      { id: "N24", name: "Overlay tabs (HOT TAKES / PREDICTIONS)", type: "button", loc: "Composer overlay", short: "Switch between posting a hot take or creating a prediction.", long: "Composer has two modes. Toggle between them." },
-      { id: "N25", name: "Hot take text input", type: "input", loc: "Composer overlay", short: "Write your hot take.", long: "Keep it punchy — best hot takes generate reactions and challenges." },
-      { id: "N26", name: "POST button", type: "button", loc: "Composer overlay", short: "Publish your hot take.", long: "Appears in feed immediately. Others can react, challenge, or share. Can't be edited or deleted yet." },
+      { id: "N24", name: "Overlay tabs (FEED / PREDICTIONS)", type: "button", loc: "Composer overlay", short: "Switch between posting a post or creating a prediction.", long: "Composer has two modes. Toggle between them." },
+      { id: "N25", name: "Post text input", type: "input", loc: "Composer overlay", short: "Write your post.", long: "Keep it punchy — best posts generate reactions and challenges." },
+      { id: "N26", name: "POST button", type: "button", loc: "Composer overlay", short: "Publish your post.", long: "Appears in feed immediately. Others can react, challenge, or share. Can't be edited or deleted yet." },
       { id: "N27", name: "Close/swipe-down to dismiss", type: "gesture", loc: "Composer overlay", short: "Close the composer without posting.", long: "Swipe down or tap background. Any typed text is lost — no draft save." }
     ]
   },
@@ -316,7 +316,7 @@ const SCREENS = [
       { id: "U3", name: "Challenge notifications toggle", type: "toggle", loc: "Notifications", short: "Turn challenge notifications on/off.", long: "Challenges still arrive — you just won't be alerted." },
       { id: "U4", name: "Debate notifications toggle", type: "toggle", loc: "Notifications", short: "Turn debate result notifications on/off.", long: "Debate outcomes, scoring, related activity." },
       { id: "U5", name: "Follow notifications toggle", type: "toggle", loc: "Notifications", short: "Turn follow notifications on/off.", long: "Notified when someone follows you." },
-      { id: "U6", name: "Reaction notifications toggle", type: "toggle", loc: "Notifications", short: "Turn reaction notifications on/off.", long: "Notified when someone reacts to your hot takes." },
+      { id: "U6", name: "Reaction notifications toggle", type: "toggle", loc: "Notifications", short: "Turn reaction notifications on/off.", long: "Notified when someone reacts to your posts." },
       { id: "U7", name: "Sound effects toggle", type: "toggle", loc: "Audio", short: "Turn sound effects on/off.", long: "Beeps, navigation sounds, event audio." },
       { id: "U8", name: "Mute all audio toggle", type: "toggle", loc: "Audio", short: "Mute everything.", long: "Master mute. App is mute-first design — nothing breaks." },
       { id: "U9", name: "Dark mode toggle", type: "toggle", loc: "Display", short: "Switch dark/light themes.", long: "Immediate effect. Saved to localStorage. Dark is default and recommended." },
@@ -346,16 +346,16 @@ const SCREENS = [
       { id: "V7", name: "Bottom tab bar (V7-V11)", type: "button", loc: "Bottom", short: "Navigation tabs matching main app.", long: "Groups tab highlighted. Others navigate to index.html." }
     ]
   },
-  { id: "W", route: "/groups", title: "Group Detail", subtitle: "Inside a Group", heroTag: "Your crew.", heroDesc: "Hot takes from members, active challenges, member list, and GvG battles.", intro: "Inside a specific group.", emoji: "🏰",
+  { id: "W", route: "/groups", title: "Group Detail", subtitle: "Inside a Group", heroTag: "Your crew.", heroDesc: "Posts from members, active challenges, member list, and GvG battles.", intro: "Inside a specific group.", emoji: "🏰",
     elements: [
       { id: "W1", name: "Group banner/header", type: "display", loc: "Top", short: "Group name and banner image.", long: "Shows group identity. Custom banner if earned through three-tier progression." },
       { id: "W2", name: "JOIN/LEAVE GROUP button", type: "button", loc: "Header", short: "Join or leave this group.", long: "Instant for open groups. Some have entry requirements (Elo, tier, audition)." },
       { id: "W3", name: "⚔️ CHALLENGE ANOTHER GROUP", type: "button", loc: "Actions", short: "Start a Group vs Group battle.", long: "Opens GvG Challenge Modal (Screen BI). Members only." },
-      { id: "W4", name: "Hot Takes tab", type: "button", loc: "Tab bar", short: "View group members' hot takes.", long: "Feed scoped to this group. Members only." },
+      { id: "W4", name: "Feed tab", type: "button", loc: "Tab bar", short: "View group members' posts.", long: "Feed scoped to this group. Members only." },
       { id: "W5", name: "Challenges tab", type: "button", loc: "Tab bar", short: "View active challenges.", long: "Incoming and outgoing GvG challenges." },
       { id: "W6", name: "Members tab", type: "button", loc: "Tab bar", short: "View all members and roles.", long: "Leader, Co-Leader, Elder, Member. Can promote/demote/kick with right role." },
-      { id: "W7", name: "Group hot take input", type: "input", loc: "Hot Takes tab", short: "Write a hot take for this group.", long: "Posts to group feed instead of public feed." },
-      { id: "W8", name: "POST button", type: "button", loc: "Hot Takes tab", short: "Publish to group feed.", long: "Only group members see it." },
+      { id: "W7", name: "Group post input", type: "input", loc: "Feed tab", short: "Write a post for this group.", long: "Posts to group feed instead of public feed." },
+      { id: "W8", name: "POST button", type: "button", loc: "Feed tab", short: "Publish to group feed.", long: "Only group members see it." },
       { id: "W9", name: "ACCEPT challenge button", type: "button", loc: "Challenges tab", short: "Accept incoming GvG challenge.", long: "Leaders and Co-Leaders only. Locks in the challenge." },
       { id: "W10", name: "DECLINE challenge button", type: "button", loc: "Challenges tab", short: "Decline incoming GvG challenge.", long: "Leaders and Co-Leaders only. Removes the challenge." },
       { id: "W11", name: "Member role actions", type: "button", loc: "Members tab", short: "Promote/Demote/Kick members.", long: "Role hierarchy enforces permissions. Can't promote to your own rank or higher." }
@@ -581,9 +581,9 @@ const SCREENS = [
       { id: "AV3", name: "All filter pill", type: "button", loc: "Filter bar", short: "Show all notifications.", long: "Default view." },
       { id: "AV4", name: "⚔️ Challenges filter", type: "button", loc: "Filter bar", short: "Show challenge notifications only.", long: "Incoming, acceptances, declines, results." },
       { id: "AV5", name: "🏆 Results filter", type: "button", loc: "Filter bar", short: "Show debate result notifications only.", long: "Outcomes, scores, Elo changes." },
-      { id: "AV6", name: "🔥 Reactions filter", type: "button", loc: "Filter bar", short: "Show reaction notifications only.", long: "When people react to your hot takes." },
+      { id: "AV6", name: "🔥 Reactions filter", type: "button", loc: "Filter bar", short: "Show reaction notifications only.", long: "When people react to your posts." },
       { id: "AV7", name: "🪙 Economy filter", type: "button", loc: "Filter bar", short: "Show token notifications only.", long: "Earnings, payouts, milestones." },
-      { id: "AV8", name: "Notification rows", type: "link", loc: "List", short: "Tap to navigate to related content.", long: "Challenge → arena. Reaction → hot take. Result → post-debate. Etc." },
+      { id: "AV8", name: "Notification rows", type: "link", loc: "List", short: "Tap to navigate to related content.", long: "Challenge → arena. Reaction → post. Result → post-debate. Etc." },
       { id: "AV9", name: "Backdrop tap to close", type: "gesture", loc: "Background", short: "Tap outside to dismiss.", long: "Same as AV2." }
     ]
   },
@@ -608,11 +608,11 @@ const SCREENS = [
       { id: "AY3", name: "Tap backdrop to close", type: "gesture", loc: "Background", short: "Dismiss the list.", long: "Returns to profile." }
     ]
   },
-  { id: "AZ", route: "/", title: "Challenge Modal", subtitle: "From Hot Takes", heroTag: "You're wrong.", heroDesc: "Issue a debate challenge in response to a hot take.", intro: "Challenge modal from hot takes feed.", emoji: "🥊",
+  { id: "AZ", route: "/", title: "Challenge Modal", subtitle: "From Feed", heroTag: "You're wrong.", heroDesc: "Issue a debate challenge in response to a post.", intro: "Challenge modal from posts feed.", emoji: "🥊",
     elements: [
       { id: "AZ1", name: "Challenge response textarea", type: "input", loc: "Form", short: "Write your counter-argument.", long: "Your opening salvo. Sent as the challenge invitation. If accepted, frames the debate." },
       { id: "AZ2", name: "CANCEL button", type: "button", loc: "Bottom", short: "Cancel the challenge.", long: "Dismisses without sending." },
-      { id: "AZ3", name: "⚔️ BET. submit button", type: "button", loc: "Bottom", short: "Send the challenge.", long: "Notification goes to hot take author. They accept or decline." },
+      { id: "AZ3", name: "⚔️ BET. submit button", type: "button", loc: "Bottom", short: "Send the challenge.", long: "Notification goes to post author. They accept or decline." },
       { id: "AZ4", name: "Tap backdrop to close", type: "gesture", loc: "Background", short: "Dismiss without sending.", long: "Same as AZ2." }
     ]
   },
