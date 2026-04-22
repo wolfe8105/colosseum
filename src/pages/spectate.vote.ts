@@ -5,6 +5,7 @@
  */
 
 import { safeRpc } from '../auth.ts';
+import { get_arena_debate_spectator } from '../contracts/rpc-schemas.ts';
 import { claimVote } from '../tokens.ts';
 import { nudge } from '../nudge.ts';
 import { state } from './spectate.state.ts';
@@ -50,7 +51,7 @@ async function castVote(side: string, d: SpectateDebate): Promise<void> {
 
     nudge('first_vote', '🗳️ Vote cast. Your voice shapes the verdict.');
 
-    const { data: rawFresh } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId });
+    const { data: rawFresh } = await safeRpc('get_arena_debate_spectator', { p_debate_id: state.debateId }, get_arena_debate_spectator);
     const fresh = rawFresh as { vote_count_a?: number; vote_count_b?: number } | null;
     if (fresh) {
       updateVoteBar(fresh.vote_count_a || 0, fresh.vote_count_b || 0);
