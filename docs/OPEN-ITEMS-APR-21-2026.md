@@ -58,14 +58,14 @@ Both users land on the pre-debate screen together. The reference loadout picker 
 
 ## PRIORITY 3: F-70 through F-77 (Pat's Feature List)
 
-These were formalized in Session 295 and added to the punch list. None have been started.
+These were formalized in Session 295 and added to the punch list.
 
 | Feature | Description | Notes |
 |---------|-------------|-------|
-| F-70 | Social media links in profile | Add fields for Twitter/X, Instagram, TikTok, etc. to the profile page. Display on public profile (`/u/username`). Schema change on `profiles` table + client UI. |
+| ~~F-70~~ ✅ | ~~Social media links in profile~~ | **DONE.** 6 platforms (Twitter/X, Instagram, TikTok, YouTube, Snapchat, Bluesky). Username input, icon row on own + public profile. Migration applied. |
 | F-71 | Adult content / pornography policy | Define and enforce policy. What happens when someone posts NSFW content? Content moderation rules, reporting flow, automated detection or manual review. Policy doc + potential content filter. |
 | F-72 | Minor safety — USA/EU compliance (COPPA, GDPR-K) | Legal compliance for users under 13 (COPPA) and under 16 (GDPR-K). The app already has an age gate in the Plinko signup flow and `profiles.is_minor` flag. Need to decide: block minors entirely, or restrict features? Ties to the Launch Checklist "minors policy decision" item. |
-| F-73 | Placeholder audit | Find every stub, placeholder, "TODO", lorem ipsum, and hardcoded demo text in the app and replace with real copy. Systematic grep + manual review. |
+| ~~F-73~~ ✅ | ~~Placeholder audit~~ | **DONE.** All user-facing "hot take" refs purged. Stale ad comment fixed. Remaining placeholder data is demo-mode only (intentional). |
 | F-74 | Landing page redesign | Currently, unauthenticated users see a login prompt first. Pat wants the feed visible before signup — let people see the content, then prompt login when they try to interact. This is a significant auth flow change. |
 | F-75 | Login UX redesign | Google is currently the primary/top login option. Pat doesn't like the prominence. Rethink the login page layout — maybe email/password first, social logins secondary, or a different arrangement entirely. |
 | F-76 | Google Play auto-signup flow (One Tap / Credential Manager) | When the app is on Google Play and a user downloads it, Google has a native flow that can sign them up with one tap using their Google account. Research Google's Credential Manager API and wire it into the Supabase auth flow. |
