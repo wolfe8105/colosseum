@@ -56,7 +56,9 @@ export async function onMatchAccept(): Promise<void> {
     try {
       const { data, error } = await safeRpc<MatchAcceptResponse>('check_match_acceptance', { p_debate_id: matchFoundDebate.id });
       if (error || !data) return;
-      const resp = data as MatchAcceptResponse;
+      // RETURNS TABLE comes back as an array from PostgREST — unwrap first row
+      const rows = data as unknown as MatchAcceptResponse[];
+      const resp = Array.isArray(rows) ? rows[0]! : (data as MatchAcceptResponse);
       if (resp.status === 'cancelled') {
         onOpponentDeclined();
         return;
