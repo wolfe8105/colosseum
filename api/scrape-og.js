@@ -1,22 +1,31 @@
 // ============================================================
 // THE MODERATOR — OG Preview Scraper (Serverless Function)
 // Session 293 — F-62 Link Card Debates
+// Updated — F-77 Image Proxying (Reddit pattern)
 //
 // WHAT THIS DOES:
 // 1. Takes a URL from authenticated user
 // 2. Fetches the page server-side (avoids CORS)
 // 3. Extracts og:image, og:title, domain
-// 4. Returns JSON preview data for storage in arena_debates.link_preview
+// 4. Downloads the og:image and re-uploads to Supabase Storage
+//    (same trick Reddit uses — images never 404 because they live
+//    on our CDN, not the source site's)
+// 5. Returns JSON preview data with our stable Supabase image URL
 //
 // ROUTE: /api/scrape-og?url=<encoded-url>
 //
-// WHY SERVERLESS:
-// Client-side fetch would be blocked by CORS on most domains.
-// Server-side scrape is invisible to the target site's CORS policy.
+// WHY IMAGE PROXYING:
+// Storing raw og:image URLs (espncdn.com, media.cnn.com, etc.) breaks
+// constantly — hotlink protection, CDN expiry, CORS, 404s.
+// Reddit solves this by copying every image to their own CDN immediately.
+// We do the same: fetch → upload to link-previews bucket → store our URL.
 // ============================================================
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const STORAGE_BUCKET = 'link-previews';
 
 // Max response body to read (1MB — enough for <head> section)
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -40,6 +49,85 @@ function getDomain(url) {
   try {
     const u = new URL(url);
     return u.hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+// Deterministic filename from URL — same URL always produces same filename
+// so we never upload duplicates for the same article
+function imageFilename(imageUrl) {
+  // Simple hash: sum of char codes, then hex. Good enough for dedup.
+  let hash = 0;
+  for (let i = 0; i < imageUrl.length; i++) {
+    hash = ((hash << 5) - hash) + imageUrl.charCodeAt(i);
+    hash |= 0;
+  }
+  const unsigned = (hash >>> 0).toString(16).padStart(8, '0');
+  // Guess extension from URL, default to jpg
+  const ext = imageUrl.match(/\.(png|webp|gif|jpe?g)(\?|$)/i)?.[1]?.replace('jpeg','jpg') || 'jpg';
+  return `${unsigned}.${ext}`;
+}
+
+// Fetch an image URL and upload to Supabase Storage.
+// Returns the public Supabase CDN URL, or null on failure.
+async function proxyImage(imageUrl) {
+  try {
+    const filename = imageFilename(imageUrl);
+    const storagePath = `og/${filename}`;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
+
+    // Check if we already have this image cached — if so, skip upload
+    const checkRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/info/public/${STORAGE_BUCKET}/${storagePath}`,
+      { headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    if (checkRes.ok) {
+      // Already cached — return existing URL
+      return publicUrl;
+    }
+
+    // Fetch the image bytes
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const imgRes = await fetch(imageUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; TheModeratorBot/1.0; +https://themoderator.app)',
+        'Accept': 'image/*',
+      },
+      redirect: 'follow',
+    });
+    clearTimeout(timeout);
+
+    if (!imgRes.ok) return null;
+
+    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+    if (!contentType.startsWith('image/')) return null;
+
+    // Size limit: 4MB
+    const bytes = await imgRes.arrayBuffer();
+    if (bytes.byteLength > 4 * 1024 * 1024) return null;
+
+    // Upload to Supabase Storage
+    const uploadRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000', // 1 year
+          'x-upsert': 'false', // don't overwrite existing
+        },
+        body: bytes,
+      }
+    );
+
+    if (!uploadRes.ok) return null;
+    return publicUrl;
+
   } catch {
     return null;
   }
@@ -144,10 +232,16 @@ export default async function handler(req, res) {
       } catch { /* keep as-is */ }
     }
 
+    // Proxy the image through Supabase Storage (Reddit pattern).
+    // If proxying fails for any reason, fall back to the original URL —
+    // better a sometimes-broken image than no preview at all.
+    const proxiedUrl = await proxyImage(imageUrl);
+
     return res.status(200).json({
-      image_url: imageUrl,
+      image_url: proxiedUrl || imageUrl,
       og_title: ogTitle || null,
       domain: domain || null,
+      proxied: !!proxiedUrl, // handy for debugging
     });
   } catch (err) {
     if (err.name === 'AbortError') {
