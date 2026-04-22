@@ -4,7 +4,6 @@
  */
 
 import { escapeHTML } from './config.ts';
-import { showAdInterstitial } from './arena/arena-ads.ts';
 import { entries, isOwner, filterSearch, filterResult, filterCat, setFilterSearch, setFilterResult, setFilterCat } from './profile-debate-archive.state.ts';
 import { filtered, archiveUrl } from './profile-debate-archive.filter.ts';
 import { showAddPicker } from './profile-debate-archive.picker.ts';
@@ -107,7 +106,7 @@ function wireTable(container: HTMLElement): void {
     row.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('.dba-actions')) return;
       const url = row.dataset.url;
-      if (url) showAdInterstitial(() => window.open(url, '_blank'));
+      if (url) import('./arena/arena-ads.ts').then(m => m.showAdInterstitial(() => window.open(url, '_blank'))).catch(() => window.open(url, '_blank'));
     });
   });
 

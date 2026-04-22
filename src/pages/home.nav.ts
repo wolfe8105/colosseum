@@ -1,7 +1,6 @@
 /**
  * Home — Screen navigation and data-action click dispatch
  */
-import { destroy as destroyArena, showPowerUpShop } from '../arena.ts';
 import { registerNavigate } from '../navigation.ts';
 import { shareProfile, inviteFriend } from '../share.ts';
 import { subscribe } from '../payments.ts';
@@ -14,6 +13,13 @@ import { loadFollowCounts } from './home.profile.ts';
 import { loadDebateArchive } from '../profile-debate-archive.ts';
 import { state } from './home.state.ts';
 
+// Lazy-loaded arena module reference (cached after first import)
+let _arenaModule: typeof import('../arena.ts') | null = null;
+async function getArena() {
+  if (!_arenaModule) _arenaModule = await import('../arena.ts');
+  return _arenaModule;
+}
+
 const VALID_SCREENS = ['home', 'arena', 'profile', 'shop', 'leaderboard', 'arsenal', 'invite', 'search', 'dm'];
 
 export function navigateTo(screenId: string) {
@@ -21,7 +27,7 @@ export function navigateTo(screenId: string) {
 
   // Clean up previous screen's resources
   if (state.currentScreen === 'arena' && screenId !== 'arena') {
-    destroyArena();
+    getArena().then(m => m.destroy()).catch(() => {});
   }
   state.currentScreen = screenId;
 
@@ -71,7 +77,7 @@ document.addEventListener('click', (e: Event) => {
   const action = el.dataset.action;
   if (action === 'powerup-shop') {
     navigateTo('arena');
-    setTimeout(() => showPowerUpShop(), 300);
+    setTimeout(() => { getArena().then(m => m.showPowerUpShop()).catch(() => {}); }, 300);
   } else if (action === 'share-profile') {
     const p = getCurrentProfile();
     const u = getCurrentUser();

@@ -7,6 +7,20 @@
  *
  * Session 201: Replaced LCARS ring nav with card feed.
  */
+
+// ============================================================
+// CHUNK LOAD ERROR HANDLER — must run before any dynamic imports
+// Catches stale-chunk errors after deployment and silently reloads.
+// Guard: max 1 reload per 5 minutes to prevent infinite loops.
+// ============================================================
+window.addEventListener('vite:preloadError', (event) => {
+  const lastReload = sessionStorage.getItem('mod-chunk-reload');
+  if (lastReload && Date.now() - Number(lastReload) < 300_000) return;
+  event.preventDefault();
+  sessionStorage.setItem('mod-chunk-reload', String(Date.now()));
+  window.location.reload();
+});
+
 // --- Side-effect imports (self-wire their listeners at module load) ---
 import './home.overlay.ts';
 import './home.nav.ts';
@@ -189,3 +203,10 @@ if (urlParams.get('payment') === 'canceled') { showToast('Payment canceled.', 'i
 // --- Auto-open category overlay from ?cat= query param ---
 const catParam = urlParams.get('cat');
 if (catParam) { const matchedCat = CATEGORIES.find(c => c.id === catParam); if (matchedCat) { openCategory(matchedCat); window.history.replaceState({}, '', window.location.pathname); } }
+
+// --- Prefetch arena chunk on idle so it's cached when user taps Arena tab ---
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => { import('../arena.ts').catch(() => {}); });
+} else {
+  setTimeout(() => { import('../arena.ts').catch(() => {}); }, 3000);
+}

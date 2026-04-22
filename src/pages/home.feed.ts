@@ -18,7 +18,6 @@ import {
   startFeedCountdowns,
 } from '../feed-card.ts';
 import type { UnifiedFeedCard } from '../feed-card.ts';
-import { enterFeedRoomAsSpectator } from '../arena/arena-feed-room.ts';
 
 // ============================================================
 // STATE
@@ -411,7 +410,7 @@ function _wireFeedDelegation(container: HTMLElement): void {
     // Live card → spectate
     const liveCard = target.closest('.arena-card.card-live[data-debate-id]') as HTMLElement | null;
     if (liveCard) {
-      void enterFeedRoomAsSpectator(liveCard.dataset.debateId!);
+      import('../arena/arena-feed-room.ts').then(m => m.enterFeedRoomAsSpectator(liveCard.dataset.debateId!)).catch(e => console.error('[home.feed] spectate:', e));
       return;
     }
 
