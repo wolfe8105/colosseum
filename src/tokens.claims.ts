@@ -46,7 +46,7 @@ export async function claimHotTake(hotTakeId: string): Promise<ClaimResult | nul
   const result = await _rpc('claim_action_tokens', { p_action: 'hot_take', p_reference_id: hotTakeId });
   if (!result?.success) return null;
   _updateBalanceDisplay(result.new_balance);
-  _tokenToast(result.tokens_earned ?? 0, 'Hot take');
+  _tokenToast(result.tokens_earned ?? 0, 'Post');
   void claimMilestone('first_hot_take');
   // LANDMINE [LM-TOK-002]: Fire-and-forget drip import — intentional but silent on failure.
   import('./onboarding-drip.ts').then(({ triggerDripDay }) => triggerDripDay(4)).catch(() => {});

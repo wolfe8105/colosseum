@@ -118,7 +118,7 @@ function showAdOverlay(durationSec: number): HTMLElement | null {
       <div class="feed-ad-label">COMMERCIAL BREAK</div>
       <div class="feed-ad-countdown">Resuming in ${durationSec}s</div>
       <div class="feed-ad-slot" id="feed-ad-slot">
-        <!-- Replace PUBLISHER_ID with ca-pub-XXXXXXXXXXXXXXXX and AD_UNIT_ID with your slot ID -->
+        <!-- AdSense unit -->
         <ins class="adsbygoogle feed-ad-unit"
              style="display:block"
              data-ad-client="ca-pub-1800696416995461"
