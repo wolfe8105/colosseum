@@ -1,0 +1,18 @@
+# Keystore — NEVER commit
+*.keystore
+*.jks
+
+# Build outputs
+app/build/
+build/
+*.aab
+*.apk
+
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# IDE
+.idea/
+*.iml

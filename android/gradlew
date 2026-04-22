@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /home/claude/gradle-8.4/bin/gradle "$@"
