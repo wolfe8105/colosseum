@@ -186,12 +186,16 @@ async function appInit() {
 
   loadFollowCounts().catch(e => console.error('[home]', e));
   renderFeed().catch(e => console.error('renderFeed error:', e));
-  loadBountyDotSet().catch(e => console.warn('loadBountyDotSet error:', e));
-  initTournaments().catch(e => console.error('[home]', e));
 
-  // F-36: Onboarding drip card (new users, first 14 days)
-  const homeEl = document.getElementById('screen-home');
-  if (homeEl) initDripCard(homeEl).catch(e => console.error('[home]', e));
+  // Only run auth-dependent features for logged-in users
+  if (getCurrentUser()) {
+    loadBountyDotSet().catch(e => console.warn('loadBountyDotSet error:', e));
+    initTournaments().catch(e => console.error('[home]', e));
+
+    // F-36: Onboarding drip card (new users, first 14 days)
+    const homeEl = document.getElementById('screen-home');
+    if (homeEl) initDripCard(homeEl).catch(e => console.error('[home]', e));
+  }
 }
 
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => appInit().catch(e => console.error('appInit error:', e))); }
