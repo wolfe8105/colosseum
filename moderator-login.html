@@ -24,7 +24,7 @@
 <meta name="twitter:description" content="Sign in to post your takes, challenge rivals, and debate live. Four modes: Live Audio, Voice Memo, Text Battle, AI Sparring." />
 <meta name="twitter:image" content="https://themoderator.app/og-card-default.png" />
 
-<script>(function(){var d=document.documentElement;var s=localStorage.getItem("theme");var t=s||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");d.setAttribute("data-theme",t);if(t==="light"){var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
+<script>(function(){var d=document.documentElement;var s=localStorage.getItem("theme");var t=s||"dark";d.setAttribute("data-theme",t);if(t==="light"){var m=document.getElementById("meta-theme-color");if(m)m.content="#eaeef2";}})()</script>
 <!-- F-39: Preserve challenge code through login flow -->
 <script>(function(){try{var c=new URLSearchParams(window.location.search).get('challenge');if(c)localStorage.setItem('mod_pending_challenge',c.trim().toUpperCase());}catch(e){}})()</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -111,24 +111,31 @@
     box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 12px 48px rgba(0,0,0,0.5);
   }
 
-  /* Tabs */
+  /* Tabs — bold, clearly bordered */
   .login-tabs {
-    display: flex; gap: 0;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--glass-border);
+    display: flex; gap: 8px;
+    margin-bottom: 24px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 4px;
+    border: 1.5px solid var(--glass-border);
   }
   .login-tab {
-    flex: 1; background: none; border: none;
+    flex: 1; border: 1.5px solid transparent;
     color: var(--mod-text-muted);
-    font-family: var(--mod-font-ui); font-weight: 700;
-    font-size: 16px; letter-spacing: 3px;
-    padding: 10px 0; cursor: pointer; position: relative;
+    font-family: var(--mod-font-ui); font-weight: 800;
+    font-size: 15px; letter-spacing: 3px;
+    padding: 12px 0; cursor: pointer;
+    border-radius: 10px;
+    background: none;
+    transition: all 0.2s;
+    text-transform: uppercase;
   }
-  .login-tab.active { color: var(--mod-text-heading); }
-  .login-tab.active::after {
-    content: ''; position: absolute;
-    bottom: -1px; left: 0; right: 0;
-    height: 2px; background: var(--mod-text-heading);
+  .login-tab:active { opacity: 0.8; }
+  .login-tab.active {
+    color: var(--mod-text-heading);
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.25);
   }
 
   /* Forms */
@@ -220,16 +227,25 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
 
-  /* Email expand toggle */
+  /* Email button — themed, same width as Google */
   .email-toggle {
-    width: 100%; background: none; border: none;
-    color: var(--mod-text-muted); font-family: var(--mod-font-ui);
-    font-size: 13px; font-weight: 600; letter-spacing: 1px;
-    text-transform: uppercase; cursor: pointer;
-    padding: 8px 0; text-align: center;
-    transition: color 0.2s;
+    width: 100%; min-height: 52px; padding: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    border-radius: 14px;
+    font-family: var(--mod-font-ui); font-weight: 700;
+    font-size: 14px; letter-spacing: 2px;
+    cursor: pointer; margin-bottom: 0;
+    transition: all 0.2s;
+    background: transparent;
+    border: 1.5px solid var(--mod-cyan);
+    color: var(--mod-cyan);
+    text-transform: uppercase;
   }
-  .email-toggle:active { color: var(--mod-text-primary); }
+  .email-toggle:active { background: rgba(0,224,255,0.08); transform: scale(0.98); }
+  .email-toggle.open {
+    border-color: var(--mod-magenta);
+    color: var(--mod-magenta);
+  }
 
   .email-section {
     max-height: 0; overflow: hidden;
@@ -358,7 +374,7 @@
 
   <!-- Tabs -->
   <div class="login-tabs">
-    <button class="login-tab active" data-tab="login">LOG IN</button>
+    <button class="login-tab active" data-tab="login">SIGN IN</button>
     <button class="login-tab" data-tab="signup">SIGN UP</button>
   </div>
 
@@ -378,7 +394,7 @@
 
     <div class="divider">or</div>
 
-    <button type="button" class="email-toggle" id="login-email-toggle">Use email instead ▾</button>
+    <button type="button" class="email-toggle" id="login-email-toggle" style="margin-top:10px;">✉ EMAIL</button>
 
     <div class="email-section" id="login-email-section">
       <div class="form-group">
@@ -413,7 +429,7 @@
 
     <div class="divider">or</div>
 
-    <button type="button" class="email-toggle" id="signup-email-toggle">Use email instead ▾</button>
+    <button type="button" class="email-toggle" id="signup-email-toggle" style="margin-top:10px;">✉ EMAIL</button>
 
     <div class="email-section" id="signup-email-section">
       <div class="form-group">

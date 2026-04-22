@@ -44,14 +44,14 @@ document.getElementById('login-email-toggle')?.addEventListener('click', functio
   const section = document.getElementById('login-email-section');
   if (!section) return;
   section.classList.toggle('open');
-  this.textContent = section.classList.contains('open') ? 'Hide email login ▴' : 'Use email instead ▾';
+  this.classList.toggle('open');
 });
 
 document.getElementById('signup-email-toggle')?.addEventListener('click', function (this: HTMLElement) {
   const section = document.getElementById('signup-email-section');
   if (!section) return;
   section.classList.toggle('open');
-  this.textContent = section.classList.contains('open') ? 'Hide email signup ▴' : 'Use email instead ▾';
+  this.classList.toggle('open');
 });
 
 // ============================================================
