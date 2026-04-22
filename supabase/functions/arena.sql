@@ -381,7 +381,7 @@ CREATE OR REPLACE FUNCTION public.check_match_acceptance(p_debate_id uuid)
  SECURITY DEFINER
 SET search_path = public, pg_catalog
 AS $function$
-
+#variable_conflict use_column
 DECLARE
   v_caller UUID := auth.uid();
   v_row arena_debates%ROWTYPE;
@@ -391,12 +391,15 @@ BEGIN
     RAISE EXCEPTION 'Debate not found';
   END IF;
 
-  -- Auth: caller must be player_a or player_b
-  IF v_caller IS DISTINCT FROM v_row.player_a AND v_caller IS DISTINCT FROM v_row.player_b THEN
+  -- Auth: caller must be debater_a or debater_b
+  IF v_caller IS DISTINCT FROM v_row.debater_a AND v_caller IS DISTINCT FROM v_row.debater_b THEN
     RAISE EXCEPTION 'Not a participant in this debate';
   END IF;
 
-  RETURN QUERY SELECT v_row.player_a_ready, v_row.player_b_ready, v_row.status::TEXT;
+  player_a_ready := v_row.player_a_ready;
+  player_b_ready := v_row.player_b_ready;
+  status := v_row.status;
+  RETURN NEXT;
 END;
 
 $function$;
@@ -407,10 +410,12 @@ CREATE OR REPLACE FUNCTION public.check_private_lobby(p_debate_id uuid)
  SECURITY DEFINER
 SET search_path = public, pg_catalog
 AS $function$
-
+#variable_conflict use_column
 DECLARE
   v_user_id uuid := auth.uid();
   v_debate  arena_debates%ROWTYPE;
+  v_opp_name text;
+  v_opp_elo  int;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -424,25 +429,28 @@ BEGIN
   END IF;
 
   IF v_debate.debater_b IS NULL THEN
-    RETURN QUERY SELECT
-      v_debate.status,
-      NULL::uuid,
-      NULL::text,
-      NULL::int,
-      v_debate.player_b_ready,
-      COALESCE(v_debate.total_rounds, 4),
-      COALESCE(v_debate.language, 'en');
+    status := v_debate.status;
+    opponent_id := NULL;
+    opponent_name := NULL;
+    opponent_elo := NULL;
+    player_b_ready := v_debate.player_b_ready;
+    total_rounds := COALESCE(v_debate.total_rounds, 4);
+    language := COALESCE(v_debate.language, 'en');
+    RETURN NEXT;
   ELSE
-    RETURN QUERY
-    SELECT
-      v_debate.status,
-      v_debate.debater_b,
-      COALESCE(p.display_name, p.username, 'Opponent')::text,
-      COALESCE(p.elo_rating, 1200)::int,
-      v_debate.player_b_ready,
-      COALESCE(v_debate.total_rounds, 4),
-      COALESCE(v_debate.language, 'en')
+    SELECT COALESCE(p.display_name, p.username, 'Opponent'),
+           COALESCE(p.elo_rating, 1200)::int
+    INTO v_opp_name, v_opp_elo
     FROM profiles p WHERE p.id = v_debate.debater_b;
+
+    status := v_debate.status;
+    opponent_id := v_debate.debater_b;
+    opponent_name := v_opp_name;
+    opponent_elo := v_opp_elo;
+    player_b_ready := v_debate.player_b_ready;
+    total_rounds := COALESCE(v_debate.total_rounds, 4);
+    language := COALESCE(v_debate.language, 'en');
+    RETURN NEXT;
   END IF;
 END;
 
@@ -2316,7 +2324,7 @@ CREATE OR REPLACE FUNCTION public.join_private_lobby(p_debate_id uuid DEFAULT NU
  SECURITY DEFINER
 SET search_path = public, pg_catalog
 AS $function$
-
+#variable_conflict use_column
 DECLARE
   v_user_id      uuid := auth.uid();
   v_debate       arena_debates%ROWTYPE;
@@ -2330,10 +2338,10 @@ BEGIN
 
   IF p_debate_id IS NOT NULL THEN
     SELECT * INTO v_debate FROM arena_debates
-    WHERE id = p_debate_id AND status = 'pending' AND debater_b IS NULL;
+    WHERE id = p_debate_id AND arena_debates.status = 'pending' AND debater_b IS NULL;
   ELSIF p_join_code IS NOT NULL THEN
     SELECT * INTO v_debate FROM arena_debates
-    WHERE join_code = upper(trim(p_join_code)) AND status = 'pending' AND debater_b IS NULL;
+    WHERE join_code = upper(trim(p_join_code)) AND arena_debates.status = 'pending' AND debater_b IS NULL;
   ELSE
     RAISE EXCEPTION 'Must provide debate_id or join_code';
   END IF;
@@ -2365,7 +2373,7 @@ BEGIN
       status        = 'matched'
   WHERE id          = v_debate.id
     AND debater_b   IS NULL
-    AND status      = 'pending';
+    AND arena_debates.status = 'pending';
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
@@ -2382,20 +2390,22 @@ BEGIN
     p_event_type := 'private_lobby_joined',
     p_user_id    := v_user_id,
     p_debate_id  := v_debate.id,
+    p_category   := NULL,
+    p_side       := NULL,
     p_metadata   := jsonb_build_object('visibility', v_debate.visibility)
   );
 
-  RETURN QUERY SELECT
-    v_debate.id,
-    'matched'::text,
-    v_debate.topic,
-    v_debate.mode,
-    v_opponent_name,
-    v_debate.debater_a,
-    v_opponent_elo,
-    COALESCE(v_debate.ruleset, 'amplified')::text,
-    COALESCE(v_debate.total_rounds, 4),
-    COALESCE(v_debate.language, 'en');
+  debate_id := v_debate.id;
+  status := 'matched';
+  topic := v_debate.topic;
+  mode := v_debate.mode;
+  opponent_name := v_opponent_name;
+  opponent_id := v_debate.debater_a;
+  opponent_elo := v_opponent_elo;
+  ruleset := COALESCE(v_debate.ruleset, 'amplified');
+  total_rounds := COALESCE(v_debate.total_rounds, 4);
+  language := COALESCE(v_debate.language, 'en');
+  RETURN NEXT;
 END;
 
 $function$;
@@ -2498,13 +2508,12 @@ BEGIN
     RAISE EXCEPTION 'Debate not found';
   END IF;
 
-  -- Auth: caller must be player_a or player_b
-  IF v_caller IS DISTINCT FROM v_row.player_a AND v_caller IS DISTINCT FROM v_row.player_b THEN
+  IF v_caller IS DISTINCT FROM v_row.debater_a AND v_caller IS DISTINCT FROM v_row.debater_b THEN
     RAISE EXCEPTION 'Not a participant in this debate';
   END IF;
 
   -- Set the caller's ready column
-  IF v_caller = v_row.player_a THEN
+  IF v_caller = v_row.debater_a THEN
     -- Idempotent: skip if already set
     IF v_row.player_a_ready IS NOT NULL THEN RETURN; END IF;
     UPDATE arena_debates SET player_a_ready = p_accept WHERE id = p_debate_id;

@@ -199,8 +199,7 @@ BEGIN
   -- Expire open cards older than 30 minutes
   WITH expired AS (
     UPDATE arena_debates
-    SET status = 'expired',
-        updated_at = now()
+    SET status = 'expired'
     WHERE status = 'open'
       AND created_at < now() - interval '30 minutes'
     RETURNING id
@@ -209,9 +208,10 @@ BEGIN
 
   -- Clean search index for expired cards
   DELETE FROM search_index
-  WHERE debate_id IN (
-    SELECT id FROM arena_debates WHERE status = 'expired'
-  );
+  WHERE entity_type = 'debate'
+    AND entity_id IN (
+      SELECT id FROM arena_debates WHERE status = 'expired'
+    );
 
   RETURN json_build_object(
     'success', true,
