@@ -17,6 +17,7 @@
 
 import { getSupabaseClient } from '../auth.ts';
 import { getAccessToken, setRealtimeAuth, createChannel, removeChannel } from './arena-realtime-client.ts';
+import { clampRealtime } from '../contracts/dependency-clamps.ts';
 import {
   currentDebate, feedRealtimeChannel, set_feedRealtimeChannel,
 } from './arena-state.ts';
@@ -83,7 +84,9 @@ export async function subscribeRealtime(debateId: string): Promise<void> {
         if (role) handleParticipantGone(role);
       },
     )
-    .subscribe();
+    .subscribe((status: string, err?: Error) => {
+      clampRealtime(status, `feed:${debateId}`, err);
+    });
 
   set_feedRealtimeChannel(channel);
 

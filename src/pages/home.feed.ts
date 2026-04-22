@@ -8,6 +8,7 @@
  */
 import { safeRpc, getCurrentUser, getIsPlaceholderMode, getSupabaseClient } from '../auth.ts';
 import { create_debate_card, cancel_debate_card, react_debate_card } from '../contracts/rpc-schemas.ts';
+import { clampVercel } from '../contracts/dependency-clamps.ts';
 import { escapeHTML, showToast } from '../config.ts';
 import {
   renderFeedCard,
@@ -141,6 +142,7 @@ async function postDebateCard(): Promise<void> {
   if (linkUrl) {
     try {
       const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl));
+      clampVercel('/api/scrape-og', res);
       if (res.ok) linkPreview = await res.json();
     } catch { /* proceed without preview */ }
   }

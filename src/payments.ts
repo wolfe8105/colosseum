@@ -23,6 +23,7 @@ import {
 } from './config.ts';
 import type { SubscriptionTiers } from './config.ts';
 import { getCurrentUser, getCurrentProfile, ready } from './auth.ts';
+import { clampStripe, clampVercel } from './contracts/dependency-clamps.ts';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -180,7 +181,10 @@ export async function subscribe(tier: string): Promise<void> {
       }),
     });
 
-    if (!res.ok) throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      clampStripe('subscribe_checkout', res, `${res.status} ${res.statusText}`);
+      throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
+    }
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {
@@ -226,7 +230,10 @@ export async function buyTokens(packageId: string): Promise<void> {
       }),
     });
 
-    if (!res.ok) throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      clampStripe('buy_tokens_checkout', res, `${res.status} ${res.statusText}`);
+      throw new Error(`Stripe error: ${res.status} ${res.statusText}`);
+    }
     const { sessionId } = (await res.json()) as CheckoutResponse;
     await stripe!.redirectToCheckout({ sessionId });
   } catch (e) {

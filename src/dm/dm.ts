@@ -6,6 +6,7 @@
 
 import { ready, getCurrentUser, getSupabaseClient } from '../auth.ts';
 import { showToast } from '../config.ts';
+import { clampRealtime } from '../contracts/dependency-clamps.ts';
 import { fetchThreads, fetchMessages, sendMessage, fetchUnreadCount } from './dm.fetch.ts';
 import { renderInbox, renderThread } from './dm.render.ts';
 import {
@@ -150,7 +151,9 @@ function subscribeToThread(threadId: string): void {
           }
         }
       )
-      .subscribe();
+      .subscribe((status: string, err?: Error) => {
+        clampRealtime(status, `dm:${threadId}`, err);
+      });
     realtimeChannel = channel;
   } catch (e) {
     console.error('[DM] Realtime subscribe failed:', e);

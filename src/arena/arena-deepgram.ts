@@ -18,6 +18,7 @@
 
 import type { TranscriptCallback, StatusCallback, DeepgramStatus, DeepgramResult } from './arena-deepgram.types.ts';
 import { fetchDeepgramToken } from './arena-deepgram.token.ts';
+import { clampDeepgram } from '../contracts/dependency-clamps.ts';
 
 export type { TranscriptCallback, StatusCallback, DeepgramStatus } from './arena-deepgram.types.ts';
 
@@ -332,6 +333,7 @@ function clearReconnectTimer(): void {
 }
 
 function emitStatus(status: DeepgramStatus): void {
+  clampDeepgram(status);
   if (_onStatus) _onStatus(status);
 }
 

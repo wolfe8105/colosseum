@@ -7,6 +7,7 @@
 
 import { getCurrentUser, getAvailableModerators, getSupabaseClient } from '../auth.ts';
 import { escapeHTML } from '../config.ts';
+import { clampVercel } from '../contracts/dependency-clamps.ts';
 import { set_selectedModerator, set_selectedRuleset, set_selectedLinkUrl, set_selectedLinkPreview } from './arena-state.ts';
 import type { AvailableModerator } from './arena-types-moderator.ts';
 import { MODES } from './arena-constants.ts';
@@ -151,6 +152,7 @@ export function showModeSelect(): void {
         const res = await fetch(`/api/scrape-og?url=${encodeURIComponent(url)}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
+        clampVercel('/api/scrape-og', res);
         const data = await res.json();
         if (!res.ok) {
           set_selectedLinkUrl(null);
