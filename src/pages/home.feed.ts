@@ -349,6 +349,111 @@ export async function renderFeed(): Promise<void> {
   renderCards();
   startFeedCountdowns();
   _wireFeedDelegation(feedEl);
+  _initPullToRefresh();
+}
+
+// ============================================================
+// PULL TO REFRESH — main feed (.mod-feed)
+// ============================================================
+
+function _initPullToRefresh(): void {
+  const scroller = document.querySelector('.mod-feed') as HTMLElement | null;
+  if (!scroller || scroller.dataset.ptrInit) return;
+  scroller.dataset.ptrInit = '1';
+
+  const PTR_THRESHOLD = 80;
+  const PTR_MAX = 120;
+
+  // Inject indicator element
+  const ptr = document.createElement('div');
+  ptr.id = 'feed-ptr';
+  ptr.style.cssText = `
+    position:sticky;top:-60px;left:0;right:0;z-index:100;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    height:52px;margin:-52px 0 0;
+    opacity:0;transition:opacity 0.15s;
+    pointer-events:none;
+  `;
+  ptr.innerHTML = `
+    <div class="ptr-spinner" style="
+      width:20px;height:20px;border-radius:50%;
+      border:2px solid var(--mod-border-primary);
+      border-top-color:var(--mod-cyan);
+      transition:transform 0.1s;
+    "></div>
+    <span class="ptr-label" style="font-size:13px;color:var(--mod-text-sub);font-weight:600;">Pull to refresh</span>
+  `;
+
+  // Insert before first child of scroller
+  scroller.insertBefore(ptr, scroller.firstChild);
+
+  // Inject spin animation once
+  if (!document.getElementById('ptr-feed-style')) {
+    const style = document.createElement('style');
+    style.id = 'ptr-feed-style';
+    style.textContent = `
+      @keyframes ptrFeedSpin { to { transform: rotate(360deg); } }
+      #feed-ptr .ptr-spinner.spinning { animation: ptrFeedSpin 0.7s linear infinite; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let startY = 0;
+  let dragging = false;
+  let triggered = false;
+
+  scroller.addEventListener('touchstart', (e: TouchEvent) => {
+    if (scroller.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+      dragging = true;
+      triggered = false;
+    }
+  }, { passive: true });
+
+  scroller.addEventListener('touchmove', (e: TouchEvent) => {
+    if (!dragging) return;
+    const dy = Math.min(e.touches[0].clientY - startY, PTR_MAX);
+    if (dy <= 0) { dragging = false; return; }
+    const progress = Math.min(dy / PTR_THRESHOLD, 1);
+    ptr.style.opacity = String(progress);
+    ptr.style.marginTop = `${dy - 52}px`;
+    const spinner = ptr.querySelector('.ptr-spinner') as HTMLElement;
+    spinner.style.transform = `rotate(${progress * 360}deg)`;
+    (ptr.querySelector('.ptr-label') as HTMLElement).textContent =
+      dy >= PTR_THRESHOLD ? 'Release to refresh' : 'Pull to refresh';
+    triggered = dy >= PTR_THRESHOLD;
+  }, { passive: true });
+
+  scroller.addEventListener('touchend', async () => {
+    if (!dragging) return;
+    dragging = false;
+    if (!triggered) {
+      ptr.style.opacity = '0';
+      ptr.style.marginTop = '-52px';
+      return;
+    }
+    // Show loading state
+    (ptr.querySelector('.ptr-label') as HTMLElement).textContent = 'Refreshing…';
+    const spinner = ptr.querySelector('.ptr-spinner') as HTMLElement;
+    spinner.classList.add('spinning');
+    spinner.style.transform = '';
+    ptr.style.opacity = '1';
+    ptr.style.marginTop = '0px';
+
+    try {
+      feedCards = await fetchUnifiedFeed(currentCategory);
+      await enrichReactions(feedCards);
+      renderCards();
+      startFeedCountdowns();
+    } catch (e) {
+      console.warn('[home.feed] pull-to-refresh failed:', e);
+    }
+
+    spinner.classList.remove('spinning');
+    ptr.style.opacity = '0';
+    ptr.style.marginTop = '-52px';
+    triggered = false;
+  });
 }
 
 // ============================================================
