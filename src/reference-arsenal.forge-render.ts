@@ -48,7 +48,7 @@ function _renderStep1(state: ForgeFormState): string {
     <label class="forge-label">Author / Organization</label>
     <input type="text" id="forge-author" placeholder="e.g. IPCC Working Group I" value="${esc(state.source_author)}" />
     <label class="forge-label">Source Date</label>
-    <input type="date" id="forge-date" value="${esc(state.source_date)}" />
+    <input type="text" id="forge-date" placeholder="YYYY-MM-DD" value="${esc(state.source_date)}" maxlength="10" />
     <label class="forge-label">Locator (page, timestamp, paragraph)</label>
     <input type="text" id="forge-locator" placeholder="e.g. p.42, 3:15, Section 2.1" value="${esc(state.locator)}" />
     <label class="forge-label">Source URL (optional)</label>
