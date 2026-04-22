@@ -23,6 +23,7 @@ import '../paywall.ts';
 import '../cards.ts';
 import '../analytics.ts';
 import { initDripCard } from '../onboarding-drip.ts';
+import { initProfileSocials } from '../profile-socials.ts';
 
 // --- Named imports ---
 import { ready, getCurrentUser, getIsPlaceholderMode, onChange } from '../auth.ts';
@@ -63,6 +64,9 @@ onChange((user: User | null, profile: Profile | null) => {
 
 // Pull-to-refresh init
 initPullToRefresh();
+
+// Profile social links (F-70)
+initProfileSocials();
 
 // ============================================================
 // INIT — Members Zone assumes valid session

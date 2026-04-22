@@ -29,10 +29,16 @@ export async function updateProfile(updates: ProfileUpdate): Promise<AuthResult>
       p_username: updates.username !== undefined ? updates.username : null,
       p_preferred_language: updates.preferred_language !== undefined ? updates.preferred_language : null,
       p_is_private: updates.is_private !== undefined ? updates.is_private : null,
+      p_social_twitter: updates.social_twitter !== undefined ? updates.social_twitter : null,
+      p_social_instagram: updates.social_instagram !== undefined ? updates.social_instagram : null,
+      p_social_tiktok: updates.social_tiktok !== undefined ? updates.social_tiktok : null,
+      p_social_youtube: updates.social_youtube !== undefined ? updates.social_youtube : null,
+      p_social_snapchat: updates.social_snapchat !== undefined ? updates.social_snapchat : null,
+      p_social_bluesky: updates.social_bluesky !== undefined ? updates.social_bluesky : null,
     });
     if (error) throw error;
 
-    const safeFields: (keyof ProfileUpdate)[] = ['display_name', 'avatar_url', 'bio', 'username', 'preferred_language'];
+    const safeFields: (keyof ProfileUpdate)[] = ['display_name', 'avatar_url', 'bio', 'username', 'preferred_language', 'social_twitter', 'social_instagram', 'social_tiktok', 'social_youtube', 'social_snapchat', 'social_bluesky'];
     safeFields.forEach(f => {
       if (updates[f] !== undefined && currentProfile) {
         (currentProfile as Record<string, unknown>)[f] = updates[f];
@@ -127,6 +133,23 @@ export async function showUserProfile(userId: string): Promise<void> {
   const safeName = esc((profile.display_name ?? profile.username ?? 'UNKNOWN')).toUpperCase();
   const safeBio = profile.bio ? esc(profile.bio) : '';
 
+  // F-70: Build social icon row for public profile modal
+  const socialPlatforms = [
+    { key: 'social_twitter',   icon: '𝕏',  url: (u: string) => `https://x.com/${u}` },
+    { key: 'social_instagram', icon: '📷', url: (u: string) => `https://instagram.com/${u}` },
+    { key: 'social_tiktok',    icon: '🎵', url: (u: string) => `https://tiktok.com/@${u}` },
+    { key: 'social_youtube',   icon: '▶️', url: (u: string) => `https://youtube.com/@${u}` },
+    { key: 'social_snapchat',  icon: '👻', url: (u: string) => `https://snapchat.com/add/${u}` },
+    { key: 'social_bluesky',   icon: '🦋', url: (u: string) => `https://bsky.app/profile/${u.includes('.') ? u : u + '.bsky.social'}` },
+  ] as const;
+  const socialHtml = socialPlatforms
+    .filter(p => (profile as Record<string, unknown>)[p.key])
+    .map(p => {
+      const handle = esc(String((profile as Record<string, unknown>)[p.key]));
+      return `<a href="${p.url(String((profile as Record<string, unknown>)[p.key]))}" target="_blank" rel="noopener" style="font-size:18px;text-decoration:none;opacity:0.7;" title="@${handle}">${p.icon}</a>`;
+    }).join('');
+  const socialRow = socialHtml ? `<div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">${socialHtml}</div>` : '';
+
   const lastChild = modal.querySelector('div > div:last-child');
   if (lastChild) lastChild.remove();
 
@@ -139,6 +162,7 @@ export async function showUserProfile(userId: string): Promise<void> {
       <div style="font-family:var(--mod-font-display);font-size:18px;letter-spacing:2px;color:var(--mod-text-heading);">${safeName}${vgBadge(profile.verified_gladiator)}${bountyDot(profile.id)}</div>
       <div style="font-size:11px;color:var(--mod-accent);letter-spacing:2px;margin-top:4px;">${tierLabel}</div>
       ${safeBio ? `<div style="font-size:13px;color:var(--mod-text-sub);margin-top:8px;line-height:1.4;">${safeBio}</div>` : ''}
+      ${socialRow}
       ${profile.username ? `<a href="/u/${encodeURIComponent(profile.username)}" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--mod-accent);text-decoration:none;">View full profile →</a>` : ''}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;">

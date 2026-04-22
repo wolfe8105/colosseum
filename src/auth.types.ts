@@ -54,6 +54,12 @@ export interface Profile {
   mod_rulings_total: number;
   mod_approval_pct: number;
   verified_gladiator?: boolean | null;
+  social_twitter?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_youtube?: string | null;
+  social_snapchat?: string | null;
+  social_bluesky?: string | null;
   created_at: string;
   updated_at?: string;
   /** Profile may have additional columns not listed here */
@@ -80,6 +86,12 @@ export interface PublicProfile {
   created_at: string;
   is_private?: boolean;
   verified_gladiator?: boolean;
+  social_twitter?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_youtube?: string | null;
+  social_snapchat?: string | null;
+  social_bluesky?: string | null;
   intro_music_id?: string;
   custom_intro_url?: string | null;
   error?: string;
@@ -133,6 +145,12 @@ export interface ProfileUpdate {
   username?: string | null;
   preferred_language?: string | null;
   is_private?: boolean | null;
+  social_twitter?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_youtube?: string | null;
+  social_snapchat?: string | null;
+  social_bluesky?: string | null;
 }
 
 /** Auth state change listener */

@@ -27,6 +27,21 @@ export function buildProfileHtml(profile) {
   const displayName = escapeHtml(p.display_name || p.username);
   const username = escapeHtml(p.username);
   const bio = escapeHtml(p.bio || 'No bio yet.');
+
+  // F-70: Social links
+  const socialPlatforms = [
+    { key: 'social_twitter',   icon: '𝕏',  url: (u) => `https://x.com/${u}` },
+    { key: 'social_instagram', icon: '📷', url: (u) => `https://instagram.com/${u}` },
+    { key: 'social_tiktok',    icon: '🎵', url: (u) => `https://tiktok.com/@${u}` },
+    { key: 'social_youtube',   icon: '▶️', url: (u) => `https://youtube.com/@${u}` },
+    { key: 'social_snapchat',  icon: '👻', url: (u) => `https://snapchat.com/add/${u}` },
+    { key: 'social_bluesky',   icon: '🦋', url: (u) => `https://bsky.app/profile/${u.includes('.') ? u : u + '.bsky.social'}` },
+  ];
+  const socialIconsHtml = socialPlatforms
+    .filter(s => p[s.key])
+    .map(s => `<a href="${s.url(escapeHtml(p[s.key]))}" target="_blank" rel="noopener" style="font-size:18px;text-decoration:none;opacity:0.7;" title="@${escapeHtml(p[s.key])}">${s.icon}</a>`)
+    .join('');
+  const socialRow = socialIconsHtml ? `<div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">${socialIconsHtml}</div>` : '';
   const elo = p.elo_rating || 1000;
   const wins = p.wins || 0;
   const losses = p.losses || 0;
@@ -101,6 +116,7 @@ export function buildProfileHtml(profile) {
     <div class="profile-name">${displayName}</div>
     <div class="profile-username">@${username}</div>
     ${bio !== 'No bio yet.' ? `<div class="profile-bio">${bio}</div>` : ''}
+    ${socialRow}
     <div class="rank-badge ${rank.name.toLowerCase()}">${rank.icon} ${rank.name}</div>
   </div>
 
