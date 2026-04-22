@@ -49,9 +49,8 @@ export function isUUID(s: unknown): s is string {
 
 export function onChange(fn: AuthListener): void {
   listeners.push(fn);
-  if (currentUser || currentProfile) {
-    try { fn(currentUser, currentProfile); } catch (e) { console.error('[auth] onChange immediate callback threw', e); }
-  }
+  // F-74: Always fire immediately so guest UI initializes correctly (user/profile may both be null)
+  try { fn(currentUser, currentProfile); } catch (e) { console.error('[auth] onChange immediate callback threw', e); }
 }
 
 export function _notify(user: User | null, profile: Profile | null): void {
@@ -169,6 +168,8 @@ export function init(): void {
               .catch(e => { console.error('ModeratorAuth: profile load failed', e); _resolveReady(); });
           }, 0);
         } else {
+          // F-74: No session — notify listeners so guest UI (JOIN button, etc.) initializes
+          _notify(null, null);
           _resolveReady();
         }
       } else if (event === 'SIGNED_IN' && session?.user) {

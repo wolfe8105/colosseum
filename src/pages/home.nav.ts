@@ -64,9 +64,17 @@ export function navigateTo(screenId: string) {
   }
 }
 
-// Bottom nav wiring
+// Bottom nav wiring — guests tapping PROFILE go to signup
 document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => navigateTo((btn as HTMLElement).dataset.screen!));
+  btn.addEventListener('click', () => {
+    const screen = (btn as HTMLElement).dataset.screen!;
+    // F-74: Guest tapping Profile or Arena tab → signup prompt
+    if (!getCurrentUser() && (screen === 'profile' || screen === 'arena')) {
+      window.location.href = 'moderator-plinko.html';
+      return;
+    }
+    navigateTo(screen);
+  });
 });
 registerNavigate(navigateTo);
 

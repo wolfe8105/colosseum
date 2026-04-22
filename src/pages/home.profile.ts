@@ -35,6 +35,7 @@ function _renderNavAvatar(el: HTMLElement, profile: Profile) {
 
 export function updateUIFromProfile(user: User | null, profile: Profile | null) {
   // F-74: For guests (no profile), style the header avatar as a "JOIN" CTA
+  // and hide the desktop sidebar (which shows confusing default stats)
   if (!profile) {
     const navAvatar = document.getElementById('user-avatar-btn');
     if (navAvatar) {
@@ -49,8 +50,15 @@ export function updateUIFromProfile(user: User | null, profile: Profile | null) 
       navAvatar.style.padding = '0 10px';
       navAvatar.style.width = 'auto';
     }
+    // Hide desktop sidebar for guests — shows confusing "GLADIATOR / FREE TIER" defaults
+    const desktopPanel = document.getElementById('desktop-panel');
+    if (desktopPanel) desktopPanel.style.display = 'none';
     return;
   }
+
+  // Logged-in user — make sure desktop panel is visible
+  const desktopPanel = document.getElementById('desktop-panel');
+  if (desktopPanel) desktopPanel.style.display = '';
 
   // Helper: safe element setter — silently skips if element doesn't exist on current page
   const _set = (id: string, value: string) => { const el = document.getElementById(id); if (el) el.textContent = value; };
