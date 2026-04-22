@@ -34,7 +34,23 @@ function _renderNavAvatar(el: HTMLElement, profile: Profile) {
 }
 
 export function updateUIFromProfile(user: User | null, profile: Profile | null) {
-  if (!profile) return;
+  // F-74: For guests (no profile), style the header avatar as a "JOIN" CTA
+  if (!profile) {
+    const navAvatar = document.getElementById('user-avatar-btn');
+    if (navAvatar) {
+      navAvatar.textContent = 'JOIN';
+      navAvatar.style.fontSize = '10px';
+      navAvatar.style.letterSpacing = '1px';
+      navAvatar.style.fontWeight = '700';
+      navAvatar.style.background = 'var(--mod-magenta)';
+      navAvatar.style.color = 'var(--mod-text-on-accent)';
+      navAvatar.style.borderColor = 'var(--mod-magenta)';
+      navAvatar.style.borderRadius = '20px';
+      navAvatar.style.padding = '0 10px';
+      navAvatar.style.width = 'auto';
+    }
+    return;
+  }
 
   // Helper: safe element setter — silently skips if element doesn't exist on current page
   const _set = (id: string, value: string) => { const el = document.getElementById(id); if (el) el.textContent = value; };
@@ -93,7 +109,15 @@ export async function loadFollowCounts() {
 const avatarBtn = document.getElementById('user-avatar-btn');
 const dropdown = document.getElementById('user-dropdown');
 if (avatarBtn && dropdown) {
-  avatarBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('open'); });
+  avatarBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // F-74: For guests, tapping the avatar goes straight to signup
+    if (!getCurrentUser()) {
+      window.location.href = 'moderator-plinko.html';
+      return;
+    }
+    dropdown.classList.toggle('open');
+  });
   document.addEventListener('click', () => { dropdown.classList.remove('open'); });
 }
 

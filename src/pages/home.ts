@@ -136,6 +136,12 @@ function showSlowConnectionOverlay(seconds: number, onResolved: () => void): { d
 }
 
 async function appInit() {
+  // F-74: Feed is public — guests see content before signup.
+  // We still wait for auth to settle so logged-in users get their profile,
+  // but we no longer redirect unauthenticated visitors to login.
+  // Auth-gated actions (post, react, challenge, arena, profile) redirect
+  // to plinko individually when triggered.
+
   // Phase 1: wait up to 6 seconds for auth
   let authSettled = false;
   try {
@@ -145,34 +151,30 @@ async function appInit() {
     ]);
   } catch (e) { console.warn('[Home] auth init failed:', e); }
 
-  // Phase 2: if auth still pending after 6s, show slow-connection overlay + 20s countdown
-  if (!authSettled && !getCurrentUser() && !getIsPlaceholderMode()) {
+  // Phase 2: if auth still pending after 6s AND user appears to have a session
+  // (has a supabase auth cookie), show slow-connection overlay. Guests skip this.
+  const looksLoggedIn = document.cookie.split(';').some(c => c.trim().match(/^sb-.*-auth-token/));
+  if (!authSettled && looksLoggedIn && !getIsPlaceholderMode()) {
     let overlayDismissed = false;
     const { dismiss, waitForZero } = showSlowConnectionOverlay(20, () => { overlayDismissed = true; });
 
-    // Race: auth resolves vs countdown hits zero
     await Promise.race([
       ready.then(() => { authSettled = true; dismiss(); }),
       waitForZero()
     ]);
 
     if (!authSettled && !overlayDismissed) {
-      // Countdown expired with no auth — tell user and redirect to login
-      showToast('Unable to connect. Please sign in again.', 'error');
-      await new Promise(r => setTimeout(r, 1800));
-      window.location.href = 'moderator-login.html';
-      return;
+      // Countdown expired — session likely stale, show feed as guest
+      showToast('Connection slow — showing public feed', 'info');
+      await new Promise(r => setTimeout(r, 800));
     }
   }
 
   const loading = document.getElementById('loading-screen');
   if (loading) { loading.classList.add('fade-out'); setTimeout(() => loading.remove(), 400); }
 
-  if (!getCurrentUser() && !getIsPlaceholderMode()) {
-    window.location.href = 'moderator-login.html';
-    return;
-  }
-
+  // F-74: No redirect. Guests land on the feed.
+  // Placeholder mode still gets a fake profile for demo purposes.
   if (getIsPlaceholderMode()) {
     updateUIFromProfile(null, { display_name: 'Debater', username: 'debater', elo_rating: 1200, wins: 0, losses: 0, current_streak: 0, level: 1, debates_completed: 0, token_balance: 50, subscription_tier: 'free', profile_depth_pct: 0 } as any);
   }
