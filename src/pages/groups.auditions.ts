@@ -86,6 +86,7 @@ export async function submitAuditionRequest(): Promise<void> {
     const errEl = document.getElementById('audition-error');
     errEl!.textContent    = (e as Error).message || 'Could not request audition';
     errEl!.style.display  = 'block';
+  } finally {
     btn.disabled         = false;
     btn.textContent      = 'REQUEST AUDITION';
   }

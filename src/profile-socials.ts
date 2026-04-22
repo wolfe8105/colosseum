@@ -90,6 +90,7 @@ export function initProfileSocials(): void {
 
   saveBtn.addEventListener('click', async () => {
     const btn = saveBtn as HTMLButtonElement;
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.textContent = 'SAVING...';
 
@@ -99,23 +100,28 @@ export function initProfileSocials(): void {
       return val || null;
     };
 
-    await updateProfile({
-      social_twitter: getValue('social-twitter'),
-      social_instagram: getValue('social-instagram'),
-      social_tiktok: getValue('social-tiktok'),
-      social_youtube: getValue('social-youtube'),
-      social_snapchat: getValue('social-snapchat'),
-      social_bluesky: getValue('social-bluesky'),
-    });
+    try {
+      await updateProfile({
+        social_twitter: getValue('social-twitter'),
+        social_instagram: getValue('social-instagram'),
+        social_tiktok: getValue('social-tiktok'),
+        social_youtube: getValue('social-youtube'),
+        social_snapchat: getValue('social-snapchat'),
+        social_bluesky: getValue('social-bluesky'),
+      });
 
-    btn.disabled = false;
-    btn.textContent = 'SAVE';
-    editPanel.style.display = 'none';
-    editBtn.style.display = 'inline-block';
+      editPanel.style.display = 'none';
+      editBtn.style.display = 'inline-block';
 
-    // Re-render with updated profile
-    const profile = getCurrentProfile();
-    if (profile) renderSocialDisplay(profile);
+      // Re-render with updated profile
+      const profile = getCurrentProfile();
+      if (profile) renderSocialDisplay(profile);
+    } catch (err) {
+      console.error('[Socials] save failed:', err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'SAVE';
+    }
   });
 
   // Render on auth change

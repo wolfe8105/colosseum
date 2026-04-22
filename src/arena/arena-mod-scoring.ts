@@ -52,12 +52,17 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
     btn.addEventListener('click', async () => {
       const score = Number.parseInt((btn as HTMLElement).dataset.score!, 10);
       section.querySelectorAll('.mod-score-btn').forEach((b) => { (b as HTMLButtonElement).disabled = true; (b as HTMLElement).style.opacity = '0.4'; });
-      const result = await scoreModerator(debate.id, score);
-      const scoredEl = document.getElementById('mod-scored');
-      if (result?.error) {
-        if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
-      } else {
-        if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
+      try {
+        const result = await scoreModerator(debate.id, score);
+        const scoredEl = document.getElementById('mod-scored');
+        if (result?.error) {
+          if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
+          section.querySelectorAll('.mod-score-btn').forEach((b) => { (b as HTMLButtonElement).disabled = false; (b as HTMLElement).style.opacity = '1'; });
+        } else {
+          if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
+        }
+      } catch {
+        section.querySelectorAll('.mod-score-btn').forEach((b) => { (b as HTMLButtonElement).disabled = false; (b as HTMLElement).style.opacity = '1'; });
       }
     });
   });
@@ -71,15 +76,19 @@ export function renderModScoring(debate: CurrentDebate, container: HTMLElement):
   document.getElementById('mod-score-submit')?.addEventListener('click', async () => {
     const score = Number.parseInt(slider?.value || '25', 10);
     const submitBtn = document.getElementById('mod-score-submit') as HTMLButtonElement | null;
+    if (submitBtn?.disabled) return;
     if (submitBtn) { submitBtn.textContent = '\u23F3'; submitBtn.disabled = true; }
-    const result = await scoreModerator(debate.id, score);
-    const scoredEl = document.getElementById('mod-scored');
-    if (result?.error) {
-      if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
-      if (submitBtn) { submitBtn.textContent = 'SUBMIT SCORE'; submitBtn.disabled = false; }
-    } else {
-      if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
-      if (submitBtn) submitBtn.remove();
-    }
+    try {
+      const result = await scoreModerator(debate.id, score);
+      const scoredEl = document.getElementById('mod-scored');
+      if (result?.error) {
+        if (scoredEl) { scoredEl.textContent = '\u274C ' + (friendlyError(result.error) || String(result.error)); scoredEl.style.display = 'block'; scoredEl.style.color = 'var(--mod-accent)'; }
+      } else {
+        if (scoredEl) { scoredEl.textContent = '\u2705 Score submitted'; scoredEl.style.display = 'block'; }
+        if (submitBtn) submitBtn.remove();
+        return;
+      }
+    } catch { /* silent */ }
+    if (submitBtn) { submitBtn.textContent = 'SUBMIT SCORE'; submitBtn.disabled = false; }
   });
 }

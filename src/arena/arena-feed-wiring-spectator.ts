@@ -78,7 +78,6 @@ async function handleTip(
     if (error || !data) {
       console.warn('[FeedRoom] cast_sentiment_tip failed:', error);
       showToast('Tip failed', 'error');
-      allBtns.forEach(b => { b.disabled = false; });
       return;
     }
 
@@ -96,7 +95,6 @@ async function handleTip(
       } else {
         showToast('Tip failed', 'error');
       }
-      allBtns.forEach(b => { b.disabled = false; });
       return;
     }
 
@@ -113,10 +111,12 @@ async function handleTip(
       allBtns.forEach(b => { b.disabled = false; });
       if (statusEl) statusEl.textContent = 'Tap to tip';
     }, 800);
+    return; // Skip finally re-enable — handled by setTimeout
 
   } catch (e) {
     console.warn('[FeedRoom] cast_sentiment_tip error:', e);
     showToast('Tip failed', 'error');
-    allBtns.forEach(b => { b.disabled = false; });
   }
+  // Re-enable on all error/catch paths (success returns early above)
+  allBtns.forEach(b => { b.disabled = false; });
 }

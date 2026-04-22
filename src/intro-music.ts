@@ -110,7 +110,7 @@ export function openIntroMusicPicker(): void {
 
   const saveBtn = sheet.querySelector<HTMLButtonElement>('#im-save-btn');
   saveBtn?.addEventListener('click', async () => {
-    if (!saveBtn) return;
+    if (!saveBtn || saveBtn.disabled) return;
     saveBtn.disabled = true; saveBtn.textContent = 'SAVING…';
     try {
       await saveIntroMusic(selectedId, pendingFile, pendingUrl);
@@ -118,6 +118,7 @@ export function openIntroMusicPicker(): void {
       _close(backdrop);
     } catch (err) {
       showToast((err as Error).message || 'Save failed', 'error');
+    } finally {
       saveBtn.disabled = false; saveBtn.textContent = 'SAVE';
     }
   });

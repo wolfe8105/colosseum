@@ -102,11 +102,11 @@ export function wireChatUI(d: SpectateDebate): void {
     } catch (err) {
       console.warn('[Spectate] Chat error:', err);
       input!.value = msg;
+    } finally {
+      sending = false;
+      sendBtn!.disabled = false;
+      input!.focus();
     }
-
-    sending = false;
-    sendBtn!.disabled = false;
-    input!.focus();
   }
 
   // M-B32-2: remove stale listeners before re-wiring to prevent handler stacking

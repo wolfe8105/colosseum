@@ -87,12 +87,12 @@ export async function postGroupCard(groupId: string) {
     return;
   }
   const btn = document.getElementById('group-take-post') as HTMLButtonElement | null;
+  if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     const { error } = await safeRpc('create_debate_card', { p_content: text, p_category: groupId }, create_debate_card);
     if (error) {
       showToast('Post failed — try again', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
       return;
     }
     input.value = '';
@@ -101,7 +101,7 @@ export async function postGroupCard(groupId: string) {
     loadGroupFeed(groupId);
   } catch (e) {
     showToast('Connection lost — try again', 'error');
+  } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
   }
-  if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
 }

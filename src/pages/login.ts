@@ -118,19 +118,20 @@ document.getElementById('newpw-btn')?.addEventListener('click', async () => {
   if (pw !== confirm) { showMsg('newpw-msg', 'Passwords do not match.', 'error'); return; }
 
   const btn = document.getElementById('newpw-btn') as HTMLButtonElement | null;
+  if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = 'UPDATING...'; }
 
   try {
     const result = await updatePassword(pw);
     if (!result.success) {
       showMsg('newpw-msg', result.error ?? 'Could not update password.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'UPDATE PASSWORD'; }
     } else {
       showMsg('newpw-msg', '✅ Password updated! Entering the arena...', 'success');
       setTimeout(() => { window.location.href = getReturnTo(); }, 1200);
     }
   } catch {
     showMsg('newpw-msg', 'Something went wrong. Try again.', 'error');
+  } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'UPDATE PASSWORD'; }
   }
 });

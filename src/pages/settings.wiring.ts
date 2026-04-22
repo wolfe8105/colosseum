@@ -52,14 +52,13 @@ export function wireSettings(): void {
       const result = await resetPassword(email);
       if (result.success) {
         if (btn) btn.textContent = '✅ Reset link sent!';
-        setTimeout(() => { if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; } }, 3000);
       } else {
-        if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
         showToast('Failed to send reset email: ' + (result.error ?? 'Unknown error'), 'error');
       }
     } catch {
-      if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; }
       showToast('Failed to send reset email. Please try again.', 'error');
+    } finally {
+      setTimeout(() => { if (btn) { btn.textContent = '🔑 RESET PASSWORD'; btn.disabled = false; } }, 3000);
     }
   });
 

@@ -60,12 +60,17 @@ export async function renderProfileBountySection(
       btn.style.background = 'rgba(204,41,54,0.15)';
       btn.onclick = async () => {
         btn.disabled = true; btn.textContent = '…';
-        const result = await cancelBounty(existingBounty!.id);
-        if (result.success) {
-          body.innerHTML = `<div style="font-size:12px;color:var(--mod-text-muted);text-align:center;">Bounty cancelled. ${Number(result.refund)} tokens refunded.</div>`;
-        } else {
+        try {
+          const result = await cancelBounty(existingBounty!.id);
+          if (result.success) {
+            body.innerHTML = `<div style="font-size:12px;color:var(--mod-text-muted);text-align:center;">Bounty cancelled. ${Number(result.refund)} tokens refunded.</div>`;
+          } else {
+            btn.textContent = result.error ?? 'Error — try again';
+          }
+        } catch {
+          btn.textContent = 'Error — try again';
+        } finally {
           btn.disabled = false;
-          btn.textContent = result.error ?? 'Error — try again';
         }
       };
     });
@@ -115,13 +120,18 @@ export async function renderProfileBountySection(
     if (!dur || dur < 1 || dur > 365) { errEl.textContent = 'Duration must be 1–365 days.'; errEl.style.display = 'block'; return; }
     if (amt + dur > viewerBalance) { errEl.textContent = 'Insufficient tokens.'; errEl.style.display = 'block'; return; }
     btn.disabled = true; btn.textContent = '…';
-    const result = await postBounty(targetId, amt, dur);
-    if (result.success) {
-      body.innerHTML = `<div style="font-size:13px;color:var(--mod-accent);text-align:center;padding:8px 0;">🟡 Bounty posted. It goes live immediately.</div>`;
-      void loadBountyDotSet();
-    } else {
+    try {
+      const result = await postBounty(targetId, amt, dur);
+      if (result.success) {
+        body.innerHTML = `<div style="font-size:13px;color:var(--mod-accent);text-align:center;padding:8px 0;">🟡 Bounty posted. It goes live immediately.</div>`;
+        void loadBountyDotSet();
+      } else {
+        errEl.textContent = result.error ?? 'Something went wrong.'; errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Something went wrong.'; errEl.style.display = 'block';
+    } finally {
       btn.disabled = false; btn.textContent = '🟡 POST BOUNTY';
-      errEl.textContent = result.error ?? 'Something went wrong.'; errEl.style.display = 'block';
     }
   });
 }
@@ -165,9 +175,15 @@ export async function renderMyBountiesSection(container: HTMLElement): Promise<v
         btn.style.background = 'rgba(204,41,54,0.15)'; return;
       }
       btn.disabled = true; btn.textContent = '…';
-      const result = await cancelBounty(bountyId);
-      if (result.success) { await renderMyBountiesSection(container); void loadBountyDotSet(); }
-      else { btn.disabled = false; btn.textContent = result.error ?? 'Error'; delete btn.dataset.confirmed; }
+      try {
+        const result = await cancelBounty(bountyId);
+        if (result.success) { await renderMyBountiesSection(container); void loadBountyDotSet(); }
+        else { btn.textContent = result.error ?? 'Error'; delete btn.dataset.confirmed; }
+      } catch {
+        btn.textContent = 'Error — try again'; delete btn.dataset.confirmed;
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }

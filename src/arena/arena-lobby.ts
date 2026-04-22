@@ -265,6 +265,7 @@ export async function showPowerUpShop(): Promise<void> {
     buttonEl.addEventListener('click', async () => {
       const id = buttonEl.dataset.id;
       const cost = Number(buttonEl.dataset.cost);
+      if (buttonEl.disabled) return;
       buttonEl.disabled = true;
       buttonEl.textContent = '...';
       try {
@@ -274,11 +275,10 @@ export async function showPowerUpShop(): Promise<void> {
           showPowerUpShop(); // re-render with updated balance
         } else {
           showToast(result.error || 'Purchase failed');
-          buttonEl.disabled = false;
-          buttonEl.textContent = `${cost} \uD83E\uDE99`;
         }
       } catch {
         showToast('Purchase failed. Please try again.');
+      } finally {
         buttonEl.disabled = false;
         buttonEl.textContent = `${cost} \uD83E\uDE99`;
       }

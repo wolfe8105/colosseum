@@ -64,15 +64,22 @@ export function showRulingPanel(ref: ReferenceItem): void {
     clearInterval(_rulingCountdownTimer!);
     set__rulingCountdownTimer(null);
     const reason = (document.getElementById('mod-ruling-reason') as HTMLTextAreaElement | null)?.value?.trim() || '';
-    const result = await ruleOnReference(ref.id, 'allowed', reason);
-    if (result?.error) {
-      addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+    try {
+      const result = await ruleOnReference(ref.id, 'allowed', reason);
+      if (result?.error) {
+        addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+      } else {
+        addSystemMessage('\u2705 Evidence ALLOWED by moderator' + (reason ? ': ' + reason : ''));
+        overlay.remove();
+        return;
+      }
+    } catch (e) {
+      addSystemMessage('\u274C Ruling failed: unexpected error');
+      console.warn('[Arena] ruleOnReference allow error:', e);
+    } finally {
       _rulingBusy = false;
       if (allowBtn) allowBtn.disabled = false;
       if (denyBtn) denyBtn.disabled = false;
-    } else {
-      addSystemMessage('\u2705 Evidence ALLOWED by moderator' + (reason ? ': ' + reason : ''));
-      overlay.remove();
     }
   });
 
@@ -86,15 +93,22 @@ export function showRulingPanel(ref: ReferenceItem): void {
     clearInterval(_rulingCountdownTimer!);
     set__rulingCountdownTimer(null);
     const reason = (document.getElementById('mod-ruling-reason') as HTMLTextAreaElement | null)?.value?.trim() || '';
-    const result = await ruleOnReference(ref.id, 'denied', reason);
-    if (result?.error) {
-      addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+    try {
+      const result = await ruleOnReference(ref.id, 'denied', reason);
+      if (result?.error) {
+        addSystemMessage('\u274C Ruling failed: ' + (friendlyError(result.error) || String(result.error)));
+      } else {
+        addSystemMessage('\u274C Evidence DENIED by moderator' + (reason ? ': ' + reason : ''));
+        overlay.remove();
+        return;
+      }
+    } catch (e) {
+      addSystemMessage('\u274C Ruling failed: unexpected error');
+      console.warn('[Arena] ruleOnReference deny error:', e);
+    } finally {
       _rulingBusy = false;
       if (allowBtn) allowBtn.disabled = false;
       if (denyBtn) denyBtn.disabled = false;
-    } else {
-      addSystemMessage('\u274C Evidence DENIED by moderator' + (reason ? ': ' + reason : ''));
-      overlay.remove();
     }
   });
 

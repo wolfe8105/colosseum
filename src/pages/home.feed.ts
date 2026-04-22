@@ -147,6 +147,7 @@ async function postDebateCard(): Promise<void> {
   }
 
   const btn = document.querySelector('[data-action="post-debate-card"]') as HTMLButtonElement | null;
+  if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
   try {
@@ -160,7 +161,6 @@ async function postDebateCard(): Promise<void> {
     const { error } = await safeRpc('create_debate_card', params, create_debate_card);
     if (error) {
       showToast('Post failed — try again', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
       return;
     }
     input.value = '';
@@ -181,8 +181,9 @@ async function postDebateCard(): Promise<void> {
     void refreshFeed();
   } catch {
     showToast('Connection lost — try again', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
   }
-  if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
 }
 
 // ============================================================

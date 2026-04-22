@@ -34,13 +34,13 @@ export function attachStep3(): void {
     }
 
     const btn = document.getElementById('btn-create') as HTMLButtonElement | null;
+    if (btn?.disabled) return;
     if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
     try {
       if (signupMethod === 'email') {
         if (!signupEmail || !signupPassword) {
           showMsg('step3-msg', 'Session expired. Please start over.', 'error');
-          if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
           setTimeout(() => goToStep(1), 1500);
           return;
         }
@@ -59,12 +59,10 @@ export function attachStep3(): void {
           // show clean message and send user back to step 1 where the password field is
           if (err.toLowerCase().includes('password')) {
             showMsg('step1-msg', 'Please choose a stronger password.', 'error');
-            if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
             goToStep(1);
             return;
           }
           showMsg('step3-msg', err, 'error');
-          if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
           return;
         }
 
@@ -162,7 +160,6 @@ export function attachStep3(): void {
         goToStep(4);
       } else {
         showMsg('step3-msg', 'Session expired. Please start over.', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
         setTimeout(() => goToStep(1), 1500);
         return;
       }
@@ -171,6 +168,7 @@ export function attachStep3(): void {
       set_signupPassword('');
       set_signupEmail('');
       showMsg('step3-msg', 'Something went wrong. Try again.', 'error');
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
     }
   });

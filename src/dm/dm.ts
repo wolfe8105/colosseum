@@ -80,33 +80,39 @@ function wireThreadEvents(container: HTMLElement): void {
     input.value = '';
     input.disabled = true;
 
-    const result = await sendMessage(thread.other_user_id, body);
-    input.disabled = false;
+    try {
+      const result = await sendMessage(thread.other_user_id, body);
 
-    if (result.error) {
-      showToast(
-        result.error === 'not_eligible' ? 'You need to interact with this user first (debate, spectate, or tip).'
-        : result.error === 'blocked' ? 'This conversation is no longer available.'
-        : 'Message failed to send. Try again.',
-        'error'
-      );
-      input.value = body; // Restore on failure
-      return;
-    }
+      if (result.error) {
+        showToast(
+          result.error === 'not_eligible' ? 'You need to interact with this user first (debate, spectate, or tip).'
+          : result.error === 'blocked' ? 'This conversation is no longer available.'
+          : 'Message failed to send. Try again.',
+          'error'
+        );
+        input.value = body; // Restore on failure
+        return;
+      }
 
-    // Add message optimistically
-    const myId = getCurrentUser()?.id;
-    if (myId) {
-      const newMsg: DMMessage = {
-        id: result.message_id ?? crypto.randomUUID(),
-        sender_id: myId,
-        body,
-        created_at: new Date().toISOString(),
-        read_at: null,
-      };
-      activeMessages.unshift(newMsg); // unshift because array is newest-first
-      await renderDMScreen();
-      input.focus();
+      // Add message optimistically
+      const myId = getCurrentUser()?.id;
+      if (myId) {
+        const newMsg: DMMessage = {
+          id: result.message_id ?? crypto.randomUUID(),
+          sender_id: myId,
+          body,
+          created_at: new Date().toISOString(),
+          read_at: null,
+        };
+        activeMessages.unshift(newMsg); // unshift because array is newest-first
+        await renderDMScreen();
+        input.focus();
+      }
+    } catch {
+      showToast('Message failed to send. Try again.', 'error');
+      input.value = body;
+    } finally {
+      input.disabled = false;
     }
   };
 

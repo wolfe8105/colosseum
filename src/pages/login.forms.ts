@@ -112,6 +112,7 @@ export function wireLoginForm(getReturnTo: () => string, isPlaceholder: boolean)
     }
 
     const btn = document.getElementById('login-btn') as HTMLButtonElement | null;
+    if (btn?.disabled) return;
     if (btn) { btn.disabled = true; btn.textContent = 'ENTERING...'; }
 
     try {
@@ -119,13 +120,13 @@ export function wireLoginForm(getReturnTo: () => string, isPlaceholder: boolean)
       if (!result.success) {
         recordFailedAttempt();
         showMsg('login-msg', result.error ?? 'Login failed.', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'ENTER THE ARENA'; }
       } else {
         showMsg('login-msg', 'Welcome back, gladiator.', 'success');
         setTimeout(() => { window.location.href = getReturnTo(); }, 600);
       }
     } catch {
       showMsg('login-msg', 'Something went wrong. Try again.', 'error');
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'ENTER THE ARENA'; }
     }
   });
@@ -177,6 +178,7 @@ export function wireSignupForm(getReturnTo: () => string, isPlaceholder: boolean
     }
 
     const btn = document.getElementById('signup-btn') as HTMLButtonElement | null;
+    if (btn?.disabled) return;
     if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
     try {
@@ -185,13 +187,13 @@ export function wireSignupForm(getReturnTo: () => string, isPlaceholder: boolean
 
       if (!result.success) {
         showMsg('signup-msg', result.error ?? 'Signup failed.', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
       } else {
         showMsg('signup-msg', 'Account created! Check your email to confirm.', 'success');
         setTimeout(() => { window.location.href = getReturnTo(); }, 1200);
       }
     } catch {
       showMsg('signup-msg', 'Something went wrong. Try again.', 'error');
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
     }
   });

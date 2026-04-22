@@ -122,19 +122,18 @@ export function renderPostDebate(debate: CurrentDebate, ctx: PostDebateContext):
   document.getElementById('arena-add-rival')?.addEventListener('click', async () => {
     if (!debate.opponentId) return;
     const btn = document.getElementById('arena-add-rival') as HTMLButtonElement | null;
+    if (btn?.disabled) return;
     if (btn) { btn.disabled = true; btn.textContent = '\u23F3 Adding...'; }
     try {
       const result = await declareRival(debate.opponentId);
       if (result && !result.error) {
         if (btn) btn.textContent = '\u2705 RIVAL ADDED';
         showToast('\u2694\uFE0F Rival declared!', 'success');
-      } else {
-        if (btn) { btn.textContent = '\u2694\uFE0F ADD RIVAL'; btn.disabled = false; }
-        showToast('Could not add rival', 'error');
+        return; // Keep disabled — one-time action
       }
-    } catch {
-      if (btn) { btn.textContent = '\u2694\uFE0F ADD RIVAL'; btn.disabled = false; }
-    }
+      showToast('Could not add rival', 'error');
+    } catch { /* silent */ }
+    if (btn) { btn.textContent = '\u2694\uFE0F ADD RIVAL'; btn.disabled = false; }
   });
 
   // Tap opponent name → profile modal

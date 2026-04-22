@@ -150,16 +150,12 @@ export async function submitGroupChallenge() {
     if (error) {
       errEl!.textContent   = error.message || 'RPC failed';
       errEl!.style.display = 'block';
-      btn.disabled        = false;
-      btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
     const result = typeof data === 'string' ? JSON.parse(data) : data;
     if (result?.error) {
       errEl!.textContent   = result.error;
       errEl!.style.display = 'block';
-      btn.disabled        = false;
-      btn.textContent     = 'SEND CHALLENGE ⚔️';
       return;
     }
     closeGvGModal();
@@ -168,9 +164,10 @@ export async function submitGroupChallenge() {
   } catch (e) {
     errEl!.textContent   = 'Something went wrong';
     errEl!.style.display = 'block';
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'SEND CHALLENGE ⚔️';
   }
-  btn.disabled    = false;
-  btn.textContent = 'SEND CHALLENGE ⚔️';
 }
 
 export async function loadGroupChallenges(groupId: string) {

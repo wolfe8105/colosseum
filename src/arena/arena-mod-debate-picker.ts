@@ -88,6 +88,7 @@ export function showModDebatePicker(): void {
 
 export async function createModDebate(): Promise<void> {
   const btn = document.getElementById('mod-debate-create-btn') as HTMLButtonElement | null;
+  if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
 
   const mode = (document.getElementById('mod-debate-mode') as HTMLSelectElement)?.value || 'text';
@@ -110,7 +111,8 @@ export async function createModDebate(): Promise<void> {
     set_modDebateId(result.debate_id);
     showModDebateWaitingMod(result.debate_id, result.join_code, topic || 'Open Debate', mode as DebateMode, ranked);
   } catch (err) {
-    if (btn) { btn.disabled = false; btn.textContent = '⚔️ CREATE & GET CODE'; }
     showToast(friendlyError(err) || 'Could not create debate');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚔️ CREATE & GET CODE'; }
   }
 }

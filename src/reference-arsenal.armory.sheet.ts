@@ -78,6 +78,7 @@ export function openSheet(ref: ArsenalReference, myId: string | null, onReload: 
     submitBtn.addEventListener('click', async () => {
       const grounds = (document.getElementById('armory-challenge-grounds') as HTMLTextAreaElement)?.value?.trim();
       if (!grounds || grounds.length < 5) { showToast('Add grounds for the challenge', 'error'); return; }
+      if (submitBtn.disabled) return;
       submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
       try {
         const result = await challengeReference(ref.id, grounds, null);
@@ -89,6 +90,7 @@ export function openSheet(ref: ArsenalReference, myId: string | null, onReload: 
         }
       } catch (err) {
         showToast(err instanceof Error ? err.message : 'Challenge failed', 'error');
+      } finally {
         submitBtn.disabled = false; submitBtn.textContent = 'Submit Challenge';
       }
     });
