@@ -15,6 +15,7 @@ import { buildTurnSequence, MAX_ROUNDS } from './webrtc.turn.ts';
 import { requestMic, toggleMute, getAudioLevel, createWaveform, enforceMute } from './webrtc.audio.ts';
 import { setupSignaling, sendSignal } from './webrtc.signaling.ts';
 import { beginStep, finishTurn, endDebate } from './webrtc.engine.ts';
+import { stopWebRTCMonitor } from './webrtc.monitor.ts';
 import type { DebateRole, DebateState, TurnStep } from './webrtc.types.ts';
 
 // Re-export types for consumers
@@ -65,6 +66,9 @@ export async function startLive(): Promise<void> {
 export function leaveDebate(): void {
   stopWorkerTimer();
   terminateWorkerTimer();
+
+  // P7: Stop WebRTC quality monitoring and fire session summary
+  stopWebRTCMonitor();
 
   // Session 208: Reset ICE restart state (audit #14)
   state.iceRestartAttempts = 0;

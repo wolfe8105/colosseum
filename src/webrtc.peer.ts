@@ -7,6 +7,7 @@
 
 import { state, signals, fire, MAX_ICE_RESTART_ATTEMPTS, SETUP_TIMEOUT_MS } from './webrtc.state.ts';
 import { getIceServers } from './webrtc.ice.ts';
+import { startWebRTCMonitor } from './webrtc.monitor.ts';
 
 // ============================================================
 // PEER CONNECTION
@@ -51,6 +52,10 @@ export function createPeerConnection(iceServers: RTCIceServer[]): RTCPeerConnect
       if (state.disconnectTimer) { clearTimeout(state.disconnectTimer); state.disconnectTimer = null; }
       // Session 222: RTC-BUG-3 — clear setup timeout on successful connection
       if (state.setupTimer) { clearTimeout(state.setupTimer); state.setupTimer = null; }
+      // F-70/P7: Start WebRTC quality monitoring → PostHog
+      if (state.debateState.debateId && state.debateState.role) {
+        startWebRTCMonitor(state.peerConnection!, state.debateState.debateId, state.debateState.role);
+      }
       fire('connected', {});
     } else if (connState === 'disconnected') {
       // Transient — wait 3s before attempting restart (connection may recover)
