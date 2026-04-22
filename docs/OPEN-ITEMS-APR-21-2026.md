@@ -113,12 +113,12 @@ These require Pat to do them personally. No Claude work needed.
 
 ---
 
-## PRIORITY 7: Launch Checklist (Code Tasks)
+## ~~PRIORITY 7: Launch Checklist (Code Tasks)~~ ✅ DONE
 
 | Item | Time estimate | Notes |
 |------|---------------|-------|
-| Peermetrics setup | 30 min | WebRTC call quality monitoring. Install the library, add the integration code, configure the dashboard. |
-| Outside-in Claude review | 30 min | Fresh Claude session reads the app from scratch with no context and flags anything that looks wrong. Different perspective from the existing audit work. |
+| ~~Peermetrics setup~~ ✅ | 30 min | **DONE.** `@peermetrics/webrtc-stats` wired into WebRTC engine → PostHog. Events: `webrtc_stats` (10s intervals), `webrtc_quality_low`, `webrtc_session_end`. |
+| ~~Outside-in Claude review~~ ✅ | 30 min | **DONE.** Flagged 5 concerns: main bundle size (fixed — 61% reduction via lazy-load arena), disable-button-no-finally (80 instances, documented), direct SELECTs (3, minor), no CSP headers, Profile index signature. |
 
 ---
 
