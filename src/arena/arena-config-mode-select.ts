@@ -5,10 +5,9 @@
 // arena-config-mode-select → arena-private-picker → arena-config-mode-select
 // Pre-existing cycle (one of 37 known in src/arena/). Do not fix here.
 
-import { getCurrentUser, getAvailableModerators, getSupabaseClient } from '../auth.ts';
+import { getCurrentUser, getAvailableModerators } from '../auth.ts';
 import { escapeHTML } from '../config.ts';
-import { clampVercel } from '../contracts/dependency-clamps.ts';
-import { set_selectedModerator, set_selectedRuleset, set_selectedLinkUrl, set_selectedLinkPreview } from './arena-state.ts';
+import { set_selectedModerator, set_selectedRuleset } from './arena-state.ts';
 import type { AvailableModerator } from './arena-types-moderator.ts';
 import { MODES } from './arena-constants.ts';
 import { isPlaceholder, pushArenaState } from './arena-core.utils.ts';
@@ -79,7 +78,7 @@ export function showModeSelect(): void {
   // Wire close
   document.getElementById('arena-mode-backdrop')?.addEventListener('click', () => closeModeSelect());
   document.getElementById('arena-mode-cancel')?.addEventListener('click', () => closeModeSelect());
-
+}
 
 export function closeModeSelect(forward?: boolean): void {
   const overlay = document.getElementById('arena-mode-overlay');
