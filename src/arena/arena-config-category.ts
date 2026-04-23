@@ -58,13 +58,21 @@ export function showCategoryPicker(mode: string, topic: string): void {
         <div id="arena-cat-link-preview" style="display:none;margin-top:8px;"></div>
         <div id="arena-cat-link-error" style="display:none;color:var(--mod-status-live);font-size:12px;margin-top:4px;"></div>
       </div>
-      <label id="arena-want-mod-row" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;user-select:none;margin-bottom:12px;">
+      <label id="arena-want-mod-row" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;user-select:none;margin-bottom:8px;">
         <input type="checkbox" id="arena-want-mod-toggle" style="width:22px;height:22px;accent-color:var(--mod-accent-primary);cursor:pointer;flex-shrink:0;">
         <div>
           <div style="font-family:var(--mod-font-ui);font-size:15px;font-weight:700;color:var(--mod-text-heading);letter-spacing:0.5px;">🧑‍⚖️ REQUEST A MODERATOR</div>
           <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-top:2px;">A human moderator will judge this debate</div>
         </div>
       </label>
+      <button id="arena-invite-mod-btn" style="display:none;width:100%;padding:12px 16px;border-radius:var(--mod-radius-md);border:1px dashed var(--mod-border-primary);background:transparent;color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:14px;cursor:pointer;text-align:left;margin-bottom:12px;">
+        👤 INVITE A SPECIFIC MODERATOR
+      </button>
+      <div id="arena-mod-invite-search" style="display:none;margin-bottom:12px;">
+        <input id="arena-mod-search-input" type="text" placeholder="Search by username…" style="width:100%;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-accent);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;box-sizing:border-box;outline:none;">
+        <div id="arena-mod-search-results" style="margin-top:6px;"></div>
+        <div id="arena-mod-invited-card" style="display:none;margin-top:6px;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-accent);background:var(--mod-accent-muted);font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);display:flex;align-items:center;justify-content:space-between;"></div>
+      </div>
       <button class="arena-cat-cancel" id="arena-cat-cancel">Back</button>
     </div>
   `;
@@ -117,6 +125,84 @@ export function showCategoryPicker(mode: string, topic: string): void {
     linkInput.addEventListener('paste', () => { setTimeout(() => { void scrapeLink(); }, 100); });
   }
 
+  // Mod invite state
+  let invitedModId: string | null = null;
+  let invitedModName: string | null = null;
+
+  // Show/hide invite button when checkbox toggled
+  const wantModToggle = document.getElementById('arena-want-mod-toggle') as HTMLInputElement | null;
+  const inviteModBtn = document.getElementById('arena-invite-mod-btn');
+  const modInviteSearch = document.getElementById('arena-mod-invite-search');
+  wantModToggle?.addEventListener('change', () => {
+    if (wantModToggle.checked) {
+      if (inviteModBtn) inviteModBtn.style.display = 'block';
+    } else {
+      if (inviteModBtn) inviteModBtn.style.display = 'none';
+      if (modInviteSearch) modInviteSearch.style.display = 'none';
+      invitedModId = null;
+      invitedModName = null;
+    }
+  });
+
+  // Open search panel
+  inviteModBtn?.addEventListener('click', () => {
+    if (modInviteSearch) modInviteSearch.style.display = 'block';
+    (document.getElementById('arena-mod-search-input') as HTMLInputElement | null)?.focus();
+  });
+
+  // Moderator search
+  const modSearchInput = document.getElementById('arena-mod-search-input') as HTMLInputElement | null;
+  const modSearchResults = document.getElementById('arena-mod-search-results');
+  const modInvitedCard = document.getElementById('arena-mod-invited-card');
+  let modSearchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  modSearchInput?.addEventListener('input', () => {
+    if (modSearchTimer) clearTimeout(modSearchTimer);
+    const q = modSearchInput.value.trim();
+    if (!q || q.length < 2) { if (modSearchResults) modSearchResults.innerHTML = ''; return; }
+    modSearchTimer = setTimeout(async () => {
+      try {
+        const { data, error } = await safeRpc<{ id: string; username: string; display_name: string; mod_rating: number; mod_debates_total: number }[]>('search_moderators', { p_query: q });
+        if (error || !data || !(data as unknown[]).length) {
+          if (modSearchResults) modSearchResults.innerHTML = '<div style="padding:8px;font-size:13px;color:var(--mod-text-muted);">No moderators found</div>';
+          return;
+        }
+        const mods = data as { id: string; username: string; display_name: string; mod_rating: number; mod_debates_total: number }[];
+        if (modSearchResults) {
+          modSearchResults.innerHTML = mods.map(m => `
+            <div class="mod-search-result" data-id="${escapeHTML(m.id)}" data-name="${escapeHTML(m.display_name || m.username)}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);margin-bottom:6px;cursor:pointer;">
+              <div>
+                <div style="font-family:var(--mod-font-ui);font-size:14px;font-weight:600;color:var(--mod-text-primary);">${escapeHTML(m.display_name || m.username)}</div>
+                <div style="font-size:12px;color:var(--mod-text-muted);">@${escapeHTML(m.username)} · ${m.mod_debates_total ?? 0} debates moderated</div>
+              </div>
+              <div style="font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-accent);">${m.mod_rating ? Number(m.mod_rating).toFixed(1) + '★' : ''}</div>
+            </div>
+          `).join('');
+          modSearchResults.querySelectorAll('.mod-search-result').forEach(el => {
+            el.addEventListener('click', () => {
+              invitedModId = (el as HTMLElement).dataset.id ?? null;
+              invitedModName = (el as HTMLElement).dataset.name ?? null;
+              modSearchResults.innerHTML = '';
+              if (modSearchInput) modSearchInput.value = '';
+              if (modInviteSearch) modInviteSearch.style.display = 'none';
+              if (inviteModBtn) inviteModBtn.style.display = 'none';
+              if (modInvitedCard) {
+                modInvitedCard.style.display = 'flex';
+                modInvitedCard.innerHTML = `<span>⚖️ ${escapeHTML(invitedModName ?? '')} invited</span><button id="arena-mod-invite-clear" style="background:none;border:none;color:var(--mod-text-muted);font-size:18px;cursor:pointer;padding:0;">×</button>`;
+                document.getElementById('arena-mod-invite-clear')?.addEventListener('click', () => {
+                  invitedModId = null;
+                  invitedModName = null;
+                  modInvitedCard.style.display = 'none';
+                  if (inviteModBtn) inviteModBtn.style.display = 'block';
+                });
+              }
+            });
+          });
+        }
+      } catch { if (modSearchResults) modSearchResults.innerHTML = '<div style="padding:8px;font-size:13px;color:var(--mod-text-muted);">Search failed</div>'; }
+    }, 350);
+  });
+
   // Post debate card and trigger background OG scrape
   const postDebate = async (category: string | null) => {
     const title = getTitle();
@@ -136,7 +222,7 @@ export function showCategoryPicker(mode: string, topic: string): void {
       p_content: title,
       p_category: category || 'trending',
       p_total_rounds: selectedRounds,
-      p_want_moderator: wantMod,
+      p_want_moderator: wantMod || !!invitedModId,
     };
     if (linkUrl) params.p_link_url = linkUrl;
 
@@ -146,6 +232,14 @@ export function showCategoryPicker(mode: string, topic: string): void {
     if (error) {
       showToast('Could not post debate — try again', 'error');
       return;
+    }
+
+    // If a specific moderator was invited, send the invite now that we have the debate_id
+    const debateId = (cardData as Record<string, unknown>)?.debate_id as string | undefined;
+    if (invitedModId && debateId) {
+      try {
+        await safeRpc('invite_moderator', { p_debate_id: debateId, p_moderator_id: invitedModId });
+      } catch { /* non-critical — debate is posted, invite just didn't send */ }
     }
 
     showToast('⚔️ Debate posted! Challengers incoming.', 'success');
