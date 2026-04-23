@@ -200,12 +200,19 @@ export function wireSignupForm(getReturnTo: () => string, isPlaceholder: boolean
 }
 
 // Wire tab switching (side-effectful init)
+// SIGN UP tab redirects to plinko (low-friction single-button acquisition funnel)
 document.querySelectorAll('.login-tab').forEach(tab => {
   tab.addEventListener('click', () => {
+    const tabName = (tab as HTMLElement).dataset.tab;
+    if (tabName === 'signup') {
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get('returnTo') || '';
+      window.location.href = 'moderator-plinko.html' + (returnTo ? '?returnTo=' + encodeURIComponent(returnTo) : '');
+      return;
+    }
     document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
     tab.classList.add('active');
-    const tabName = (tab as HTMLElement).dataset.tab;
     if (tabName) {
       const form = document.getElementById('form-' + tabName);
       if (form) form.classList.add('active');

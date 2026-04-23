@@ -39,7 +39,7 @@ export function updateUIFromProfile(user: User | null, profile: Profile | null) 
   if (!profile) {
     const navAvatar = document.getElementById('user-avatar-btn');
     if (navAvatar) {
-      navAvatar.textContent = 'JOIN';
+      navAvatar.textContent = 'SIGN IN';
       navAvatar.style.fontSize = '10px';
       navAvatar.style.letterSpacing = '1px';
       navAvatar.style.fontWeight = '700';
@@ -121,7 +121,7 @@ if (avatarBtn && dropdown) {
     e.stopPropagation();
     // F-74: For guests, tapping the avatar goes straight to signup
     if (!getCurrentUser()) {
-      window.location.href = 'moderator-plinko.html';
+      window.location.href = 'moderator-login.html';
       return;
     }
     dropdown.classList.toggle('open');
