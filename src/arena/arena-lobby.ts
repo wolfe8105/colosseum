@@ -86,7 +86,7 @@ export function renderLobby(): void {
         <button class="arena-secondary-btn" id="arena-private-btn">\u2694\uFE0F PRIVATE DEBATE</button>
         <button class="arena-secondary-btn" id="arena-powerup-shop-btn">\u26A1 POWER-UPS</button>
       </div>
-      ${profile?.is_moderator ? `<div class="arena-btn-row" style="margin-top:0;"><button class="arena-secondary-btn" id="arena-mod-queue-btn" style="width:100%;">🧑‍⚖️ MOD QUEUE</button></div>` : ''}
+      ${profile?.is_moderator ? `<div class="arena-btn-row" style="margin-top:0;"><button class="arena-secondary-btn" id="arena-mod-queue-btn" style="width:100%;font-size:16px;letter-spacing:1.5px;">🧑‍⚖️ MODERATOR QUEUE</button></div>` : ''}
       ${getCurrentUser() && !profile?.is_moderator ? `
       <div id="arena-mod-banner" style="background:var(--mod-bg-card);border:1px solid var(--mod-cyan);border-radius:10px;padding:14px 16px;margin-top:8px;text-align:center;">
         <div style="font-family:var(--mod-font-display);font-size:15px;color:var(--mod-cyan);letter-spacing:1px;margin-bottom:4px;">THE MODERATOR NEEDS MODERATORS</div>

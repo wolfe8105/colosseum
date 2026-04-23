@@ -91,26 +91,26 @@ function getComposerHTML(): string {
     </div>`;
   }
   return `<div style="background:var(--mod-bg-card);border:1px solid var(--mod-accent-muted);border-radius:12px;padding:14px;margin-bottom:16px;">
-    <textarea id="feed-composer-input" placeholder="Let your opinion be heard..." style="
-      width:100%;background:var(--mod-bg-card);border:1px solid var(--mod-border-secondary);border-radius:10px;
-      color:var(--mod-text-heading);padding:12px;font-size:14px;resize:none;height:60px;
-      font-family:var(--mod-font-ui);margin-bottom:8px;box-sizing:border-box;
-    " maxlength="280"></textarea>
-    <div id="feed-composer-link-row" style="margin-bottom:8px;">
-      <input id="feed-composer-link" type="url" placeholder="Paste a link (optional)" style="
-        width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mod-border-secondary);
-        background:var(--mod-bg-card);color:var(--mod-text-heading);font-size:13px;
+    <div id="feed-composer-link-row" style="margin-bottom:10px;">
+      <input id="feed-composer-link" type="url" placeholder="Paste a link to debate…" style="
+        width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--mod-border-secondary);
+        background:var(--mod-bg-subtle);color:var(--mod-text-heading);font-size:14px;
         font-family:var(--mod-font-ui);box-sizing:border-box;
       ">
     </div>
-    <div id="feed-composer-link-preview" style="display:none;margin-bottom:8px;"></div>
+    <div id="feed-composer-link-preview" style="display:none;margin-bottom:10px;"></div>
+    <textarea id="feed-composer-input" placeholder="Your take on this… (optional)" style="
+      width:100%;background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);border-radius:10px;
+      color:var(--mod-text-heading);padding:10px 12px;font-size:14px;resize:none;height:52px;
+      font-family:var(--mod-font-ui);margin-bottom:8px;box-sizing:border-box;
+    " maxlength="280"></textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div id="feed-composer-count" style="font-size:11px;color:var(--mod-text-sub);">0 / 280</div>
       <button data-action="post-debate-card" style="
         background:var(--mod-magenta);color:var(--mod-text-on-accent);border:none;border-radius:8px;
         padding:8px 20px;font-family:var(--mod-font-display);font-size:14px;
         letter-spacing:1px;cursor:pointer;min-height:var(--mod-touch-min);
-      ">POST</button>
+      ">CREATE DEBATE</button>
     </div>
   </div>`;
 }
@@ -362,18 +362,8 @@ export async function renderFeed(): Promise<void> {
 
   let html = '';
   html += renderCategoryPills();
-  html += getComposerHTML();
   html += '<div id="unified-feed"></div>';
   feedEl.innerHTML = html;
-
-  // Wire composer char count
-  const input = document.getElementById('feed-composer-input') as HTMLTextAreaElement | null;
-  const counter = document.getElementById('feed-composer-count');
-  if (input && counter) {
-    input.addEventListener('input', () => {
-      counter.textContent = input.value.length + ' / 280';
-    });
-  }
 
   renderCards();
   startFeedCountdowns();
