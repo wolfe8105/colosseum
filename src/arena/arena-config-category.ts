@@ -117,9 +117,20 @@ export function showCategoryPicker(mode: string, topic: string): void {
     linkInput.addEventListener('paste', () => { setTimeout(() => { void scrapeLink(); }, 100); });
   }
 
+  // Helper: check rounds selected
+  const getRoundsSelected = () => !!overlay.querySelector('.arena-round-btn.selected');
+  const flashRounds = () => {
+    const row = overlay.querySelector('.arena-round-row') as HTMLElement | null;
+    if (!row) return;
+    row.style.outline = '2px solid var(--mod-magenta)';
+    row.style.borderRadius = '8px';
+    setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 1500);
+  };
+
   // Wire category buttons
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      if (!getRoundsSelected()) { flashRounds(); return; }
       set_selectedCategory((btn as HTMLElement).dataset.cat ?? null);
       set_selectedWantMod(getWantMod());
       overlay.remove();
@@ -129,6 +140,7 @@ export function showCategoryPicker(mode: string, topic: string): void {
 
   // Wire "any" button
   document.getElementById('arena-cat-any')?.addEventListener('click', () => {
+    if (!getRoundsSelected()) { flashRounds(); return; }
     set_selectedCategory(null);
     set_selectedWantMod(getWantMod());
     overlay.remove();

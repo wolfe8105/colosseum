@@ -42,38 +42,6 @@ export function showModeSelect(): void {
           <div class="arena-mode-arrow">\u2192</div>
         </div>
       `).join('')}
-      <div class="arena-topic-section">
-        <div class="arena-topic-label">Topic (optional)</div>
-        <input class="arena-topic-input" id="arena-topic-input" type="text" placeholder="e.g. Is AI going to take all our jobs?" maxlength="200">
-      </div>
-      <div class="arena-topic-section" id="arena-link-section">
-        <div class="arena-topic-label">Add a link (optional)</div>
-        <input class="arena-topic-input" id="arena-link-input" type="url" placeholder="Paste a URL to preview on the debate card" maxlength="2000">
-        <div id="arena-link-preview" style="display:none;"></div>
-        <div id="arena-link-error" style="display:none;color:var(--mod-status-live);font-size:12px;margin-top:4px;"></div>
-      </div>
-      <div class="mod-picker-section" id="mod-picker-section">
-        <div class="mod-picker-label">Moderator (optional)</div>
-        <div class="mod-picker-opts" id="mod-picker-opts">
-          <div class="mod-picker-opt selected" data-mod-type="none" data-mod-id="">
-            <div class="mod-picker-avatar">\u2014</div>
-            <div class="mod-picker-info">
-              <div class="mod-picker-name">No Moderator</div>
-              <div class="mod-picker-stats">Debate without moderation</div>
-            </div>
-            <div class="mod-picker-check">\u2713</div>
-          </div>
-          <div class="mod-picker-opt" data-mod-type="ai" data-mod-id="">
-            <div class="mod-picker-avatar">\uD83E\uDD16</div>
-            <div class="mod-picker-info">
-              <div class="mod-picker-name">AI Moderator</div>
-              <div class="mod-picker-stats">Instant rulings, always available</div>
-            </div>
-            <div class="mod-picker-check"></div>
-          </div>
-        </div>
-        <div id="mod-picker-humans" style="margin-top:6px;"></div>
-      </div>
       <button class="arena-mode-cancel" id="arena-mode-cancel">Cancel</button>
     </div>
   `;
@@ -85,7 +53,7 @@ export function showModeSelect(): void {
     const cardEl = card as HTMLElement;
     cardEl.addEventListener('click', () => {
       const mode = cardEl.dataset.mode!;
-      const topic = (document.getElementById('arena-topic-input') as HTMLInputElement | null)?.value?.trim() || '';
+      const topic = '';
       // Capture selected moderator
       const selOpt = overlay.querySelector('.mod-picker-opt.selected') as HTMLElement | null;
       if (selOpt) {
@@ -108,85 +76,10 @@ export function showModeSelect(): void {
     });
   });
 
-  // Wire mod picker selection
-  wireModPicker(overlay);
-
-  // Load available human moderators
-  void loadAvailableModerators(overlay);
-
   // Wire close
   document.getElementById('arena-mode-backdrop')?.addEventListener('click', () => closeModeSelect());
   document.getElementById('arena-mode-cancel')?.addEventListener('click', () => closeModeSelect());
 
-  // Wire link input — scrape OG on blur/paste
-  const linkInput = document.getElementById('arena-link-input') as HTMLInputElement | null;
-  if (linkInput) {
-    let lastScrapedUrl = '';
-    const scrapeLink = async () => {
-      const url = linkInput.value.trim();
-      const previewEl = document.getElementById('arena-link-preview');
-      const errorEl = document.getElementById('arena-link-error');
-      if (!url) {
-        set_selectedLinkUrl(null);
-        set_selectedLinkPreview(null);
-        if (previewEl) previewEl.style.display = 'none';
-        if (errorEl) errorEl.style.display = 'none';
-        return;
-      }
-      if (url === lastScrapedUrl) return;
-      lastScrapedUrl = url;
-
-      // Quick URL validation
-      try { const u = new URL(url); if (u.protocol !== 'https:' && u.protocol !== 'http:') throw 0; }
-      catch { if (errorEl) { errorEl.textContent = 'Enter a valid URL'; errorEl.style.display = 'block'; } return; }
-
-      if (previewEl) { previewEl.style.display = 'block'; previewEl.innerHTML = '<div style="padding:8px;color:var(--mod-text-muted);font-size:12px;">Fetching preview…</div>'; }
-      if (errorEl) errorEl.style.display = 'none';
-
-      try {
-        const client = getSupabaseClient();
-        const session = client ? await client.auth.getSession() : null;
-        const token = session?.data?.session?.access_token;
-        if (!token) { if (errorEl) { errorEl.textContent = 'Sign in to add links'; errorEl.style.display = 'block'; } return; }
-
-        const res = await fetch(`/api/scrape-og?url=${encodeURIComponent(url)}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        clampVercel('/api/scrape-og', res);
-        const data = await res.json();
-        if (!res.ok) {
-          set_selectedLinkUrl(null);
-          set_selectedLinkPreview(null);
-          if (previewEl) previewEl.style.display = 'none';
-          if (errorEl) { errorEl.textContent = data.error || 'Could not preview this link'; errorEl.style.display = 'block'; }
-          return;
-        }
-
-        set_selectedLinkUrl(url);
-        set_selectedLinkPreview(data);
-        if (errorEl) errorEl.style.display = 'none';
-        if (previewEl) {
-          previewEl.style.display = 'block';
-          previewEl.innerHTML = `
-            <div class="arena-link-card-preview">
-              <img src="${escapeHTML(data.image_url)}" alt="" class="arena-link-card-img" onerror="this.style.display='none'">
-              <div class="arena-link-card-meta">
-                <div class="arena-link-card-domain">${escapeHTML(data.domain || '')}</div>
-                ${data.og_title ? `<div class="arena-link-card-title">${escapeHTML(data.og_title)}</div>` : ''}
-              </div>
-            </div>`;
-        }
-      } catch {
-        set_selectedLinkUrl(null);
-        set_selectedLinkPreview(null);
-        if (previewEl) previewEl.style.display = 'none';
-        if (errorEl) { errorEl.textContent = 'Could not fetch link'; errorEl.style.display = 'block'; }
-      }
-    };
-    linkInput.addEventListener('blur', () => { void scrapeLink(); });
-    linkInput.addEventListener('paste', () => { setTimeout(() => { void scrapeLink(); }, 100); });
-  }
-}
 
 export function closeModeSelect(forward?: boolean): void {
   const overlay = document.getElementById('arena-mode-overlay');
