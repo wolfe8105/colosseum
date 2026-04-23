@@ -12,6 +12,7 @@ import {
 } from './notifications.state.ts';
 import { createPanel, open_panel, close_panel, updateBadge, renderList } from './notifications.panel.ts';
 import type { Notification } from './notifications.types.ts';
+import { initPushNotifications } from './push-notifications.ts';
 
 export type { NotificationType, Notification, NotificationFilter } from './notifications.types.ts';
 export { TYPES, ECONOMY_TYPES } from './notifications.types.ts';
@@ -60,6 +61,8 @@ export function init(): void {
     updateBadge();
   } else {
     startPolling();
+    // Init push after auth — non-blocking, noops if app ID not set
+    void initPushNotifications();
   }
 }
 

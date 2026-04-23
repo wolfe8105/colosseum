@@ -244,6 +244,12 @@ export function showCategoryPicker(mode: string, topic: string): void {
 
     showToast('⚔️ Debate posted! Challengers incoming.', 'success');
 
+    // Good moment to ask for push permission — user just took a high-intent action
+    try {
+      const { hasPushPermission, requestPushPermission } = await import('../push-notifications.ts');
+      if (!hasPushPermission()) void requestPushPermission();
+    } catch { /* non-critical */ }
+
     // Claim tokens
     try {
       const { claimActionTokens, claimMilestone } = await import('../tokens.claims.ts');

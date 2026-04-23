@@ -64,6 +64,7 @@ export function createPanel(): void {
         <button class="notif-filter" data-filter="challenge" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚔️ Challenges</button>
         <button class="notif-filter" data-filter="result" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🏆 Results</button>
         <button class="notif-filter" data-filter="reaction" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🔥 Reactions</button>
+        <button class="notif-filter" data-filter="mod_invite" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚖️ Mod Invites</button>
         <button class="notif-filter" data-filter="economy" style="background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">🪙 Economy</button>
       </div>
       <div id="notif-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:8px 0;"></div>
