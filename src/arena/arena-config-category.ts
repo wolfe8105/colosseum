@@ -106,7 +106,7 @@ export function showCategoryPicker(mode: string, topic: string): void {
         if (previewEl) {
           previewEl.style.display = 'block';
           previewEl.innerHTML = '<div style="border-radius:8px;overflow:hidden;border:1px solid var(--mod-border-secondary);">' +
-            (data.image_url ? '<img src="' + escapeHTML(data.image_url) + '" style="width:100%;max-height:140px;object-fit:cover;" onerror="this.style.display='none'">' : '') +
+            (data.image_url ? '<img src="' + escapeHTML(data.image_url) + '" style="width:100%;max-height:140px;object-fit:cover;" onerror="this.style.display=&quot;none&quot;">' : '') +
             '<div style="padding:8px 10px;"><div style="font-size:11px;color:var(--mod-text-muted);">' + escapeHTML(data.domain || '') + '</div>' +
             (data.og_title ? '<div style="font-size:13px;font-weight:600;color:var(--mod-text-heading);margin-top:2px;">' + escapeHTML(data.og_title) + '</div>' : '') +
             '</div></div>';
