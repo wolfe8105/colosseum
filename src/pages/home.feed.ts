@@ -136,29 +136,20 @@ async function postDebateCard(): Promise<void> {
   const linkInput = document.getElementById('feed-composer-link') as HTMLInputElement | null;
   const linkUrl = linkInput?.value?.trim() || null;
 
-  // Scrape OG if link provided
-  let linkPreview: Record<string, string> | null = null;
-  if (linkUrl) {
-    try {
-      const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl));
-      clampVercel('/api/scrape-og', res);
-      if (res.ok) linkPreview = await res.json();
-    } catch { /* proceed without preview */ }
-  }
-
   const btn = document.querySelector('[data-action="post-debate-card"]') as HTMLButtonElement | null;
   if (btn?.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
   try {
+    // Post immediately — card appears in feed right away.
+    // OG image scrape happens in background after posting.
     const params: Record<string, unknown> = {
       p_content: text,
       p_category: currentCategory || 'trending',
     };
     if (linkUrl) params.p_link_url = linkUrl;
-    if (linkPreview) params.p_link_preview = linkPreview;
 
-    const { error } = await safeRpc('create_debate_card', params, create_debate_card);
+    const { data: cardData, error } = await safeRpc('create_debate_card', params, create_debate_card);
     if (error) {
       showToast('Post failed — try again', 'error');
       return;
@@ -179,11 +170,49 @@ async function postDebateCard(): Promise<void> {
     } catch { /* non-critical */ }
 
     void refreshFeed();
+
+    // Background OG scrape — fires after card is live, non-blocking.
+    // Microlink fetches the page, we proxy the image to Supabase,
+    // then patch the debate record. Card updates on next feed refresh.
+    if (linkUrl && (cardData as Record<string,unknown>)?.debate_id) {
+      const debateId = (cardData as Record<string,unknown>).debate_id as string;
+      void _scrapeOgBackground(linkUrl, debateId);
+    }
   } catch {
     showToast('Connection lost — try again', 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'POST'; }
   }
+}
+
+// ============================================================
+// BACKGROUND OG SCRAPE
+// Runs after card is posted. Calls scrape-og API with Microlink,
+// then patches the debate record with the image preview.
+// User never waits — card just gets richer on next refresh.
+// ============================================================
+
+async function _scrapeOgBackground(linkUrl: string, debateId: string): Promise<void> {
+  try {
+    const supabase = getSupabaseClient();
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) return;
+
+    const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl), {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    clampVercel('/api/scrape-og', res);
+    if (!res.ok) return;
+
+    const preview = await res.json();
+    if (!preview?.image_url) return;
+
+    // Patch the debate record with the preview data
+    await supabase
+      .from('arena_debates')
+      .update({ link_preview: preview })
+      .eq('id', debateId);
+  } catch { /* silent — preview is non-critical */ }
 }
 
 // ============================================================

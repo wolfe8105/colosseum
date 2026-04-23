@@ -1,95 +1,81 @@
 // ============================================================
 // THE MODERATOR — OG Preview Scraper (Serverless Function)
 // Session 293 — F-62 Link Card Debates
-// Updated — F-77 Image Proxying (Reddit pattern)
+// Updated — F-77 Microlink Pro + Supabase image proxy
 //
-// WHAT THIS DOES:
-// 1. Takes a URL from authenticated user
-// 2. Fetches the page server-side (avoids CORS)
-// 3. Extracts og:image, og:title, domain
-// 4. Downloads the og:image and re-uploads to Supabase Storage
-//    (same trick Reddit uses — images never 404 because they live
-//    on our CDN, not the source site's)
-// 5. Returns JSON preview data with our stable Supabase image URL
+// FLOW:
+// 1. Authenticated user POSTs a URL
+// 2. Microlink Pro fetches the page (real headless Chromium,
+//    residential proxy rotation, bot detection bypass)
+// 3. Microlink returns og:title, og:image URL, domain
+// 4. We download the og:image and re-upload to Supabase Storage
+//    → image lives on our CDN permanently, never 404s
+// 5. Return stable Supabase image URL + metadata
 //
-// ROUTE: /api/scrape-og?url=<encoded-url>
+// WHY MICROLINK:
+// Our own curl/fetch gets blocked by ESPN, CNN, Cloudflare-protected
+// sites. Microlink runs real Chromium with residential proxies and
+// handles bot detection on the top 500 sites automatically.
 //
-// WHY IMAGE PROXYING:
-// Storing raw og:image URLs (espncdn.com, media.cnn.com, etc.) breaks
-// constantly — hotlink protection, CDN expiry, CORS, 404s.
-// Reddit solves this by copying every image to their own CDN immediately.
-// We do the same: fetch → upload to link-previews bucket → store our URL.
+// WHY SUPABASE STORAGE:
+// Even with Microlink giving us the correct og:image URL, that URL
+// lives on ESPN/CNN's CDN and can break (hotlink protection, token
+// expiry, 404). We copy it to our own storage so it's permanent.
+// Same pattern Reddit uses with external-preview.redd.it.
+//
+// ROUTE: GET /api/scrape-og?url=<encoded>
+//        POST /api/scrape-og  { url }
 // ============================================================
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const MICROLINK_API_KEY = process.env.MICROLINK_API_KEY;
 
 const STORAGE_BUCKET = 'link-previews';
-
-// Max response body to read (1MB — enough for <head> section)
-const MAX_BODY_BYTES = 1024 * 1024;
-// Scrape timeout
-const FETCH_TIMEOUT_MS = 8000;
-
-function extractMeta(html, property) {
-  // Match <meta property="og:X" content="..."> or <meta name="og:X" content="...">
-  const patterns = [
-    new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'),
-    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`, 'i'),
-  ];
-  for (const re of patterns) {
-    const match = html.match(re);
-    if (match) return match[1];
-  }
-  return null;
-}
+const MICROLINK_ENDPOINT = 'https://pro.microlink.io';
 
 function getDomain(url) {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, '');
-  } catch {
-    return null;
-  }
+  try { return new URL(url).hostname.replace(/^www\./, ''); }
+  catch { return null; }
 }
 
-// Deterministic filename from URL — same URL always produces same filename
-// so we never upload duplicates for the same article
+function isValidUrl(url) {
+  try { const u = new URL(url); return u.protocol === 'https:' || u.protocol === 'http:'; }
+  catch { return false; }
+}
+
+// Deterministic filename — same article URL always maps to same file.
+// Deduplicates uploads when multiple users post the same link.
 function imageFilename(imageUrl) {
-  // Simple hash: sum of char codes, then hex. Good enough for dedup.
   let hash = 0;
   for (let i = 0; i < imageUrl.length; i++) {
     hash = ((hash << 5) - hash) + imageUrl.charCodeAt(i);
     hash |= 0;
   }
-  const unsigned = (hash >>> 0).toString(16).padStart(8, '0');
-  // Guess extension from URL, default to jpg
-  const ext = imageUrl.match(/\.(png|webp|gif|jpe?g)(\?|$)/i)?.[1]?.replace('jpeg','jpg') || 'jpg';
-  return `${unsigned}.${ext}`;
+  const hex = (hash >>> 0).toString(16).padStart(8, '0');
+  const ext = imageUrl.match(/\.(png|webp|gif|jpe?g)(\?|$)/i)?.[1]?.replace('jpeg', 'jpg') || 'jpg';
+  return `${hex}.${ext}`;
 }
 
-// Fetch an image URL and upload to Supabase Storage.
-// Returns the public Supabase CDN URL, or null on failure.
-async function proxyImage(imageUrl) {
+// Download og:image from source and upload to Supabase Storage.
+// Returns our permanent CDN URL, or null on failure.
+async function proxyImageToSupabase(imageUrl) {
   try {
     const filename = imageFilename(imageUrl);
     const storagePath = `og/${filename}`;
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
 
-    // Check if we already have this image cached — if so, skip upload
+    // Already cached — return immediately without re-uploading
     const checkRes = await fetch(
       `${SUPABASE_URL}/storage/v1/object/info/public/${STORAGE_BUCKET}/${storagePath}`,
       { headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
     );
-    if (checkRes.ok) {
-      // Already cached — return existing URL
-      return publicUrl;
-    }
+    if (checkRes.ok) return publicUrl;
 
-    // Fetch the image bytes
+    // Download image (10s timeout, 4MB cap)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const imgRes = await fetch(imageUrl, {
       signal: controller.signal,
       headers: {
@@ -101,15 +87,12 @@ async function proxyImage(imageUrl) {
     clearTimeout(timeout);
 
     if (!imgRes.ok) return null;
-
     const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
     if (!contentType.startsWith('image/')) return null;
 
-    // Size limit: 4MB
     const bytes = await imgRes.arrayBuffer();
     if (bytes.byteLength > 4 * 1024 * 1024) return null;
 
-    // Upload to Supabase Storage
     const uploadRes = await fetch(
       `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`,
       {
@@ -118,135 +101,99 @@ async function proxyImage(imageUrl) {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
           'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000', // 1 year
-          'x-upsert': 'false', // don't overwrite existing
+          'Cache-Control': 'public, max-age=31536000',
+          'x-upsert': 'false',
         },
         body: bytes,
       }
     );
 
-    if (!uploadRes.ok) return null;
-    return publicUrl;
-
+    return uploadRes.ok ? publicUrl : null;
   } catch {
     return null;
   }
 }
 
-function isValidUrl(url) {
-  try {
-    const u = new URL(url);
-    return u.protocol === 'https:' || u.protocol === 'http:';
-  } catch {
-    return false;
-  }
+// Microlink Pro — real Chromium + residential proxies.
+// Handles ESPN, CNN, Bloomberg, any bot-protected site automatically.
+async function fetchWithMicrolink(url) {
+  const params = new URLSearchParams({ url, meta: 'true' });
+  const res = await fetch(`${MICROLINK_ENDPOINT}?${params}`, {
+    headers: { 'x-api-key': MICROLINK_API_KEY },
+  });
+
+  if (!res.ok) return null;
+  const json = await res.json();
+  if (json.status !== 'success' || !json.data) return null;
+
+  const { data } = json;
+  return {
+    imageUrl: data.image?.url || null,
+    ogTitle: data.title || null,
+    domain: getDomain(url),
+  };
 }
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', 'https://themoderator.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-  // Auth gate — require valid Supabase session
+  // Auth gate
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  // Verify token with Supabase
   try {
     const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        'Authorization': authHeader,
-        'apikey': SUPABASE_ANON_KEY,
-      },
+      headers: { 'Authorization': authHeader, 'apikey': SUPABASE_ANON_KEY },
     });
     if (!userRes.ok) return res.status(401).json({ error: 'Invalid session' });
   } catch {
     return res.status(401).json({ error: 'Auth verification failed' });
   }
 
-  const url = req.query.url;
+  // URL from query string (GET) or body (POST)
+  let url;
+  if (req.method === 'POST') {
+    try {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      url = body?.url;
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  } else {
+    url = req.query.url;
+  }
+
   if (!url || !isValidUrl(url)) {
-    return res.status(400).json({ error: 'Invalid URL. Provide a valid http or https URL.' });
+    return res.status(400).json({ error: 'Invalid URL' });
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; TheModeratorBot/1.0; +https://themoderator.app)',
-        'Accept': 'text/html',
-      },
-      redirect: 'follow',
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      return res.status(422).json({ error: `URL returned ${response.status}` });
+    // Microlink handles bot detection, JS rendering, proxy rotation
+    const meta = await fetchWithMicrolink(url);
+    if (!meta?.imageUrl) {
+      return res.status(422).json({ error: 'No preview image found for this URL' });
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml')) {
-      return res.status(422).json({ error: 'URL does not return HTML' });
-    }
-
-    // Read body with size limit
-    const reader = response.body.getReader();
-    const chunks = [];
-    let totalBytes = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.length;
-      chunks.push(value);
-      if (totalBytes >= MAX_BODY_BYTES) break;
-    }
-
-    const html = new TextDecoder().decode(Buffer.concat(chunks.map(c => Buffer.from(c))));
-
-    // Extract OG data
-    const ogImage = extractMeta(html, 'og:image');
-    const ogTitle = extractMeta(html, 'og:title');
-    const domain = getDomain(url);
-
-    if (!ogImage) {
-      return res.status(422).json({ error: 'No og:image found. Try a different link.' });
-    }
-
-    // Resolve relative og:image URLs
-    let imageUrl = ogImage;
-    if (ogImage.startsWith('/')) {
-      try {
-        const base = new URL(url);
-        imageUrl = `${base.protocol}//${base.host}${ogImage}`;
-      } catch { /* keep as-is */ }
-    }
-
-    // Proxy the image through Supabase Storage (Reddit pattern).
-    // If proxying fails for any reason, fall back to the original URL —
-    // better a sometimes-broken image than no preview at all.
-    const proxiedUrl = await proxyImage(imageUrl);
+    // Copy image to our CDN — permanent, never breaks
+    const proxiedUrl = await proxyImageToSupabase(meta.imageUrl);
 
     return res.status(200).json({
-      image_url: proxiedUrl || imageUrl,
-      og_title: ogTitle || null,
-      domain: domain || null,
-      proxied: !!proxiedUrl, // handy for debugging
+      image_url: proxiedUrl || meta.imageUrl,
+      og_title: meta.ogTitle,
+      domain: meta.domain,
+      proxied: !!proxiedUrl,
     });
   } catch (err) {
-    if (err.name === 'AbortError') {
-      return res.status(422).json({ error: 'URL took too long to respond' });
-    }
-    return res.status(422).json({ error: 'Could not fetch URL' });
+    console.error('[scrape-og] error:', err);
+    return res.status(422).json({ error: 'Could not fetch preview' });
   }
 }
