@@ -1,13 +1,13 @@
 // arena-config-category.ts — Category + rounds picker bottom sheet
 // Part of the arena-config-mode split
 
-import { set_selectedCategory, set_selectedWantMod, set_selectedLinkUrl, set_selectedLinkPreview } from './arena-state.ts';
-import { escapeHTML } from '../config.ts';
+import { set_selectedCategory, set_selectedWantMod, set_selectedLinkUrl, set_selectedLinkPreview, selectedRounds } from './arena-state.ts';
+import { escapeHTML, showToast } from '../config.ts';
 import { clampVercel } from '../contracts/dependency-clamps.ts';
-import { getSupabaseClient } from '../auth.ts';
+import { getSupabaseClient, safeRpc } from '../auth.ts';
+import { create_debate_card } from '../contracts/rpc-schemas.ts';
 import { QUEUE_CATEGORIES } from './arena-constants.ts';
 import { pushArenaState } from './arena-core.utils.ts';
-import { enterQueue } from './arena-queue.ts';
 import { roundPickerCSS, roundPickerHTML, wireRoundPicker } from './arena-config-round-picker.ts';
 
 export function showCategoryPicker(mode: string, topic: string): void {
@@ -117,34 +117,84 @@ export function showCategoryPicker(mode: string, topic: string): void {
     linkInput.addEventListener('paste', () => { setTimeout(() => { void scrapeLink(); }, 100); });
   }
 
-  // Helper: check rounds selected
-  const getRoundsSelected = () => !!overlay.querySelector('.arena-round-btn.selected');
-  const flashRounds = () => {
-    const row = overlay.querySelector('.arena-round-row') as HTMLElement | null;
-    if (!row) return;
-    row.style.outline = '2px solid var(--mod-magenta)';
-    row.style.borderRadius = '8px';
-    setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 1500);
+  // Post debate card and trigger background OG scrape
+  const postDebate = async (category: string | null) => {
+    const title = getTitle();
+    const linkUrl = (document.getElementById('arena-cat-link') as HTMLInputElement | null)?.value?.trim() || null;
+    const wantMod = getWantMod();
+
+    if (!title) {
+      const titleInput = document.getElementById('arena-cat-title') as HTMLInputElement | null;
+      if (titleInput) { titleInput.style.borderColor = 'var(--mod-magenta)'; setTimeout(() => { titleInput.style.borderColor = 'var(--mod-border-primary)'; }, 1500); }
+      return;
+    }
+
+    set_selectedCategory(category);
+    set_selectedWantMod(wantMod);
+
+    const params: Record<string, unknown> = {
+      p_content: title,
+      p_category: category || 'trending',
+      p_total_rounds: selectedRounds,
+      p_want_moderator: wantMod,
+    };
+    if (linkUrl) params.p_link_url = linkUrl;
+
+    overlay.remove();
+
+    const { data: cardData, error } = await safeRpc('create_debate_card', params, create_debate_card);
+    if (error) {
+      showToast('Could not post debate — try again', 'error');
+      return;
+    }
+
+    showToast('⚔️ Debate posted! Challengers incoming.', 'success');
+
+    // Claim tokens
+    try {
+      const { claimActionTokens, claimMilestone } = await import('../tokens.claims.ts');
+      void claimActionTokens?.('hot_take', '');
+      void claimMilestone?.('first_hot_take');
+    } catch { /* non-critical */ }
+
+    // Background OG scrape if link provided
+    if (linkUrl && (cardData as Record<string, unknown>)?.debate_id) {
+      const debateId = (cardData as Record<string, unknown>).debate_id as string;
+      void _scrapeOgBackground(linkUrl, debateId);
+    }
+
+    // Navigate home to see the card in the feed
+    const { navigateTo } = await import('../navigation.ts');
+    navigateTo('home');
+  };
+
+  // Background OG scrape — same pattern as home.feed.ts
+  const _scrapeOgBackground = async (linkUrl: string, debateId: string): Promise<void> => {
+    try {
+      const client = getSupabaseClient();
+      const session = client ? await client.auth.getSession() : null;
+      const token = session?.data?.session?.access_token;
+      if (!token) return;
+      const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl), { headers: { 'Authorization': 'Bearer ' + token } });
+      clampVercel('/api/scrape-og', res);
+      if (!res.ok) return;
+      const preview = await res.json();
+      if (!preview?.image_url) return;
+      const supabase = getSupabaseClient();
+      if (supabase) await (supabase as any).from('arena_debates').update({ link_preview: preview }).eq('id', debateId);
+    } catch { /* silent */ }
   };
 
   // Wire category buttons
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (!getRoundsSelected()) { flashRounds(); return; }
-      set_selectedCategory((btn as HTMLElement).dataset.cat ?? null);
-      set_selectedWantMod(getWantMod());
-      overlay.remove();
-      enterQueue(mode, getTitle());
+      void postDebate((btn as HTMLElement).dataset.cat ?? null);
     });
   });
 
   // Wire "any" button
   document.getElementById('arena-cat-any')?.addEventListener('click', () => {
-    if (!getRoundsSelected()) { flashRounds(); return; }
-    set_selectedCategory(null);
-    set_selectedWantMod(getWantMod());
-    overlay.remove();
-    enterQueue(mode, getTitle());
+    void postDebate(null);
   });
 
   // Wire cancel — go back to lobby
