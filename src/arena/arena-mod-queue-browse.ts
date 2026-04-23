@@ -28,6 +28,10 @@ export function showModQueue(): void {
     <div style="padding:0 16px 16px;">
       <button class="arena-secondary-btn" id="mod-queue-back" style="width:100%;margin-bottom:16px;">← BACK</button>
       ${profile?.is_moderator ? `<button class="arena-secondary-btn" id="mod-queue-create-debate" style="width:100%;margin-bottom:16px;border-color:var(--mod-accent-primary);color:var(--mod-accent-primary);">⚔️ CREATE DEBATE</button>` : ''}
+      <div id="mod-invite-section" style="display:none;margin-bottom:16px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:2px;color:var(--mod-accent);text-transform:uppercase;margin-bottom:8px;">⚖️ INVITED TO MODERATE</div>
+        <div id="mod-invite-list"></div>
+      </div>
       <div id="mod-queue-list"></div>
     </div>
   `;
@@ -45,6 +49,7 @@ export function showModQueue(): void {
   });
 
   void loadModQueue();
+  void loadPendingModInvites();
   startModQueuePoll();
 }
 
@@ -141,4 +146,71 @@ export function stopModQueuePoll(): void {
     clearInterval(modQueuePollTimer);
     set_modQueuePollTimer(null);
   }
+}
+
+export async function loadPendingModInvites(): Promise<void> {
+  const section = document.getElementById('mod-invite-section');
+  const listEl = document.getElementById('mod-invite-list');
+  if (!section || !listEl) return;
+
+  try {
+    const { data, error } = await safeRpc<{
+      debate_id: string;
+      topic: string;
+      category: string;
+      mode: string;
+      inviter_name: string;
+      created_at: string;
+    }[]>('get_pending_mod_invites');
+
+    if (error || !data || !(data as unknown[]).length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    const invites = data as { debate_id: string; topic: string; category: string; mode: string; inviter_name: string; created_at: string }[];
+    section.style.display = 'block';
+
+    listEl.innerHTML = invites.map(inv => `
+      <div class="mod-invite-card" data-debate-id="${escapeHTML(inv.debate_id)}" style="background:var(--mod-bg-card);border:1px solid var(--mod-accent);border-radius:var(--mod-radius-md);padding:14px 16px;margin-bottom:10px;">
+        <div style="font-family:var(--mod-font-ui);font-size:11px;letter-spacing:1.5px;color:var(--mod-text-secondary);text-transform:uppercase;margin-bottom:6px;">${escapeHTML(inv.category)} · ${escapeHTML(inv.mode)}</div>
+        <div style="font-family:var(--mod-font-body);font-size:15px;font-weight:600;color:var(--mod-text-primary);margin-bottom:4px;">${escapeHTML(inv.topic || 'Untitled Debate')}</div>
+        <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-secondary);margin-bottom:12px;">Invited by ${escapeHTML(inv.inviter_name)}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="arena-secondary-btn mod-invite-accept-btn" data-debate-id="${escapeHTML(inv.debate_id)}" style="flex:1;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);border-color:var(--mod-accent-primary);">ACCEPT</button>
+          <button class="arena-secondary-btn mod-invite-decline-btn" data-debate-id="${escapeHTML(inv.debate_id)}" style="flex:1;">DECLINE</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Wire accept buttons
+    listEl.querySelectorAll<HTMLButtonElement>('.mod-invite-accept-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+          const { error } = await safeRpc('respond_mod_invite', { p_debate_id: btn.dataset.debateId, p_accept: true });
+          if (error) { showToast('Could not accept — try again'); btn.disabled = false; btn.textContent = 'ACCEPT'; return; }
+          btn.closest('.mod-invite-card')?.remove();
+          showToast('✅ Accepted! You\'re the moderator.', 'success');
+          if (!listEl.querySelector('.mod-invite-card')) section.style.display = 'none';
+        } catch { showToast('Could not accept — try again'); btn.disabled = false; btn.textContent = 'ACCEPT'; }
+      });
+    });
+
+    // Wire decline buttons
+    listEl.querySelectorAll<HTMLButtonElement>('.mod-invite-decline-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+          await safeRpc('respond_mod_invite', { p_debate_id: btn.dataset.debateId, p_accept: false });
+          btn.closest('.mod-invite-card')?.remove();
+          showToast('Declined — debate is now open to any moderator');
+          if (!listEl.querySelector('.mod-invite-card')) section.style.display = 'none';
+        } catch { showToast('Could not decline — try again'); btn.disabled = false; btn.textContent = 'DECLINE'; }
+      });
+    });
+
+  } catch { section.style.display = 'none'; }
 }
