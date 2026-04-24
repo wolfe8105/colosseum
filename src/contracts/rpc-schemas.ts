@@ -627,7 +627,7 @@ export const increment_questions_answered = z.object({
 export const create_debate_card = z.object({
   success: z.boolean().optional(),
   error: z.string().optional(),
-  debate_id: z.string().optional(),
+  id: z.string().optional(),
 }).passthrough();
 
 
