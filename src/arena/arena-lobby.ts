@@ -24,6 +24,7 @@ import { showPrivateLobbyPicker } from './arena-private-picker.ts';
 import { showModQueue } from './arena-mod-queue-browse.ts';
 import { joinWithCode } from './arena-private-lobby.join.ts';
 import { loadPendingChallenges } from './arena-pending-challenges.ts';
+import { loadMyOpenDebates } from './arena-lobby.open-debates.ts';
 import { stopReferencePoll } from './arena-mod-refs.ts';
 import { enterFeedRoomAsSpectator } from './arena-feed-room.ts';
 import {
@@ -98,6 +99,10 @@ export function renderLobby(): void {
         <button class="arena-secondary-btn" id="arena-join-code-btn" style="flex:0 0 auto;padding:10px 18px;">GO</button>
       </div>
     </div>
+    <div class="arena-section" id="arena-my-open-section" style="display:none;">
+      <div class="arena-section-title"><span class="section-dot" style="background:var(--mod-accent);"></span> YOUR OPEN DEBATES</div>
+      <div id="arena-my-open-feed"></div>
+    </div>
     <div class="arena-section" id="arena-pending-challenges-section" style="display:none;">
       <div class="arena-section-title"><span class="section-dot live-dot"></span> CHALLENGES FOR YOU</div>
       <div id="arena-pending-challenges-feed"></div>
@@ -162,7 +167,10 @@ export function renderLobby(): void {
 
   // Load lobby content
   void loadLobbyFeed();
-  if (!isPlaceholder()) void loadPendingChallenges();
+  if (!isPlaceholder()) {
+    void loadPendingChallenges();
+    void loadMyOpenDebates();
+  }
 
   // Event delegation for arena card links
   lobby.addEventListener('click', (e: Event) => {
