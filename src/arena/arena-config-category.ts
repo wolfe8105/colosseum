@@ -232,8 +232,8 @@ export function showCategoryPicker(mode: string, topic: string): void {
       return;
     }
 
-    // If a specific moderator was invited, send the invite now that we have the debate_id
-    const debateId = (cardData as Record<string, unknown>)?.debate_id as string | undefined;
+    // If a specific moderator was invited, send the invite now that we have the debate id
+    const debateId = (cardData as Record<string, unknown>)?.id as string | undefined;
     if (invitedModId && debateId) {
       try {
         await safeRpc('invite_moderator', { p_debate_id: debateId, p_moderator_id: invitedModId });
@@ -256,8 +256,8 @@ export function showCategoryPicker(mode: string, topic: string): void {
     } catch { /* non-critical */ }
 
     // Background OG scrape if link provided
-    if (linkUrl && (cardData as Record<string, unknown>)?.debate_id) {
-      const debateId = (cardData as Record<string, unknown>).debate_id as string;
+    if (linkUrl && (cardData as Record<string, unknown>)?.id) {
+      const debateId = (cardData as Record<string, unknown>).id as string;
       void _scrapeOgBackground(linkUrl, debateId);
     }
 
