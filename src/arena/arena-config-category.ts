@@ -60,16 +60,30 @@ export function showCategoryPicker(mode: string, topic: string): void {
         <div id="arena-cat-link-preview" style="display:none;margin-top:8px;"></div>
         <div id="arena-cat-link-error" style="display:none;color:var(--mod-status-live);font-size:12px;margin-top:4px;"></div>
       </div>
-      <label id="arena-want-mod-row" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;user-select:none;margin-bottom:8px;">
-        <input type="checkbox" id="arena-want-mod-toggle" style="width:22px;height:22px;accent-color:var(--mod-accent-primary);cursor:pointer;flex-shrink:0;">
-        <div>
-          <div style="font-family:var(--mod-font-ui);font-size:15px;font-weight:700;color:var(--mod-text-heading);letter-spacing:0.5px;">🧑‍⚖️ REQUEST A MODERATOR</div>
-          <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-top:2px;">A human moderator will judge this debate</div>
-        </div>
-      </label>
-      <button id="arena-invite-mod-btn" style="display:none;width:100%;padding:12px 16px;border-radius:var(--mod-radius-md);border:1px dashed var(--mod-border-primary);background:transparent;color:var(--mod-text-body);font-family:var(--mod-font-ui);font-size:14px;cursor:pointer;text-align:left;margin-bottom:12px;">
-        👤 INVITE A SPECIFIC MODERATOR
-      </button>
+      <div class="arena-round-label" style="margin-bottom:8px;">Choose a Moderator</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <button class="arena-mod-opt" id="arena-mod-ai" data-mod="ai" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;text-align:left;width:100%;transition:all 0.15s;">
+          <span style="font-size:22px;">🤖</span>
+          <div>
+            <div style="font-family:var(--mod-font-ui);font-size:14px;font-weight:700;color:var(--mod-text-heading);letter-spacing:0.5px;">AI MODERATOR</div>
+            <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-top:2px;">Claude judges the debate instantly</div>
+          </div>
+        </button>
+        <button class="arena-mod-opt" id="arena-mod-human" data-mod="human" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;text-align:left;width:100%;transition:all 0.15s;">
+          <span style="font-size:22px;">🧑‍⚖️</span>
+          <div>
+            <div style="font-family:var(--mod-font-ui);font-size:14px;font-weight:700;color:var(--mod-text-heading);letter-spacing:0.5px;">REQUEST A MODERATOR</div>
+            <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-top:2px;">A human moderator will claim and judge this debate</div>
+          </div>
+        </button>
+        <button class="arena-mod-opt" id="arena-mod-invite" data-mod="invite" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-border-primary);background:var(--mod-bg-card);cursor:pointer;text-align:left;width:100%;transition:all 0.15s;">
+          <span style="font-size:22px;">👤</span>
+          <div>
+            <div style="font-family:var(--mod-font-ui);font-size:14px;font-weight:700;color:var(--mod-text-heading);letter-spacing:0.5px;">INVITE A SPECIFIC MODERATOR</div>
+            <div style="font-family:var(--mod-font-ui);font-size:12px;color:var(--mod-text-muted);margin-top:2px;">Search and assign someone you trust</div>
+          </div>
+        </button>
+      </div>
       <div id="arena-mod-invite-search" style="display:none;margin-bottom:12px;">
         <input id="arena-mod-search-input" type="text" placeholder="Search by username…" style="width:100%;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-accent);background:var(--mod-bg-card);color:var(--mod-text-primary);font-family:var(--mod-font-ui);font-size:14px;box-sizing:border-box;outline:none;">
         <div id="arena-mod-search-results" style="margin-top:6px;"></div>
@@ -85,7 +99,10 @@ export function showCategoryPicker(mode: string, topic: string): void {
 
   // Helper: read title from input
   const getTitle = () => (document.getElementById('arena-cat-title') as HTMLInputElement | null)?.value?.trim() || topic;
-  const getWantMod = () => (document.getElementById('arena-want-mod-toggle') as HTMLInputElement | null)?.checked ?? false;
+  // modChoice: 'ai' | 'human' | 'invite' — must be set before posting
+  let modChoice: string | null = null;
+  let selectedCategory: string | null = null;
+  const submitBtn = document.getElementById('arena-cat-submit') as HTMLButtonElement | null;
 
   // Wire link scraping
   const linkInput = document.getElementById('arena-cat-link') as HTMLInputElement | null;
@@ -131,26 +148,37 @@ export function showCategoryPicker(mode: string, topic: string): void {
   // Mod invite state
   let invitedModId: string | null = null;
   let invitedModName: string | null = null;
-
-  // Show/hide invite button when checkbox toggled
-  const wantModToggle = document.getElementById('arena-want-mod-toggle') as HTMLInputElement | null;
-  const inviteModBtn = document.getElementById('arena-invite-mod-btn');
   const modInviteSearch = document.getElementById('arena-mod-invite-search');
-  wantModToggle?.addEventListener('change', () => {
-    if (wantModToggle.checked) {
-      if (inviteModBtn) inviteModBtn.style.display = 'block';
-    } else {
-      if (inviteModBtn) inviteModBtn.style.display = 'none';
-      if (modInviteSearch) modInviteSearch.style.display = 'none';
-      invitedModId = null;
-      invitedModName = null;
-    }
-  });
 
-  // Open search panel
-  inviteModBtn?.addEventListener('click', () => {
-    if (modInviteSearch) modInviteSearch.style.display = 'block';
-    (document.getElementById('arena-mod-search-input') as HTMLInputElement | null)?.focus();
+  // Helper: re-evaluate whether submit should be enabled
+  const checkSubmitReady = () => {
+    if (submitBtn) submitBtn.disabled = !(selectedCategory && modChoice);
+  };
+
+  // Wire the three mod option cards
+  overlay.querySelectorAll('.arena-mod-opt').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      overlay.querySelectorAll('.arena-mod-opt').forEach(b => {
+        (b as HTMLElement).style.borderColor = 'var(--mod-border-primary)';
+        (b as HTMLElement).style.background = 'var(--mod-bg-card)';
+      });
+      (btn as HTMLElement).style.borderColor = 'var(--mod-accent)';
+      (btn as HTMLElement).style.background = 'var(--mod-accent-muted)';
+      modChoice = (btn as HTMLElement).dataset.mod ?? null;
+
+      // Show/hide search panel
+      if (modChoice === 'invite') {
+        if (modInviteSearch) modInviteSearch.style.display = 'block';
+        (document.getElementById('arena-mod-search-input') as HTMLInputElement | null)?.focus();
+      } else {
+        if (modInviteSearch) modInviteSearch.style.display = 'none';
+        invitedModId = null;
+        invitedModName = null;
+        const modInvitedCard = document.getElementById('arena-mod-invited-card');
+        if (modInvitedCard) modInvitedCard.style.display = 'none';
+      }
+      checkSubmitReady();
+    });
   });
 
   // Moderator search
@@ -210,7 +238,6 @@ export function showCategoryPicker(mode: string, topic: string): void {
   const postDebate = async (category: string | null) => {
     const title = getTitle();
     const linkUrl = (document.getElementById('arena-cat-link') as HTMLInputElement | null)?.value?.trim() || null;
-    const wantMod = getWantMod();
 
     if (!title) {
       const titleInput = document.getElementById('arena-cat-title') as HTMLInputElement | null;
@@ -218,8 +245,10 @@ export function showCategoryPicker(mode: string, topic: string): void {
       return;
     }
 
+    if (!modChoice) return; // shouldn't reach here but guard anyway
+
     set_selectedCategory(category);
-    set_selectedWantMod(wantMod);
+    set_selectedWantMod(modChoice === 'human');
 
     const params: Record<string, unknown> = {
       p_content: title,
@@ -287,17 +316,14 @@ export function showCategoryPicker(mode: string, topic: string): void {
   };
 
   // Wire category buttons — tap to select, not to submit
-  let selectedCategory: string | null = null;
-  const submitBtn = document.getElementById('arena-cat-submit') as HTMLButtonElement | null;
-
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       // Deselect all, select tapped
       overlay.querySelectorAll('.arena-cat-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedCategory = (btn as HTMLElement).dataset.cat ?? null;
-      // Enable submit now that a category is chosen
-      if (submitBtn) submitBtn.disabled = false;
+        // Enable submit only when both category and mod choice are set
+      checkSubmitReady();
     });
   });
 
