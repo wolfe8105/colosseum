@@ -15,6 +15,7 @@ import {
   renderFeedEmpty,
   renderModeratorCard,
   injectOpenCardCSS,
+  injectFeedCardHeroCSS,
   startFeedCountdowns,
 } from '../feed-card.ts';
 import type { UnifiedFeedCard } from '../feed-card.ts';
@@ -343,6 +344,7 @@ function renderCategoryPills(): string {
 
 export async function renderFeed(): Promise<void> {
   injectOpenCardCSS();
+  injectFeedCardHeroCSS();
 
   const homeScreen = document.getElementById('screen-home');
   if (!homeScreen) return;
