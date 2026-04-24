@@ -252,7 +252,7 @@ function _renderLinkPreview(card: UnifiedFeedCard): string {
   if (!card.link_url || !lp?.image_url) return '';
   // Full-bleed hero — negative margin pulls it to card edges, sits at top before title
   return `<a href="${esc(card.link_url)}" target="_blank" rel="noopener" class="feed-card-hero-link" onclick="event.stopPropagation()">
-    <img src="${esc(lp.image_url)}" alt="" class="feed-card-hero-img" onerror="this.parentElement.style.display='none'">
+    <img src="${esc(lp.image_url)}" alt="" class="feed-card-hero-img">
     ${lp.domain ? `<span class="feed-card-hero-domain">${esc(lp.domain)}</span>` : ''}
   </a>`;
 }
@@ -335,7 +335,7 @@ export function injectFeedCardHeroCSS(): void {
   const style = document.createElement('style');
   style.id = 'feed-card-hero-css';
   style.textContent = `
-    .feed-card-hero-link { display: block; text-decoration: none; margin: calc(-1 * var(--mod-space-md)) calc(-1 * var(--mod-space-lg)) var(--mod-space-sm); overflow: hidden; border-radius: var(--mod-radius-md) var(--mod-radius-md) 0 0; position: relative; height: 180px; }
+    .feed-card-hero-link { display: block; text-decoration: none; margin: calc(-1 * var(--mod-space-md)) calc(-1 * var(--mod-space-lg)) var(--mod-space-sm); overflow: hidden; border-radius: var(--mod-radius-md) var(--mod-radius-md) 0 0; position: relative; height: 180px; background: var(--mod-bg-elevated); }
     .feed-card-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .feed-card-hero-domain { position: absolute; bottom: 6px; left: 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); color: rgba(255,255,255,0.85); font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
     .feed-card-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
