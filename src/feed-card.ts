@@ -252,7 +252,7 @@ function _renderLinkPreview(card: UnifiedFeedCard): string {
   if (!card.link_url || !lp?.image_url) return '';
   // Full-bleed hero — negative margin pulls it to card edges, sits at top before title
   return `<a href="${esc(card.link_url)}" target="_blank" rel="noopener" class="feed-card-hero-link" onclick="event.stopPropagation()">
-    <img src="${esc(lp.image_url)}" alt="" class="feed-card-hero-img" onerror="this.closest('.feed-card-hero-link').style.display='none'">
+    <img src="${esc(lp.image_url)}" alt="" class="feed-card-hero-img" onerror="this.parentElement.style.display='none'">
     ${lp.domain ? `<span class="feed-card-hero-domain">${esc(lp.domain)}</span>` : ''}
   </a>`;
 }
@@ -344,6 +344,16 @@ export function injectFeedCardHeroCSS(): void {
     .feed-card-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--mod-bg-inset); border: 2px solid var(--mod-border-primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--mod-text-muted); flex-shrink: 0; text-transform: uppercase; }
     .feed-card-avatar-name { font-size: 12px; font-weight: 600; color: var(--mod-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
     .feed-card-vs-pill { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--mod-accent); flex-shrink: 0; }
+    .arena-card { background: var(--mod-bg-card); border: 1px solid var(--mod-border-primary); border-left: var(--mod-card-bar-width) solid var(--mod-bar-secondary); border-radius: var(--mod-radius-md); padding: var(--mod-space-md) var(--mod-space-lg); margin-bottom: var(--mod-space-sm); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .arena-card-topic { font-family: var(--mod-font-ui); font-size: var(--mod-font-card-title-size, 15px); font-weight: var(--mod-font-card-title-weight, 700); color: var(--mod-text-primary); letter-spacing: var(--mod-font-card-title-spacing, 0.5px); line-height: 1.35; margin-bottom: 6px; }
+    .arena-card-badge { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: var(--mod-radius-pill); }
+    .arena-card-badge.live { background: var(--mod-status-live-bg); color: var(--mod-status-live); border: 1px solid var(--mod-accent-border); }
+    .arena-card-badge.verdict { background: var(--mod-status-waiting-bg); color: var(--mod-text-sub); border: 1px solid var(--mod-border-secondary); }
+    .arena-card-meta { font-size: 10px; color: var(--mod-text-muted); }
+    .arena-card-btn { padding: 6px 14px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-accent); background: var(--mod-accent-muted); color: var(--mod-accent-text); font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+    .arena-card-score { font-family: var(--mod-font-ui); font-weight: 700; color: var(--mod-text-sub); }
+    .arena-empty { text-align: center; padding: 40px 16px; color: var(--mod-text-muted); font-size: 13px; }
+    .arena-empty .empty-icon { font-size: 32px; margin-bottom: 8px; display: block; opacity: 0.5; }
   `;
   document.head.appendChild(style);
 }
