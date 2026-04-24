@@ -8,6 +8,7 @@ import { TYPES, ECONOMY_TYPES } from './notifications.types.ts';
 import type { NotificationFilter } from './notifications.types.ts';
 import { notifications, unreadCount, panelOpen, setPanelOpen } from './notifications.state.ts';
 import { markRead, markAllRead, timeAgo } from './notifications.actions.ts';
+import { handleDeepLink } from './notifications.deeplink.ts';
 
 export function updateBadge(): void {
   const dot = document.getElementById('notif-dot');
@@ -90,7 +91,14 @@ export function createPanel(): void {
   });
   document.getElementById('notif-list')?.addEventListener('click', (e: Event) => {
     const item = (e.target as HTMLElement).closest('.notif-item') as HTMLElement | null;
-    if (item) markRead(item.dataset['id'] ?? '');
+    if (!item) return;
+    const id = item.dataset['id'] ?? '';
+    markRead(id);
+    const notif = notifications.find(n => n.id === id);
+    if (notif) {
+      close_panel();
+      handleDeepLink(notif);
+    }
   });
 }
 

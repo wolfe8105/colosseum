@@ -20,6 +20,7 @@ export interface Notification {
   created_at?: string;
   read: boolean;
   user_id?: string;
+  data?: Record<string, unknown>;
 }
 
 export type NotificationFilter = 'all' | 'challenge' | 'result' | 'reaction' | 'economy';
