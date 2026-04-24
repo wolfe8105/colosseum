@@ -382,31 +382,8 @@ function _initPullToRefresh(): void {
   if (!scroller || scroller.dataset.ptrInit) return;
   scroller.dataset.ptrInit = '1';
 
-  const PTR_THRESHOLD = 80;
-  const PTR_MAX = 120;
-
-  // Inject indicator element
-  const ptr = document.createElement('div');
-  ptr.id = 'feed-ptr';
-  ptr.style.cssText = `
-    position:sticky;top:-60px;left:0;right:0;z-index:100;
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    height:52px;margin:-52px 0 0;
-    opacity:0;transition:opacity 0.15s;
-    pointer-events:none;
-  `;
-  ptr.innerHTML = `
-    <div class="ptr-spinner" style="
-      width:20px;height:20px;border-radius:50%;
-      border:2px solid var(--mod-border-primary);
-      border-top-color:var(--mod-cyan);
-      transition:transform 0.1s;
-    "></div>
-    <span class="ptr-label" style="font-size:13px;color:var(--mod-text-sub);font-weight:600;">Pull to refresh</span>
-  `;
-
-  // Insert before first child of scroller
-  scroller.insertBefore(ptr, scroller.firstChild);
+  const PTR_THRESHOLD = 75;
+  const PTR_MAX = 110;
 
   // Inject spin animation once
   if (!document.getElementById('ptr-feed-style')) {
@@ -414,30 +391,47 @@ function _initPullToRefresh(): void {
     style.id = 'ptr-feed-style';
     style.textContent = `
       @keyframes ptrFeedSpin { to { transform: rotate(360deg); } }
-      #feed-ptr .ptr-spinner.spinning { animation: ptrFeedSpin 0.7s linear infinite; }
+      #feed-ptr.spinning .ptr-spinner { animation: ptrFeedSpin 0.7s linear infinite; }
     `;
     document.head.appendChild(style);
   }
+
+  // PTR indicator — fixed position, sits above the scroller, outside overflow
+  const ptr = document.createElement('div');
+  ptr.id = 'feed-ptr';
+  ptr.style.cssText = `
+    position:fixed;top:56px;left:0;right:0;z-index:9999;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    height:48px;pointer-events:none;
+    transform:translateY(-48px);transition:transform 0.2s,opacity 0.2s;
+    opacity:0;
+  `;
+  ptr.innerHTML = `
+    <div class="ptr-spinner" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--mod-border-primary);border-top-color:var(--mod-cyan);"></div>
+    <span class="ptr-label" style="font-size:13px;color:var(--mod-text-sub);font-weight:600;">Pull to refresh</span>
+  `;
+  document.body.appendChild(ptr);
 
   let startY = 0;
   let dragging = false;
   let triggered = false;
 
-  scroller.addEventListener('touchstart', (e: TouchEvent) => {
-    if (scroller.scrollTop === 0) {
+  // Listen on document — more reliable on iOS/Android than the fixed container
+  document.addEventListener('touchstart', (e: TouchEvent) => {
+    if (scroller.scrollTop <= 0) {
       startY = e.touches[0].clientY;
       dragging = true;
       triggered = false;
     }
   }, { passive: true });
 
-  scroller.addEventListener('touchmove', (e: TouchEvent) => {
+  document.addEventListener('touchmove', (e: TouchEvent) => {
     if (!dragging) return;
     const dy = Math.min(e.touches[0].clientY - startY, PTR_MAX);
-    if (dy <= 0) { dragging = false; return; }
+    if (dy <= 0) { dragging = false; ptr.style.opacity = '0'; ptr.style.transform = 'translateY(-48px)'; return; }
     const progress = Math.min(dy / PTR_THRESHOLD, 1);
     ptr.style.opacity = String(progress);
-    ptr.style.marginTop = `${dy - 52}px`;
+    ptr.style.transform = `translateY(${Math.min(dy - 48, 0)}px)`;
     const spinner = ptr.querySelector('.ptr-spinner') as HTMLElement;
     spinner.style.transform = `rotate(${progress * 360}deg)`;
     (ptr.querySelector('.ptr-label') as HTMLElement).textContent =
@@ -445,21 +439,21 @@ function _initPullToRefresh(): void {
     triggered = dy >= PTR_THRESHOLD;
   }, { passive: true });
 
-  scroller.addEventListener('touchend', async () => {
+  document.addEventListener('touchend', async () => {
     if (!dragging) return;
     dragging = false;
     if (!triggered) {
       ptr.style.opacity = '0';
-      ptr.style.marginTop = '-52px';
+      ptr.style.transform = 'translateY(-48px)';
       return;
     }
-    // Show loading state
+    // Show spinner
     (ptr.querySelector('.ptr-label') as HTMLElement).textContent = 'Refreshing…';
     const spinner = ptr.querySelector('.ptr-spinner') as HTMLElement;
-    spinner.classList.add('spinning');
     spinner.style.transform = '';
+    ptr.classList.add('spinning');
     ptr.style.opacity = '1';
-    ptr.style.marginTop = '0px';
+    ptr.style.transform = 'translateY(0)';
 
     try {
       feedCards = await fetchUnifiedFeed(currentCategory);
@@ -470,9 +464,9 @@ function _initPullToRefresh(): void {
       console.warn('[home.feed] pull-to-refresh failed:', e);
     }
 
-    spinner.classList.remove('spinning');
+    ptr.classList.remove('spinning');
     ptr.style.opacity = '0';
-    ptr.style.marginTop = '-52px';
+    ptr.style.transform = 'translateY(-48px)';
     triggered = false;
   });
 }
