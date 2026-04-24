@@ -52,8 +52,8 @@ export function injectLobbyCSS(): void {
     .arena-card-btn:active { background: rgba(231,68,42,0.2); }
 
     /* F-77 REDESIGN: HERO IMAGE (full bleed, top of card) */
-    .feed-card-hero-link { display: block; text-decoration: none; margin: calc(-1 * var(--mod-space-md)) calc(-1 * var(--mod-space-lg)) var(--mod-space-sm); overflow: hidden; border-radius: var(--mod-radius-md) var(--mod-radius-md) 0 0; position: relative; }
-    .feed-card-hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .feed-card-hero-link { display: block; text-decoration: none; margin: calc(-1 * var(--mod-space-md)) calc(-1 * var(--mod-space-lg)) var(--mod-space-sm); overflow: hidden; border-radius: var(--mod-radius-md) var(--mod-radius-md) 0 0; position: relative; height: 180px; }
+    .feed-card-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .feed-card-hero-domain { position: absolute; bottom: 6px; left: 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); color: rgba(255,255,255,0.85); font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
 
     /* BADGE ROW — replaces arena-card-top */
