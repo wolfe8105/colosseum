@@ -221,8 +221,6 @@ export function showCategoryPicker(mode: string, topic: string): void {
     const params: Record<string, unknown> = {
       p_content: title,
       p_category: category || 'trending',
-      p_total_rounds: selectedRounds,
-      p_want_moderator: wantMod || !!invitedModId,
     };
     if (linkUrl) params.p_link_url = linkUrl;
 
