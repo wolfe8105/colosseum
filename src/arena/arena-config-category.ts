@@ -266,20 +266,20 @@ export function showCategoryPicker(mode: string, topic: string): void {
     navigateTo('home');
   };
 
-  // Background OG scrape — same pattern as home.feed.ts
+  // Background OG scrape — passes debate_id so the API patches link_preview
+  // server-side using the service role key. No client-side DB update needed
+  // (no UPDATE RLS policy on arena_debates, and auth context may be stale
+  // by the time this background call finishes).
   const _scrapeOgBackground = async (linkUrl: string, debateId: string): Promise<void> => {
     try {
       const client = getSupabaseClient();
       const session = client ? await client.auth.getSession() : null;
       const token = session?.data?.session?.access_token;
       if (!token) return;
-      const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl), { headers: { 'Authorization': 'Bearer ' + token } });
+      const params = new URLSearchParams({ url: linkUrl, debate_id: debateId });
+      const res = await fetch('/api/scrape-og?' + params.toString(), { headers: { 'Authorization': 'Bearer ' + token } });
       clampVercel('/api/scrape-og', res);
-      if (!res.ok) return;
-      const preview = await res.json();
-      if (!preview?.image_url) return;
-      const supabase = getSupabaseClient();
-      if (supabase) await (supabase as any).from('arena_debates').update({ link_preview: preview }).eq('id', debateId);
+      // DB update handled server-side — nothing more to do here
     } catch { /* silent */ }
   };
 

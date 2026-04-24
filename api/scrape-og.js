@@ -159,17 +159,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Auth verification failed' });
   }
 
-  // URL from query string (GET) or body (POST)
+  // URL + optional debate_id from query string (GET) or body (POST)
   let url;
+  let debateId = null;
   if (req.method === 'POST') {
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       url = body?.url;
+      debateId = body?.debate_id ?? null;
     } catch {
       return res.status(400).json({ error: 'Invalid JSON body' });
     }
   } else {
     url = req.query.url;
+    debateId = req.query.debate_id ?? null;
   }
 
   if (!url || !isValidUrl(url)) {
@@ -186,12 +189,41 @@ export default async function handler(req, res) {
     // Copy image to our CDN — permanent, never breaks
     const proxiedUrl = await proxyImageToSupabase(meta.imageUrl);
 
-    return res.status(200).json({
+    const preview = {
       image_url: proxiedUrl || meta.imageUrl,
       og_title: meta.ogTitle,
       domain: meta.domain,
       proxied: !!proxiedUrl,
-    });
+    };
+
+    // If a debate_id was supplied, patch link_preview server-side using the
+    // service role key. This sidesteps client-side RLS entirely — the client
+    // has no UPDATE policy on arena_debates, and auth context may be stale
+    // by the time this background call completes anyway.
+    if (debateId && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const patchRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/arena_debates?id=eq.${encodeURIComponent(debateId)}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ link_preview: preview }),
+          }
+        );
+        if (!patchRes.ok) {
+          console.error('[scrape-og] link_preview patch failed:', patchRes.status, await patchRes.text());
+        }
+      } catch (patchErr) {
+        console.error('[scrape-og] link_preview patch error:', patchErr);
+      }
+    }
+
+    return res.status(200).json(preview);
   } catch (err) {
     console.error('[scrape-og] error:', err);
     return res.status(422).json({ error: 'Could not fetch preview' });
