@@ -378,7 +378,7 @@ export async function renderFeed(): Promise<void> {
 // ============================================================
 
 function _initPullToRefresh(): void {
-  const scroller = document.querySelector('.mod-feed') as HTMLElement | null;
+  const scroller = document.getElementById('screen-home') as HTMLElement | null;
   if (!scroller || scroller.dataset.ptrInit) return;
   scroller.dataset.ptrInit = '1';
 
