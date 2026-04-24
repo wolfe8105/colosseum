@@ -51,7 +51,22 @@ export function injectLobbyCSS(): void {
     .arena-card-btn { padding: 6px 14px; border-radius: var(--mod-radius-pill); border: 1px solid var(--mod-border-accent); background: var(--mod-accent-muted); color: var(--mod-accent-text); font-family: var(--mod-font-ui); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
     .arena-card-btn:active { background: rgba(231,68,42,0.2); }
 
-    /* F-62: LINK CARD PREVIEW */
+    /* F-77 REDESIGN: HERO IMAGE (full bleed, top of card) */
+    .feed-card-hero-link { display: block; text-decoration: none; margin: calc(-1 * var(--mod-space-md)) calc(-1 * var(--mod-space-lg)) var(--mod-space-sm); overflow: hidden; border-radius: var(--mod-radius-md) var(--mod-radius-md) 0 0; position: relative; }
+    .feed-card-hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .feed-card-hero-domain { position: absolute; bottom: 6px; left: 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); color: rgba(255,255,255,0.85); font-family: var(--mod-font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+
+    /* BADGE ROW — replaces arena-card-top */
+    .feed-card-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+
+    /* FOOTER — avatars + action button */
+    .feed-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: var(--mod-space-sm); }
+    .feed-card-avatars { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; }
+    .feed-card-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--mod-bg-inset); border: 2px solid var(--mod-border-primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--mod-text-muted); flex-shrink: 0; text-transform: uppercase; }
+    .feed-card-avatar-name { font-size: 12px; font-weight: 600; color: var(--mod-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+    .feed-card-vs-pill { font-family: var(--mod-font-ui); font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--mod-accent); flex-shrink: 0; }
+
+    /* F-62: LINK CARD PREVIEW (legacy — kept for arena lobby cards) */
     .arena-card-link-preview { display: block; text-decoration: none; border: 1px solid var(--mod-border-subtle); border-radius: var(--mod-radius-sm); overflow: hidden; margin-bottom: 8px; background: var(--mod-bg-inset); transition: border-color var(--mod-transition-fast); }
     .arena-card-link-preview:active { border-color: var(--mod-accent); }
     .arena-card-link-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }

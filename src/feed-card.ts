@@ -99,24 +99,27 @@ function _renderOpenCard(card: UnifiedFeedCard): string {
     ? `<button data-action="cancel-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:var(--mod-bg-subtle);border:1px solid var(--mod-border-secondary);color:var(--mod-text-muted);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;margin-left:auto;min-height:var(--mod-touch-min);">✕ CANCEL</button>`
     : '';
 
+  const initB = esc((card.debater_b_name || card.debater_b_username || '?')[0] ?? '?');
+  const nameB = esc(card.debater_b_name || card.debater_b_username || '');
+
   return `<div class="arena-card card-open" data-card-id="${esc(card.id)}" data-status="open" data-created="${esc(card.created_at)}">
-    <div class="arena-card-top">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span class="arena-card-badge" style="background:rgba(59,199,148,0.15);color:var(--mod-status-open);border:1px solid rgba(59,199,148,0.3);">OPEN</span>
-        <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
-      </div>
-      <span class="arena-card-meta feed-card-countdown" data-expires="${esc(card.created_at)}">${countdownBlock}</span>
+    ${linkBlock}
+    <div class="feed-card-badges">
+      <span class="arena-card-badge" style="background:rgba(59,199,148,0.15);color:var(--mod-status-open);border:1px solid rgba(59,199,148,0.3);">OPEN</span>
+      <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
+      <span class="arena-card-meta feed-card-countdown" data-expires="${esc(card.created_at)}" style="margin-left:auto;">${countdownBlock}</span>
     </div>
     <div class="arena-card-topic">${cardText}</div>
-    ${linkBlock}
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <div ${profileAttr} style="width:28px;height:28px;border-radius:50%;background:var(--mod-bg-card);border:2px solid var(--mod-accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--mod-accent);${!isOwn ? 'cursor:pointer;' : ''}">${initial}</div>
-      <span ${profileAttr} style="font-size:12px;font-weight:600;color:var(--mod-text-primary);${!isOwn ? 'cursor:pointer;' : ''}">${displayName}${vgBadge(card.verified_a ?? false)}${bountyDot(card.debater_a)}</span>
-      <span style="font-size:11px;color:var(--mod-text-muted);">${Number(card.elo_a || 1200)} Elo</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button data-action="react-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;${reactedClass}border:1px solid;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;min-height:var(--mod-touch-min);">🔥 ${Number(card.reaction_count)}</button>
-      ${!isOwn ? `<button data-action="challenge-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:rgba(59,199,148,0.1);border:1px solid rgba(59,199,148,0.3);color:var(--mod-status-open);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;min-height:var(--mod-touch-min);">⚔️ CHALLENGE</button>` : cancelBtn}
+    <div class="feed-card-footer">
+      <div class="feed-card-avatars">
+        <div ${profileAttr} class="feed-card-avatar" title="${displayName}">${initial}</div>
+        <span class="feed-card-avatar-name" ${profileAttr}>${displayName}${vgBadge(card.verified_a ?? false)}</span>
+        ${!isOwn ? '' : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button data-action="react-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;${reactedClass}border:1px solid;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;min-height:var(--mod-touch-min);">🔥 ${Number(card.reaction_count)}</button>
+        ${!isOwn ? `<button data-action="challenge-card" data-id="${esc(card.id)}" style="display:flex;align-items:center;gap:4px;background:rgba(59,199,148,0.1);border:1px solid rgba(59,199,148,0.3);color:var(--mod-status-open);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;min-height:var(--mod-touch-min);">⚔️ CHALLENGE</button>` : cancelBtn}
+      </div>
     </div>
   </div>`;
 }
@@ -137,23 +140,25 @@ function _renderLiveCard(card: UnifiedFeedCard): string {
   const linkBlock = _renderLinkPreview(card);
 
   return `<div class="arena-card card-live" data-card-id="${esc(card.id)}" data-status="live" data-debate-id="${esc(card.id)}">
-    <div class="arena-card-top">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span class="arena-card-badge live">● LIVE</span>
-        <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
-        ${rulesetBadge}${roundsBadge}
-      </div>
-      <span class="arena-card-meta">${roundMeta}</span>
+    ${linkBlock}
+    <div class="feed-card-badges">
+      <span class="arena-card-badge live">● LIVE</span>
+      <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
+      ${rulesetBadge}${roundsBadge}
+      <span class="arena-card-meta" style="margin-left:auto;">${roundMeta}</span>
     </div>
     <div class="arena-card-topic">${esc(card.content || card.topic || 'Live Debate')}</div>
-    ${linkBlock}
-    <div class="arena-card-vs">
-      <span>${nameA}${bountyDot(card.debater_a)}</span>
-      <span class="vs">VS</span>
-      <span>${nameB}${bountyDot(card.debater_b)}</span>
-      ${card.score_a != null ? `<span class="arena-card-score">${Number(card.score_a)}–${Number(card.score_b)}</span>` : ''}
+    <div class="feed-card-footer">
+      <div class="feed-card-avatars">
+        <div class="feed-card-avatar">${nameA[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name">${nameA}${bountyDot(card.debater_a)}</span>
+        <span class="feed-card-vs-pill">VS</span>
+        <div class="feed-card-avatar">${nameB[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name">${nameB}${bountyDot(card.debater_b)}</span>
+        ${card.score_a != null ? `<span class="arena-card-score" style="margin-left:auto;">${Number(card.score_a)}–${Number(card.score_b)}</span>` : ''}
+      </div>
+      <button class="arena-card-btn">SPECTATE</button>
     </div>
-    <div class="arena-card-action"><button class="arena-card-btn">SPECTATE</button></div>
   </div>`;
 }
 
@@ -171,22 +176,24 @@ function _renderVotingCard(card: UnifiedFeedCard): string {
   const linkBlock = _renderLinkPreview(card);
 
   return `<div class="arena-card" data-card-id="${esc(card.id)}" data-status="voting" data-link="/debate/${encodeURIComponent(card.id)}">
-    <div class="arena-card-top">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span class="arena-card-badge" style="background:rgba(250,196,75,0.15);color:var(--mod-bar-secondary);border:1px solid rgba(250,196,75,0.3);">VOTING</span>
-        <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
-      </div>
-      <span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span>
+    ${linkBlock}
+    <div class="feed-card-badges">
+      <span class="arena-card-badge" style="background:rgba(250,196,75,0.15);color:var(--mod-bar-secondary);border:1px solid rgba(250,196,75,0.3);">VOTING</span>
+      <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
+      <span class="arena-card-meta" style="margin-left:auto;">${votes} vote${votes !== 1 ? 's' : ''}</span>
     </div>
     <div class="arena-card-topic">${esc(card.content || card.topic || 'Untitled Debate')}</div>
-    ${linkBlock}
-    <div class="arena-card-vs">
-      <span>${nameA}${bountyDot(card.debater_a)}</span>
-      <span class="vs">VS</span>
-      <span>${nameB}${bountyDot(card.debater_b)}</span>
-      ${card.score_a != null ? `<span class="arena-card-score">${Number(card.score_a)}–${Number(card.score_b)}</span>` : ''}
+    <div class="feed-card-footer">
+      <div class="feed-card-avatars">
+        <div class="feed-card-avatar">${nameA[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name">${nameA}${bountyDot(card.debater_a)}</span>
+        <span class="feed-card-vs-pill">VS</span>
+        <div class="feed-card-avatar">${nameB[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name">${nameB}${bountyDot(card.debater_b)}</span>
+        ${card.score_a != null ? `<span class="arena-card-score" style="margin-left:auto;">${Number(card.score_a)}–${Number(card.score_b)}</span>` : ''}
+      </div>
+      <button class="arena-card-btn">VOTE</button>
     </div>
-    <div class="arena-card-action"><button class="arena-card-btn">VOTE</button></div>
   </div>`;
 }
 
@@ -213,40 +220,40 @@ function _renderVerdictCard(card: UnifiedFeedCard): string {
   const linkBlock = _renderLinkPreview(card);
 
   return `<div class="arena-card" data-card-id="${esc(card.id)}" data-status="complete" data-link="/debate/${encodeURIComponent(card.id)}">
-    <div class="arena-card-top">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span class="arena-card-badge verdict">VERDICT</span>
-        <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
-        ${rulesetBadge}
-      </div>
-      <span class="arena-card-meta">${votes} vote${votes !== 1 ? 's' : ''}</span>
+    ${linkBlock}
+    <div class="feed-card-badges">
+      <span class="arena-card-badge verdict">VERDICT</span>
+      <span class="arena-card-badge" style="background:var(--mod-bg-subtle);color:var(--mod-text-muted);border:1px solid var(--mod-border-secondary);">${catLabel}</span>
+      ${rulesetBadge}
+      <span class="arena-card-meta" style="margin-left:auto;">${votes} vote${votes !== 1 ? 's' : ''}</span>
     </div>
     <div class="arena-card-topic">${esc(card.content || card.topic || 'Untitled Debate')}</div>
-    ${linkBlock}
-    <div class="arena-card-vs">
-      <span style="${winnerStyle || loserStyleA}">${nameA}${scoreA > scoreB ? ' ✓' : ''}${bountyDot(card.debater_a)}</span>
-      <span class="vs">VS</span>
-      <span style="${winnerStyleB || loserStyleB}">${nameB}${scoreB > scoreA ? ' ✓' : ''}${bountyDot(card.debater_b)}</span>
-      <span class="arena-card-score">${scoreA}–${scoreB}</span>
+    <div class="feed-card-footer">
+      <div class="feed-card-avatars">
+        <div class="feed-card-avatar" style="${winnerStyle ? 'border-color:var(--mod-status-open);' : ''}">${nameA[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name" style="${winnerStyle || loserStyleA}">${nameA}${scoreA > scoreB ? ' ✓' : ''}${bountyDot(card.debater_a)}</span>
+        <span class="feed-card-vs-pill">VS</span>
+        <div class="feed-card-avatar" style="${winnerStyleB ? 'border-color:var(--mod-status-open);' : ''}">${nameB[0] ?? '?'}</div>
+        <span class="feed-card-avatar-name" style="${winnerStyleB || loserStyleB}">${nameB}${scoreB > scoreA ? ' ✓' : ''}${bountyDot(card.debater_b)}</span>
+        <span class="arena-card-score" style="margin-left:auto;">${scoreA}–${scoreB}</span>
+      </div>
+      <button class="arena-card-btn">VIEW</button>
     </div>
-    <div class="arena-card-action"><button class="arena-card-btn">VIEW</button></div>
   </div>`;
 }
 
 // ============================================================
-// SHARED: Link preview block (F-62)
+// SHARED: Link preview block — HERO IMAGE (full bleed, top of card)
 // ============================================================
 
 function _renderLinkPreview(card: UnifiedFeedCard): string {
   const esc = escapeHTML;
   const lp = card.link_preview as { image_url?: string; og_title?: string; domain?: string } | null;
   if (!card.link_url || !lp?.image_url) return '';
-  return `<a href="${esc(card.link_url)}" target="_blank" rel="noopener" class="arena-card-link-preview" onclick="event.stopPropagation()">
-    <img src="${esc(lp.image_url)}" alt="" class="arena-card-link-img" onerror="this.parentElement.style.display='none'">
-    <div class="arena-card-link-meta">
-      ${lp.domain ? `<span class="arena-card-link-domain">${esc(lp.domain)}</span>` : ''}
-      ${lp.og_title ? `<span class="arena-card-link-title">${esc(lp.og_title)}</span>` : ''}
-    </div>
+  // Full-bleed hero — negative margin pulls it to card edges, sits at top before title
+  return `<a href="${esc(card.link_url)}" target="_blank" rel="noopener" class="feed-card-hero-link" onclick="event.stopPropagation()">
+    <img src="${esc(lp.image_url)}" alt="" class="feed-card-hero-img" onerror="this.closest('.feed-card-hero-link').style.display='none'">
+    ${lp.domain ? `<span class="feed-card-hero-domain">${esc(lp.domain)}</span>` : ''}
   </a>`;
 }
 
