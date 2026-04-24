@@ -31,6 +31,8 @@ export function showCategoryPicker(mode: string, topic: string): void {
       .arena-cat-any { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--mod-radius-md); border:1px solid var(--mod-border-subtle); background:transparent; cursor:pointer; font-family:var(--mod-font-ui); font-size:13px; color:var(--mod-text-muted); letter-spacing:1px; margin-bottom:12px; transition:all 0.15s; }
       .arena-cat-any:active { background:var(--mod-bg-card); }
       .arena-cat-cancel { width:100%; padding:12px; border-radius:var(--mod-radius-pill); border:none; background:transparent; color:var(--mod-text-muted); font-family:var(--mod-font-ui); font-size:14px; cursor:pointer; }
+      .arena-cat-submit { width:100%; padding:16px; border-radius:var(--mod-radius-pill); border:none; background:var(--mod-accent-primary, var(--mod-magenta)); color:#fff; font-family:var(--mod-font-ui); font-size:15px; font-weight:700; letter-spacing:2px; cursor:pointer; margin-bottom:8px; transition:opacity 0.15s; }
+      .arena-cat-submit:disabled { opacity:0.35; cursor:not-allowed; }
       ${roundPickerCSS()}
     </style>
     <div class="arena-cat-backdrop" id="arena-cat-backdrop"></div>
@@ -73,6 +75,7 @@ export function showCategoryPicker(mode: string, topic: string): void {
         <div id="arena-mod-search-results" style="margin-top:6px;"></div>
         <div id="arena-mod-invited-card" style="display:none;margin-top:6px;padding:10px 14px;border-radius:var(--mod-radius-md);border:1px solid var(--mod-accent);background:var(--mod-accent-muted);font-family:var(--mod-font-ui);font-size:13px;color:var(--mod-text-primary);display:flex;align-items:center;justify-content:space-between;"></div>
       </div>
+      <button class="arena-cat-submit" id="arena-cat-submit" disabled>⚔️ START DEBATE</button>
       <button class="arena-cat-cancel" id="arena-cat-cancel">Back</button>
     </div>
   `;
@@ -283,14 +286,27 @@ export function showCategoryPicker(mode: string, topic: string): void {
     } catch { /* silent */ }
   };
 
-  // Wire category buttons
+  // Wire category buttons — tap to select, not to submit
+  let selectedCategory: string | null = null;
+  const submitBtn = document.getElementById('arena-cat-submit') as HTMLButtonElement | null;
+
   overlay.querySelectorAll('.arena-cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      void postDebate((btn as HTMLElement).dataset.cat ?? null);
+      // Deselect all, select tapped
+      overlay.querySelectorAll('.arena-cat-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedCategory = (btn as HTMLElement).dataset.cat ?? null;
+      // Enable submit now that a category is chosen
+      if (submitBtn) submitBtn.disabled = false;
     });
   });
 
-  // Wire "any" button
+  // Wire submit button
+  submitBtn?.addEventListener('click', () => {
+    void postDebate(selectedCategory);
+  });
+
+  // Wire "any" button — still one-tap submit (fastest match UX)
   document.getElementById('arena-cat-any')?.addEventListener('click', () => {
     void postDebate(null);
   });
