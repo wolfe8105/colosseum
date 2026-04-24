@@ -173,10 +173,11 @@ async function postDebateCard(): Promise<void> {
     void refreshFeed();
 
     // Background OG scrape — fires after card is live, non-blocking.
-    // Microlink fetches the page, we proxy the image to Supabase,
-    // then patch the debate record. Card updates on next feed refresh.
-    if (linkUrl && (cardData as Record<string,unknown>)?.debate_id) {
-      const debateId = (cardData as Record<string,unknown>).debate_id as string;
+    // Passes debate_id to the API so it patches link_preview server-side
+    // (no UPDATE RLS policy on arena_debates for client). After firing,
+    // poll the DB for up to 15s so the hero image appears without a manual refresh.
+    if (linkUrl && (cardData as Record<string,unknown>)?.id) {
+      const debateId = (cardData as Record<string,unknown>).id as string;
       void _scrapeOgBackground(linkUrl, debateId);
     }
   } catch {
@@ -199,7 +200,10 @@ async function _scrapeOgBackground(linkUrl: string, debateId: string): Promise<v
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) return;
 
-    const res = await fetch('/api/scrape-og?url=' + encodeURIComponent(linkUrl), {
+    // Pass debate_id so the API patches link_preview server-side via service
+    // role key — client has no UPDATE RLS policy on arena_debates.
+    const params = new URLSearchParams({ url: linkUrl, debate_id: debateId });
+    const res = await fetch('/api/scrape-og?' + params.toString(), {
       headers: { 'Authorization': `Bearer ${session.access_token}` },
     });
     clampVercel('/api/scrape-og', res);
@@ -208,12 +212,42 @@ async function _scrapeOgBackground(linkUrl: string, debateId: string): Promise<v
     const preview = await res.json();
     if (!preview?.image_url) return;
 
-    // Patch the debate record with the preview data
-    await supabase
-      .from('arena_debates')
-      .update({ link_preview: preview })
-      .eq('id', debateId);
+    // Poll the feed card DOM for up to 15s and inject the hero image
+    // in-place so the user doesn't need to manually refresh.
+    _injectHeroImage(debateId, preview.image_url);
   } catch { /* silent — preview is non-critical */ }
+}
+
+// Poll the rendered feed card for up to 15s and swap in the hero image
+// once the server-side DB patch has landed and the image is ready.
+function _injectHeroImage(debateId: string, imageUrl: string): void {
+  const MAX_WAIT = 15000;
+  const INTERVAL = 1500;
+  let elapsed = 0;
+
+  const timer = setInterval(() => {
+    elapsed += INTERVAL;
+
+    // Find the card in the DOM — cards have data-debate-id attributes
+    const card = document.querySelector(`[data-card-id="${debateId}"]`) as HTMLElement | null;
+    if (card) {
+      // Check if a hero already exists (another refresh beat us to it)
+      if (!card.querySelector('.feed-card-hero')) {
+        const hero = document.createElement('div');
+        hero.className = 'feed-card-hero';
+        hero.style.cssText = `
+          width:100%;height:180px;border-radius:10px 10px 0 0;
+          background:url('${imageUrl}') center/cover no-repeat;
+          margin-bottom:10px;
+        `;
+        card.prepend(hero);
+      }
+      clearInterval(timer);
+      return;
+    }
+
+    if (elapsed >= MAX_WAIT) clearInterval(timer);
+  }, INTERVAL);
 }
 
 // ============================================================
