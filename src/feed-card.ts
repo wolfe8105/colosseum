@@ -251,7 +251,7 @@ function _renderLinkPreview(card: UnifiedFeedCard): string {
   const lp = card.link_preview as { image_url?: string; og_title?: string; domain?: string } | null;
   if (!card.link_url || !lp?.image_url) return '';
   return `<a href="${esc(card.link_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:block;text-decoration:none;margin:-12px -16px 8px;height:180px;overflow:hidden;border-radius:6px 6px 0 0;position:relative;">
-    <img src="${esc(lp.image_url)}" alt="" style="width:100%;height:180px;object-fit:cover;display:block;" onerror="console.error('Hero img failed:',this.src);this.parentElement.style.display='none'">
+    <div style="width:100%;height:180px;background-image:url('${esc(lp.image_url)}');background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
     ${lp.domain ? `<span style="position:absolute;bottom:6px;left:10px;background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.85);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:4px;">${esc(lp.domain)}</span>` : ''}
   </a>`;
 }
