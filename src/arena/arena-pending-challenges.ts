@@ -40,6 +40,7 @@ export async function loadPendingChallenges(): Promise<void> {
         <div class="arena-card-action" style="gap:8px;display:flex;justify-content:flex-end;">
           <button class="arena-card-btn challenge-accept-btn" data-debate-id="${escapeHTML(c.debate_id)}" data-mode="${escapeHTML(c.mode)}" data-topic="${escapeHTML(c.topic || '')}" data-opp-id="${escapeHTML(c.challenger_id)}" data-opp-name="${escapeHTML(c.challenger_name)}" data-opp-elo="${c.challenger_elo}" style="border-color:var(--mod-accent-border);color:var(--mod-accent);">ACCEPT</button>
           <button class="arena-card-btn challenge-decline-btn" data-debate-id="${escapeHTML(c.debate_id)}">DECLINE</button>
+          <button class="arena-card-btn challenge-block-btn" data-debate-id="${escapeHTML(c.debate_id)}" data-opp-id="${escapeHTML(c.challenger_id)}" data-opp-name="${escapeHTML(c.challenger_name)}" style="padding:8px 10px;opacity:0.6;" title="Block this user">🚫</button>
         </div>
       </div>
     `).join('');
@@ -94,6 +95,30 @@ export async function loadPendingChallenges(): Promise<void> {
         // Remove the card
         el.closest('.arena-card')?.remove();
         if (!feed.querySelector('.arena-card')) section.style.display = 'none';
+      });
+    });
+    // Wire block buttons
+    feed.querySelectorAll('.challenge-block-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLButtonElement;
+        const oppId = el.dataset.oppId!;
+        const oppName = el.dataset.oppName || 'this user';
+        const debateId = el.dataset.debateId!;
+        const confirmed = window.confirm(`Block ${oppName}? They won't be able to challenge or message you.`);
+        if (!confirmed) return;
+        el.disabled = true;
+        el.textContent = '⏳';
+        await safeRpc('cancel_private_lobby', { p_debate_id: debateId }).catch(() => {});
+        const { error } = await safeRpc('block_user', { p_blocked_id: oppId });
+        if (!error) {
+          el.closest('.arena-card')?.remove();
+          if (!feed.querySelector('.arena-card')) section.style.display = 'none';
+          showToast(`${oppName} blocked`);
+        } else {
+          el.disabled = false;
+          el.textContent = '🚫';
+          showToast('Could not block — try again');
+        }
       });
     });
   } catch { /* silent — challenges are optional */ }

@@ -159,6 +159,7 @@ export async function loadPendingModInvites(): Promise<void> {
       topic: string;
       category: string;
       mode: string;
+      inviter_id: string;
       inviter_name: string;
       created_at: string;
     }[]>('get_pending_mod_invites');
@@ -168,7 +169,7 @@ export async function loadPendingModInvites(): Promise<void> {
       return;
     }
 
-    const invites = data as { debate_id: string; topic: string; category: string; mode: string; inviter_name: string; created_at: string }[];
+    const invites = data as { debate_id: string; topic: string; category: string; mode: string; inviter_id: string; inviter_name: string; created_at: string }[];
     section.style.display = 'block';
 
     listEl.innerHTML = invites.map(inv => `
@@ -179,6 +180,7 @@ export async function loadPendingModInvites(): Promise<void> {
         <div style="display:flex;gap:8px;">
           <button class="arena-secondary-btn mod-invite-accept-btn" data-debate-id="${escapeHTML(inv.debate_id)}" style="flex:1;background:var(--mod-accent-primary);color:var(--mod-text-on-accent);border-color:var(--mod-accent-primary);">ACCEPT</button>
           <button class="arena-secondary-btn mod-invite-decline-btn" data-debate-id="${escapeHTML(inv.debate_id)}" style="flex:1;">DECLINE</button>
+          <button class="arena-secondary-btn mod-invite-block-btn" data-debate-id="${escapeHTML(inv.debate_id)}" data-inviter-id="${escapeHTML(inv.inviter_id)}" data-inviter-name="${escapeHTML(inv.inviter_name)}" style="padding:8px 10px;opacity:0.6;" title="Block this user">🚫</button>
         </div>
       </div>
     `).join('');
@@ -209,6 +211,30 @@ export async function loadPendingModInvites(): Promise<void> {
           showToast('Declined — debate is now open to any moderator');
           if (!listEl.querySelector('.mod-invite-card')) section.style.display = 'none';
         } catch { showToast('Could not decline — try again'); btn.disabled = false; btn.textContent = 'DECLINE'; }
+      });
+    });
+
+    // Wire block buttons
+    listEl.querySelectorAll<HTMLButtonElement>('.mod-invite-block-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const inviterId = btn.dataset.inviterId!;
+        const inviterName = btn.dataset.inviterName || 'this user';
+        const debateId = btn.dataset.debateId!;
+        const confirmed = window.confirm(`Block ${inviterName}? They won't be able to invite or message you.`);
+        if (!confirmed) return;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        await safeRpc('respond_mod_invite', { p_debate_id: debateId, p_accept: false }).catch(() => {});
+        const { error } = await safeRpc('block_user', { p_blocked_id: inviterId });
+        if (!error) {
+          btn.closest('.mod-invite-card')?.remove();
+          showToast(`${inviterName} blocked`);
+          if (!listEl.querySelector('.mod-invite-card')) section.style.display = 'none';
+        } else {
+          btn.disabled = false;
+          btn.textContent = '🚫';
+          showToast('Could not block — try again');
+        }
       });
     });
 

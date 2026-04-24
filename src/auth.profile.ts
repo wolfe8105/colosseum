@@ -5,7 +5,7 @@
 import { getSupabaseClient, getIsPlaceholderMode, getCurrentUser, getCurrentProfile, isUUID, _notify, _clearAuthState } from './auth.core.ts';
 import { safeRpc } from './auth.rpc.ts';
 import { requireAuth } from './auth.gate.ts';
-import { escapeHTML, FEATURES } from './config.ts';
+import { escapeHTML, FEATURES, showToast } from './config.ts';
 import { vgBadge } from './badge.ts';
 import { followUser, unfollowUser } from './auth.follows.ts';
 import { declareRival } from './auth.rivals.ts';
@@ -186,6 +186,7 @@ export async function showUserProfile(userId: string): Promise<void> {
     <div style="display:flex;gap:8px;">
       <button id="upm-follow-btn" style="flex:1;padding:12px;border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;border:none;${profile.is_following ? 'background:var(--mod-bg-control);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);' : 'background:var(--mod-accent);color:var(--mod-bg-base);'}">${profile.is_following ? 'FOLLOWING' : 'FOLLOW'}</button>
       <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:var(--mod-magenta);border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
+      <button id="upm-block-btn" style="padding:12px 14px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" title="Block user">🚫</button>
       <button id="upm-close-btn" style="padding:12px 16px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;">✕</button>
     </div>`;
 
@@ -240,6 +241,23 @@ export async function showUserProfile(userId: string): Promise<void> {
       setTimeout(() => { if (rivalBtn) rivalBtn.textContent = '⚔️ RIVAL'; }, 2000);
     }
     if (rivalBtn) rivalBtn.style.opacity = '1';
+  });
+
+  // Block button handler
+  const blockBtn = document.getElementById('upm-block-btn');
+  blockBtn?.addEventListener('click', async () => {
+    if (!requireAuth('block users')) return;
+    const confirmed = window.confirm(`Block this user? They won't be able to challenge or message you, and won't appear in your searches.`);
+    if (!confirmed) return;
+    if (blockBtn) { blockBtn.textContent = '⏳'; (blockBtn as HTMLButtonElement).disabled = true; }
+    const { error } = await safeRpc('block_user', { p_blocked_id: userId });
+    if (!error) {
+      document.getElementById('user-profile-modal')?.remove();
+      showToast('User blocked');
+    } else {
+      if (blockBtn) { blockBtn.textContent = '🚫'; (blockBtn as HTMLButtonElement).disabled = false; }
+      showToast('Could not block — try again');
+    }
   });
 
   // F-28: Bounty section — only shown to authenticated users viewing another user's profile

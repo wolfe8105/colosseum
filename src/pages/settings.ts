@@ -14,6 +14,7 @@ import { loadSettings } from './settings.load.ts';
 import { loadModeratorSettings, wireModeratorToggles } from './settings.moderator.ts';
 import { wireSettings, wireIntroMusicRow } from './settings.wiring.ts';
 import { setChecked } from './settings.helpers.ts';
+import { loadBlockedUsers } from './settings.blocks.ts';
 
 // LANDMINE [LM-SET-001]: Uses Promise.race([ready, setTimeout(6000)]) — same auth race
 // as home.ts before M-C4 was fixed. Slow auth silently redirects to plinko with no UI.
@@ -29,6 +30,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadModeratorSettings();
   wireSettings();
   wireModeratorToggles();
+  void loadBlockedUsers();
 
   // SESSION 52: Load toggles from user_settings table (overrides localStorage)
   const user = getCurrentUser() as { id?: string } | null;
