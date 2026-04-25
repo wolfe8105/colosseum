@@ -303,3 +303,19 @@ Prefix all Gatekeeper files with `gk-`.
 - Do not skip the architecture test
 - Do not ignore regression surface failures
 - Do not stop unless you hit a wall you cannot pass without human help
+
+---
+
+## WHEN THIS RUNS — CRITICAL
+
+The Gatekeeper runs **immediately after CC ships a feature** — not days later, not in a batch. The session after CC writes the code is this session.
+
+If you are running this on old code that has been in production for multiple sessions, you may find spec violations that have been live in the app for a long time. Report them. Do not mark them as test problems — they are source bugs. The code does not match the spec.
+
+The correct workflow:
+1. CC writes the feature (one session)
+2. Gatekeeper runs against it (next session, immediately)
+3. If Gatekeeper fails — CC fixes the source (next session)
+4. Gatekeeper re-runs — must pass before feature is considered done
+
+Running the Gatekeeper in a batch weeks after shipping defeats the purpose. Spec violations found late are production bugs that have already affected users.

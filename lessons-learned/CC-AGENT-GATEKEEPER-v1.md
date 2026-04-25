@@ -308,3 +308,17 @@ Report failures by pasting the full `cargo test` output verbatim.
 Commit with: `cargo test` passing, then `git add`, `git commit`, `git push`.
 
 The same rules apply regardless of language: test the spec, not the code. One test per TC. Architecture test equivalent in Rust is checking that `use` statements only import from the allowed list (verify by reading the source file).
+
+---
+
+## WHEN THIS RUNS — CRITICAL
+
+The Gatekeeper runs **immediately after CC ships a feature** — not days later, not in a batch. The session after CC writes the code is this session.
+
+The correct workflow:
+1. CC writes the feature (one session)
+2. Gatekeeper runs against it (next session, immediately)
+3. If Gatekeeper fails — CC fixes the source (next session)
+4. Gatekeeper re-runs — must pass before feature is considered done
+
+Running the Gatekeeper in a batch weeks after shipping means spec violations have been live in production affecting real users. That is the failure mode this agent exists to prevent.
