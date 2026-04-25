@@ -18,6 +18,52 @@ Read the spec first. Read the source file second. The spec tells you what to tes
 
 ---
 
+## STEP 0 — BUILD THE DEPENDENCY MAP
+
+Before reading the spec or the source file, generate a fresh dependency map from the live repo. Do not use the static spine in `_archive/prototypes/` — it drifts and cannot be trusted.
+
+Run this and save the output to `tests/_gatekeeper-map.txt`:
+
+```bash
+# For every source file, list what it imports
+find src -name "*.ts" ! -name "*.d.ts" ! -name "*.types.ts" | sort | while read f; do
+  imports=$(grep -E "^import " "$f" | grep -oP "from\s+['\"]([^'\"]+)['\"]" | grep -oP "['\"]([^'\"]+)['\"]" | tr -d "'\"" | sort)
+  if [ -n "$imports" ]; then
+    echo "=== $f ==="
+    echo "$imports"
+  fi
+done > tests/_gatekeeper-map.txt
+
+# For every test file, list what source file it targets
+find tests -name "*.test.ts" | sort | while read t; do
+  targets=$(grep -oP "from\s+['\"](\.\./src/[^'\"]+)['\"]" "$t" | grep -oP "src/[^'\"]+")
+  if [ -n "$targets" ]; then
+    echo "=== $t ==="
+    echo "$targets"
+  fi
+done >> tests/_gatekeeper-map.txt
+```
+
+Once built, query it to answer: which existing tests cover the file you are about to test? Those are the tests you must also verify pass after your new tests are added — not just the new ones.
+
+Report the map query result before proceeding:
+
+```
+MAP QUERY — [changed filename]
+Existing tests that cover this file: [list, or "none"]
+Downstream files that import this file: [list, or "none"]
+```
+
+This is your regression surface. If your changes break any test in the existing coverage list, that is a regression — report it the same way as a spec failure.
+
+---
+
+## MAP GENERATION PLACEHOLDER
+
+*[A future agent (Agent 3 or equivalent) will own generating and maintaining a persistent, queryable dependency graph for the whole repo. For now, the Gatekeeper generates its own map fresh on each run and discards it after. When that agent exists, replace Step 0 with a query to its map file.]*
+
+---
+
 ## SPEC ENFORCEMENT PLACEHOLDER
 
 *[Spec enforcement behavior will be defined here in a future session. For now, proceed with the spec as given.]*
