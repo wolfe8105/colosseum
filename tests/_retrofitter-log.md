@@ -1,7 +1,7 @@
 # Retrofitter Log — Updated 2026-04-25
 
-## Test count: 2422 passing, 19 failing (all pre-existing)
-## Test files: 213 passing, 8 failing (all pre-existing)
+## Test count: 2731 passing, 19 failing (all pre-existing)
+## Test files: 242 passing, 8 failing (all pre-existing)
 
 ---
 
@@ -156,6 +156,27 @@
 - src/pages/home.invite.ts → tests/home-invite.test.ts ✓
 - src/pages/home.invite-render.ts → tests/home-invite-render.test.ts ✓
 - src/pages/home.invite-sheet.ts → tests/home-invite-sheet.test.ts ✓
+- src/pages/groups.load.ts → tests/groups-load.test.ts (9 tests) ✓
+- src/pages/groups.nav.ts → tests/groups-nav.test.ts (15 tests) ✓
+- src/pages/home.overlay.ts → tests/home-overlay.test.ts (8 tests) ✓
+- src/pages/home.profile.ts → tests/home-profile.test.ts (12 tests) ✓
+- src/pages/home.depth.ts → tests/home-depth.test.ts (11 tests) ✓
+- src/pages/login.forms.ts → tests/login-forms.test.ts (16 tests) ✓
+- src/pages/group-banner-upload.ts → tests/group-banner-upload.test.ts (10 tests) ✓
+- src/pages/groups.create.ts → tests/groups-create.test.ts (12 tests) ✓
+- src/pages/groups.members.modal.html.ts → tests/groups-members-modal-html.test.ts (8 tests) ✓
+- src/pages/settings.load.ts → tests/settings-load.test.ts (11 tests) ✓
+- src/pages/settings.save.ts → tests/settings-save.test.ts (9 tests) ✓
+- src/pages/groups.auditions.render.ts → tests/groups-auditions-render.test.ts (13 tests) ✓
+- src/pages/profile-depth.state.ts → tests/profile-depth-state.test.ts (19 tests) ✓
+- src/pages/profile-depth.tier.ts → tests/profile-depth-tier.test.ts (8 tests) ✓
+- src/pages/spectate.state.ts → tests/spectate-state.test.ts (10 tests) ✓
+- src/pages/settings.wiring.ts → tests/settings-wiring.test.ts (11 tests) ✓
+- src/pages/spectate.vote.ts → tests/spectate-vote.test.ts (12 tests) ✓
+- src/pages/settings.blocks.ts → tests/settings-blocks.test.ts (9 tests) ✓
+- src/pages/spectate.render-messages.ts → tests/spectate-render-messages.test.ts (12 tests) ✓
+- src/pages/settings.moderator.ts → tests/settings-moderator.test.ts (9 tests) ✓
+- src/pages/cosmetics.render.ts → tests/cosmetics-render.test.ts (19 tests) ✓
 
 ### Arena CSS Injectors (all idempotency-free, inject-always)
 - src/arena/arena-css-after-effects.ts → tests/arena-css-after-effects.test.ts ✓
