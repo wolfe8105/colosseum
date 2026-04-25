@@ -1,7 +1,7 @@
 # Retrofitter Log — Updated 2026-04-25
 
-## Test count: 1918 passing, 19 failing (8 pre-existing f48-mod-debate + 3 pre-existing auth-profile + 8 pre-existing ARCH/TC drift in share/dm/notifications/payments/arena-config-category)
-## Test files: 169 passing, 8 failing (all pre-existing)
+## Test count: 2422 passing, 19 failing (all pre-existing)
+## Test files: 213 passing, 8 failing (all pre-existing)
 
 ---
 
@@ -121,6 +121,32 @@
 - src/rivals-presence-channel.ts → tests/rivals-presence-channel.test.ts ✓
 - src/rivals-presence-css.ts → tests/rivals-presence-css.test.ts ✓
 - src/rivals-presence-popup.ts → tests/rivals-presence-popup.test.ts ✓
+
+### Contracts
+- src/contracts/dependency-clamps.ts → tests/dependency-clamps.test.ts (14 tests) ✓
+- src/contracts/rpc-schemas.ts → (type/schema only — ARCH test via arena-feed-spec-chat import) ✓
+
+### Misc (new batch)
+- src/async.actions.ts → tests/async-actions.test.ts (2 tests) ✓
+- src/safe-button.ts → tests/safe-button.test.ts (6 tests) ✓
+- src/notifications.deeplink.ts → tests/notifications-deeplink.test.ts (11 tests) ✓
+- src/push-notifications.ts → tests/push-notifications.test.ts (9 tests) ✓
+- src/profile-socials.ts → tests/profile-socials.test.ts (7 tests) ✓
+
+### Arena (new batch)
+- src/arena/arena-css-feed-phase4-5.ts → tests/arena-css-feed-phase4-5.test.ts (5 tests) ✓
+- src/arena/arena-ads.ts → tests/arena-ads.test.ts (9 tests) ✓
+- src/arena/arena-bounty-claim.ts → tests/arena-bounty-claim.test.ts (9 tests) ✓
+- src/arena/arena-lobby.open-debates.ts → tests/arena-lobby-open-debates.test.ts (9 tests) ✓
+- src/arena/arena-config-mode-select.ts → tests/arena-config-mode-select.test.ts (12 tests) ✓
+- src/arena/arena-config-settings.ts → tests/arena-config-settings.test.ts (13 tests) ✓
+- src/arena/arena-feed-spec-chat.ts → tests/arena-feed-spec-chat.test.ts (12 tests) ✓
+
+### Pages (new batch)
+- src/pages/plinko-password.ts → tests/plinko-password.test.ts (10 tests) ✓
+- src/pages/plinko-step2-age.ts → tests/plinko-step2-age.test.ts (7 tests) ✓
+- src/pages/plinko-step4-step5.ts → tests/plinko-step4-step5.test.ts (5 tests) ✓
+- src/pages/group-banner-css.ts → tests/group-banner-css.test.ts (4 tests) ✓
 
 ### Pages
 - src/pages/plinko-state.ts → tests/plinko-state.test.ts ✓
