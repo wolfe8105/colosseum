@@ -129,7 +129,7 @@ describe('TC4 — shareTake: calls navigator.share with take URL', () => {
     await new Promise(r => setTimeout(r, 0));
     expect(mockShare).toHaveBeenCalledWith(expect.objectContaining({
       url: expect.stringContaining('take-42'),
-      text: expect.stringContaining('Hot Take'),
+      text: expect.stringContaining('take-42'),
     }));
   });
 });

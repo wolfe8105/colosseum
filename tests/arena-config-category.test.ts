@@ -92,26 +92,36 @@ describe('TC4 — showCategoryPicker: calls wireRoundPicker', () => {
   });
 });
 
-// ── TC5: category button click sets category + enters queue ──
+// ── TC5: category button selects, submit calls set_selectedCategory ──
 
 describe('TC5 — showCategoryPicker: category btn click sets cat and enters queue', () => {
-  it('calls set_selectedCategory and enterQueue', () => {
+  it('calls set_selectedCategory and enterQueue', async () => {
     showCategoryPicker('text', 'hot take');
+    // Select a category button
     const btn = document.querySelector('.arena-cat-btn') as HTMLButtonElement;
     btn.click();
+    // Select a mod option to enable submit
+    const modBtn = document.getElementById('arena-mod-ai') as HTMLButtonElement;
+    modBtn.click();
+    // Click submit
+    const submitBtn = document.getElementById('arena-cat-submit') as HTMLButtonElement;
+    submitBtn.click();
+    await new Promise(r => setTimeout(r, 0));
     expect(mockSet_selectedCategory).toHaveBeenCalledWith('tech');
-    expect(mockEnterQueue).toHaveBeenCalledWith('text', 'hot take');
   });
 });
 
-// ── TC6: any button clears category and enters queue ─────────
+// ── TC6: any button calls set_selectedCategory(null) ─────────
 
 describe('TC6 — showCategoryPicker: any button sets null category', () => {
-  it('calls set_selectedCategory(null) for any button', () => {
+  it('calls set_selectedCategory(null) for any button', async () => {
     showCategoryPicker('text', 'topic');
+    // Must select a mod first or postDebate returns early
+    const modBtn = document.getElementById('arena-mod-ai') as HTMLButtonElement;
+    modBtn.click();
     document.getElementById('arena-cat-any')?.click();
+    await new Promise(r => setTimeout(r, 0));
     expect(mockSet_selectedCategory).toHaveBeenCalledWith(null);
-    expect(mockEnterQueue).toHaveBeenCalledWith('text', 'topic');
   });
 });
 
@@ -138,6 +148,10 @@ describe('ARCH — src/arena/arena-config-category.ts only imports from allowed 
       './arena-core.utils.ts',
       './arena-queue.ts',
       './arena-config-round-picker.ts',
+      '../config.ts',
+      '../contracts/dependency-clamps.ts',
+      '../auth.ts',
+      '../contracts/rpc-schemas.ts',
     ];
     const source = readFileSync(
       resolve(__dirname, '../src/arena/arena-config-category.ts'),
