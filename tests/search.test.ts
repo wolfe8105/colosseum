@@ -57,13 +57,13 @@ describe('TC2 — renderSearchScreen: creates results container', () => {
 });
 
 describe('TC3 — renderSearchScreen: creates 3 tab buttons', () => {
-  it('renders 3 .gs-tab buttons for users, takes, groups', () => {
+  it('renders 3 .gs-tab buttons for users, debates, groups', () => {
     renderSearchScreen();
     const tabs = document.querySelectorAll('.gs-tab');
     expect(tabs).toHaveLength(3);
     const tabTexts = Array.from(tabs).map(t => t.textContent?.toLowerCase() ?? '');
     expect(tabTexts.some(t => t.includes('users'))).toBe(true);
-    expect(tabTexts.some(t => t.includes('takes'))).toBe(true);
+    expect(tabTexts.some(t => t.includes('debates'))).toBe(true);
     expect(tabTexts.some(t => t.includes('groups'))).toBe(true);
   });
 });
@@ -75,11 +75,11 @@ describe('TC4 — renderSearchScreen: no-op when container missing', () => {
   });
 });
 
-describe('TC5 — renderSearchScreen: short query shows help text', () => {
-  it('initial results area shows "at least 2 characters" prompt', () => {
+describe('TC5 — renderSearchScreen: blank query triggers trending (no static prompt)', () => {
+  it('initial results area does not show static "2 characters" prompt', () => {
     renderSearchScreen();
     const results = document.getElementById('global-search-results');
-    expect(results?.innerHTML).toContain('2 characters');
+    expect(results?.innerHTML).not.toContain('Type at least 2 characters');
   });
 });
 
@@ -97,14 +97,14 @@ describe('TC6 — renderSearchScreen: input fires debounced search', () => {
   });
 });
 
-describe('TC7 — renderSearchScreen: input <2 chars clears results', () => {
-  it('re-renders results with prompt when input is cleared to 1 char', () => {
+describe('TC7 — renderSearchScreen: input <2 chars triggers trending', () => {
+  it('does not show static "2 characters" prompt when input cleared to 1 char', () => {
     renderSearchScreen();
     const input = document.getElementById('global-search-input') as HTMLInputElement;
     input.value = 'x';
     input.dispatchEvent(new Event('input'));
     const results = document.getElementById('global-search-results');
-    expect(results?.innerHTML).toContain('2 characters');
+    expect(results?.innerHTML).not.toContain('Type at least 2 characters');
   });
 });
 

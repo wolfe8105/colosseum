@@ -1,95 +1,631 @@
-# Integrator Seams — The Moderator
-# 623 seams ranked by risk score. Work top to bottom.
-# Format: [rank] [status] Module A → Module B — what crosses
+# Integrator Seam List
 
-## Rank 001–010: Core rendering + auth chain (highest risk)
+Total seams: 623
+Generated from src/ import graph. Score = sum of fan-in of both modules.
+Check box when integration test written and passing.
 
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 001 | ✅ DONE | `feed-card` → `auth` + `badge` + `bounties.dot` | `getCurrentUser()` ownership check; `vgBadge()` verified badge; `bountyDot()` active bounty dot — all land in rendered HTML |
-| 002 | ⬜ TODO | `home.feed` → `feed-card` | `renderFeedCard()` called with RPC data; result inserted into DOM |
-| 003 | ⬜ TODO | `home.overlay` → `feed-card` | Overlay renders open card; cancel/challenge buttons present for owner vs non-owner |
-| 004 | ⬜ TODO | `groups.feed` → `feed-card` | Groups feed renders cards via `renderFeedCard()`; empty state on no data |
-| 005 | ⬜ TODO | `tokens.claims` → `tokens.balance` → `auth.core` | Daily claim fires `get_token_balance` RPC; balance rendered in DOM |
-| 006 | ⬜ TODO | `notifications.panel` → `notifications.actions` → `notifications.state` | Panel renders unread badge; mark-read fires RPC; badge clears |
-| 007 | ⬜ TODO | `staking.rpc` → `depth-gate` → `auth` | Staking blocked when depth gate requires auth; RPC only fires when authed |
-| 008 | ⬜ TODO | `rivals-presence` → `rivals-presence-channel` → `async` | Presence channel wired through async rivals state |
-| 009 | ⬜ TODO | `share` → `auth` + `navigation` | Share fires RPC with user ID; navigation.call invoked on success |
-| 010 | ⬜ TODO | `onboarding-drip` → `auth` + `rpc-schemas` | Drip fires correct RPCs; auth-gated actions blocked for guests |
+Format: [ ] rank | score | importer → imported
 
-## Rank 011–020: Arena config + queue chain
-
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 011 | ⬜ TODO | `arena-config-mode-select` → `arena-config-category` → `arena-state` | Mode selection mutates state; category picker reflects it |
-| 012 | ⬜ TODO | `arena-queue` → `arena-match-found` → `arena-room-enter` | Queue join → match found → enter room transition |
-| 013 | ⬜ TODO | `arena-match-flow` → `arena-match-found` + `arena-match-timers` | Timer fires → match flow progresses |
-| 014 | ⬜ TODO | `arena-private-picker` → `arena-private-lobby` → `arena-match-found` | Private lobby creation → match found fires |
-| 015 | ⬜ TODO | `arena-mod-queue-browse` → `arena-mod-debate-picker` → `arena-mod-debate-waiting` | Mod browses queue → picks debate → waiting state |
-| 016 | ⬜ TODO | `arena-room-end-finalize` → `tokens` + `staking` + `reference-arsenal` | End-of-debate settlement calls token/staking/reference RPCs |
-| 017 | ⬜ TODO | `arena-room-end-render` → `arena-mod-scoring` + `arena-room-ai-scoring` | Score rendering pulls from both scoring modules |
-| 018 | ⬜ TODO | `arena-pending-challenges` → `arena-match-found` → `arena-room-enter` | Challenge accepted → match found → room enter |
-| 019 | ⬜ TODO | `arena-feed-wiring` → `arena-feed-wiring-debater` + `arena-feed-wiring-mod` + `arena-feed-wiring-spectator` | Wiring orchestrator delegates to role-specific wiring |
-| 020 | ⬜ TODO | `arena-lobby` → `arena-lobby.open-debates` + `arena-mod-queue-browse` | Lobby loads open debates + mod queue |
-
-## Rank 021–040: Profile, settings, groups
-
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 021 | ⬜ TODO | `auth.profile` → `auth.core` + `auth.follows` + `auth.rivals` + `badge` + `bounties` | Full profile load chain |
-| 022 | ⬜ TODO | `profile-depth.section` → `profile-depth.render` + `profile-depth.tier` + `tokens` | Section renders tier and token state |
-| 023 | ⬜ TODO | `settings.load` → `settings.helpers` | Settings loaded into form fields |
-| 024 | ⬜ TODO | `settings.save` → `auth` + `settings.helpers` | Save calls RPC; form state updated |
-| 025 | ⬜ TODO | `groups.detail` → `groups.feed` + `groups.members` + `groups.challenges` + `groups.auditions` | Detail page loads all sub-sections |
-| 026 | ⬜ TODO | `groups.load` → `groups.state` | Load populates state; downstream renders correctly |
-| 027 | ⬜ TODO | `groups.challenges` → `auth` + `rpc-schemas` | Challenge submission fires validated RPC |
-| 028 | ⬜ TODO | `groups.members` → `groups.members.modal` → `groups.state` | Modal opens; member data from state |
-| 029 | ⬜ TODO | `home.nav` → `home.feed` + `home.profile` + `home.invite` + `home.arsenal` | Nav wires all home sub-sections |
-| 030 | ⬜ TODO | `home.profile` → `auth` | Profile header renders with auth state |
-
-## Rank 031–050: Token economy + payments
-
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 031 | ⬜ TODO | `tokens.balance` → `auth.core` | Balance fetch calls RPC; returned value set in state |
-| 032 | ⬜ TODO | `tokens.milestones` → `tokens.balance` + `tokens.animations` | Milestone check reads balance; fires animation on unlock |
-| 033 | ⬜ TODO | `powerups.rpc` → `auth` + `tokens` | Powerup activation calls RPC; token cost deducted |
-| 034 | ⬜ TODO | `powerups.loadout` → `powerups.rpc` + `tiers` | Loadout shows tier-gated powerups; activation fires RPC |
-| 035 | ⬜ TODO | `paywall` → `auth` + `navigation` | Paywall blocks unauthenticated access; navigation fires on auth |
-| 036 | ⬜ TODO | `payments` → `auth` + `dependency-clamps` | Payment initiation fires analytics event via clamp |
-| 037 | ⬜ TODO | `staking.render` → `staking.rpc` + `tiers` | Render shows tier-appropriate staking options |
-| 038 | ⬜ TODO | `staking.wire` → `staking.rpc` | Wire calls correct staking RPCs on button press |
-| 039 | ⬜ TODO | `reference-arsenal.forge` → `reference-arsenal.forge-submit` + `reference-arsenal.forge-wiring` | Forge form submits via RPC |
-| 040 | ⬜ TODO | `reference-arsenal.armory` → `reference-arsenal.armory.sheet` + `reference-arsenal.render` | Armory renders cards; sheet opens on selection |
-
-## Rank 041–060: Spectate + leaderboard + DM
-
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 041 | ⬜ TODO | `spectate.chat` → `auth` + `depth-gate` + `rpc-schemas` | Chat blocked by depth gate; message fires validated RPC |
-| 042 | ⬜ TODO | `spectate.vote` → `auth` + `tokens` + `rpc-schemas` | Vote fires RPC; token cost deducted |
-| 043 | ⬜ TODO | `spectate.render` → `spectate.chat` + `spectate.vote` + `spectate.render-timeline` | Full spectate page render |
-| 044 | ⬜ TODO | `leaderboard.render` → `leaderboard.list` + `leaderboard.state` | Leaderboard renders from state |
-| 045 | ⬜ TODO | `leaderboard.list` → `leaderboard.fetch` + `badge` + `bounties` | List rows include badge/bounty data |
-| 046 | ⬜ TODO | `dm.ts` → `dm.fetch` + `dm.render` | DM page loads messages; renders them |
-| 047 | ⬜ TODO | `notifications.ts` → `notifications.panel` + `push-notifications` | Notifications init wires panel and push |
-| 048 | ⬜ TODO | `rivals-presence` → `rivals-presence-popup` + `rivals-presence-channel` | Presence popup shown when rival online |
-| 049 | ⬜ TODO | `async.actions-predict` → `async.fetch` + `async.render` + `tokens` | Predict action fetches, renders, deducts tokens |
-| 050 | ⬜ TODO | `async.rivals` → `async.state` + `auth` | Rivals async state loaded from auth |
-
-## Rank 051–100: Plinko + login + misc (lower risk, less interconnected)
-
-(Remaining seams continue below — added as needed)
-
-| Rank | Status | Seam | What crosses |
-|------|--------|------|--------------|
-| 051 | ⬜ TODO | `plinko.ts` → `plinko-step1-method` + `plinko-step2-age` + `plinko-step3-username` + `plinko-step4-step5` | Multi-step signup flow |
-| 052 | ⬜ TODO | `plinko-auth-return` → `auth` + `plinko-helpers` | OAuth return updates state; helpers advance step |
-| 053 | ⬜ TODO | `login.ts` → `login.forms` + `auth` | Login form submits credentials via auth |
-| 054 | ⬜ TODO | `home.arsenal` → `reference-arsenal` + `home.arsenal-shop` | Arsenal section renders with shop |
-| 055 | ⬜ TODO | `home.invite` → `home.invite-render` + `home.invite-sheet` + `auth` | Invite sheet opens; RPC fires with user ID |
-| 056 | ⬜ TODO | `modifiers-catalog` → `auth` + `rpc-schemas` | Catalog fetch fires validated RPC |
-| 057 | ⬜ TODO | `profile-debate-archive` → `profile-debate-archive.render` + `auth.rpc` | Archive loaded via safeRpc; rendered |
-| 058 | ⬜ TODO | `scoring` → `auth` | Scoring fetch uses Supabase client from auth |
-| 059 | ⬜ TODO | `search` → `auth` | Search fires RPC via auth client |
-| 060 | ⬜ TODO | `tournaments` → `tournaments.indicator` + `auth` | Tournaments init loads indicator state |
+- [ ] 001 | score: 64 | arena/arena-feed-ui.ts → arena-state
+- [ ] 002 | score: 60 | arena/arena-room-live-messages.ts → arena-state
+- [ ] 003 | score: 59 | arena/arena-state.ts → powerups
+- [ ] 004 | score: 59 | arena/arena-room-live-poll.ts → arena-state
+- [ ] 005 | score: 57 | arena/arena-room-end.ts → arena-state
+- [ ] 006 | score: 57 | arena/arena-match-found.ts → arena-state
+- [ ] 007 | score: 57 | arena/arena-feed-events.ts → arena-state
+- [ ] 008 | score: 56 | arena/arena-queue.ts → arena-state
+- [ ] 009 | score: 56 | arena/arena-feed-machine-turns.ts → arena-state
+- [ ] 010 | score: 55 | arena/arena-room-enter.ts → arena-state
+- [ ] 011 | score: 55 | arena/arena-feed-heartbeat.ts → arena-state
+- [ ] 012 | score: 54 | arena/arena-room-predebate.ts → arena-state
+- [ ] 013 | score: 54 | arena/arena-room-ai-response.ts → arena-state
+- [ ] 014 | score: 54 | arena/arena-private-picker.ts → arena-state
+- [ ] 015 | score: 54 | arena/arena-mod-queue-status.ts → arena-state
+- [ ] 016 | score: 54 | arena/arena-match-timers.ts → arena-state
+- [ ] 017 | score: 54 | arena/arena-config-round-picker.ts → arena-state
+- [ ] 018 | score: 54 | arena/arena-config-mode-select.ts → arena-state
+- [ ] 019 | score: 53 | arena/arena-room-live-audio.ts → arena-state
+- [ ] 020 | score: 53 | arena/arena-private-lobby.join.ts → arena-state
+- [ ] 021 | score: 53 | arena/arena-mod-debate-waiting.ts → arena-state
+- [ ] 022 | score: 53 | arena/arena-feed-references.ts → arena-state
+- [ ] 023 | score: 53 | arena/arena-feed-realtime.ts → arena-state
+- [ ] 024 | score: 53 | arena/arena-feed-machine-pause.ts → arena-state
+- [ ] 025 | score: 53 | arena/arena-feed-disconnect.ts → arena-state
+- [ ] 026 | score: 53 | arena/arena-feed-disconnect-mod.ts → arena-state
+- [ ] 027 | score: 53 | arena/arena-config-settings.ts → arena-state
+- [ ] 028 | score: 52 | arena/arena-room-render.ts → arena-state
+- [ ] 029 | score: 52 | arena/arena-room-end-scores.ts → arena-state
+- [ ] 030 | score: 52 | arena/arena-room-end-render.ts → arena-state
+- [ ] 031 | score: 52 | arena/arena-room-end-nulled.ts → arena-state
+- [ ] 032 | score: 52 | arena/arena-private-lobby.ts → arena-state
+- [ ] 033 | score: 52 | arena/arena-pending-challenges.ts → arena-state
+- [ ] 034 | score: 52 | arena/arena-mod-refs-ruling.ts → arena-state
+- [ ] 035 | score: 52 | arena/arena-mod-refs-form.ts → arena-state
+- [ ] 036 | score: 52 | arena/arena-mod-queue-browse.ts → arena-state
+- [ ] 037 | score: 52 | arena/arena-mod-debate-poll.ts → arena-state
+- [ ] 038 | score: 52 | arena/arena-mod-debate-picker.ts → arena-state
+- [ ] 039 | score: 52 | arena/arena-lobby.open-debates.ts → arena-state
+- [ ] 040 | score: 52 | arena/arena-feed-wiring.ts → arena-state
+- [ ] 041 | score: 52 | arena/arena-feed-wiring-mod.ts → arena-state
+- [ ] 042 | score: 52 | arena/arena-feed-wiring-debater.ts → arena-state
+- [ ] 043 | score: 52 | arena/arena-feed-machine-ads.ts → arena-state
+- [ ] 044 | score: 52 | arena/arena-feed-events-render.ts → arena-state
+- [ ] 045 | score: 52 | arena/arena-core.ts → arena-state
+- [ ] 046 | score: 52 | arena/arena-config-category.ts → arena-state
+- [ ] 047 | score: 51 | arena/arena-match-flow.ts → arena-state
+- [ ] 048 | score: 51 | arena/arena-lobby.ts → arena-state
+- [ ] 049 | score: 51 | arena.ts → arena-state
+- [ ] 050 | score: 48 | arena/arena-types.ts → staking
+- [ ] 051 | score: 40 | arena/arena-feed-ui.ts → arena-core.utils
+- [ ] 052 | score: 38 | auth.rpc.ts → rpc-schemas
+- [ ] 053 | score: 37 | arena/arena-room-live-poll.ts → rpc-schemas
+- [ ] 054 | score: 35 | arena/arena-room-live-poll.ts → arena-core.utils
+- [ ] 055 | score: 33 | arena/arena-room-end.ts → arena-core.utils
+- [ ] 056 | score: 33 | arena/arena-match-found.ts → arena-core.utils
+- [ ] 057 | score: 33 | arena/arena-feed-events.ts → arena-core.utils
+- [ ] 058 | score: 33 | share.ts → rpc-schemas
+- [ ] 059 | score: 32 | arena/arena-queue.ts → arena-core.utils
+- [ ] 060 | score: 32 | pages/groups.auditions.ts → rpc-schemas
+- [ ] 061 | score: 32 | arena/arena-private-picker.ts → rpc-schemas
+- [ ] 062 | score: 31 | arena/arena-room-enter.ts → arena-core.utils
+- [ ] 063 | score: 31 | arena/arena-feed-heartbeat.ts → arena-core.utils
+- [ ] 064 | score: 31 | pages/spectate.vote.ts → rpc-schemas
+- [ ] 065 | score: 31 | pages/spectate.chat.ts → rpc-schemas
+- [ ] 066 | score: 31 | pages/home.feed.ts → rpc-schemas
+- [ ] 067 | score: 31 | pages/groups.members.ts → rpc-schemas
+- [ ] 068 | score: 31 | pages/groups.challenges.ts → rpc-schemas
+- [ ] 069 | score: 31 | modifiers-catalog.ts → rpc-schemas
+- [ ] 070 | score: 30 | arena/arena-feed-ui.ts → arena-feed-state
+- [ ] 071 | score: 30 | arena/arena-room-predebate.ts → arena-core.utils
+- [ ] 072 | score: 30 | arena/arena-room-ai-response.ts → arena-core.utils
+- [ ] 073 | score: 30 | arena/arena-private-picker.ts → arena-core.utils
+- [ ] 074 | score: 30 | arena/arena-config-mode-select.ts → arena-core.utils
+- [ ] 075 | score: 30 | pages/profile-depth.section.ts → rpc-schemas
+- [ ] 076 | score: 30 | pages/home.invite.ts → rpc-schemas
+- [ ] 077 | score: 30 | pages/home.invite-sheet.ts → rpc-schemas
+- [ ] 078 | score: 30 | pages/groups.load.ts → rpc-schemas
+- [ ] 079 | score: 30 | pages/groups.feed.ts → rpc-schemas
+- [ ] 080 | score: 30 | pages/groups.detail.ts → rpc-schemas
+- [ ] 081 | score: 30 | pages/groups.create.ts → rpc-schemas
+- [ ] 082 | score: 30 | onboarding-drip.ts → rpc-schemas
+- [ ] 083 | score: 30 | modifiers-rpc.ts → rpc-schemas
+- [ ] 084 | score: 30 | async.actions-predict.ts → rpc-schemas
+- [ ] 085 | score: 30 | arena/arena-room-end-finalize.ts → rpc-schemas
+- [ ] 086 | score: 30 | arena/arena-feed-wiring-spectator.ts → rpc-schemas
+- [ ] 087 | score: 30 | arena/arena-feed-spec-chat.ts → rpc-schemas
+- [ ] 088 | score: 30 | arena/arena-config-category.ts → rpc-schemas
+- [ ] 089 | score: 29 | arena/arena-room-live-audio.ts → arena-core.utils
+- [ ] 090 | score: 29 | arena/arena-private-lobby.join.ts → arena-core.utils
+- [ ] 091 | score: 29 | arena/arena-feed-realtime.ts → arena-core.utils
+- [ ] 092 | score: 29 | arena/arena-config-settings.ts → arena-core.utils
+- [ ] 093 | score: 29 | pages/spectate.ts → rpc-schemas
+- [ ] 094 | score: 29 | pages/profile-depth.ts → rpc-schemas
+- [ ] 095 | score: 29 | pages/plinko-invite-nudge.ts → rpc-schemas
+- [ ] 096 | score: 28 | arena/arena-room-render.ts → arena-core.utils
+- [ ] 097 | score: 28 | arena/arena-private-lobby.ts → arena-core.utils
+- [ ] 098 | score: 28 | arena/arena-pending-challenges.ts → arena-core.utils
+- [ ] 099 | score: 28 | arena/arena-mod-refs-form.ts → arena-core.utils
+- [ ] 100 | score: 28 | arena/arena-lobby.open-debates.ts → arena-core.utils
+- [ ] 101 | score: 28 | arena/arena-core.ts → arena-core.utils
+- [ ] 102 | score: 28 | arena/arena-config-category.ts → arena-core.utils
+- [ ] 103 | score: 27 | arena/arena-match-flow.ts → arena-core.utils
+- [ ] 104 | score: 27 | arena/arena-lobby.ts → arena-core.utils
+- [ ] 105 | score: 23 | arena/arena-feed-events.ts → arena-feed-state
+- [ ] 106 | score: 22 | arena/arena-feed-machine-turns.ts → arena-feed-state
+- [ ] 107 | score: 21 | arena/arena-feed-transcript.ts → arena-feed-state
+- [ ] 108 | score: 21 | arena/arena-feed-heartbeat.ts → arena-feed-state
+- [ ] 109 | score: 19 | auth.rpc.ts → auth.core
+- [ ] 110 | score: 19 | arena/arena-feed-references.ts → arena-feed-state
+- [ ] 111 | score: 19 | arena/arena-feed-realtime.ts → arena-feed-state
+- [ ] 112 | score: 19 | arena/arena-feed-machine-pause.ts → arena-feed-state
+- [ ] 113 | score: 19 | arena/arena-feed-disconnect.ts → arena-feed-state
+- [ ] 114 | score: 19 | arena/arena-feed-disconnect-mod.ts → arena-feed-state
+- [ ] 115 | score: 18 | arena/arena-room-live-poll.ts → nudge
+- [ ] 116 | score: 18 | arena/arena-feed-machine-turns.ts → arena-feed-ui
+- [ ] 117 | score: 18 | arena/arena-feed-wiring-spectator.ts → arena-feed-state
+- [ ] 118 | score: 18 | arena/arena-feed-wiring-mod.ts → arena-feed-state
+- [ ] 119 | score: 18 | arena/arena-feed-wiring-debater.ts → arena-feed-state
+- [ ] 120 | score: 18 | arena/arena-feed-machine-ads.ts → arena-feed-state
+- [ ] 121 | score: 18 | arena/arena-feed-events-render.ts → arena-feed-state
+- [ ] 122 | score: 18 | arena/arena-feed-disconnect-debater.ts → arena-feed-state
+- [ ] 123 | score: 17 | arena/arena-room-live-poll.ts → arena-room-live-messages
+- [ ] 124 | score: 17 | pages/groups.utils.ts → groups.state
+- [ ] 125 | score: 16 | arena/arena-room-end.ts → nudge
+- [ ] 126 | score: 15 | pages/groups.auditions.ts → groups.state
+- [ ] 127 | score: 15 | arena/arena-feed-references.ts → arena-feed-ui
+- [ ] 128 | score: 15 | arena/arena-feed-machine-pause.ts → arena-feed-ui
+- [ ] 129 | score: 15 | arena/arena-feed-disconnect.ts → arena-feed-ui
+- [ ] 130 | score: 15 | arena/arena-feed-disconnect-mod.ts → arena-feed-ui
+- [ ] 131 | score: 14 | arena/arena-room-live-poll.ts → arena-room-end
+- [ ] 132 | score: 14 | feed-card.ts → bounties
+- [ ] 133 | score: 14 | arena/arena-room-end.ts → powerups
+- [ ] 134 | score: 14 | arena/arena-room-end.ts → arena-room-live-poll
+- [ ] 135 | score: 14 | pages/home.arsenal-shop-types.ts → modifiers
+- [ ] 136 | score: 14 | tokens.balance.ts → auth.core
+- [ ] 137 | score: 14 | arena/arena-room-enter.ts → nudge
+- [ ] 138 | score: 14 | pages/groups.nav.ts → groups.state
+- [ ] 139 | score: 14 | pages/groups.members.ts → groups.state
+- [ ] 140 | score: 14 | pages/groups.members.modal.ts → groups.state
+- [ ] 141 | score: 14 | pages/groups.challenges.ts → groups.state
+- [ ] 142 | score: 14 | arena/arena-feed-wiring-spectator.ts → arena-feed-ui
+- [ ] 143 | score: 14 | arena/arena-feed-wiring-mod.ts → arena-feed-ui
+- [ ] 144 | score: 14 | arena/arena-feed-wiring-debater.ts → arena-feed-ui
+- [ ] 145 | score: 14 | arena/arena-feed-machine-ads.ts → arena-feed-ui
+- [ ] 146 | score: 14 | arena/arena-feed-events-render.ts → arena-feed-ui
+- [ ] 147 | score: 14 | arena/arena-feed-disconnect-debater.ts → arena-feed-ui
+- [ ] 148 | score: 13 | reference-arsenal.ts → reference-arsenal.rpc
+- [ ] 149 | score: 13 | arena/arena-room-end.ts → arena-types-results
+- [ ] 150 | score: 13 | auth.rivals.ts → auth.core
+- [ ] 151 | score: 13 | auth.gate.ts → auth.core
+- [ ] 152 | score: 13 | auth.follows.ts → auth.core
+- [ ] 153 | score: 13 | pages/groups.settings.ts → groups.state
+- [ ] 154 | score: 13 | pages/groups.load.ts → groups.state
+- [ ] 155 | score: 13 | pages/groups.feed.ts → groups.state
+- [ ] 156 | score: 13 | pages/groups.detail.ts → groups.state
+- [ ] 157 | score: 13 | pages/groups.create.ts → groups.state
+- [ ] 158 | score: 12 | powerups.ts → powerups.rpc
+- [ ] 159 | score: 12 | reference-arsenal.ts → reference-arsenal.utils
+- [ ] 160 | score: 12 | arena/arena-match-found.ts → arena-sounds
+- [ ] 161 | score: 12 | profile-debate-archive.edit.ts → auth.rpc
+- [ ] 162 | score: 12 | modifiers-render.ts → modifiers
+- [ ] 163 | score: 12 | auth.rivals.ts → auth.rpc
+- [ ] 164 | score: 12 | auth.follows.ts → auth.rpc
+- [ ] 165 | score: 12 | arena/arena-room-ai-response.ts → arena-room-live-messages
+- [ ] 166 | score: 12 | pages/spectate.vote.ts → nudge
+- [ ] 167 | score: 12 | auth.profile.ts → auth.core
+- [ ] 168 | score: 12 | auth.ops.ts → auth.core
+- [ ] 169 | score: 12 | auth.moderator.ts → auth.core
+- [ ] 170 | score: 12 | pages/groups.ts → groups.state
+- [ ] 171 | score: 11 | arena/arena-room-live-poll.ts → arena-room-ai-response
+- [ ] 172 | score: 11 | pages/plinko-helpers.ts → plinko-state
+- [ ] 173 | score: 11 | arena/arena-room-end.ts → arena-mod-refs
+- [ ] 174 | score: 11 | arena/arena-match-found.ts → arena-queue
+- [ ] 175 | score: 11 | arena/arena-queue.ts → arena-match-found
+- [ ] 176 | score: 11 | arena/arena-feed-machine-turns.ts → arena-sounds
+- [ ] 177 | score: 11 | arena/arena-feed-machine-turns.ts → arena-feed-events
+- [ ] 178 | score: 11 | pages/home.state.ts → reference-arsenal
+- [ ] 179 | score: 11 | arena/arena-room-predebate.ts → powerups
+- [ ] 180 | score: 11 | arena/arena-room-predebate.ts → bounties
+- [ ] 181 | score: 11 | arena/arena-room-ai-response.ts → arena-room-live-poll
+- [ ] 182 | score: 11 | modifiers-catalog.ts → modifiers
+- [ ] 183 | score: 11 | auth.profile.ts → auth.rpc
+- [ ] 184 | score: 11 | auth.moderator.ts → auth.rpc
+- [ ] 185 | score: 11 | arena/arena-room-live-audio.ts → arena-room-live-messages
+- [ ] 186 | score: 11 | arena/arena-mod-refs-ai.ts → arena-room-live-messages
+- [ ] 187 | score: 11 | tokens.claims.ts → nudge
+- [ ] 188 | score: 11 | pages/plinko-step3-username.ts → nudge
+- [ ] 189 | score: 11 | arena/arena-room-render.ts → nudge
+- [ ] 190 | score: 11 | arena/arena-room-end-render.ts → nudge
+- [ ] 191 | score: 11 | arena/arena-feed-machine-ads.ts → nudge
+- [ ] 192 | score: 10 | powerups.ts → powerups.shop
+- [ ] 193 | score: 10 | powerups.ts → powerups.overlays
+- [ ] 194 | score: 10 | powerups.ts → powerups.loadout
+- [ ] 195 | score: 10 | powerups.ts → powerups.activation
+- [ ] 196 | score: 10 | bounties.ts → bounties.rpc
+- [ ] 197 | score: 10 | bounties.ts → bounties.dot
+- [ ] 198 | score: 10 | reference-arsenal.ts → reference-arsenal.render
+- [ ] 199 | score: 10 | reference-arsenal.ts → reference-arsenal.loadout
+- [ ] 200 | score: 10 | reference-arsenal.ts → reference-arsenal.debate
+- [ ] 201 | score: 10 | tokens.ts → tokens.balance
+- [ ] 202 | score: 10 | feed-card.ts → badge
+- [ ] 203 | score: 10 | arena/arena-match-found.ts → arena-types-match
+- [ ] 204 | score: 10 | arena/arena-match-found.ts → arena-room-enter
+- [ ] 205 | score: 10 | share.ts → navigation
+- [ ] 206 | score: 10 | reference-arsenal.forge-submit.ts → reference-arsenal.rpc
+- [ ] 207 | score: 10 | powerups.rpc.ts → tokens
+- [ ] 208 | score: 10 | arena/arena-feed-transcript.ts → arena-feed-events
+- [ ] 209 | score: 10 | async.ts → async.state
+- [ ] 210 | score: 10 | async.fetch.ts → async.state
+- [ ] 211 | score: 10 | arena/arena-room-predebate.ts → reference-arsenal
+- [ ] 212 | score: 10 | auth.profile.ts → bounties
+- [ ] 213 | score: 10 | arena/arena-room-live-audio.ts → arena-room-live-poll
+- [ ] 214 | score: 10 | profile-debate-archive.ts → auth.rpc
+- [ ] 215 | score: 10 | profile-debate-archive.picker.ts → auth.rpc
+- [ ] 216 | score: 10 | pages/home.invite-sheet.ts → modifiers
+- [ ] 217 | score: 10 | pages/home.arsenal-shop-wiring.ts → modifiers
+- [ ] 218 | score: 10 | pages/home.arsenal-shop-sheet.ts → modifiers
+- [ ] 219 | score: 10 | pages/home.arsenal-shop-render.ts → modifiers
+- [ ] 220 | score: 10 | pages/home.arsenal-shop-filters.ts → modifiers
+- [ ] 221 | score: 10 | modifiers-rpc.ts → modifiers
+- [ ] 222 | score: 10 | arena/arena-room-render.ts → arena-room-live-messages
+- [ ] 223 | score: 10 | arena/arena-mod-refs-ruling.ts → arena-room-live-messages
+- [ ] 224 | score: 10 | arena/arena-mod-refs-form.ts → arena-room-live-messages
+- [ ] 225 | score: 10 | pages/spectate.ts → nudge
+- [ ] 226 | score:  9 | bounties.ts → bounties.render
+- [ ] 227 | score:  9 | reference-arsenal.ts → reference-arsenal.forge
+- [ ] 228 | score:  9 | reference-arsenal.ts → reference-arsenal.armory
+- [ ] 229 | score:  9 | tokens.ts → tokens.animations
+- [ ] 230 | score:  9 | arena/arena-room-end.ts → arena-mod-queue-status
+- [ ] 231 | score:  9 | arena/arena-match-found.ts → arena-room-predebate
+- [ ] 232 | score:  9 | arena/arena-match-found.ts → arena-match-timers
+- [ ] 233 | score:  9 | arena/arena-queue.ts → arena-types-match
+- [ ] 234 | score:  9 | arena/arena-queue.ts → arena-types-feed-list
+- [ ] 235 | score:  9 | arena/arena-feed-machine-turns.ts → arena-feed-transcript
+- [ ] 236 | score:  9 | staking.rpc.ts → tokens
+- [ ] 237 | score:  9 | arena/arena-mod-queue-status.ts → arena-types-moderator
+- [ ] 238 | score:  9 | arena/arena-config-mode-select.ts → arena-types-moderator
+- [ ] 239 | score:  9 | async.rivals.ts → async.state
+- [ ] 240 | score:  9 | arena/arena-feed-references.ts → reference-arsenal
+- [ ] 241 | score:  9 | arena/arena-config-settings.ts → arena-types-results
+- [ ] 242 | score:  9 | leaderboard.list.ts → bounties
+- [ ] 243 | score:  9 | arena/arena-room-render.ts → powerups
+- [ ] 244 | score:  9 | arena/arena-room-render.ts → bounties
+- [ ] 245 | score:  9 | arena/arena-room-render.ts → arena-room-live-poll
+- [ ] 246 | score:  9 | arena/arena-room-live-input.ts → arena-room-live-poll
+- [ ] 247 | score:  9 | arena/arena-room-end-nulled.ts → powerups
+- [ ] 248 | score:  9 | arena/arena-loadout-presets.ts → powerups
+- [ ] 249 | score:  9 | arena/arena-core.ts → arena-room-live-poll
+- [ ] 250 | score:  9 | arena/arena-bounty-claim.ts → bounties
+- [ ] 251 | score:  9 | arena.ts → arena-room-live-messages
+- [ ] 252 | score:  8 | tokens.ts → tokens.milestones
+- [ ] 253 | score:  8 | arena/arena-sounds.ts → arena-sounds-core
+- [ ] 254 | score:  8 | pages/profile-depth.state.ts → profile-depth.data
+- [ ] 255 | score:  8 | reference-arsenal.render.ts → reference-arsenal.utils
+- [ ] 256 | score:  8 | reference-arsenal.loadout.ts → reference-arsenal.utils
+- [ ] 257 | score:  8 | arena/arena-config-mode-select.ts → arena-queue
+- [ ] 258 | score:  8 | reference-arsenal.armory.ts → reference-arsenal.rpc
+- [ ] 259 | score:  8 | pages/spectate.vote.ts → tokens
+- [ ] 260 | score:  8 | pages/spectate.vote.ts → spectate.state
+- [ ] 261 | score:  8 | pages/spectate.render-messages.ts → spectate.state
+- [ ] 262 | score:  8 | pages/spectate.chat.ts → spectate.state
+- [ ] 263 | score:  8 | pages/home.feed.ts → feed-card
+- [ ] 264 | score:  8 | pages/home.feed.ts → dependency-clamps
+- [ ] 265 | score:  8 | arena/arena-room-live-audio.ts → arena-room-end
+- [ ] 266 | score:  8 | arena/arena-private-lobby.join.ts → arena-types-moderator
+- [ ] 267 | score:  8 | arena/arena-private-lobby.join.ts → arena-match-found
+- [ ] 268 | score:  8 | arena/arena-feed-realtime.ts → dependency-clamps
+- [ ] 269 | score:  8 | arena/arena-feed-disconnect-mod.ts → arena-room-end
+- [ ] 270 | score:  8 | pages/settings.wiring.ts → settings.helpers
+- [ ] 271 | score:  8 | pages/settings.save.ts → settings.helpers
+- [ ] 272 | score:  8 | pages/settings.moderator.ts → settings.helpers
+- [ ] 273 | score:  8 | pages/settings.load.ts → settings.helpers
+- [ ] 274 | score:  8 | pages/home.arsenal.ts → reference-arsenal
+- [ ] 275 | score:  8 | async.render.wager.ts → async.state
+- [ ] 276 | score:  8 | async.render.predictions.ts → async.state
+- [ ] 277 | score:  8 | async.actions-predict.ts → async.state
+- [ ] 278 | score:  8 | arena/arena-room-end-render.ts → arena-types-results
+- [ ] 279 | score:  8 | arena/arena-room-end-finalize.ts → reference-arsenal
+- [ ] 280 | score:  8 | arena/arena-room-end-finalize.ts → arena-types-results
+- [ ] 281 | score:  8 | arena/arena-room-end-after-effects.ts → arena-types-results
+- [ ] 282 | score:  8 | arena/arena-mod-refs-ruling.ts → arena-types-results
+- [ ] 283 | score:  8 | pages/home.ts → bounties
+- [ ] 284 | score:  8 | arena/arena-lobby.ts → powerups
+- [ ] 285 | score:  8 | arena.ts → arena-room-live-poll
+- [ ] 286 | score:  7 | tokens.ts → tokens.claims
+- [ ] 287 | score:  7 | contracts/dependency-clamps.ts → analytics
+- [ ] 288 | score:  7 | arena/arena-room-end.ts → arena-room-end-scores
+- [ ] 289 | score:  7 | arena/arena-room-end.ts → arena-room-end-render
+- [ ] 290 | score:  7 | arena/arena-room-end.ts → arena-room-end-nulled
+- [ ] 291 | score:  7 | arena/arena-room-end.ts → arena-room-end-finalize
+- [ ] 292 | score:  7 | arena/arena-feed-events.ts → arena-feed-events-render
+- [ ] 293 | score:  7 | arena/arena-mod-refs.ts → arena-mod-refs-ai
+- [ ] 294 | score:  7 | profile-debate-archive.edit.ts → profile-debate-archive.state
+- [ ] 295 | score:  7 | arena/arena-room-predebate.ts → arena-room-enter
+- [ ] 296 | score:  7 | pages/groups.members.ts → groups.utils
+- [ ] 297 | score:  7 | pages/groups.members.modal.ts → groups.utils
+- [ ] 298 | score:  7 | pages/groups.challenges.ts → groups.utils
+- [ ] 299 | score:  7 | arena/arena-room-ai-scoring.ts → arena-types-ai-scoring
+- [ ] 300 | score:  7 | arena/arena-feed-disconnect.ts → arena-feed-machine-turns
+- [ ] 301 | score:  7 | arena/arena-feed-disconnect-mod.ts → arena-feed-machine-turns
+- [ ] 302 | score:  7 | reference-arsenal.armory.sheet.ts → reference-arsenal.rpc
+- [ ] 303 | score:  7 | payments.ts → dependency-clamps
+- [ ] 304 | score:  7 | pages/spectate.render.ts → spectate.state
+- [ ] 305 | score:  7 | pages/spectate.render-timeline.ts → spectate.state
+- [ ] 306 | score:  7 | pages/profile-depth.section.ts → tokens
+- [ ] 307 | score:  7 | pages/plinko-step4-step5.ts → plinko-helpers
+- [ ] 308 | score:  7 | pages/plinko-step3-username.ts → plinko-helpers
+- [ ] 309 | score:  7 | pages/plinko-step2-age.ts → plinko-helpers
+- [ ] 310 | score:  7 | pages/plinko-step1-method.ts → plinko-helpers
+- [ ] 311 | score:  7 | pages/plinko-auth-return.ts → plinko-helpers
+- [ ] 312 | score:  7 | pages/home.overlay.ts → feed-card
+- [ ] 313 | score:  7 | pages/home.nav.ts → navigation
+- [ ] 314 | score:  7 | pages/groups.feed.ts → feed-card
+- [ ] 315 | score:  7 | notifications.deeplink.ts → navigation
+- [ ] 316 | score:  7 | async.actions-predict.ts → tokens
+- [ ] 317 | score:  7 | arena/arena-room-end-finalize.ts → tokens
+- [ ] 318 | score:  7 | arena/arena-private-lobby.ts → arena-match-found
+- [ ] 319 | score:  7 | arena/arena-pending-challenges.ts → arena-match-found
+- [ ] 320 | score:  7 | arena/arena-mod-queue-browse.ts → arena-types-moderator
+- [ ] 321 | score:  7 | arena/arena-mod-debate-poll.ts → arena-types-moderator
+- [ ] 322 | score:  7 | arena/arena-mod-debate-poll.ts → arena-match-found
+- [ ] 323 | score:  7 | arena/arena-feed-wiring-mod.ts → arena-feed-events
+- [ ] 324 | score:  7 | arena/arena-feed-wiring-debater.ts → arena-feed-events
+- [ ] 325 | score:  7 | arena/arena-feed-machine-ads.ts → arena-sounds
+- [ ] 326 | score:  7 | arena/arena-feed-machine-ads.ts → arena-room-end
+- [ ] 327 | score:  7 | arena/arena-feed-machine-ads.ts → arena-feed-events
+- [ ] 328 | score:  7 | arena/arena-feed-events-render.ts → arena-sounds
+- [ ] 329 | score:  7 | arena/arena-feed-disconnect-debater.ts → arena-room-end
+- [ ] 330 | score:  7 | arena/arena-config-category.ts → dependency-clamps
+- [ ] 331 | score:  7 | pages/settings.ts → settings.helpers
+- [ ] 332 | score:  7 | arena.ts → arena-types-results
+- [ ] 333 | score:  6 | arena/arena-mod-refs.ts → arena-mod-refs-ruling
+- [ ] 334 | score:  6 | arena/arena-mod-refs.ts → arena-mod-refs-form
+- [ ] 335 | score:  6 | staking.ts → staking.rpc
+- [ ] 336 | score:  6 | staking.rpc.ts → depth-gate
+- [ ] 337 | score:  6 | reference-arsenal.loadout.ts → reference-arsenal.debate
+- [ ] 338 | score:  6 | notifications.actions.ts → notifications.state
+- [ ] 339 | score:  6 | async.ts → async.render
+- [ ] 340 | score:  6 | async.ts → async.fetch
+- [ ] 341 | score:  6 | arena/arena-room-predebate.ts → staking
+- [ ] 342 | score:  6 | arena/arena-room-predebate.ts → arena-ads
+- [ ] 343 | score:  6 | arena/arena-private-picker.ts → arena-config-round-picker
+- [ ] 344 | score:  6 | arena/arena-private-picker.ts → arena-config-mode-select
+- [ ] 345 | score:  6 | arena/arena-config-mode-select.ts → arena-private-picker
+- [ ] 346 | score:  6 | tokens.milestones.ts → tokens.balance
+- [ ] 347 | score:  6 | reference-arsenal.forge.ts → reference-arsenal.forge-submit
+- [ ] 348 | score:  6 | profile-debate-archive.render.ts → profile-debate-archive.state
+- [ ] 349 | score:  6 | powerups.loadout.ts → powerups.rpc
+- [ ] 350 | score:  6 | powerups.activation.ts → powerups.rpc
+- [ ] 351 | score:  6 | pages/spectate.render-messages.ts → spectate.utils
+- [ ] 352 | score:  6 | pages/spectate.chat.ts → spectate.utils
+- [ ] 353 | score:  6 | pages/profile-depth.tier.ts → profile-depth.state
+- [ ] 354 | score:  6 | pages/profile-depth.tier.ts → profile-depth.data
+- [ ] 355 | score:  6 | pages/profile-depth.render.ts → profile-depth.state
+- [ ] 356 | score:  6 | pages/profile-depth.render.ts → profile-depth.data
+- [ ] 357 | score:  6 | pages/home.profile.ts → badge
+- [ ] 358 | score:  6 | auth.profile.ts → badge
+- [ ] 359 | score:  6 | arena/arena-feed-realtime.ts → arena-feed-heartbeat
+- [ ] 360 | score:  6 | arena/arena-feed-disconnect.ts → arena-feed-heartbeat
+- [ ] 361 | score:  6 | arena/arena-feed-disconnect-mod.ts → arena-feed-heartbeat
+- [ ] 362 | score:  6 | reference-arsenal.armory.sheet.ts → reference-arsenal.utils
+- [ ] 363 | score:  6 | pages/plinko-step3-username.ts → plinko-state
+- [ ] 364 | score:  6 | pages/plinko-step2-age.ts → plinko-state
+- [ ] 365 | score:  6 | pages/plinko-step1-method.ts → plinko-state
+- [ ] 366 | score:  6 | pages/plinko-auth-return.ts → plinko-state
+- [ ] 367 | score:  6 | pages/groups.load.ts → groups.utils
+- [ ] 368 | score:  6 | pages/groups.feed.ts → groups.utils
+- [ ] 369 | score:  6 | arena/arena-room-render.ts → arena-mod-refs
+- [ ] 370 | score:  6 | arena/arena-room-end-scores.ts → arena-types-ai-scoring
+- [ ] 371 | score:  6 | arena/arena-room-end-render.ts → arena-types-ai-scoring
+- [ ] 372 | score:  6 | arena/arena-room-end-render.ts → arena-queue
+- [ ] 373 | score:  6 | arena/arena-room-end-finalize.ts → arena-types-ai-scoring
+- [ ] 374 | score:  6 | arena/arena-feed-wiring-debater.ts → arena-feed-machine-turns
+- [ ] 375 | score:  6 | arena/arena-feed-machine-ads.ts → arena-feed-machine-turns
+- [ ] 376 | score:  6 | arena/arena-core.ts → arena-queue
+- [ ] 377 | score:  6 | arena/arena-core.ts → arena-mod-refs
+- [ ] 378 | score:  6 | paywall.ts → navigation
+- [ ] 379 | score:  6 | pages/spectate.ts → spectate.state
+- [ ] 380 | score:  6 | pages/plinko.ts → plinko-helpers
+- [ ] 381 | score:  6 | dm/dm.ts → dependency-clamps
+- [ ] 382 | score:  6 | async.utils.ts → navigation
+- [ ] 383 | score:  6 | arena/arena-match-flow.ts → arena-match-found
+- [ ] 384 | score:  6 | arena/arena-lobby.ts → navigation
+- [ ] 385 | score:  6 | arena/arena-entrance.ts → arena-sounds
+- [ ] 386 | score:  6 | arena.ts → arena-types-moderator
+- [ ] 387 | score:  6 | arena.ts → arena-room-end
+- [ ] 388 | score:  5 | arena/arena-room-enter.ts → arena-room-render
+- [ ] 389 | score:  5 | profile-debate-archive.edit.ts → profile-debate-archive.render
+- [ ] 390 | score:  5 | pages/groups.auditions.ts → groups.auditions.render
+- [ ] 391 | score:  5 | notifications.actions.ts → notifications.panel
+- [ ] 392 | score:  5 | async.ts → async.rivals
+- [ ] 393 | score:  5 | async.ts → async.actions
+- [ ] 394 | score:  5 | tokens.milestones.ts → tokens.animations
+- [ ] 395 | score:  5 | rivals-presence-channel.ts → async
+- [ ] 396 | score:  5 | reference-arsenal.armory.ts → reference-arsenal.render
+- [ ] 397 | score:  5 | profile-debate-archive.render.ts → profile-debate-archive.edit
+- [ ] 398 | score:  5 | pages/spectate.chat.ts → depth-gate
+- [ ] 399 | score:  5 | pages/groups.nav.ts → groups.auditions
+- [ ] 400 | score:  5 | notifications.panel.ts → notifications.state
+- [ ] 401 | score:  5 | notifications.panel.ts → notifications.actions
+- [ ] 402 | score:  5 | leaderboard.fetch.ts → leaderboard.state
+- [ ] 403 | score:  5 | auth.profile.ts → auth.rivals
+- [ ] 404 | score:  5 | auth.profile.ts → auth.gate
+- [ ] 405 | score:  5 | auth.profile.ts → auth.follows
+- [ ] 406 | score:  5 | arena/arena-room-ai-scoring.ts → arena-room-ai-response
+- [ ] 407 | score:  5 | arena/arena-private-lobby.join.ts → arena-types-private-lobby
+- [ ] 408 | score:  5 | arena/arena-mod-scoring.ts → arena-ads
+- [ ] 409 | score:  5 | arena/arena-mod-refs-ai.ts → arena-room-ai-response
+- [ ] 410 | score:  5 | arena/arena-config-settings.ts → arena-config-mode-select
+- [ ] 411 | score:  5 | tokens.claims.ts → tokens.balance
+- [ ] 412 | score:  5 | reference-arsenal.forge-wiring.ts → reference-arsenal.forge-submit
+- [ ] 413 | score:  5 | reference-arsenal.forge-render.ts → reference-arsenal.forge-submit
+- [ ] 414 | score:  5 | profile-debate-archive.ts → profile-debate-archive.state
+- [ ] 415 | score:  5 | profile-debate-archive.filter.ts → profile-debate-archive.state
+- [ ] 416 | score:  5 | pages/spectate.render.ts → spectate.utils
+- [ ] 417 | score:  5 | pages/spectate.render-timeline.ts → spectate.utils
+- [ ] 418 | score:  5 | pages/profile-depth.section.ts → profile-depth.state
+- [ ] 419 | score:  5 | pages/profile-depth.section.ts → profile-depth.data
+- [ ] 420 | score:  5 | pages/home.overlay.ts → home.state
+- [ ] 421 | score:  5 | pages/home.nav.ts → share
+- [ ] 422 | score:  5 | pages/home.nav.ts → home.state
+- [ ] 423 | score:  5 | pages/home.arsenal.ts → home.state
+- [ ] 424 | score:  5 | leaderboard.list.ts → badge
+- [ ] 425 | score:  5 | arena/arena-room-end-render.ts → share
+- [ ] 426 | score:  5 | arena/arena-mod-debate-poll.ts → arena-room-enter
+- [ ] 427 | score:  5 | arena/arena-feed-wiring-debater.ts → arena-feed-transcript
+- [ ] 428 | score:  5 | arena/arena-lobby.ts → arena-mod-refs
+- [ ] 429 | score:  5 | arena.ts → arena-types-ai-scoring
+- [ ] 430 | score:  5 | arena.ts → arena-queue
+- [ ] 431 | score:  5 | arena.ts → arena-mod-refs
+- [ ] 432 | score:  4 | staking.ts → staking.wire
+- [ ] 433 | score:  4 | staking.ts → staking.render
+- [ ] 434 | score:  4 | async.render.ts → async.render.wager
+- [ ] 435 | score:  4 | async.render.ts → async.render.predictions
+- [ ] 436 | score:  4 | arena/arena-room-predebate.ts → arena-loadout-presets
+- [ ] 437 | score:  4 | arena/arena-room-predebate.ts → arena-bounty-claim
+- [ ] 438 | score:  4 | arena/arena-private-picker.ts → arena-private-lobby
+- [ ] 439 | score:  4 | arena/arena-config-mode-select.ts → arena-config-category
+- [ ] 440 | score:  4 | tournaments.ts → tournaments.indicator
+- [ ] 441 | score:  4 | powerups.loadout.ts → tiers
+- [ ] 442 | score:  4 | pages/groups.members.ts → groups.members.modal.html
+- [ ] 443 | score:  4 | pages/groups.members.ts → groups.members.modal
+- [ ] 444 | score:  4 | pages/groups.members.modal.ts → groups.members.modal.html
+- [ ] 445 | score:  4 | arena/arena-private-lobby.join.ts → arena-mod-debate-waiting
+- [ ] 446 | score:  4 | arena/arena-feed-references.ts → arena-feed-machine-pause
+- [ ] 447 | score:  4 | arena/arena-feed-realtime.ts → arena-feed-disconnect
+- [ ] 448 | score:  4 | arena/arena-feed-disconnect.ts → arena-feed-disconnect-mod
+- [ ] 449 | score:  4 | tokens.claims.ts → tokens.animations
+- [ ] 450 | score:  4 | staking.wire.ts → staking.rpc
+- [ ] 451 | score:  4 | staking.render.ts → staking.rpc
+- [ ] 452 | score:  4 | profile-debate-archive.ts → profile-debate-archive.edit
+- [ ] 453 | score:  4 | profile-debate-archive.picker.ts → profile-debate-archive.edit
+- [ ] 454 | score:  4 | pages/home.overlay.ts → async
+- [ ] 455 | score:  4 | pages/home.nav.ts → async
+- [ ] 456 | score:  4 | pages/home.invite-sheet.ts → modifiers-render
+- [ ] 457 | score:  4 | pages/home.arsenal-shop-sheet.ts → modifiers-render
+- [ ] 458 | score:  4 | pages/home.arsenal-shop-render.ts → modifiers-render
+- [ ] 459 | score:  4 | pages/groups.detail.ts → groups.auditions
+- [ ] 460 | score:  4 | leaderboard.render.ts → leaderboard.state
+- [ ] 461 | score:  4 | leaderboard.list.ts → leaderboard.state
+- [ ] 462 | score:  4 | dm/dm.render.ts → dm.state
+- [ ] 463 | score:  4 | dm/dm.fetch.ts → dm.state
+- [ ] 464 | score:  4 | async.actions-predict.ts → async.render
+- [ ] 465 | score:  4 | async.actions-predict.ts → async.fetch
+- [ ] 466 | score:  4 | arena/arena-room-render.ts → arena-mod-queue-status
+- [ ] 467 | score:  4 | arena/arena-room-end-render.ts → arena-ads
+- [ ] 468 | score:  4 | arena/arena-room-end-finalize.ts → staking
+- [ ] 469 | score:  4 | arena/arena-private-lobby.ts → arena-types-private-lobby
+- [ ] 470 | score:  4 | arena/arena-pending-challenges.ts → arena-types-private-lobby
+- [ ] 471 | score:  4 | arena/arena-mod-debate-picker.ts → arena-config-round-picker
+- [ ] 472 | score:  4 | arena/arena-loadout-presets.ts → reference-arsenal.loadout
+- [ ] 473 | score:  4 | arena/arena-feed-wiring-spectator.ts → depth-gate
+- [ ] 474 | score:  4 | arena/arena-core.ts → arena-mod-queue-status
+- [ ] 475 | score:  4 | arena/arena-core.ts → arena-match-timers
+- [ ] 476 | score:  4 | arena/arena-config-category.ts → arena-config-round-picker
+- [ ] 477 | score:  4 | share.ui.ts → share
+- [ ] 478 | score:  4 | pages/profile-depth.ts → profile-depth.state
+- [ ] 479 | score:  4 | pages/home.ts → home.state
+- [ ] 480 | score:  4 | arena/arena-match-flow.ts → arena-types-match
+- [ ] 481 | score:  4 | arena/arena-lobby.ts → arena-types-feed-list
+- [ ] 482 | score:  4 | arena.ts → arena-types-match
+- [ ] 483 | score:  4 | arena.ts → arena-types-feed-list
+- [ ] 484 | score:  4 | arena.ts → arena-room-enter
+- [ ] 485 | score:  3 | tournaments.ts → tournaments.rpc
+- [ ] 486 | score:  3 | tournaments.ts → tournaments.render
+- [ ] 487 | score:  3 | reference-arsenal.forge.ts → reference-arsenal.forge-wiring
+- [ ] 488 | score:  3 | reference-arsenal.forge.ts → reference-arsenal.forge-render
+- [ ] 489 | score:  3 | reference-arsenal.armory.ts → reference-arsenal.armory.sheet
+- [ ] 490 | score:  3 | profile-debate-archive.render.ts → profile-debate-archive.picker
+- [ ] 491 | score:  3 | profile-debate-archive.render.ts → profile-debate-archive.filter
+- [ ] 492 | score:  3 | notifications.panel.ts → notifications.deeplink
+- [ ] 493 | score:  3 | async.actions.ts → async.actions-predict
+- [ ] 494 | score:  3 | arena/arena-mod-debate-waiting.ts → arena-mod-debate-poll
+- [ ] 495 | score:  3 | arena/arena-feed-disconnect.ts → arena-feed-disconnect-debater
+- [ ] 496 | score:  3 | tokens.claims.ts → tokens.milestones
+- [ ] 497 | score:  3 | staking.render.ts → tiers
+- [ ] 498 | score:  3 | rivals-presence.ts → rivals-presence-popup
+- [ ] 499 | score:  3 | rivals-presence.ts → rivals-presence-channel
+- [ ] 500 | score:  3 | profile-debate-archive.ts → profile-debate-archive.render
+- [ ] 501 | score:  3 | pages/spectate.render.ts → spectate.vote
+- [ ] 502 | score:  3 | pages/spectate.render.ts → spectate.render-messages
+- [ ] 503 | score:  3 | pages/spectate.render.ts → spectate.chat
+- [ ] 504 | score:  3 | pages/spectate.render-timeline.ts → spectate.render-messages
+- [ ] 505 | score:  3 | pages/profile-depth.section.ts → profile-depth.tier
+- [ ] 506 | score:  3 | pages/profile-depth.section.ts → profile-depth.render
+- [ ] 507 | score:  3 | pages/home.nav.ts → home.profile
+- [ ] 508 | score:  3 | pages/home.nav.ts → home.feed
+- [ ] 509 | score:  3 | pages/home.invite-sheet.ts → modifiers-catalog
+- [ ] 510 | score:  3 | pages/home.invite-sheet.ts → home.invite-html
+- [ ] 511 | score:  3 | pages/home.invite-render.ts → home.invite-html
+- [ ] 512 | score:  3 | pages/home.arsenal-shop.ts → modifiers-catalog
+- [ ] 513 | score:  3 | pages/groups.detail.ts → groups.nav
+- [ ] 514 | score:  3 | pages/groups.detail.ts → groups.members
+- [ ] 515 | score:  3 | pages/groups.detail.ts → groups.challenges
+- [ ] 516 | score:  3 | pages/cosmetics.render.ts → cosmetics.modal
+- [ ] 517 | score:  3 | leaderboard.list.ts → leaderboard.fetch
+- [ ] 518 | score:  3 | bounties.render.ts → bounties.rpc
+- [ ] 519 | score:  3 | bounties.render.ts → bounties.dot
+- [ ] 520 | score:  3 | arena/arena-room-render.ts → arena-room-live-audio
+- [ ] 521 | score:  3 | arena/arena-room-live-input.ts → arena-room-live-audio
+- [ ] 522 | score:  3 | arena/arena-room-end-scores.ts → arena-room-ai-scoring
+- [ ] 523 | score:  3 | arena/arena-room-end-render.ts → arena-room-ai-scoring
+- [ ] 524 | score:  3 | arena/arena-room-end-render.ts → arena-mod-scoring
+- [ ] 525 | score:  3 | arena/arena-room-end-finalize.ts → tournaments
+- [ ] 526 | score:  3 | arena/arena-mod-refs-form.ts → arena-mod-refs-ai
+- [ ] 527 | score:  3 | arena/arena-mod-debate-picker.ts → arena-mod-debate-waiting
+- [ ] 528 | score:  3 | arena/arena-feed-wiring-mod.ts → arena-feed-references
+- [ ] 529 | score:  3 | arena/arena-feed-wiring-mod.ts → arena-feed-realtime
+- [ ] 530 | score:  3 | arena/arena-feed-wiring-debater.ts → arena-feed-references
+- [ ] 531 | score:  3 | arena/arena-feed-events-render.ts → arena-feed-machine-pause
+- [ ] 532 | score:  3 | arena/arena-core.ts → arena-private-lobby.join
+- [ ] 533 | score:  3 | analytics.ts → analytics.utils
+- [ ] 534 | score:  3 | pages/groups.ts → groups.auditions
+- [ ] 535 | score:  3 | notifications.ts → notifications.state
+- [ ] 536 | score:  3 | notifications.ts → notifications.actions
+- [ ] 537 | score:  3 | dm/dm.ts → dm.state
+- [ ] 538 | score:  3 | arena/arena-match-flow.ts → arena-room-predebate
+- [ ] 539 | score:  3 | arena/arena-match-flow.ts → arena-match-timers
+- [ ] 540 | score:  3 | arena/arena-lobby.ts → arena-private-picker
+- [ ] 541 | score:  3 | arena.ts → arena-room-predebate
+- [ ] 542 | score:  3 | arena.ts → arena-private-picker
+- [ ] 543 | score:  3 | arena.ts → arena-config-mode-select
+- [ ] 544 | score:  2 | pages/spectate.render.ts → spectate.share
+- [ ] 545 | score:  2 | pages/spectate.render.ts → spectate.render-timeline
+- [ ] 546 | score:  2 | pages/settings.wiring.ts → settings.save
+- [ ] 547 | score:  2 | pages/plinko-step1-method.ts → plinko-password
+- [ ] 548 | score:  2 | pages/home.nav.ts → profile-debate-archive
+- [ ] 549 | score:  2 | pages/home.nav.ts → payments
+- [ ] 550 | score:  2 | pages/home.nav.ts → home.invite
+- [ ] 551 | score:  2 | pages/home.nav.ts → home.arsenal
+- [ ] 552 | score:  2 | pages/home.invite.ts → home.invite-sheet
+- [ ] 553 | score:  2 | pages/home.invite.ts → home.invite-render
+- [ ] 554 | score:  2 | pages/home.invite-render.ts → home.invite-wiring
+- [ ] 555 | score:  2 | pages/home.arsenal.ts → home.arsenal-shop
+- [ ] 556 | score:  2 | pages/home.arsenal-shop.ts → home.arsenal-shop-render
+- [ ] 557 | score:  2 | pages/home.arsenal-shop-wiring.ts → home.arsenal-shop-sheet
+- [ ] 558 | score:  2 | pages/home.arsenal-shop-sheet.ts → modifiers-handlers
+- [ ] 559 | score:  2 | pages/home.arsenal-shop-render.ts → home.arsenal-shop-wiring
+- [ ] 560 | score:  2 | pages/home.arsenal-shop-render.ts → home.arsenal-shop-filters
+- [ ] 561 | score:  2 | pages/groups.detail.ts → groups.feed
+- [ ] 562 | score:  2 | pages/groups.detail.ts → group-banner
+- [ ] 563 | score:  2 | pages/group-banner.ts → group-banner-upload
+- [ ] 564 | score:  2 | modifiers-handlers.ts → modifiers-rpc
+- [ ] 565 | score:  2 | leaderboard.render.ts → leaderboard.list
+- [ ] 566 | score:  2 | arena/arena-room-render.ts → arena-room-live-input
+- [ ] 567 | score:  2 | arena/arena-room-end-render.ts → arena-room-end-transcript
+- [ ] 568 | score:  2 | arena/arena-room-end-render.ts → arena-room-end-after-effects
+- [ ] 569 | score:  2 | arena/arena-mod-queue-browse.ts → arena-mod-debate-picker
+- [ ] 570 | score:  2 | arena/arena-feed-wiring.ts → arena-feed-wiring-spectator
+- [ ] 571 | score:  2 | arena/arena-feed-wiring.ts → arena-feed-wiring-mod
+- [ ] 572 | score:  2 | arena/arena-feed-wiring.ts → arena-feed-wiring-debater
+- [ ] 573 | score:  2 | arena/arena-feed-wiring-debater.ts → arena-feed-machine-ads
+- [ ] 574 | score:  2 | pages/spectate.ts → spectate.vote
+- [ ] 575 | score:  2 | pages/spectate.ts → spectate.chat
+- [ ] 576 | score:  2 | pages/profile-depth.ts → profile-depth.tier
+- [ ] 577 | score:  2 | pages/profile-depth.ts → profile-depth.render
+- [ ] 578 | score:  2 | pages/home.ts → tournaments
+- [ ] 579 | score:  2 | pages/home.ts → home.profile
+- [ ] 580 | score:  2 | pages/home.ts → home.feed
+- [ ] 581 | score:  2 | pages/groups.ts → groups.nav
+- [ ] 582 | score:  2 | pages/groups.ts → groups.members
+- [ ] 583 | score:  2 | pages/groups.ts → groups.challenges
+- [ ] 584 | score:  2 | pages/cosmetics.ts → cosmetics.modal
+- [ ] 585 | score:  2 | notifications.ts → notifications.panel
+- [ ] 586 | score:  2 | leaderboard.ts → leaderboard.fetch
+- [ ] 587 | score:  2 | arena/arena-lobby.ts → arena-private-lobby.join
+- [ ] 588 | score:  2 | arena/arena-lobby.ts → arena-config-settings
+- [ ] 589 | score:  2 | arena.ts → arena-mod-scoring
+- [ ] 590 | score:  2 | arena.ts → arena-config-settings
+- [ ] 591 | score:  1 | pages/spectate.ts → spectate.render
+- [ ] 592 | score:  1 | pages/settings.ts → settings.wiring
+- [ ] 593 | score:  1 | pages/settings.ts → settings.moderator
+- [ ] 594 | score:  1 | pages/settings.ts → settings.load
+- [ ] 595 | score:  1 | pages/settings.ts → settings.blocks
+- [ ] 596 | score:  1 | pages/profile-depth.ts → profile-depth.section
+- [ ] 597 | score:  1 | pages/plinko.ts → plinko-step4-step5
+- [ ] 598 | score:  1 | pages/plinko.ts → plinko-step3-username
+- [ ] 599 | score:  1 | pages/plinko.ts → plinko-step2-age
+- [ ] 600 | score:  1 | pages/plinko.ts → plinko-step1-method
+- [ ] 601 | score:  1 | pages/plinko.ts → plinko-auth-return
+- [ ] 602 | score:  1 | pages/login.ts → login.forms
+- [ ] 603 | score:  1 | pages/home.ts → rivals-presence
+- [ ] 604 | score:  1 | pages/home.ts → profile-socials
+- [ ] 605 | score:  1 | pages/home.ts → onboarding-drip
+- [ ] 606 | score:  1 | pages/home.ts → home.overlay
+- [ ] 607 | score:  1 | pages/home.ts → home.nav
+- [ ] 608 | score:  1 | pages/groups.ts → groups.settings
+- [ ] 609 | score:  1 | pages/groups.ts → groups.load
+- [ ] 610 | score:  1 | pages/groups.ts → groups.detail
+- [ ] 611 | score:  1 | pages/groups.ts → groups.create
+- [ ] 612 | score:  1 | pages/debate-landing.ts → debate-landing.data
+- [ ] 613 | score:  1 | pages/cosmetics.ts → cosmetics.render
+- [ ] 614 | score:  1 | notifications.ts → push-notifications
+- [ ] 615 | score:  1 | leaderboard.ts → leaderboard.render
+- [ ] 616 | score:  1 | leaderboard.ts → leaderboard.elo
+- [ ] 617 | score:  1 | dm/dm.ts → dm.render
+- [ ] 618 | score:  1 | dm/dm.ts → dm.fetch
+- [ ] 619 | score:  1 | arena/arena-lobby.ts → arena-pending-challenges
+- [ ] 620 | score:  1 | arena/arena-lobby.ts → arena-mod-queue-browse
+- [ ] 621 | score:  1 | arena/arena-lobby.ts → arena-lobby.open-debates
+- [ ] 622 | score:  1 | arena/arena-entrance.ts → arena-entrance-render
+- [ ] 623 | score:  1 | arena.ts → arena-core

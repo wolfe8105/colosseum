@@ -1,41 +1,47 @@
 /**
  * THE MODERATOR — Global Search
- * Session 281: New module. Unified search across users, hot takes, groups.
+ * Session 281: New module. Unified search across users, debates, groups.
+ * Session 296: Rewritten to match F-24 spec — unified search_all RPC,
+ *   debates tab (was takes), get_trending on blank query, W/L in user rows,
+ *   query-embedded no-results message.
  *
- * Uses existing `search_users_by_username` RPC for user search.
- * Hot take search via direct Supabase query (ILIKE on body).
- * Group search via direct Supabase query (ILIKE on name).
+ * Core model: search_all(p_query, p_types, p_limit) RPC for all searches.
+ * get_trending(p_types, p_limit) RPC for empty-state feed.
  */
 
 import { safeRpc, getSupabaseClient, getIsPlaceholderMode } from './auth.ts';
 import { escapeHTML } from './config.ts';
 
-type SearchTab = 'users' | 'takes' | 'groups';
+type SearchTab = 'users' | 'debates' | 'groups';
 
 interface SearchUser {
   id: string;
   username: string;
   display_name: string;
   elo_rating: number;
+  wins: number;
+  losses: number;
 }
 
-interface SearchTake {
+interface SearchDebate {
   id: string;
-  body: string;
-  username: string;
+  topic: string;
+  category: string;
   created_at: string;
+  vote_count: number;
 }
 
 interface SearchGroup {
   id: string;
   name: string;
   member_count: number;
+  category: string;
 }
 
 let currentSearchTab: SearchTab = 'users';
 let searchQuery = '';
 let userResults: SearchUser[] | null = null;
-let takeResults: SearchTake[] | null = null;
+let debateResults: SearchDebate[] | null = null;
 let groupResults: SearchGroup[] | null = null;
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 let isSearching = false;
@@ -49,7 +55,7 @@ export function renderSearchScreen(): void {
   container.innerHTML = `
     <div style="text-align:center;padding:16px 0 12px;">
       <div style="font-family:var(--mod-font-display);font-size:24px;letter-spacing:3px;color:var(--mod-accent);font-weight:700;">🔍 SEARCH</div>
-      <div style="color:var(--mod-text-sub);font-size:13px;">Find users, posts, and groups.</div>
+      <div style="color:var(--mod-text-sub);font-size:13px;">Find users, debates, and groups.</div>
     </div>
 
     <div style="margin-bottom:12px;">
@@ -62,13 +68,13 @@ export function renderSearchScreen(): void {
     </div>
 
     <div style="display:flex;gap:4px;margin-bottom:12px;">
-      ${(['users', 'takes', 'groups'] as const).map(tab => `
+      ${(['users', 'debates', 'groups'] as const).map(tab => `
         <button class="gs-tab" data-gs-tab="${tab}" style="
           flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
           font-family:var(--mod-font-ui);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
           background:${currentSearchTab === tab ? 'var(--mod-accent-muted)' : 'var(--mod-bg-subtle)'};
           color:${currentSearchTab === tab ? 'var(--mod-accent)' : 'var(--mod-text-sub)'};
-        ">${tab === 'users' ? '👤 Users' : tab === 'takes' ? '🔥 Takes' : '👥 Groups'}</button>
+        ">${tab === 'users' ? '👤 Users' : tab === 'debates' ? '⚔️ Debates' : '👥 Groups'}</button>
       `).join('')}
     </div>
 
@@ -87,7 +93,7 @@ export function renderSearchScreen(): void {
       searchQuery = q;
       if (q.length < 2) {
         clearResults();
-        updateResults();
+        void loadTrending();
         return;
       }
       searchTimer = setTimeout(() => void runSearch(q), 300);
@@ -100,14 +106,40 @@ export function renderSearchScreen(): void {
       currentSearchTab = (btn as HTMLElement).dataset.gsTab as SearchTab;
       renderSearchScreen();
       if (searchQuery.length >= 2) void runSearch(searchQuery);
+      else void loadTrending();
     });
   });
+
+  // Load trending on initial render if no query
+  if (searchQuery.length < 2) {
+    void loadTrending();
+  }
 }
 
 function clearResults(): void {
   userResults = null;
-  takeResults = null;
+  debateResults = null;
   groupResults = null;
+}
+
+async function loadTrending(): Promise<void> {
+  const sb = getSupabaseClient();
+  if (!sb || getIsPlaceholderMode()) return;
+
+  try {
+    const { data, error } = await safeRpc<unknown[]>('get_trending', {
+      p_types: [currentSearchTab],
+      p_limit: 10,
+    });
+    if (!error && data) {
+      applyResults(data as unknown[], true);
+    } else {
+      clearResults();
+    }
+  } catch {
+    clearResults();
+  }
+  updateResults();
 }
 
 async function runSearch(query: string): Promise<void> {
@@ -118,49 +150,32 @@ async function runSearch(query: string): Promise<void> {
   if (!sb || getIsPlaceholderMode()) { isSearching = false; return; }
 
   try {
-    if (currentSearchTab === 'users') {
-      const { data, error } = await safeRpc<SearchUser[]>('search_users_by_username', { p_query: query });
-      userResults = (!error && data) ? data as SearchUser[] : [];
-    } else if (currentSearchTab === 'takes') {
-      const { data, error } = await sb
-        .from('arena_debates')
-        .select('id, content, created_at, profiles!arena_debates_debater_a_fkey(username)')
-        .eq('status', 'open')
-        .not('content', 'is', null)
-        .ilike('content', `%${query}%`)
-        .order('created_at', { ascending: false })
-        .limit(15);
-      if (!error && data) {
-        takeResults = (data as unknown[]).map((row: unknown) => {
-          const r = row as Record<string, unknown>;
-          const prof = r.profiles as Record<string, unknown> | null;
-          return {
-            id: r.id as string,
-            body: r.content as string,
-            username: (prof?.username as string) ?? 'anon',
-            created_at: r.created_at as string,
-          };
-        });
-      } else {
-        takeResults = [];
-      }
-    } else if (currentSearchTab === 'groups') {
-      const { data, error } = await sb
-        .from('groups')
-        .select('id, name, member_count')
-        .ilike('name', `%${query}%`)
-        .order('member_count', { ascending: false })
-        .limit(15);
-      groupResults = (!error && data) ? data as SearchGroup[] : [];
+    const { data, error } = await safeRpc<unknown[]>('search_all', {
+      p_query: query,
+      p_types: [currentSearchTab],
+      p_limit: 10,
+    });
+    if (!error && data) {
+      applyResults(data as unknown[], false);
+    } else {
+      clearResults();
     }
   } catch {
-    if (currentSearchTab === 'users') userResults = [];
-    if (currentSearchTab === 'takes') takeResults = [];
-    if (currentSearchTab === 'groups') groupResults = [];
+    clearResults();
   }
 
   isSearching = false;
   updateResults();
+}
+
+function applyResults(rows: unknown[], _trending: boolean): void {
+  if (currentSearchTab === 'users') {
+    userResults = (rows as SearchUser[]);
+  } else if (currentSearchTab === 'debates') {
+    debateResults = (rows as SearchDebate[]);
+  } else {
+    groupResults = (rows as SearchGroup[]);
+  }
 }
 
 function updateResults(): void {
@@ -169,51 +184,49 @@ function updateResults(): void {
 }
 
 function renderResults(): string {
-  if (searchQuery.length < 2) {
-    return `<div style="text-align:center;color:var(--mod-text-muted);font-size:13px;padding:40px 0;">Type at least 2 characters to search</div>`;
-  }
-
   if (currentSearchTab === 'users') return renderUserResults();
-  if (currentSearchTab === 'takes') return renderTakeResults();
+  if (currentSearchTab === 'debates') return renderDebateResults();
   return renderGroupResults();
 }
 
 function renderUserResults(): string {
   if (!userResults) return renderSearching();
   if (userResults.length === 0) return renderEmpty();
-  return userResults.map(u => `
-    <a href="/u/${encodeURIComponent(u.username)}" style="
-      display:flex;align-items:center;gap:12px;padding:12px;cursor:pointer;
-      border-bottom:1px solid var(--mod-border-subtle);text-decoration:none;color:inherit;
-    ">
-      <div style="
-        width:40px;height:40px;border-radius:50%;background:var(--mod-bg-card);
-        border:2px solid var(--mod-border-primary);display:flex;align-items:center;justify-content:center;
-        font-weight:700;color:var(--mod-text-heading);font-size:14px;flex-shrink:0;
-      ">${escHtml((u.display_name || u.username || '?')[0].toUpperCase())}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(u.display_name || u.username)}</div>
-        <div style="font-size:11px;color:var(--mod-text-sub);">@${escHtml(u.username)}</div>
-      </div>
-      <div style="font-family:var(--mod-font-display);font-size:16px;font-weight:700;color:var(--mod-accent);">${Number(u.elo_rating) || 1200}</div>
-    </a>
-  `).join('');
+  return userResults.map(u => {
+    const wins = Number(u.wins) || 0;
+    const losses = Number(u.losses) || 0;
+    return `
+      <a href="/u/${encodeURIComponent(u.username)}" style="
+        display:flex;align-items:center;gap:12px;padding:12px;cursor:pointer;
+        border-bottom:1px solid var(--mod-border-subtle);text-decoration:none;color:inherit;
+      ">
+        <div style="
+          width:40px;height:40px;border-radius:50%;background:var(--mod-bg-card);
+          border:2px solid var(--mod-border-primary);display:flex;align-items:center;justify-content:center;
+          font-weight:700;color:var(--mod-text-heading);font-size:14px;flex-shrink:0;
+        ">${escHtml((u.display_name || u.username || '?')[0].toUpperCase())}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(u.display_name || u.username)}</div>
+          <div style="font-size:11px;color:var(--mod-text-sub);">@${escHtml(u.username)} · ELO ${Number(u.elo_rating) || 1200} · ${wins}W/${losses}L</div>
+        </div>
+      </a>
+    `;
+  }).join('');
 }
 
-function renderTakeResults(): string {
-  if (!takeResults) return renderSearching();
-  if (takeResults.length === 0) return renderEmpty();
-  return takeResults.map(t => {
-    const date = new Date(t.created_at);
+function renderDebateResults(): string {
+  if (!debateResults) return renderSearching();
+  if (debateResults.length === 0) return renderEmpty();
+  return debateResults.map(d => {
+    const date = new Date(d.created_at);
     const ago = formatTimeAgo(date);
     return `
-      <div style="padding:12px;border-bottom:1px solid var(--mod-border-subtle);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;color:var(--mod-text-heading);">@${escHtml(t.username)}</span>
-          <span style="font-size:11px;color:var(--mod-text-muted);">${ago}</span>
-        </div>
-        <div style="font-size:13px;color:var(--mod-text-body);line-height:1.4;">${escHtml(t.body.substring(0, 200))}${t.body.length > 200 ? '…' : ''}</div>
-      </div>
+      <a href="/debate/${encodeURIComponent(d.id)}" style="
+        display:block;padding:12px;border-bottom:1px solid var(--mod-border-subtle);text-decoration:none;color:inherit;cursor:pointer;
+      ">
+        <div style="font-weight:700;font-size:14px;color:var(--mod-text-heading);margin-bottom:4px;">${escHtml(d.topic)}</div>
+        <div style="font-size:11px;color:var(--mod-text-sub);">${escHtml(d.category)} · ${ago} · ${Number(d.vote_count) || 0} votes</div>
+      </a>
     `;
   }).join('');
 }
@@ -237,7 +250,10 @@ function renderSearching(): string {
 }
 
 function renderEmpty(): string {
-  return `<div style="text-align:center;color:var(--mod-text-muted);font-size:13px;padding:40px 0;">No results found</div>`;
+  if (searchQuery.length >= 2) {
+    return `<div style="text-align:center;color:var(--mod-text-muted);font-size:13px;padding:40px 0;">No results for '${escHtml(searchQuery)}'</div>`;
+  }
+  return `<div style="text-align:center;color:var(--mod-text-muted);font-size:13px;padding:40px 0;">No trending results</div>`;
 }
 
 function formatTimeAgo(date: Date): string {
