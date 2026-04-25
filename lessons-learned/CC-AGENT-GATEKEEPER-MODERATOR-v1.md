@@ -44,11 +44,13 @@ Do this for every file before acting on it. No exceptions.
 
 ## WHAT YOU RECEIVE
 
-Two files, both already in the repo:
+Two things, both already in the repo:
 
-1. **The spec** — produced by The Whisperer. Lives in `lessons-learned/`. Filename follows the pattern `SPEC-[FEATURE-NAME].md`. It describes what the feature does, how it's triggered, what success looks like, what failure looks like, and every state it can be in.
+1. **The spec** — one of two sources depending on when the feature was built:
+   - **New features (post-Whisperer):** `lessons-learned/SPEC-[FEATURE-NAME].md` — produced by The Whisperer.
+   - **Existing features (pre-Whisperer):** The spec lives in `docs/THE-MODERATOR-FEATURE-SPECS-PENDING.md`. Find the section for the feature by its F-number (e.g. F-35, F-53). That section is the spec. Read it as if it were a Whisperer output.
 
-2. **The changed source file** — the file CC just wrote or modified. Lives in `src/`.
+2. **The source file** — the file to test. Lives in `src/`.
 
 Read the spec first. Read the source file second.
 
