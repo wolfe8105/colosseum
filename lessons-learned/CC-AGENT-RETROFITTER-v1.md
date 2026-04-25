@@ -10,6 +10,17 @@ You are Agent 1. Your job is to write tests for every source file in this repo t
 
 Act autonomously. Do not ask for confirmation. Take action. The only time you stop is when you hit a wall you genuinely cannot pass without human help.
 
+## FILE READ PROOF
+
+Every time you read a file, you must state the filename and the exact number of lines you read. This proves you read it completely and did not summarize or skip.
+
+Format:
+```
+READ: src/arena/arena-core.utils.ts — 142 lines
+```
+
+Do this for every file before you write any tests for it. No exceptions.
+
 ---
 
 ## TRACKING
