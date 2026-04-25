@@ -24,15 +24,15 @@ Format: [ ] rank | score | importer → imported
 - [x] 016 | score: 54 | arena/arena-match-timers.ts → arena-state
 - [x] 017 | score: 54 | arena/arena-config-round-picker.ts → arena-state
 - [W] 018 | score: 54 | arena/arena-config-mode-select.ts → arena-state  [WALL: → arena-queue → arena-match-found → webrtc.ts]
-- [ ] 019 | score: 53 | arena/arena-room-live-audio.ts → arena-state
-- [ ] 020 | score: 53 | arena/arena-private-lobby.join.ts → arena-state
-- [ ] 021 | score: 53 | arena/arena-mod-debate-waiting.ts → arena-state
-- [ ] 022 | score: 53 | arena/arena-feed-references.ts → arena-state
-- [ ] 023 | score: 53 | arena/arena-feed-realtime.ts → arena-state
-- [ ] 024 | score: 53 | arena/arena-feed-machine-pause.ts → arena-state
-- [ ] 025 | score: 53 | arena/arena-feed-disconnect.ts → arena-state
-- [ ] 026 | score: 53 | arena/arena-feed-disconnect-mod.ts → arena-state
-- [ ] 027 | score: 53 | arena/arena-config-settings.ts → arena-state
+- [W] 019 | score: 53 | arena/arena-room-live-audio.ts → arena-state  [WALL: direct webrtc.ts import]
+- [W] 020 | score: 53 | arena/arena-private-lobby.join.ts → arena-state  [WALL: → arena-match-found → webrtc.ts]
+- [W] 021 | score: 53 | arena/arena-mod-debate-waiting.ts → arena-state  [WALL: → arena-mod-debate-poll → arena-room-enter → webrtc.ts]
+- [x] 022 | score: 53 | arena/arena-feed-references.ts → arena-state
+- [W] 023 | score: 53 | arena/arena-feed-realtime.ts → arena-state  [WALL: → arena-feed-room → webrtc.ts]
+- [x] 024 | score: 53 | arena/arena-feed-machine-pause.ts → arena-state
+- [W] 025 | score: 53 | arena/arena-feed-disconnect.ts → arena-state  [WALL: → arena-feed-room → webrtc.ts]
+- [W] 026 | score: 53 | arena/arena-feed-disconnect-mod.ts → arena-state  [WALL: → arena-room-end → webrtc.ts]
+- [W] 027 | score: 53 | arena/arena-config-settings.ts → arena-state  [WALL: → arena-config-mode-select → arena-queue → webrtc.ts]
 - [ ] 028 | score: 52 | arena/arena-room-render.ts → arena-state
 - [ ] 029 | score: 52 | arena/arena-room-end-scores.ts → arena-state
 - [ ] 030 | score: 52 | arena/arena-room-end-render.ts → arena-state
