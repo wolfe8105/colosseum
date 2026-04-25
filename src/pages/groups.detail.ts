@@ -92,7 +92,7 @@ export function updateJoinBtn(g: GroupDetail): void {
     btn.style.display = 'block'; return;
   }
   const mode = g.join_mode ?? 'open';
-  if (mode === 'invite_only') { btn.style.display = 'none'; return; }
+  if (mode === 'invite_only' || mode === 'requirements') { btn.style.display = 'none'; return; }
   btn.style.display = 'block'; btn.disabled = false; btn.className = 'join-btn join';
   btn.textContent   = mode === 'audition' ? 'REQUEST AUDITION' : 'JOIN GROUP';
 }
