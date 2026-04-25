@@ -6,7 +6,7 @@ Check box when integration test written and passing.
 
 Format: [ ] rank | score | importer → imported
 
-- [ ] 001 | score: 64 | arena/arena-feed-ui.ts → arena-state
+- [x] 001 | score: 64 | arena/arena-feed-ui.ts → arena-state
 - [ ] 002 | score: 60 | arena/arena-room-live-messages.ts → arena-state
 - [ ] 003 | score: 59 | arena/arena-state.ts → powerups
 - [ ] 004 | score: 59 | arena/arena-room-live-poll.ts → arena-state
