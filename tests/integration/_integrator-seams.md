@@ -9,13 +9,13 @@ Format: [ ] rank | score | importer → imported
 - [x] 001 | score: 64 | arena/arena-feed-ui.ts → arena-state
 - [x] 002 | score: 60 | arena/arena-room-live-messages.ts → arena-state
 - [x] 003 | score: 59 | arena/arena-state.ts → powerups
-- [ ] 004 | score: 59 | arena/arena-room-live-poll.ts → arena-state
-- [ ] 005 | score: 57 | arena/arena-room-end.ts → arena-state
-- [ ] 006 | score: 57 | arena/arena-match-found.ts → arena-state
-- [ ] 007 | score: 57 | arena/arena-feed-events.ts → arena-state
+- [W] 004 | score: 59 | arena/arena-room-live-poll.ts → arena-state  [WALL: → arena-room-end → webrtc.ts → @peermetrics/webrtc-stats not installed]
+- [W] 005 | score: 57 | arena/arena-room-end.ts → arena-state  [WALL: direct webrtc.ts import → @peermetrics/webrtc-stats not installed]
+- [W] 006 | score: 57 | arena/arena-match-found.ts → arena-state  [WALL: → arena-room-enter → arena-feed-room → webrtc.ts]
+- [x] 007 | score: 57 | arena/arena-feed-events.ts → arena-state
 - [ ] 008 | score: 56 | arena/arena-queue.ts → arena-state
-- [ ] 009 | score: 56 | arena/arena-feed-machine-turns.ts → arena-state
-- [ ] 010 | score: 55 | arena/arena-room-enter.ts → arena-state
+- [W] 009 | score: 56 | arena/arena-feed-machine-turns.ts → arena-state  [WALL: → webrtc.ts]
+- [W] 010 | score: 55 | arena/arena-room-enter.ts → arena-state  [WALL: → arena-feed-room → webrtc.ts]
 - [ ] 011 | score: 55 | arena/arena-feed-heartbeat.ts → arena-state
 - [ ] 012 | score: 54 | arena/arena-room-predebate.ts → arena-state
 - [ ] 013 | score: 54 | arena/arena-room-ai-response.ts → arena-state
