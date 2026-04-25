@@ -33,80 +33,80 @@ Format: [ ] rank | score | importer → imported
 - [W] 025 | score: 53 | arena/arena-feed-disconnect.ts → arena-state  [WALL: → arena-feed-room → webrtc.ts]
 - [W] 026 | score: 53 | arena/arena-feed-disconnect-mod.ts → arena-state  [WALL: → arena-room-end → webrtc.ts]
 - [W] 027 | score: 53 | arena/arena-config-settings.ts → arena-state  [WALL: → arena-config-mode-select → arena-queue → webrtc.ts]
-- [ ] 028 | score: 52 | arena/arena-room-render.ts → arena-state
-- [ ] 029 | score: 52 | arena/arena-room-end-scores.ts → arena-state
-- [ ] 030 | score: 52 | arena/arena-room-end-render.ts → arena-state
-- [ ] 031 | score: 52 | arena/arena-room-end-nulled.ts → arena-state
-- [ ] 032 | score: 52 | arena/arena-private-lobby.ts → arena-state
-- [ ] 033 | score: 52 | arena/arena-pending-challenges.ts → arena-state
-- [ ] 034 | score: 52 | arena/arena-mod-refs-ruling.ts → arena-state
-- [ ] 035 | score: 52 | arena/arena-mod-refs-form.ts → arena-state
-- [ ] 036 | score: 52 | arena/arena-mod-queue-browse.ts → arena-state
-- [ ] 037 | score: 52 | arena/arena-mod-debate-poll.ts → arena-state
-- [ ] 038 | score: 52 | arena/arena-mod-debate-picker.ts → arena-state
-- [ ] 039 | score: 52 | arena/arena-lobby.open-debates.ts → arena-state
-- [ ] 040 | score: 52 | arena/arena-feed-wiring.ts → arena-state
-- [ ] 041 | score: 52 | arena/arena-feed-wiring-mod.ts → arena-state
-- [ ] 042 | score: 52 | arena/arena-feed-wiring-debater.ts → arena-state
-- [ ] 043 | score: 52 | arena/arena-feed-machine-ads.ts → arena-state
-- [ ] 044 | score: 52 | arena/arena-feed-events-render.ts → arena-state
-- [ ] 045 | score: 52 | arena/arena-core.ts → arena-state
-- [ ] 046 | score: 52 | arena/arena-config-category.ts → arena-state
-- [ ] 047 | score: 51 | arena/arena-match-flow.ts → arena-state
-- [ ] 048 | score: 51 | arena/arena-lobby.ts → arena-state
-- [ ] 049 | score: 51 | arena.ts → arena-state
-- [ ] 050 | score: 48 | arena/arena-types.ts → staking
-- [ ] 051 | score: 40 | arena/arena-feed-ui.ts → arena-core.utils
-- [ ] 052 | score: 38 | auth.rpc.ts → rpc-schemas
-- [ ] 053 | score: 37 | arena/arena-room-live-poll.ts → rpc-schemas
-- [ ] 054 | score: 35 | arena/arena-room-live-poll.ts → arena-core.utils
-- [ ] 055 | score: 33 | arena/arena-room-end.ts → arena-core.utils
-- [ ] 056 | score: 33 | arena/arena-match-found.ts → arena-core.utils
-- [ ] 057 | score: 33 | arena/arena-feed-events.ts → arena-core.utils
-- [ ] 058 | score: 33 | share.ts → rpc-schemas
-- [ ] 059 | score: 32 | arena/arena-queue.ts → arena-core.utils
-- [ ] 060 | score: 32 | pages/groups.auditions.ts → rpc-schemas
-- [ ] 061 | score: 32 | arena/arena-private-picker.ts → rpc-schemas
-- [ ] 062 | score: 31 | arena/arena-room-enter.ts → arena-core.utils
-- [ ] 063 | score: 31 | arena/arena-feed-heartbeat.ts → arena-core.utils
-- [ ] 064 | score: 31 | pages/spectate.vote.ts → rpc-schemas
-- [ ] 065 | score: 31 | pages/spectate.chat.ts → rpc-schemas
-- [ ] 066 | score: 31 | pages/home.feed.ts → rpc-schemas
-- [ ] 067 | score: 31 | pages/groups.members.ts → rpc-schemas
-- [ ] 068 | score: 31 | pages/groups.challenges.ts → rpc-schemas
-- [ ] 069 | score: 31 | modifiers-catalog.ts → rpc-schemas
-- [ ] 070 | score: 30 | arena/arena-feed-ui.ts → arena-feed-state
-- [ ] 071 | score: 30 | arena/arena-room-predebate.ts → arena-core.utils
-- [ ] 072 | score: 30 | arena/arena-room-ai-response.ts → arena-core.utils
-- [ ] 073 | score: 30 | arena/arena-private-picker.ts → arena-core.utils
-- [ ] 074 | score: 30 | arena/arena-config-mode-select.ts → arena-core.utils
-- [ ] 075 | score: 30 | pages/profile-depth.section.ts → rpc-schemas
-- [ ] 076 | score: 30 | pages/home.invite.ts → rpc-schemas
-- [ ] 077 | score: 30 | pages/home.invite-sheet.ts → rpc-schemas
-- [ ] 078 | score: 30 | pages/groups.load.ts → rpc-schemas
-- [ ] 079 | score: 30 | pages/groups.feed.ts → rpc-schemas
-- [ ] 080 | score: 30 | pages/groups.detail.ts → rpc-schemas
-- [ ] 081 | score: 30 | pages/groups.create.ts → rpc-schemas
-- [ ] 082 | score: 30 | onboarding-drip.ts → rpc-schemas
-- [ ] 083 | score: 30 | modifiers-rpc.ts → rpc-schemas
-- [ ] 084 | score: 30 | async.actions-predict.ts → rpc-schemas
-- [ ] 085 | score: 30 | arena/arena-room-end-finalize.ts → rpc-schemas
-- [ ] 086 | score: 30 | arena/arena-feed-wiring-spectator.ts → rpc-schemas
-- [ ] 087 | score: 30 | arena/arena-feed-spec-chat.ts → rpc-schemas
-- [ ] 088 | score: 30 | arena/arena-config-category.ts → rpc-schemas
-- [ ] 089 | score: 29 | arena/arena-room-live-audio.ts → arena-core.utils
-- [ ] 090 | score: 29 | arena/arena-private-lobby.join.ts → arena-core.utils
-- [ ] 091 | score: 29 | arena/arena-feed-realtime.ts → arena-core.utils
-- [ ] 092 | score: 29 | arena/arena-config-settings.ts → arena-core.utils
-- [ ] 093 | score: 29 | pages/spectate.ts → rpc-schemas
-- [ ] 094 | score: 29 | pages/profile-depth.ts → rpc-schemas
+- [W] 028 | score: 52 | arena/arena-room-render.ts → arena-state
+- [x] 029 | score: 52 | arena/arena-room-end-scores.ts → arena-state
+- [x] 030 | score: 52 | arena/arena-room-end-render.ts → arena-state
+- [x] 031 | score: 52 | arena/arena-room-end-nulled.ts → arena-state
+- [x] 032 | score: 52 | arena/arena-private-lobby.ts → arena-state
+- [x] 033 | score: 52 | arena/arena-pending-challenges.ts → arena-state
+- [x] 034 | score: 52 | arena/arena-mod-refs-ruling.ts → arena-state
+- [x] 035 | score: 52 | arena/arena-mod-refs-form.ts → arena-state
+- [x] 036 | score: 52 | arena/arena-mod-queue-browse.ts → arena-state
+- [x] 037 | score: 52 | arena/arena-mod-debate-poll.ts → arena-state
+- [x] 038 | score: 52 | arena/arena-mod-debate-picker.ts → arena-state
+- [x] 039 | score: 52 | arena/arena-lobby.open-debates.ts → arena-state
+- [x] 040 | score: 52 | arena/arena-feed-wiring.ts → arena-state
+- [x] 041 | score: 52 | arena/arena-feed-wiring-mod.ts → arena-state
+- [x] 042 | score: 52 | arena/arena-feed-wiring-debater.ts → arena-state
+- [W] 043 | score: 52 | arena/arena-feed-machine-ads.ts → arena-state
+- [W] 044 | score: 52 | arena/arena-feed-events-render.ts → arena-state
+- [W] 045 | score: 52 | arena/arena-core.ts → arena-state
+- [x] 046 | score: 52 | arena/arena-config-category.ts → arena-state
+- [x] 047 | score: 51 | arena/arena-match-flow.ts → arena-state
+- [x] 048 | score: 51 | arena/arena-lobby.ts → arena-state
+- [x] 049 | score: 51 | arena.ts → arena-state
+- [x] 050 | score: 48 | arena/arena-types.ts → staking
+- [x] 051 | score: 40 | arena/arena-feed-ui.ts → arena-core.utils
+- [x] 052 | score: 38 | auth.rpc.ts → rpc-schemas
+- [x] 053 | score: 37 | arena/arena-room-live-poll.ts → rpc-schemas
+- [x] 054 | score: 35 | arena/arena-room-live-poll.ts → arena-core.utils
+- [W] 055 | score: 33 | arena/arena-room-end.ts → arena-core.utils
+- [W] 056 | score: 33 | arena/arena-match-found.ts → arena-core.utils
+- [x] 057 | score: 33 | arena/arena-feed-events.ts → arena-core.utils
+- [x] 058 | score: 33 | share.ts → rpc-schemas
+- [x] 059 | score: 32 | arena/arena-queue.ts → arena-core.utils
+- [x] 060 | score: 32 | pages/groups.auditions.ts → rpc-schemas
+- [x] 061 | score: 32 | arena/arena-private-picker.ts → rpc-schemas
+- [x] 062 | score: 31 | arena/arena-room-enter.ts → arena-core.utils
+- [x] 063 | score: 31 | arena/arena-feed-heartbeat.ts → arena-core.utils
+- [x] 064 | score: 31 | pages/spectate.vote.ts → rpc-schemas
+- [x] 065 | score: 31 | pages/spectate.chat.ts → rpc-schemas
+- [x] 066 | score: 31 | pages/home.feed.ts → rpc-schemas
+- [x] 067 | score: 31 | pages/groups.members.ts → rpc-schemas
+- [x] 068 | score: 31 | pages/groups.challenges.ts → rpc-schemas
+- [x] 069 | score: 31 | modifiers-catalog.ts → rpc-schemas
+- [x] 070 | score: 30 | arena/arena-feed-ui.ts → arena-feed-state
+- [x] 071 | score: 30 | arena/arena-room-predebate.ts → arena-core.utils
+- [x] 072 | score: 30 | arena/arena-room-ai-response.ts → arena-core.utils
+- [x] 073 | score: 30 | arena/arena-private-picker.ts → arena-core.utils
+- [x] 074 | score: 30 | arena/arena-config-mode-select.ts → arena-core.utils
+- [x] 075 | score: 30 | pages/profile-depth.section.ts → rpc-schemas
+- [x] 076 | score: 30 | pages/home.invite.ts → rpc-schemas
+- [x] 077 | score: 30 | pages/home.invite-sheet.ts → rpc-schemas
+- [x] 078 | score: 30 | pages/groups.load.ts → rpc-schemas
+- [x] 079 | score: 30 | pages/groups.feed.ts → rpc-schemas
+- [x] 080 | score: 30 | pages/groups.detail.ts → rpc-schemas
+- [x] 081 | score: 30 | pages/groups.create.ts → rpc-schemas
+- [x] 082 | score: 30 | onboarding-drip.ts → rpc-schemas
+- [x] 083 | score: 30 | modifiers-rpc.ts → rpc-schemas
+- [x] 084 | score: 30 | async.actions-predict.ts → rpc-schemas
+- [x] 085 | score: 30 | arena/arena-room-end-finalize.ts → rpc-schemas
+- [x] 086 | score: 30 | arena/arena-feed-wiring-spectator.ts → rpc-schemas
+- [x] 087 | score: 30 | arena/arena-feed-spec-chat.ts → rpc-schemas
+- [x] 088 | score: 30 | arena/arena-config-category.ts → rpc-schemas
+- [W] 089 | score: 29 | arena/arena-room-live-audio.ts → arena-core.utils
+- [x] 090 | score: 29 | arena/arena-private-lobby.join.ts → arena-core.utils
+- [W] 091 | score: 29 | arena/arena-feed-realtime.ts → arena-core.utils
+- [x] 092 | score: 29 | arena/arena-config-settings.ts → arena-core.utils
+- [x] 093 | score: 29 | pages/spectate.ts → rpc-schemas
+- [x] 094 | score: 29 | pages/profile-depth.ts → rpc-schemas
 - [ ] 095 | score: 29 | pages/plinko-invite-nudge.ts → rpc-schemas
-- [ ] 096 | score: 28 | arena/arena-room-render.ts → arena-core.utils
+- [W] 096 | score: 28 | arena/arena-room-render.ts → arena-core.utils
 - [ ] 097 | score: 28 | arena/arena-private-lobby.ts → arena-core.utils
 - [ ] 098 | score: 28 | arena/arena-pending-challenges.ts → arena-core.utils
 - [ ] 099 | score: 28 | arena/arena-mod-refs-form.ts → arena-core.utils
 - [ ] 100 | score: 28 | arena/arena-lobby.open-debates.ts → arena-core.utils
-- [ ] 101 | score: 28 | arena/arena-core.ts → arena-core.utils
+- [W] 101 | score: 28 | arena/arena-core.ts → arena-core.utils
 - [ ] 102 | score: 28 | arena/arena-config-category.ts → arena-core.utils
 - [ ] 103 | score: 27 | arena/arena-match-flow.ts → arena-core.utils
 - [ ] 104 | score: 27 | arena/arena-lobby.ts → arena-core.utils
