@@ -141,7 +141,7 @@ import { resolve } from 'path';
 
 describe('ARCH — src/payments.ts only imports from allowed modules', () => {
   it('has no imports outside the allowed list', () => {
-    const allowed = ['./config.ts', './auth.ts'];
+    const allowed = ['./config.ts', './auth.ts', './contracts/dependency-clamps.ts'];
     const source = readFileSync(
       resolve(__dirname, '../src/payments.ts'),
       'utf-8'

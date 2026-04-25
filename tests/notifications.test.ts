@@ -173,6 +173,7 @@ describe('ARCH — src/notifications.ts only imports from allowed modules', () =
       './notifications.panel.ts',
       './notifications.actions.ts',
       './notifications.types.ts',
+      './push-notifications.ts',
     ];
     const source = readFileSync(
       resolve(__dirname, '../src/notifications.ts'),

@@ -162,6 +162,7 @@ describe('ARCH — src/dm/dm.ts only imports from allowed modules', () => {
     const allowed = [
       '../auth.ts',
       '../config.ts',
+      '../contracts/dependency-clamps.ts',
       './dm.fetch.ts',
       './dm.render.ts',
       './dm.state.ts',

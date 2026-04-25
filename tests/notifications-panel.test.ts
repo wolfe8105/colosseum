@@ -251,6 +251,7 @@ describe('ARCH — src/notifications.panel.ts only imports from allowed modules'
   it('has no imports outside the allowed list', () => {
     const allowed = [
       './config.ts',
+      './notifications.deeplink.ts',
       './notifications.types.ts',
       './notifications.state.ts',
       './notifications.actions.ts',
