@@ -264,3 +264,107 @@ describe('ARCH — seam #033 import boundary unchanged', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ─── SEAM #098: arena-pending-challenges → arena-core.utils (randomFrom) ───
+
+// TC-098-001: randomFrom is imported from arena-core.utils
+describe('TC-098-001 — ARCH: randomFrom imported from arena-core.utils', () => {
+  it('arena-pending-challenges.ts imports randomFrom from arena-core.utils', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-pending-challenges.ts'),
+      'utf-8',
+    );
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-core.utils') && l.includes('randomFrom'))).toBe(true);
+  });
+});
+
+// TC-098-002: randomFrom used as topic fallback when join result has no topic and dataset topic is empty
+describe('TC-098-002 — randomFrom supplies topic fallback when join result and dataset both lack a topic', () => {
+  it('showMatchFound receives a non-empty topic drawn from AI_TOPICS via randomFrom', async () => {
+    const capturedDebates: unknown[] = [];
+
+    // Intercept showMatchFound by mocking arena-match-found
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({
+      showMatchFound: vi.fn((d: unknown) => capturedDebates.push(d)),
+    }));
+
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        // Challenge has no topic
+        return Promise.resolve({
+          data: [{ ...FAKE_CHALLENGE, topic: '' }],
+          error: null,
+        });
+      }
+      if (rpcName === 'join_private_lobby') {
+        // join result also has no topic
+        return Promise.resolve({
+          data: {
+            debate_id: FAKE_CHALLENGE.debate_id,
+            topic: null,
+            total_rounds: 3,
+            ruleset: 'amplified',
+            language: 'en',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    const { AI_TOPICS } = await import('../../src/arena/arena-constants.ts');
+
+    await loadPendingChallenges();
+
+    const acceptBtn = document.querySelector('.challenge-accept-btn') as HTMLButtonElement;
+    expect(acceptBtn).not.toBeNull();
+    acceptBtn.click();
+
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(capturedDebates.length).toBe(1);
+    const debate = capturedDebates[0] as { topic: string };
+    // topic must be one of the AI_TOPICS entries (randomFrom result)
+    expect(AI_TOPICS).toContain(debate.topic);
+  });
+});
+
+// TC-098-003: randomFrom unit — always returns element from array
+describe('TC-098-003 — randomFrom unit: returns an element from the supplied array', () => {
+  it('randomFrom always picks a value contained in the input array', async () => {
+    const { randomFrom } = await import('../../src/arena/arena-core.utils.ts');
+    const arr = ['alpha', 'beta', 'gamma', 'delta'] as const;
+    for (let i = 0; i < 20; i++) {
+      expect(arr).toContain(randomFrom(arr));
+    }
+  });
+});
+
+// TC-098-004: randomFrom uses array length — single-element array always returns that element
+describe('TC-098-004 — randomFrom with single-element array always returns that element', () => {
+  it('randomFrom returns the only element when array has length 1', async () => {
+    const { randomFrom } = await import('../../src/arena/arena-core.utils.ts');
+    expect(randomFrom(['only'] as const)).toBe('only');
+  });
+});
+
+// TC-098-005: AI_TOPICS is the array passed to randomFrom as fallback
+describe('TC-098-005 — ARCH: AI_TOPICS is the fallback topic pool used with randomFrom', () => {
+  it('arena-pending-challenges.ts imports AI_TOPICS from arena-constants', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-pending-challenges.ts'),
+      'utf-8',
+    );
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-constants') && l.includes('AI_TOPICS'))).toBe(true);
+  });
+
+  it('AI_TOPICS is a non-empty array of strings', async () => {
+    const { AI_TOPICS } = await import('../../src/arena/arena-constants.ts');
+    expect(Array.isArray(AI_TOPICS)).toBe(true);
+    expect(AI_TOPICS.length).toBeGreaterThan(0);
+    expect(typeof AI_TOPICS[0]).toBe('string');
+  });
+});

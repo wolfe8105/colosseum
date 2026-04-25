@@ -196,3 +196,162 @@ describe('ARCH — seam #034 import boundary unchanged', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SEAM #223 — arena-mod-refs-ruling → arena-room-live-messages (addSystemMessage)
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('SEAM #223 TC-1 — allow success posts "Evidence ALLOWED" system message', () => {
+  it('addSystemMessage called with ALLOWED text on successful allow ruling', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-allow', round: 1, supports_side: 'a' as const, submitter_name: 'Alice', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const allowBtn = document.getElementById('mod-ruling-allow') as HTMLButtonElement;
+    allowBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Evidence ALLOWED by moderator'),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-2 — deny success posts "Evidence DENIED" system message', () => {
+  it('addSystemMessage called with DENIED text on successful deny ruling', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-deny', round: 2, supports_side: 'b' as const, submitter_name: 'Bob', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const denyBtn = document.getElementById('mod-ruling-deny') as HTMLButtonElement;
+    denyBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Evidence DENIED by moderator'),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-3 — allow with reason appends reason to system message', () => {
+  it('addSystemMessage includes the reason text when provided on allow', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-reason', round: 3, supports_side: 'a' as const, submitter_name: 'Carol', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const reasonEl = document.getElementById('mod-ruling-reason') as HTMLTextAreaElement;
+    reasonEl.value = 'Solid source';
+
+    const allowBtn = document.getElementById('mod-ruling-allow') as HTMLButtonElement;
+    allowBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Solid source'),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-4 — ruleOnReference error on allow posts "Ruling failed" system message', () => {
+  it('addSystemMessage called with Ruling failed when ruleOnReference returns error on allow', async () => {
+    mockRuleOnReference.mockResolvedValueOnce({ data: null, error: { message: 'permission denied' } });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-err-allow', round: 1, supports_side: 'a' as const, submitter_name: 'Dave', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const allowBtn = document.getElementById('mod-ruling-allow') as HTMLButtonElement;
+    allowBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Ruling failed'),
+    );
+
+    // Overlay stays visible when ruling fails
+    const overlay = document.getElementById('mod-ruling-overlay');
+    expect(overlay).not.toBeNull();
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-5 — ruleOnReference error on deny posts "Ruling failed" system message', () => {
+  it('addSystemMessage called with Ruling failed when ruleOnReference returns error on deny', async () => {
+    mockRuleOnReference.mockResolvedValueOnce({ data: null, error: { message: 'not found' } });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-err-deny', round: 1, supports_side: 'b' as const, submitter_name: 'Eve', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const denyBtn = document.getElementById('mod-ruling-deny') as HTMLButtonElement;
+    denyBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Ruling failed'),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-6 — ruleOnReference throw on allow posts unexpected error message', () => {
+  it('addSystemMessage called with unexpected error when ruleOnReference throws on allow', async () => {
+    mockRuleOnReference.mockRejectedValueOnce(new Error('network error'));
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = { id: 'ref-s223-throw-allow', round: 2, supports_side: 'a' as const, submitter_name: 'Frank', url: null, description: null };
+    showRulingPanel(ref as any);
+
+    const allowBtn = document.getElementById('mod-ruling-allow') as HTMLButtonElement;
+    allowBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockAddSystemMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Ruling failed: unexpected error'),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('SEAM #223 TC-7 — ARCH: arena-mod-refs-ruling imports addSystemMessage from arena-room-live-messages', () => {
+  it('import boundary from seam #223 is present in source', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-mod-refs-ruling.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-room-live-messages'))).toBe(true);
+    expect(importLines.some(l => l.includes('addSystemMessage'))).toBe(true);
+  });
+});

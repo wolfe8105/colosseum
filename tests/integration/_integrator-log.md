@@ -110,3 +110,203 @@ Remaining: 529
 
 ## Remaining
 See `_integrator-seams.md` starting at rank 095.
+
+## Batch 8 (seams #095–#106)
+Passed: #095 (12), #097 (7 new), #098 (6 new), #099 (7 new), #100 (9), #102 (6 new), #103 (9 new), #105 (20 existing)
+Walled: #096 (arena-room-render.ts imports arena-room-live-audio), #101 (arena-core.ts imports webrtc/arena-css/voicememo/arena-feed-room), #104 (arena-lobby.ts imports arena-feed-room), #106 (arena-feed-machine-turns.ts imports webrtc/arena-sounds/deepgram)
+Failed: none
+
+## Totals
+Done: 77 / 623
+Walled: 31
+Failed: 0
+Remaining: 515
+
+## Remaining
+See `_integrator-seams.md` starting at rank 107.
+
+## Batch 9 (seams #107–#116)
+Passed: #107 (15), #108 (11 existing), #109 (7), #110 (5 new), #112 (11 existing), #115 (8)
+Walled: #111 (imports realtime-client/feed-room), #113 (imports deepgram), #114 (imports deepgram), #116 (imports webrtc/arena-sounds/deepgram)
+Failed: none
+
+## Totals
+Done: 83 / 623
+Walled: 35
+Failed: 0
+Remaining: 505
+
+## Remaining
+See `_integrator-seams.md` starting at rank 117.
+
+## Batch 10 (seams #117–#126)
+Passed: #117 (8), #118 (7 new), #122 (8), #123 (7 new), #124 (18), #126 (10)
+Walled: #119 (deepgram), #120 (arena-sounds), #121 (arena-sounds), #125 (webrtc)
+Pre-walled (known importer): #129 (deepgram), #130 (deepgram), #133 (webrtc), #134 (webrtc)
+Failed: none
+
+## Totals
+Done: 89 / 623
+Walled: 43
+Failed: 0
+Remaining: 491
+
+## Remaining
+See `_integrator-seams.md` starting at rank 127.
+
+## Batch 11 (seams #127–#140)
+Passed: #127 (7 new), #128 (15 new), #131 (7 new), #132 (15 new), #135 (7), #136 (9), #138 (8), #139 (8), #140 (11)
+Walled: #137 (arena-room-enter dynamic imports arena-sounds)
+Pre-walled (known importer): #144 (deepgram), #145 (arena-sounds), #146 (arena-sounds), #149 (webrtc)
+Failed: none
+
+## Totals
+Done: 98 / 623
+Walled: 49
+Failed: 0
+Remaining: 476
+
+## Remaining
+See `_integrator-seams.md` starting at rank 141.
+
+## Batch 12 (seams #141–#154)
+Passed: #141 (7 new, 14 total), #142 (5 new, 13 total), #143 (6 written, 21 total), #147 (5 new, 15 total), #148 (18), #150 (8), #151 (5 new, 13 total), #152 (11), #153 (7 new, 14 total), #154 (7)
+Walled: none (pre-walled #144, #145, #146, #149 already marked)
+Failed: none
+
+## Totals
+Done: 108 / 623
+Walled: 49
+Failed: 0
+Remaining: 466
+
+## Remaining
+See `_integrator-seams.md` starting at rank 155.
+
+## Batch 13 (seams #155–#165)
+Passed: #155 (7), #156 (7), #157 (9), #158 (9), #159 (7 new, 26 total), #161 (10), #162 (41), #163 (7 new, 15 total), #164 (7 new, 18 total), #165 (9)
+Walled: none (pre-walled #160 already marked)
+Failed: none
+
+## Totals
+Done: 118 / 623
+Walled: 50
+Failed: 0
+Remaining: 455
+
+## Remaining
+See `_integrator-seams.md` starting at rank 166.
+
+## Batch 14 (seams #166–#182)
+Passed: #166 (8), #167 (12), #168 (13), #169 (16), #170 (29), #171 (7 new, 31 total), #172 (20), #178 (17), #182 (14)
+Walled: none dispatched (pre-walled #173–#177, #179–#180 before batch = +7 walls)
+Failed: none
+Stalled: #181 (600s watchdog — retry in Batch 15)
+
+## Totals
+Done: 127 / 623
+Walled: 60
+Failed: 0
+Remaining: 436
+
+## Remaining
+See `_integrator-seams.md` starting at rank 181.
+
+## Batch 15 (seams #181–#193)
+Passed: #181 retry (5 new, 14 total), #183 (8 new, 20 total), #184 (7 new, 23 total), #186 (13), #187 (9), #188 (8), #190 (7 new, 20 total), #192 (13 new, 20 total), #193 (11 new, 30 total)
+Walled: none dispatched (pre-walled #185, #189, #191 before batch = +3 walls; #203–#204 pre-walled now = +2)
+Failed: none
+
+## Totals
+Done: 136 / 623
+Walled: 65
+Failed: 0
+Remaining: 422
+
+## Remaining
+See `_integrator-seams.md` starting at rank 194.
+
+## Batch 16 (seams #194–#205)
+Passed: #194 (7 new, 39 total), #195 (12 new, 52 total), #196 (7 new, 15 total), #197 (7 new, 15 total), #198 (7 new, 42 total), #199 (7 new, 49 total), #200 (7 new, 34 total), #201 (7 new, 16 total), #202 (7 new, 33 total), #205 (9 new)
+Walled: none dispatched (pre-walled #203–#204, #213 = +3 walls)
+Failed: none
+
+## Totals
+Done: 146 / 623
+Walled: 68
+Failed: 0
+Remaining: 409
+
+## Remaining
+See `_integrator-seams.md` starting at rank 206.
+
+## Batch 17 (seams #206–#217)
+Passed: #206 (10), #207 (9), #208 (15 existing), #209 (10), #210 (9), #212 (7 new, 28 total), #214 (7), #215 (8), #216 (7), #217 (7)
+Walled: none dispatched (pre-walled #211, #213, #222 = +3 walls)
+Failed: none
+
+## Totals
+Done: 156 / 623
+Walled: 71
+Failed: 0
+Remaining: 396
+
+## Remaining
+See `_integrator-seams.md` starting at rank 218.
+
+## Batch 18 (seams #218–#228)
+Passed: #218 (7), #219 (7), #220 (7), #221 (12), #223 (7 new, 14 total), #224 (7 new, 22 total), #225 (9), #226 (7 new, 23 total), #227 (7 new, 57 total), #228 (9)
+Walled: none dispatched (pre-walled #222, #230–#235, #243–#245 = +11 walls)
+Failed: none
+
+## Totals
+Done: 166 / 623
+Walled: 82
+Failed: 0
+Remaining: 375
+
+## Remaining
+See `_integrator-seams.md` starting at rank 229.
+
+## Batch 19 (seams #229, #236–#242, #246–#247)
+Passed: #229 (14), #236 (8), #237 (9 new, 20 total), #238 (9), #239 (8), #240 (7 new, 31 total), #241 (8), #242 (8), #247 (7 new, 14 total)
+Walled: #246 (arena-room-live-input imports arena-room-live-audio); pre-walled #249, #253 = +2 walls
+Failed: none
+
+## Totals
+Done: 175 / 623
+Walled: 86
+Failed: 0
+Remaining: 362
+
+## Remaining
+See `_integrator-seams.md` starting at rank 248.
+
+## Batch 20 (seams #248–#259)
+Passed: #248 (9), #250 (19), #252 (12), #254 (8), #255 (24), #256 (14), #257 (6 new, 15 total), #258 (7 new, 16 total), #259 (7 new, 15 total)
+Walled: #251 (arena.ts re-exports voicememo); pre-walled #265, #267, #268 = +3 walls
+Failed: none
+
+## Totals
+Done: 184 / 623
+Walled: 91
+Failed: 0
+Remaining: 348
+
+## Remaining
+See `_integrator-seams.md` starting at rank 260.
+
+## Batch 21 (seams #260–#272)
+Passed: #260 (22), #261 (13), #262 (21), #263 (10), #264 (covered in #263 file), #266 (8), #271 (8), #272 (9)
+Walled: #269 (arena-feed-disconnect-mod imports arena-deepgram), #270 (settings.wiring dynamically imports arena-sounds + intro-music)
+Failed: none
+Note: TC7 in int-plinko-step3-username.test.ts fixed — assertion scoped to step3 RPCs only (auth-init RPCs allowed)
+
+## Totals
+Done: 192 / 623
+Walled: 93
+Failed: 0
+Remaining: 338
+
+## Remaining
+See `_integrator-seams.md` starting at rank 273.

@@ -260,6 +260,156 @@ describe('TC-I6: showReferencePopup renders reference metadata with escapeHTML',
 });
 
 // ============================================================
+// SEAM #110 — arena-feed-references → arena-feed-state
+// Focuses on: `round` read from arena-feed-state and passed
+// through to citeDebateReference / fileReferenceChallenge RPCs.
+// ============================================================
+
+describe('TC-110-1: showCiteDropdown passes round from arena-feed-state to cite RPC', () => {
+  it('uses current round value when user clicks a ref item', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    // Set round to 3 in arena-feed-state
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(3);
+
+    // set_loadedRefs with one uncited ref
+    set_loadedRefs([
+      { reference_id: 'ref-cite-round', claim: 'Round test claim', author: 'Auth', current_power: 2, cited: false },
+    ]);
+
+    // safeRpc calls supabase.rpc — capture it
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 3 }, error: null });
+
+    const debate = { id: 'debate-round', role: 'b', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    expect(dropdown.style.display).toBe('block');
+
+    // Click the dropdown item
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    // Allow async handler to run
+    await vi.runAllTimersAsync();
+
+    // The RPC should have been called with p_round = 3
+    expect(mockRpc).toHaveBeenCalledWith(
+      'cite_debate_reference',
+      expect.objectContaining({ p_round: 3 }),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-110-2: showChallengeDropdown passes round from arena-feed-state to challenge RPC', () => {
+  it('uses current round value when user clicks a challenge item', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    // Set round to 2
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(2);
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-challenge-round', claim: 'Opp claim R2', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(3);
+
+    // fileReferenceChallenge blocked=true path (no pauseFeed call needed)
+    mockRpc.mockResolvedValue({
+      data: { blocked: true, challenges_remaining: 3, challenge_id: null },
+      error: null,
+    });
+
+    const debate = { id: 'debate-chal-round', role: 'a', opponentName: 'Opp', messages: [] };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.runAllTimersAsync();
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'file_reference_challenge',
+      expect.objectContaining({ p_round: 2 }),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-110-3: round live binding — set_round updates value seen by showCiteDropdown', () => {
+  it('reflects updated round after set_round is called', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(1);
+
+    set_loadedRefs([
+      { reference_id: 'ref-live', claim: 'Live binding claim', author: 'X', current_power: 1, cited: false },
+    ]);
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 2 }, error: null });
+
+    // First cite — should use round 1
+    const debate = { id: 'debate-live', role: 'a', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    (dropdown.querySelector('.feed-dropdown-item') as HTMLElement).click();
+    await vi.runAllTimersAsync();
+
+    expect(mockRpc).toHaveBeenLastCalledWith(
+      'cite_debate_reference',
+      expect.objectContaining({ p_round: 1 }),
+    );
+
+    // Now advance round to 4 — reload refs (cite marks cited:true)
+    feedStateMod.set_round(4);
+    set_loadedRefs([
+      { reference_id: 'ref-live-2', claim: 'Second claim', author: 'Y', current_power: 1, cited: false },
+    ]);
+
+    showCiteDropdown(debate);
+    const dropdown2 = document.getElementById('feed-ref-dropdown')!;
+    (dropdown2.querySelector('.feed-dropdown-item') as HTMLElement).click();
+    await vi.runAllTimersAsync();
+
+    expect(mockRpc).toHaveBeenLastCalledWith(
+      'cite_debate_reference',
+      expect.objectContaining({ p_round: 4 }),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-110-4: resetFeedRoomState resets round to 1', () => {
+  it('round returns to 1 after resetFeedRoomState()', async () => {
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(5);
+    expect(feedStateMod.round).toBe(5);
+
+    feedStateMod.resetFeedRoomState();
+    expect(feedStateMod.round).toBe(1);
+  });
+});
+
+describe('TC-110-5: arena-feed-state exports round getter and set_round setter', () => {
+  it('round starts at 1 and set_round mutates the live binding', async () => {
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    // After resetModules + re-import it starts at module default (1)
+    feedStateMod.set_round(1);
+    expect(feedStateMod.round).toBe(1);
+    feedStateMod.set_round(7);
+    expect(feedStateMod.round).toBe(7);
+  });
+});
+
+// ============================================================
 // ARCH — arena-feed-references.ts import boundaries
 // ============================================================
 
@@ -288,5 +438,508 @@ describe('ARCH — arena-feed-references.ts imports only from allowed modules', 
     for (const path of paths) {
       expect(allowed, `Unexpected import in arena-feed-references.ts: ${path}`).toContain(path);
     }
+  });
+});
+
+// ============================================================
+// SEAM #127 — arena-feed-references → arena-feed-ui
+// Focuses on: updateCiteButtonState and updateChallengeButtonState
+// are called from arena-feed-references after successful RPCs,
+// and that the DOM elements they control reflect correct state.
+// ============================================================
+
+describe('TC-127-1: updateCiteButtonState called after cite — button disabled when all refs cited', () => {
+  it('disables feed-cite-btn after all refs become cited via showCiteDropdown click', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    // Set up DOM: cite button + dropdown
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-cite-btn">📄 CITE</button>
+    `;
+
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 2 }, error: null });
+
+    // One uncited ref — after cite it becomes cited, so updateCiteButtonState disables the button
+    set_loadedRefs([
+      { reference_id: 'ref-127-1', claim: 'Single uncited ref', author: 'Auth', current_power: 2, cited: false },
+    ]);
+
+    const debate = { id: 'debate-127', role: 'a', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.runAllTimersAsync();
+
+    // After cite: set_loadedRefs marks it cited, updateCiteButtonState runs
+    // With no uncited refs remaining, the button should be disabled
+    const btn = document.getElementById('feed-cite-btn') as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-127-2: updateCiteButtonState called after cite — button text updated to ALL CITED', () => {
+  it('sets button text to ALL CITED after last uncited ref is cited', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-cite-btn">📄 CITE</button>
+    `;
+
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 2 }, error: null });
+
+    set_loadedRefs([
+      { reference_id: 'ref-127-2', claim: 'Only ref', author: 'Auth', current_power: 1, cited: false },
+    ]);
+
+    const debate = { id: 'debate-127-2', role: 'a', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    (dropdown.querySelector('.feed-dropdown-item') as HTMLElement).click();
+
+    await vi.runAllTimersAsync();
+
+    const btn = document.getElementById('feed-cite-btn') as HTMLButtonElement;
+    // updateCiteButtonState sets textContent to '📄 ALL CITED' when all refs are cited
+    expect(btn.textContent).toContain('ALL CITED');
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-127-3: updateChallengeButtonState called after non-blocked challenge — button text reflects new count', () => {
+  it('updates challenge button text with decremented challengesRemaining after successful challenge', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (3)</button>
+    `;
+
+    // Non-blocked result — challenge filed, 2 remaining
+    mockRpc.mockResolvedValue({
+      data: { blocked: false, challenges_remaining: 2, challenge_id: 'chid-1' },
+      error: null,
+    });
+
+    // Need pauseFeed to not blow up — it needs feed state setup
+    // We use the arena-state setters already imported via beforeEach
+    set_opponentCitedRefs([
+      { reference_id: 'oref-127-3', claim: 'Challengeable claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(3);
+
+    // Set up currentDebate so pauseFeed won't crash on null access
+    set_currentDebate({ id: 'debate-127-3', role: 'a', opponentName: 'Opp', messages: [], modView: false });
+
+    const debate = { id: 'debate-127-3', role: 'a', opponentName: 'Opp', messages: [], modView: false };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.runAllTimersAsync();
+
+    // updateChallengeButtonState should have run and set text to CHALLENGE (2)
+    const btn = document.getElementById('feed-challenge-btn') as HTMLButtonElement;
+    expect(btn.textContent).toContain('CHALLENGE (2)');
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-127-4: updateChallengeButtonState NOT called when challenge is blocked by shield', () => {
+  it('challenge button text unchanged when result.blocked is true', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (3)</button>
+    `;
+
+    // Blocked result — shield absorbed it
+    mockRpc.mockResolvedValue({
+      data: { blocked: true, challenges_remaining: 3, challenge_id: null },
+      error: null,
+    });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-127-4', claim: 'Blocked challenge', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(3);
+
+    const debate = { id: 'debate-127-4', role: 'a', opponentName: 'Opp', messages: [] };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    (dropdown.querySelector('.feed-dropdown-item') as HTMLElement).click();
+
+    await vi.runAllTimersAsync();
+
+    // updateChallengeButtonState was NOT called (blocked path skips it)
+    // button text stays as original set value
+    const btn = document.getElementById('feed-challenge-btn') as HTMLButtonElement;
+    expect(btn.textContent).toContain('CHALLENGE (3)');
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-127-5: updateCiteButtonState respects feedPaused — disables cite button when feed is paused', () => {
+  it('cite button is disabled when feedPaused is true even during my turn', async () => {
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-cite-btn">📄 CITE</button>
+    `;
+
+    // Set up: it's player a's turn (speaker_a phase), role is 'a', and feed is paused
+    stateMod.set_currentDebate({ id: 'debate-127-5', role: 'a', opponentName: 'Opp', messages: [], modView: false });
+    stateMod.set_feedPaused(true);
+    stateMod.set_loadedRefs([
+      { reference_id: 'ref-127-5', claim: 'Pauseable ref', author: 'Auth', current_power: 1, cited: false },
+    ]);
+    feedStateMod.set_phase('speaker_a');
+
+    const { updateCiteButtonState } = await import('../../src/arena/arena-feed-ui.ts');
+    updateCiteButtonState();
+
+    const btn = document.getElementById('feed-cite-btn') as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+
+    // Cleanup
+    stateMod.set_feedPaused(false);
+  });
+});
+
+describe('TC-127-6: updateChallengeButtonState reflects challengesRemaining in button text', () => {
+  it('sets button text to CHALLENGE (N) where N is current challengesRemaining', async () => {
+    const stateMod = await import('../../src/arena/arena-state.ts');
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (3)</button>
+    `;
+
+    stateMod.set_challengesRemaining(1);
+    stateMod.set_opponentCitedRefs([
+      { reference_id: 'oref-127-6', claim: 'Ref for count test', domain: 'x.com', already_challenged: false },
+    ]);
+
+    const { updateChallengeButtonState } = await import('../../src/arena/arena-feed-ui.ts');
+    updateChallengeButtonState();
+
+    const btn = document.getElementById('feed-challenge-btn') as HTMLButtonElement;
+    expect(btn.textContent).toContain('CHALLENGE (1)');
+  });
+});
+
+describe('TC-127-7: ARCH — arena-feed-ui.ts imports only allowed modules', () => {
+  it('contains no wall imports', () => {
+    // Exact module name substrings that must not appear as import paths.
+    // Note: 'arena-types-feed-room' is a types-only file and is permitted.
+    // We match against the extracted import path strings, not raw lines.
+    const wallModules = [
+      'webrtc', 'intro-music', 'cards.ts', 'deepgram',
+      'realtime-client', 'voicememo', 'arena-css', 'arena-room-live-audio',
+      'arena-sounds', 'arena-sounds-core', 'peermetrics', 'arena-feed-room',
+    ];
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-feed-ui.ts'),
+      'utf-8'
+    );
+    const importPaths = source.split('\n')
+      .filter(l => /from\s+['"]/.test(l))
+      .map(l => l.match(/from\s+['"]([^'"]+)['"]/)?.[1])
+      .filter((p): p is string => Boolean(p));
+    for (const wall of wallModules) {
+      for (const path of importPaths) {
+        expect(path, `arena-feed-ui.ts imports wall module "${wall}": ${path}`).not.toContain(wall);
+      }
+    }
+  });
+});
+
+// ============================================================
+// SEAM #240 — arena-feed-references → reference-arsenal
+// Focuses on: citeDebateReference and fileReferenceChallenge
+// are called from reference-arsenal.debate.ts with exact params,
+// results update arena-state correctly, and errors surface via
+// showToast.
+// ============================================================
+
+describe('TC-240-1: showCiteDropdown click fires cite_debate_reference RPC with all params', () => {
+  it('calls cite_debate_reference with p_debate_id, p_reference_id, p_round, p_side', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(2);
+
+    set_loadedRefs([
+      { reference_id: 'ref-240-1', claim: 'Seam 240 claim', author: 'AuthA', current_power: 3, cited: false },
+    ]);
+
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 4 }, error: null });
+
+    const debate = { id: 'debate-240-1', role: 'b', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    expect(dropdown.style.display).toBe('block');
+
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'cite_debate_reference',
+      expect.objectContaining({
+        p_debate_id: 'debate-240-1',
+        p_reference_id: 'ref-240-1',
+        p_round: 2,
+        p_side: 'b',
+      }),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-2: citeDebateReference RPC error surfaces via showToast and does not update loadedRefs', () => {
+  it('shows error toast and refs remain unchanged when RPC returns error', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(1);
+
+    const initialRefs = [
+      { reference_id: 'ref-240-2', claim: 'Error path ref', author: 'Auth', current_power: 2, cited: false },
+    ];
+    set_loadedRefs(initialRefs);
+
+    // Simulate RPC error
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'Cite limit reached' } });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <div id="toast-container"></div>
+    `;
+
+    const debate = { id: 'debate-240-2', role: 'a', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    // Verify RPC was called with cite_debate_reference
+    expect(mockRpc).toHaveBeenCalledWith('cite_debate_reference', expect.any(Object));
+
+    // The ref should still be uncited (state not mutated on error)
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    const refs = stateMod.loadedRefs;
+    expect(refs.some((r: { cited: boolean }) => r.cited)).toBe(false);
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-3: showChallengeDropdown click fires file_reference_challenge RPC with all params', () => {
+  it('calls file_reference_challenge with p_debate_id, p_reference_id, p_round, p_side', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(3);
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-240-3', claim: 'Opp 240 claim', domain: 'science.org', already_challenged: false },
+    ]);
+    set_challengesRemaining(2);
+
+    // Blocked=true to avoid pauseFeed side-effects
+    mockRpc.mockResolvedValue({
+      data: { blocked: true, challenges_remaining: 2, challenge_id: null },
+      error: null,
+    });
+
+    const debate = { id: 'debate-240-3', role: 'a', opponentName: 'Opp', messages: [] };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    expect(dropdown.style.display).toBe('block');
+
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'file_reference_challenge',
+      expect.objectContaining({
+        p_debate_id: 'debate-240-3',
+        p_reference_id: 'oref-240-3',
+        p_round: 3,
+        p_side: 'a',
+      }),
+    );
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-4: non-blocked challenge decrements challengesRemaining in arena-state', () => {
+  it('calls set_challengesRemaining with challenges_remaining from RPC result', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(1);
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-240-4', claim: 'Decrement claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(3);
+
+    // Non-blocked — server says 2 remaining, challenge_id set
+    mockRpc.mockResolvedValue({
+      data: { blocked: false, challenges_remaining: 2, challenge_id: 'chid-240' },
+      error: null,
+    });
+
+    // Set currentDebate so pauseFeed internal checks don't throw
+    set_currentDebate({ id: 'debate-240-4', role: 'a', opponentName: 'Opp', messages: [], modView: false });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (3)</button>
+      <div id="arena-feed-room"></div>
+    `;
+
+    const debate = { id: 'debate-240-4', role: 'a', opponentName: 'Opp', messages: [], modView: false };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    // challengesRemaining in state should now be 2 (from RPC result)
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    expect(stateMod.challengesRemaining).toBe(2);
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-5: blocked challenge does NOT change challengesRemaining and shows shield toast', () => {
+  it('challengesRemaining stays at 3 and no set_challengesRemaining mutation on blocked result', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(1);
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-240-5', claim: 'Shield blocked ref', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(3);
+
+    mockRpc.mockResolvedValue({
+      data: { blocked: true, challenges_remaining: 3, challenge_id: null },
+      error: null,
+    });
+
+    const debate = { id: 'debate-240-5', role: 'a', opponentName: 'Opp', messages: [] };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    // RPC called
+    expect(mockRpc).toHaveBeenCalledWith('file_reference_challenge', expect.any(Object));
+
+    // State unchanged at 3 (blocked path skips set_challengesRemaining)
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    expect(stateMod.challengesRemaining).toBe(3);
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-6: successful cite marks ref as cited:true in loadedRefs state', () => {
+  it('after cite_debate_reference success the ref.cited becomes true in arena-state', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const feedStateMod = await import('../../src/arena/arena-feed-state.ts');
+    feedStateMod.set_round(1);
+
+    set_loadedRefs([
+      { reference_id: 'ref-240-6', claim: 'Citeable ref', author: 'Auth', current_power: 2, cited: false },
+    ]);
+
+    mockRpc.mockResolvedValue({ data: { success: true, new_power: 3 }, error: null });
+
+    const debate = { id: 'debate-240-6', role: 'a', opponentName: 'Opp', messages: [] };
+    showCiteDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    const refs = stateMod.loadedRefs as Array<{ reference_id: string; cited: boolean }>;
+    const citedRef = refs.find(r => r.reference_id === 'ref-240-6');
+    expect(citedRef).toBeDefined();
+    expect(citedRef!.cited).toBe(true);
+
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-240-7: ARCH — reference-arsenal.debate.ts uses safeRpc and does not call supabase directly', () => {
+  it('all RPC calls in debate file route through safeRpc (no direct .rpc() in debate file)', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/reference-arsenal.debate.ts'),
+      'utf-8'
+    );
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    const importPaths = importLines
+      .map(l => l.match(/from\s+['"]([^'"]+)['"]/)?.[1])
+      .filter((p): p is string => Boolean(p));
+
+    // Must import safeRpc (from auth.ts)
+    expect(importPaths.some(p => p.includes('auth'))).toBe(true);
+
+    // Must NOT import @supabase/supabase-js directly
+    expect(importPaths.some(p => p.includes('@supabase/supabase-js'))).toBe(false);
+
+    // Must NOT call supabase.rpc() directly — no raw .rpc( in the debate file body
+    const bodyLines = source.split('\n').filter(l => !l.trimStart().startsWith('//'));
+    const rawRpcCalls = bodyLines.filter(l => /supabase\s*\.\s*rpc\s*\(/.test(l));
+    expect(rawRpcCalls.length).toBe(0);
   });
 });

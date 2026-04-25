@@ -204,3 +204,95 @@ describe('ARCH — seam #046', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ============================================================
+// SEAM #102 — arena-config-category → arena-core.utils
+// Focused on pushArenaState usage
+// ============================================================
+
+// TC-core1: showCategoryPicker calls history.pushState with arenaView='categoryPicker'
+describe('TC-core1 — showCategoryPicker pushes arena history state on open', () => {
+  it('calls history.pushState({ arenaView: "categoryPicker" }, "") when the picker is shown', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    const pushState = vi.spyOn(history, 'pushState');
+
+    const { showCategoryPicker } = await import('../../src/arena/arena-config-category.ts');
+    showCategoryPicker('live', 'Test topic');
+
+    expect(pushState).toHaveBeenCalledWith({ arenaView: 'categoryPicker' }, '');
+    pushState.mockRestore();
+  });
+});
+
+// TC-core2: pushArenaState utility itself calls history.pushState with correct shape
+describe('TC-core2 — pushArenaState utility calls history.pushState correctly', () => {
+  it('pushArenaState("myView") invokes history.pushState with { arenaView: "myView" }', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    const pushState = vi.spyOn(history, 'pushState');
+
+    const { pushArenaState } = await import('../../src/arena/arena-core.utils.ts');
+    pushArenaState('myView');
+
+    expect(pushState).toHaveBeenCalledWith({ arenaView: 'myView' }, '');
+    pushState.mockRestore();
+  });
+});
+
+// TC-core3: showCategoryPicker calls pushArenaState exactly once per invocation
+describe('TC-core3 — showCategoryPicker calls history.pushState exactly once per open', () => {
+  it('history.pushState is called exactly once when showCategoryPicker is invoked once', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    const pushState = vi.spyOn(history, 'pushState');
+
+    const { showCategoryPicker } = await import('../../src/arena/arena-config-category.ts');
+    showCategoryPicker('text', 'Should we colonise Mars?');
+
+    expect(pushState).toHaveBeenCalledTimes(1);
+    pushState.mockRestore();
+  });
+});
+
+// TC-core4: Cancel button calls history.back() (complement to pushArenaState push)
+describe('TC-core4 — cancel button calls history.back to undo the pushState', () => {
+  it('clicking #arena-cat-cancel calls history.back()', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    const histBack = vi.spyOn(history, 'back').mockImplementation(() => {});
+
+    const { showCategoryPicker } = await import('../../src/arena/arena-config-category.ts');
+    showCategoryPicker('live', 'Cancel test');
+
+    const cancelBtn = document.getElementById('arena-cat-cancel') as HTMLButtonElement | null;
+    expect(cancelBtn).not.toBeNull();
+    cancelBtn?.click();
+
+    expect(histBack).toHaveBeenCalledTimes(1);
+    histBack.mockRestore();
+  });
+});
+
+// TC-core5: Backdrop click also calls history.back()
+describe('TC-core5 — backdrop click calls history.back to undo the pushState', () => {
+  it('clicking #arena-cat-backdrop calls history.back()', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    const histBack = vi.spyOn(history, 'back').mockImplementation(() => {});
+
+    const { showCategoryPicker } = await import('../../src/arena/arena-config-category.ts');
+    showCategoryPicker('live', 'Backdrop test');
+
+    const backdrop = document.getElementById('arena-cat-backdrop') as HTMLElement | null;
+    expect(backdrop).not.toBeNull();
+    backdrop?.click();
+
+    expect(histBack).toHaveBeenCalledTimes(1);
+    histBack.mockRestore();
+  });
+});
+
+// TC-core6: ARCH seam check — arena-config-category imports arena-core.utils
+describe('ARCH — seam #102', () => {
+  it('src/arena/arena-config-category.ts imports from arena-core.utils', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-config-category.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-core.utils'))).toBe(true);
+  });
+});

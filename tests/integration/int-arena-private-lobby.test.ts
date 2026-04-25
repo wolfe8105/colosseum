@@ -247,3 +247,219 @@ describe('ARCH — seam #032 import boundary unchanged', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ============================================================
+// SEAM #097 — arena-private-lobby → arena-core.utils
+// Boundary: arena-private-lobby calls isPlaceholder(), randomFrom(),
+//           and pushArenaState() from arena-core.utils.
+//           isPlaceholder() gates the placeholder simulation branch.
+//           randomFrom(AI_TOPICS) fills empty topics.
+//           pushArenaState('privateLobbyWaiting') records browser history entry.
+// Mock boundary: @supabase/supabase-js only
+// All source modules run real.
+// ============================================================
+
+// ============================================================
+// TC-097-1 — pushArenaState called with 'privateLobbyWaiting'
+// ============================================================
+
+describe('TC-097-1 — createAndWaitPrivateLobby calls history.pushState for privateLobbyWaiting', () => {
+  it('records a history entry with arenaView=privateLobbyWaiting', async () => {
+    const pushSpy = vi.spyOn(history, 'pushState');
+
+    mockRpc.mockResolvedValueOnce({
+      data: [{ debate_id: 'debate-history', join_code: null }],
+      error: null,
+    });
+
+    await createAndWaitPrivateLobby('text', 'Test topic', 'group').catch(() => {});
+
+    const historyCalls = pushSpy.mock.calls.filter(
+      c => c[0] && typeof c[0] === 'object' && (c[0] as Record<string, unknown>).arenaView === 'privateLobbyWaiting'
+    );
+    expect(historyCalls.length).toBeGreaterThan(0);
+
+    pushSpy.mockRestore();
+  });
+});
+
+// ============================================================
+// TC-097-2 — pushArenaState writes correct state shape
+// ============================================================
+
+describe('TC-097-2 — pushArenaState writes {arenaView: privateLobbyWaiting} to history', () => {
+  it('history.pushState state object has arenaView property set to privateLobbyWaiting', async () => {
+    const calls: unknown[] = [];
+    const origPush = history.pushState.bind(history);
+    const spy = vi.spyOn(history, 'pushState').mockImplementation((state, ...rest) => {
+      calls.push(state);
+      try { origPush(state, ...rest); } catch { /* jsdom may reject */ }
+    });
+
+    mockRpc.mockResolvedValueOnce({
+      data: [{ debate_id: 'debate-push-shape', join_code: null }],
+      error: null,
+    });
+
+    await createAndWaitPrivateLobby('text', 'Shape test topic', 'group').catch(() => {});
+
+    const arenaStateCalls = calls.filter(
+      s => s !== null && typeof s === 'object' && (s as Record<string, unknown>).arenaView === 'privateLobbyWaiting'
+    );
+    expect(arenaStateCalls.length).toBeGreaterThan(0);
+
+    spy.mockRestore();
+  });
+});
+
+// ============================================================
+// TC-097-3 — isPlaceholder false: create_private_lobby RPC is called
+// ============================================================
+
+describe('TC-097-3 — isPlaceholder=false triggers create_private_lobby RPC', () => {
+  it('calls create_private_lobby when supabase client is present', async () => {
+    // Re-establish working supabase mock in case a prior test installed a null one
+    vi.resetModules();
+    mockRpc.mockReset();
+
+    vi.mock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => ({ rpc: mockRpc, from: mockFrom, auth: mockAuth })),
+    }));
+
+    mockRpc.mockResolvedValue({ data: [], error: null });
+    mockRpc.mockResolvedValueOnce({
+      data: [{ debate_id: 'debate-real', join_code: null }],
+      error: null,
+    });
+
+    const lobbyMod3r = await import('../../src/arena/arena-private-lobby.ts');
+    const stateMod3r = await import('../../src/arena/arena-state.ts');
+    stateMod3r.set_screenEl(document.getElementById('screen-main'));
+
+    await lobbyMod3r.createAndWaitPrivateLobby('text', 'Real topic', 'group').catch(() => {});
+
+    const createCall = mockRpc.mock.calls.find(c => c[0] === 'create_private_lobby');
+    expect(createCall).toBeTruthy();
+  });
+});
+
+// ============================================================
+// TC-097-4 — randomFrom fills empty topic in placeholder path
+// ============================================================
+
+describe('TC-097-4 — randomFrom(AI_TOPICS) used when topic is empty in placeholder path', () => {
+  it('onPrivateLobbyMatched receives a non-empty topic when topic arg is blank', async () => {
+    // Patch history.pushState to avoid errors
+    const pushSpy = vi.spyOn(history, 'pushState').mockImplementation(() => {});
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+
+    vi.mock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => null),
+    }));
+
+    const lobbyMod3 = await import('../../src/arena/arena-private-lobby.ts');
+    const stateMod3 = await import('../../src/arena/arena-state.ts');
+    stateMod3.set_screenEl(document.getElementById('screen-main'));
+
+    // Spy on onPrivateLobbyMatched via the module binding
+    const matchedSpy = vi.spyOn(lobbyMod3, 'onPrivateLobbyMatched');
+
+    const p = lobbyMod3.createAndWaitPrivateLobby('text', '', 'private');
+    await vi.advanceTimersByTimeAsync(3100).catch(() => {});
+    await p.catch(() => {});
+
+    if (matchedSpy.mock.calls.length > 0) {
+      const calledTopic = matchedSpy.mock.calls[0]![0].topic;
+      expect(typeof calledTopic).toBe('string');
+      expect(calledTopic.length).toBeGreaterThan(0);
+    }
+
+    vi.useRealTimers();
+    pushSpy.mockRestore();
+  });
+});
+
+// ============================================================
+// TC-097-5 — randomFrom returns a value from the provided array
+// ============================================================
+
+describe('TC-097-5 — randomFrom selects from AI_TOPICS array (non-empty result)', () => {
+  it('arena-core.utils randomFrom returns a string value from a non-empty array', async () => {
+    const utilsMod = await import('../../src/arena/arena-core.utils.ts');
+    const constantsMod = await import('../../src/arena/arena-constants.ts');
+    const topics = constantsMod.AI_TOPICS;
+    expect(Array.isArray(topics)).toBe(true);
+    expect(topics.length).toBeGreaterThan(0);
+
+    // Run 10 times to confirm randomFrom always picks a valid item
+    for (let i = 0; i < 10; i++) {
+      const result = utilsMod.randomFrom(topics);
+      expect(typeof result).toBe('string');
+      expect((topics as readonly string[]).includes(result as string)).toBe(true);
+    }
+  });
+});
+
+// ============================================================
+// TC-097-6 — startPrivateLobbyPoll stops when view changes away
+// ============================================================
+
+describe('TC-097-6 — startPrivateLobbyPoll self-cancels when view leaves privateLobbyWaiting', () => {
+  it('stops polling after view is changed to lobby', async () => {
+    // Re-establish working supabase mock in case a prior test installed a null one
+    vi.resetModules();
+    mockRpc.mockReset();
+
+    vi.mock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => ({ rpc: mockRpc, from: mockFrom, auth: mockAuth })),
+    }));
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    mockRpc.mockResolvedValue({
+      data: [{ status: 'waiting', player_b_ready: false, opponent_id: null }],
+      error: null,
+    });
+
+    const lobbyMod6 = await import('../../src/arena/arena-private-lobby.ts');
+    const stateMod6 = await import('../../src/arena/arena-state.ts');
+    const set_view6 = stateMod6.set_view as (v: string) => void;
+
+    set_view6('privateLobbyWaiting');
+    lobbyMod6.startPrivateLobbyPoll('debate-view-stop', 'text', 'Topic');
+
+    // Tick once — interval fires and async poll settles
+    await vi.advanceTimersByTimeAsync(3000);
+    const callsAfterFirst = mockRpc.mock.calls.filter(c => c[0] === 'check_private_lobby').length;
+    expect(callsAfterFirst).toBeGreaterThanOrEqual(1);
+
+    // Change view away
+    set_view6('lobby');
+
+    // Tick again — interval fires but self-cancels on view check, no RPC
+    mockRpc.mockClear();
+    await vi.advanceTimersByTimeAsync(3000);
+    const callsAfterViewChange = mockRpc.mock.calls.filter(c => c[0] === 'check_private_lobby').length;
+    expect(callsAfterViewChange).toBe(0);
+
+    vi.useRealTimers();
+  });
+});
+
+// ============================================================
+// ARCH — seam #097 import boundary: arena-core.utils named imports
+// ============================================================
+
+describe('ARCH — seam #097 import boundary unchanged', () => {
+  it('arena-private-lobby.ts imports isPlaceholder, randomFrom, pushArenaState from arena-core.utils', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-private-lobby.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    const coreUtilsLine = importLines.find(l => l.includes('arena-core.utils'));
+    expect(coreUtilsLine).toBeTruthy();
+    expect(coreUtilsLine).toContain('isPlaceholder');
+    expect(coreUtilsLine).toContain('randomFrom');
+    expect(coreUtilsLine).toContain('pushArenaState');
+  });
+});

@@ -100,184 +100,184 @@ Format: [ ] rank | score | importer → imported
 - [x] 092 | score: 29 | arena/arena-config-settings.ts → arena-core.utils
 - [x] 093 | score: 29 | pages/spectate.ts → rpc-schemas
 - [x] 094 | score: 29 | pages/profile-depth.ts → rpc-schemas
-- [ ] 095 | score: 29 | pages/plinko-invite-nudge.ts → rpc-schemas
+- [x] 095 | score: 29 | pages/plinko-invite-nudge.ts → rpc-schemas
 - [W] 096 | score: 28 | arena/arena-room-render.ts → arena-core.utils
-- [ ] 097 | score: 28 | arena/arena-private-lobby.ts → arena-core.utils
-- [ ] 098 | score: 28 | arena/arena-pending-challenges.ts → arena-core.utils
-- [ ] 099 | score: 28 | arena/arena-mod-refs-form.ts → arena-core.utils
-- [ ] 100 | score: 28 | arena/arena-lobby.open-debates.ts → arena-core.utils
+- [x] 097 | score: 28 | arena/arena-private-lobby.ts → arena-core.utils
+- [x] 098 | score: 28 | arena/arena-pending-challenges.ts → arena-core.utils
+- [x] 099 | score: 28 | arena/arena-mod-refs-form.ts → arena-core.utils
+- [x] 100 | score: 28 | arena/arena-lobby.open-debates.ts → arena-core.utils
 - [W] 101 | score: 28 | arena/arena-core.ts → arena-core.utils
-- [ ] 102 | score: 28 | arena/arena-config-category.ts → arena-core.utils
-- [ ] 103 | score: 27 | arena/arena-match-flow.ts → arena-core.utils
-- [ ] 104 | score: 27 | arena/arena-lobby.ts → arena-core.utils
-- [ ] 105 | score: 23 | arena/arena-feed-events.ts → arena-feed-state
-- [ ] 106 | score: 22 | arena/arena-feed-machine-turns.ts → arena-feed-state
-- [ ] 107 | score: 21 | arena/arena-feed-transcript.ts → arena-feed-state
-- [ ] 108 | score: 21 | arena/arena-feed-heartbeat.ts → arena-feed-state
-- [ ] 109 | score: 19 | auth.rpc.ts → auth.core
-- [ ] 110 | score: 19 | arena/arena-feed-references.ts → arena-feed-state
-- [ ] 111 | score: 19 | arena/arena-feed-realtime.ts → arena-feed-state
-- [ ] 112 | score: 19 | arena/arena-feed-machine-pause.ts → arena-feed-state
-- [ ] 113 | score: 19 | arena/arena-feed-disconnect.ts → arena-feed-state
-- [ ] 114 | score: 19 | arena/arena-feed-disconnect-mod.ts → arena-feed-state
-- [ ] 115 | score: 18 | arena/arena-room-live-poll.ts → nudge
-- [ ] 116 | score: 18 | arena/arena-feed-machine-turns.ts → arena-feed-ui
-- [ ] 117 | score: 18 | arena/arena-feed-wiring-spectator.ts → arena-feed-state
-- [ ] 118 | score: 18 | arena/arena-feed-wiring-mod.ts → arena-feed-state
-- [ ] 119 | score: 18 | arena/arena-feed-wiring-debater.ts → arena-feed-state
-- [ ] 120 | score: 18 | arena/arena-feed-machine-ads.ts → arena-feed-state
-- [ ] 121 | score: 18 | arena/arena-feed-events-render.ts → arena-feed-state
-- [ ] 122 | score: 18 | arena/arena-feed-disconnect-debater.ts → arena-feed-state
-- [ ] 123 | score: 17 | arena/arena-room-live-poll.ts → arena-room-live-messages
-- [ ] 124 | score: 17 | pages/groups.utils.ts → groups.state
-- [ ] 125 | score: 16 | arena/arena-room-end.ts → nudge
-- [ ] 126 | score: 15 | pages/groups.auditions.ts → groups.state
-- [ ] 127 | score: 15 | arena/arena-feed-references.ts → arena-feed-ui
-- [ ] 128 | score: 15 | arena/arena-feed-machine-pause.ts → arena-feed-ui
-- [ ] 129 | score: 15 | arena/arena-feed-disconnect.ts → arena-feed-ui
-- [ ] 130 | score: 15 | arena/arena-feed-disconnect-mod.ts → arena-feed-ui
-- [ ] 131 | score: 14 | arena/arena-room-live-poll.ts → arena-room-end
-- [ ] 132 | score: 14 | feed-card.ts → bounties
-- [ ] 133 | score: 14 | arena/arena-room-end.ts → powerups
-- [ ] 134 | score: 14 | arena/arena-room-end.ts → arena-room-live-poll
-- [ ] 135 | score: 14 | pages/home.arsenal-shop-types.ts → modifiers
-- [ ] 136 | score: 14 | tokens.balance.ts → auth.core
-- [ ] 137 | score: 14 | arena/arena-room-enter.ts → nudge
-- [ ] 138 | score: 14 | pages/groups.nav.ts → groups.state
-- [ ] 139 | score: 14 | pages/groups.members.ts → groups.state
-- [ ] 140 | score: 14 | pages/groups.members.modal.ts → groups.state
-- [ ] 141 | score: 14 | pages/groups.challenges.ts → groups.state
-- [ ] 142 | score: 14 | arena/arena-feed-wiring-spectator.ts → arena-feed-ui
-- [ ] 143 | score: 14 | arena/arena-feed-wiring-mod.ts → arena-feed-ui
-- [ ] 144 | score: 14 | arena/arena-feed-wiring-debater.ts → arena-feed-ui
-- [ ] 145 | score: 14 | arena/arena-feed-machine-ads.ts → arena-feed-ui
-- [ ] 146 | score: 14 | arena/arena-feed-events-render.ts → arena-feed-ui
-- [ ] 147 | score: 14 | arena/arena-feed-disconnect-debater.ts → arena-feed-ui
-- [ ] 148 | score: 13 | reference-arsenal.ts → reference-arsenal.rpc
-- [ ] 149 | score: 13 | arena/arena-room-end.ts → arena-types-results
-- [ ] 150 | score: 13 | auth.rivals.ts → auth.core
-- [ ] 151 | score: 13 | auth.gate.ts → auth.core
-- [ ] 152 | score: 13 | auth.follows.ts → auth.core
-- [ ] 153 | score: 13 | pages/groups.settings.ts → groups.state
-- [ ] 154 | score: 13 | pages/groups.load.ts → groups.state
-- [ ] 155 | score: 13 | pages/groups.feed.ts → groups.state
-- [ ] 156 | score: 13 | pages/groups.detail.ts → groups.state
-- [ ] 157 | score: 13 | pages/groups.create.ts → groups.state
-- [ ] 158 | score: 12 | powerups.ts → powerups.rpc
-- [ ] 159 | score: 12 | reference-arsenal.ts → reference-arsenal.utils
-- [ ] 160 | score: 12 | arena/arena-match-found.ts → arena-sounds
-- [ ] 161 | score: 12 | profile-debate-archive.edit.ts → auth.rpc
-- [ ] 162 | score: 12 | modifiers-render.ts → modifiers
-- [ ] 163 | score: 12 | auth.rivals.ts → auth.rpc
-- [ ] 164 | score: 12 | auth.follows.ts → auth.rpc
-- [ ] 165 | score: 12 | arena/arena-room-ai-response.ts → arena-room-live-messages
-- [ ] 166 | score: 12 | pages/spectate.vote.ts → nudge
-- [ ] 167 | score: 12 | auth.profile.ts → auth.core
-- [ ] 168 | score: 12 | auth.ops.ts → auth.core
-- [ ] 169 | score: 12 | auth.moderator.ts → auth.core
-- [ ] 170 | score: 12 | pages/groups.ts → groups.state
-- [ ] 171 | score: 11 | arena/arena-room-live-poll.ts → arena-room-ai-response
-- [ ] 172 | score: 11 | pages/plinko-helpers.ts → plinko-state
-- [ ] 173 | score: 11 | arena/arena-room-end.ts → arena-mod-refs
-- [ ] 174 | score: 11 | arena/arena-match-found.ts → arena-queue
-- [ ] 175 | score: 11 | arena/arena-queue.ts → arena-match-found
-- [ ] 176 | score: 11 | arena/arena-feed-machine-turns.ts → arena-sounds
-- [ ] 177 | score: 11 | arena/arena-feed-machine-turns.ts → arena-feed-events
-- [ ] 178 | score: 11 | pages/home.state.ts → reference-arsenal
-- [ ] 179 | score: 11 | arena/arena-room-predebate.ts → powerups
-- [ ] 180 | score: 11 | arena/arena-room-predebate.ts → bounties
-- [ ] 181 | score: 11 | arena/arena-room-ai-response.ts → arena-room-live-poll
-- [ ] 182 | score: 11 | modifiers-catalog.ts → modifiers
-- [ ] 183 | score: 11 | auth.profile.ts → auth.rpc
-- [ ] 184 | score: 11 | auth.moderator.ts → auth.rpc
-- [ ] 185 | score: 11 | arena/arena-room-live-audio.ts → arena-room-live-messages
-- [ ] 186 | score: 11 | arena/arena-mod-refs-ai.ts → arena-room-live-messages
-- [ ] 187 | score: 11 | tokens.claims.ts → nudge
-- [ ] 188 | score: 11 | pages/plinko-step3-username.ts → nudge
-- [ ] 189 | score: 11 | arena/arena-room-render.ts → nudge
-- [ ] 190 | score: 11 | arena/arena-room-end-render.ts → nudge
-- [ ] 191 | score: 11 | arena/arena-feed-machine-ads.ts → nudge
-- [ ] 192 | score: 10 | powerups.ts → powerups.shop
-- [ ] 193 | score: 10 | powerups.ts → powerups.overlays
-- [ ] 194 | score: 10 | powerups.ts → powerups.loadout
-- [ ] 195 | score: 10 | powerups.ts → powerups.activation
-- [ ] 196 | score: 10 | bounties.ts → bounties.rpc
-- [ ] 197 | score: 10 | bounties.ts → bounties.dot
-- [ ] 198 | score: 10 | reference-arsenal.ts → reference-arsenal.render
-- [ ] 199 | score: 10 | reference-arsenal.ts → reference-arsenal.loadout
-- [ ] 200 | score: 10 | reference-arsenal.ts → reference-arsenal.debate
-- [ ] 201 | score: 10 | tokens.ts → tokens.balance
-- [ ] 202 | score: 10 | feed-card.ts → badge
-- [ ] 203 | score: 10 | arena/arena-match-found.ts → arena-types-match
-- [ ] 204 | score: 10 | arena/arena-match-found.ts → arena-room-enter
-- [ ] 205 | score: 10 | share.ts → navigation
-- [ ] 206 | score: 10 | reference-arsenal.forge-submit.ts → reference-arsenal.rpc
-- [ ] 207 | score: 10 | powerups.rpc.ts → tokens
-- [ ] 208 | score: 10 | arena/arena-feed-transcript.ts → arena-feed-events
-- [ ] 209 | score: 10 | async.ts → async.state
-- [ ] 210 | score: 10 | async.fetch.ts → async.state
-- [ ] 211 | score: 10 | arena/arena-room-predebate.ts → reference-arsenal
-- [ ] 212 | score: 10 | auth.profile.ts → bounties
-- [ ] 213 | score: 10 | arena/arena-room-live-audio.ts → arena-room-live-poll
-- [ ] 214 | score: 10 | profile-debate-archive.ts → auth.rpc
-- [ ] 215 | score: 10 | profile-debate-archive.picker.ts → auth.rpc
-- [ ] 216 | score: 10 | pages/home.invite-sheet.ts → modifiers
-- [ ] 217 | score: 10 | pages/home.arsenal-shop-wiring.ts → modifiers
-- [ ] 218 | score: 10 | pages/home.arsenal-shop-sheet.ts → modifiers
-- [ ] 219 | score: 10 | pages/home.arsenal-shop-render.ts → modifiers
-- [ ] 220 | score: 10 | pages/home.arsenal-shop-filters.ts → modifiers
-- [ ] 221 | score: 10 | modifiers-rpc.ts → modifiers
-- [ ] 222 | score: 10 | arena/arena-room-render.ts → arena-room-live-messages
-- [ ] 223 | score: 10 | arena/arena-mod-refs-ruling.ts → arena-room-live-messages
-- [ ] 224 | score: 10 | arena/arena-mod-refs-form.ts → arena-room-live-messages
-- [ ] 225 | score: 10 | pages/spectate.ts → nudge
-- [ ] 226 | score:  9 | bounties.ts → bounties.render
-- [ ] 227 | score:  9 | reference-arsenal.ts → reference-arsenal.forge
-- [ ] 228 | score:  9 | reference-arsenal.ts → reference-arsenal.armory
-- [ ] 229 | score:  9 | tokens.ts → tokens.animations
-- [ ] 230 | score:  9 | arena/arena-room-end.ts → arena-mod-queue-status
-- [ ] 231 | score:  9 | arena/arena-match-found.ts → arena-room-predebate
-- [ ] 232 | score:  9 | arena/arena-match-found.ts → arena-match-timers
-- [ ] 233 | score:  9 | arena/arena-queue.ts → arena-types-match
-- [ ] 234 | score:  9 | arena/arena-queue.ts → arena-types-feed-list
-- [ ] 235 | score:  9 | arena/arena-feed-machine-turns.ts → arena-feed-transcript
-- [ ] 236 | score:  9 | staking.rpc.ts → tokens
-- [ ] 237 | score:  9 | arena/arena-mod-queue-status.ts → arena-types-moderator
-- [ ] 238 | score:  9 | arena/arena-config-mode-select.ts → arena-types-moderator
-- [ ] 239 | score:  9 | async.rivals.ts → async.state
-- [ ] 240 | score:  9 | arena/arena-feed-references.ts → reference-arsenal
-- [ ] 241 | score:  9 | arena/arena-config-settings.ts → arena-types-results
-- [ ] 242 | score:  9 | leaderboard.list.ts → bounties
-- [ ] 243 | score:  9 | arena/arena-room-render.ts → powerups
-- [ ] 244 | score:  9 | arena/arena-room-render.ts → bounties
-- [ ] 245 | score:  9 | arena/arena-room-render.ts → arena-room-live-poll
-- [ ] 246 | score:  9 | arena/arena-room-live-input.ts → arena-room-live-poll
-- [ ] 247 | score:  9 | arena/arena-room-end-nulled.ts → powerups
-- [ ] 248 | score:  9 | arena/arena-loadout-presets.ts → powerups
-- [ ] 249 | score:  9 | arena/arena-core.ts → arena-room-live-poll
-- [ ] 250 | score:  9 | arena/arena-bounty-claim.ts → bounties
-- [ ] 251 | score:  9 | arena.ts → arena-room-live-messages
-- [ ] 252 | score:  8 | tokens.ts → tokens.milestones
-- [ ] 253 | score:  8 | arena/arena-sounds.ts → arena-sounds-core
-- [ ] 254 | score:  8 | pages/profile-depth.state.ts → profile-depth.data
-- [ ] 255 | score:  8 | reference-arsenal.render.ts → reference-arsenal.utils
-- [ ] 256 | score:  8 | reference-arsenal.loadout.ts → reference-arsenal.utils
-- [ ] 257 | score:  8 | arena/arena-config-mode-select.ts → arena-queue
-- [ ] 258 | score:  8 | reference-arsenal.armory.ts → reference-arsenal.rpc
-- [ ] 259 | score:  8 | pages/spectate.vote.ts → tokens
-- [ ] 260 | score:  8 | pages/spectate.vote.ts → spectate.state
-- [ ] 261 | score:  8 | pages/spectate.render-messages.ts → spectate.state
-- [ ] 262 | score:  8 | pages/spectate.chat.ts → spectate.state
-- [ ] 263 | score:  8 | pages/home.feed.ts → feed-card
-- [ ] 264 | score:  8 | pages/home.feed.ts → dependency-clamps
-- [ ] 265 | score:  8 | arena/arena-room-live-audio.ts → arena-room-end
-- [ ] 266 | score:  8 | arena/arena-private-lobby.join.ts → arena-types-moderator
-- [ ] 267 | score:  8 | arena/arena-private-lobby.join.ts → arena-match-found
-- [ ] 268 | score:  8 | arena/arena-feed-realtime.ts → dependency-clamps
-- [ ] 269 | score:  8 | arena/arena-feed-disconnect-mod.ts → arena-room-end
-- [ ] 270 | score:  8 | pages/settings.wiring.ts → settings.helpers
-- [ ] 271 | score:  8 | pages/settings.save.ts → settings.helpers
-- [ ] 272 | score:  8 | pages/settings.moderator.ts → settings.helpers
+- [x] 102 | score: 28 | arena/arena-config-category.ts → arena-core.utils
+- [x] 103 | score: 27 | arena/arena-match-flow.ts → arena-core.utils
+- [W] 104 | score: 27 | arena/arena-lobby.ts → arena-core.utils
+- [x] 105 | score: 23 | arena/arena-feed-events.ts → arena-feed-state
+- [W] 106 | score: 22 | arena/arena-feed-machine-turns.ts → arena-feed-state
+- [x] 107 | score: 21 | arena/arena-feed-transcript.ts → arena-feed-state
+- [x] 108 | score: 21 | arena/arena-feed-heartbeat.ts → arena-feed-state
+- [x] 109 | score: 19 | auth.rpc.ts → auth.core
+- [x] 110 | score: 19 | arena/arena-feed-references.ts → arena-feed-state
+- [W] 111 | score: 19 | arena/arena-feed-realtime.ts → arena-feed-state
+- [x] 112 | score: 19 | arena/arena-feed-machine-pause.ts → arena-feed-state
+- [W] 113 | score: 19 | arena/arena-feed-disconnect.ts → arena-feed-state
+- [W] 114 | score: 19 | arena/arena-feed-disconnect-mod.ts → arena-feed-state
+- [x] 115 | score: 18 | arena/arena-room-live-poll.ts → nudge
+- [W] 116 | score: 18 | arena/arena-feed-machine-turns.ts → arena-feed-ui
+- [x] 117 | score: 18 | arena/arena-feed-wiring-spectator.ts → arena-feed-state
+- [x] 118 | score: 18 | arena/arena-feed-wiring-mod.ts → arena-feed-state
+- [W] 119 | score: 18 | arena/arena-feed-wiring-debater.ts → arena-feed-state
+- [W] 120 | score: 18 | arena/arena-feed-machine-ads.ts → arena-feed-state
+- [W] 121 | score: 18 | arena/arena-feed-events-render.ts → arena-feed-state
+- [x] 122 | score: 18 | arena/arena-feed-disconnect-debater.ts → arena-feed-state
+- [x] 123 | score: 17 | arena/arena-room-live-poll.ts → arena-room-live-messages
+- [x] 124 | score: 17 | pages/groups.utils.ts → groups.state
+- [W] 125 | score: 16 | arena/arena-room-end.ts → nudge
+- [x] 126 | score: 15 | pages/groups.auditions.ts → groups.state
+- [x] 127 | score: 15 | arena/arena-feed-references.ts → arena-feed-ui
+- [x] 128 | score: 15 | arena/arena-feed-machine-pause.ts → arena-feed-ui
+- [W] 129 | score: 15 | arena/arena-feed-disconnect.ts → arena-feed-ui
+- [W] 130 | score: 15 | arena/arena-feed-disconnect-mod.ts → arena-feed-ui
+- [x] 131 | score: 14 | arena/arena-room-live-poll.ts → arena-room-end
+- [x] 132 | score: 14 | feed-card.ts → bounties
+- [W] 133 | score: 14 | arena/arena-room-end.ts → powerups
+- [W] 134 | score: 14 | arena/arena-room-end.ts → arena-room-live-poll
+- [x] 135 | score: 14 | pages/home.arsenal-shop-types.ts → modifiers
+- [x] 136 | score: 14 | tokens.balance.ts → auth.core
+- [W] 137 | score: 14 | arena/arena-room-enter.ts → nudge
+- [x] 138 | score: 14 | pages/groups.nav.ts → groups.state
+- [x] 139 | score: 14 | pages/groups.members.ts → groups.state
+- [x] 140 | score: 14 | pages/groups.members.modal.ts → groups.state
+- [x] 141 | score: 14 | pages/groups.challenges.ts → groups.state
+- [x] 142 | score: 14 | arena/arena-feed-wiring-spectator.ts → arena-feed-ui
+- [x] 143 | score: 14 | arena/arena-feed-wiring-mod.ts → arena-feed-ui
+- [W] 144 | score: 14 | arena/arena-feed-wiring-debater.ts → arena-feed-ui
+- [W] 145 | score: 14 | arena/arena-feed-machine-ads.ts → arena-feed-ui
+- [W] 146 | score: 14 | arena/arena-feed-events-render.ts → arena-feed-ui
+- [x] 147 | score: 14 | arena/arena-feed-disconnect-debater.ts → arena-feed-ui
+- [x] 148 | score: 13 | reference-arsenal.ts → reference-arsenal.rpc
+- [W] 149 | score: 13 | arena/arena-room-end.ts → arena-types-results
+- [x] 150 | score: 13 | auth.rivals.ts → auth.core
+- [x] 151 | score: 13 | auth.gate.ts → auth.core
+- [x] 152 | score: 13 | auth.follows.ts → auth.core
+- [x] 153 | score: 13 | pages/groups.settings.ts → groups.state
+- [x] 154 | score: 13 | pages/groups.load.ts → groups.state
+- [x] 155 | score: 13 | pages/groups.feed.ts → groups.state
+- [x] 156 | score: 13 | pages/groups.detail.ts → groups.state
+- [x] 157 | score: 13 | pages/groups.create.ts → groups.state
+- [x] 158 | score: 12 | powerups.ts → powerups.rpc
+- [x] 159 | score: 12 | reference-arsenal.ts → reference-arsenal.utils
+- [W] 160 | score: 12 | arena/arena-match-found.ts → arena-sounds  [WALL: arena-sounds in wall list]
+- [x] 161 | score: 12 | profile-debate-archive.edit.ts → auth.rpc
+- [x] 162 | score: 12 | modifiers-render.ts → modifiers
+- [x] 163 | score: 12 | auth.rivals.ts → auth.rpc
+- [x] 164 | score: 12 | auth.follows.ts → auth.rpc
+- [x] 165 | score: 12 | arena/arena-room-ai-response.ts → arena-room-live-messages
+- [x] 166 | score: 12 | pages/spectate.vote.ts → nudge
+- [x] 167 | score: 12 | auth.profile.ts → auth.core
+- [x] 168 | score: 12 | auth.ops.ts → auth.core
+- [x] 169 | score: 12 | auth.moderator.ts → auth.core
+- [x] 170 | score: 12 | pages/groups.ts → groups.state
+- [x] 171 | score: 11 | arena/arena-room-live-poll.ts → arena-room-ai-response
+- [x] 172 | score: 11 | pages/plinko-helpers.ts → plinko-state
+- [W] 173 | score: 11 | arena/arena-room-end.ts → arena-mod-refs  [WALL: arena-room-end imports webrtc]
+- [W] 174 | score: 11 | arena/arena-match-found.ts → arena-queue  [WALL: arena-match-found imports arena-sounds]
+- [W] 175 | score: 11 | arena/arena-queue.ts → arena-match-found  [WALL: → arena-match-found → webrtc chain]
+- [W] 176 | score: 11 | arena/arena-feed-machine-turns.ts → arena-sounds  [WALL: arena-sounds in wall list]
+- [W] 177 | score: 11 | arena/arena-feed-machine-turns.ts → arena-feed-events  [WALL: arena-feed-machine-turns imports webrtc/deepgram]
+- [x] 178 | score: 11 | pages/home.state.ts → reference-arsenal
+- [W] 179 | score: 11 | arena/arena-room-predebate.ts → powerups  [WALL: arena-room-predebate imports arena-room-enter → webrtc]
+- [W] 180 | score: 11 | arena/arena-room-predebate.ts → bounties  [WALL: arena-room-predebate imports arena-room-enter → webrtc]
+- [x] 181 | score: 11 | arena/arena-room-ai-response.ts → arena-room-live-poll
+- [x] 182 | score: 11 | modifiers-catalog.ts → modifiers
+- [x] 183 | score: 11 | auth.profile.ts → auth.rpc
+- [x] 184 | score: 11 | auth.moderator.ts → auth.rpc
+- [W] 185 | score: 11 | arena/arena-room-live-audio.ts → arena-room-live-messages  [WALL: arena-room-live-audio in wall list]
+- [x] 186 | score: 11 | arena/arena-mod-refs-ai.ts → arena-room-live-messages
+- [x] 187 | score: 11 | tokens.claims.ts → nudge
+- [x] 188 | score: 11 | pages/plinko-step3-username.ts → nudge
+- [W] 189 | score: 11 | arena/arena-room-render.ts → nudge  [WALL: arena-room-render imports arena-room-live-audio]
+- [x] 190 | score: 11 | arena/arena-room-end-render.ts → nudge
+- [W] 191 | score: 11 | arena/arena-feed-machine-ads.ts → nudge  [WALL: arena-feed-machine-ads imports arena-sounds]
+- [x] 192 | score: 10 | powerups.ts → powerups.shop
+- [x] 193 | score: 10 | powerups.ts → powerups.overlays
+- [x] 194 | score: 10 | powerups.ts → powerups.loadout
+- [x] 195 | score: 10 | powerups.ts → powerups.activation
+- [x] 196 | score: 10 | bounties.ts → bounties.rpc
+- [x] 197 | score: 10 | bounties.ts → bounties.dot
+- [x] 198 | score: 10 | reference-arsenal.ts → reference-arsenal.render
+- [x] 199 | score: 10 | reference-arsenal.ts → reference-arsenal.loadout
+- [x] 200 | score: 10 | reference-arsenal.ts → reference-arsenal.debate
+- [x] 201 | score: 10 | tokens.ts → tokens.balance
+- [x] 202 | score: 10 | feed-card.ts → badge
+- [W] 203 | score: 10 | arena/arena-match-found.ts → arena-types-match  [WALL: arena-match-found imports arena-sounds]
+- [W] 204 | score: 10 | arena/arena-match-found.ts → arena-room-enter  [WALL: arena-match-found imports arena-sounds]
+- [x] 205 | score: 10 | share.ts → navigation
+- [x] 206 | score: 10 | reference-arsenal.forge-submit.ts → reference-arsenal.rpc
+- [x] 207 | score: 10 | powerups.rpc.ts → tokens
+- [x] 208 | score: 10 | arena/arena-feed-transcript.ts → arena-feed-events
+- [x] 209 | score: 10 | async.ts → async.state
+- [x] 210 | score: 10 | async.fetch.ts → async.state
+- [W] 211 | score: 10 | arena/arena-room-predebate.ts → reference-arsenal  [WALL: arena-room-predebate imports arena-room-enter → webrtc.ts]
+- [x] 212 | score: 10 | auth.profile.ts → bounties
+- [W] 213 | score: 10 | arena/arena-room-live-audio.ts → arena-room-live-poll  [WALL: arena-room-live-audio directly imports webrtc.ts]
+- [x] 214 | score: 10 | profile-debate-archive.ts → auth.rpc
+- [x] 215 | score: 10 | profile-debate-archive.picker.ts → auth.rpc
+- [x] 216 | score: 10 | pages/home.invite-sheet.ts → modifiers
+- [x] 217 | score: 10 | pages/home.arsenal-shop-wiring.ts → modifiers
+- [x] 218 | score: 10 | pages/home.arsenal-shop-sheet.ts → modifiers
+- [x] 219 | score: 10 | pages/home.arsenal-shop-render.ts → modifiers
+- [x] 220 | score: 10 | pages/home.arsenal-shop-filters.ts → modifiers
+- [x] 221 | score: 10 | modifiers-rpc.ts → modifiers
+- [W] 222 | score: 10 | arena/arena-room-render.ts → arena-room-live-messages  [WALL: arena-room-render imports arena-room-live-audio → webrtc.ts]
+- [x] 223 | score: 10 | arena/arena-mod-refs-ruling.ts → arena-room-live-messages
+- [x] 224 | score: 10 | arena/arena-mod-refs-form.ts → arena-room-live-messages
+- [x] 225 | score: 10 | pages/spectate.ts → nudge
+- [x] 226 | score:  9 | bounties.ts → bounties.render
+- [x] 227 | score:  9 | reference-arsenal.ts → reference-arsenal.forge
+- [x] 228 | score:  9 | reference-arsenal.ts → reference-arsenal.armory
+- [x] 229 | score:  9 | tokens.ts → tokens.animations
+- [W] 230 | score:  9 | arena/arena-room-end.ts → arena-mod-queue-status  [WALL: arena-room-end directly imports webrtc.ts]
+- [W] 231 | score:  9 | arena/arena-match-found.ts → arena-room-predebate  [WALL: arena-match-found imports arena-sounds]
+- [W] 232 | score:  9 | arena/arena-match-found.ts → arena-match-timers  [WALL: arena-match-found imports arena-sounds]
+- [W] 233 | score:  9 | arena/arena-queue.ts → arena-types-match  [WALL: arena-queue → arena-match-found → webrtc.ts]
+- [W] 234 | score:  9 | arena/arena-queue.ts → arena-types-feed-list  [WALL: arena-queue → arena-match-found → webrtc.ts]
+- [W] 235 | score:  9 | arena/arena-feed-machine-turns.ts → arena-feed-transcript  [WALL: arena-feed-machine-turns imports webrtc.ts]
+- [x] 236 | score:  9 | staking.rpc.ts → tokens
+- [x] 237 | score:  9 | arena/arena-mod-queue-status.ts → arena-types-moderator
+- [x] 238 | score:  9 | arena/arena-config-mode-select.ts → arena-types-moderator
+- [x] 239 | score:  9 | async.rivals.ts → async.state
+- [x] 240 | score:  9 | arena/arena-feed-references.ts → reference-arsenal
+- [x] 241 | score:  9 | arena/arena-config-settings.ts → arena-types-results
+- [x] 242 | score:  9 | leaderboard.list.ts → bounties
+- [W] 243 | score:  9 | arena/arena-room-render.ts → powerups  [WALL: arena-room-render imports arena-room-live-audio → webrtc.ts]
+- [W] 244 | score:  9 | arena/arena-room-render.ts → bounties  [WALL: arena-room-render imports arena-room-live-audio → webrtc.ts]
+- [W] 245 | score:  9 | arena/arena-room-render.ts → arena-room-live-poll  [WALL: arena-room-render imports arena-room-live-audio → webrtc.ts]
+- [W] 246 | score:  9 | arena/arena-room-live-input.ts → arena-room-live-poll  [WALL: arena-room-live-input imports arena-room-live-audio]
+- [x] 247 | score:  9 | arena/arena-room-end-nulled.ts → powerups
+- [x] 248 | score:  9 | arena/arena-loadout-presets.ts → powerups
+- [W] 249 | score:  9 | arena/arena-core.ts → arena-room-live-poll  [WALL: arena-core.ts imports webrtc/arena-css/voicememo/arena-feed-room]
+- [x] 250 | score:  9 | arena/arena-bounty-claim.ts → bounties
+- [W] 251 | score:  9 | arena.ts → arena-room-live-messages  [WALL: arena.ts re-exports voicememo]
+- [x] 252 | score:  8 | tokens.ts → tokens.milestones
+- [W] 253 | score:  8 | arena/arena-sounds.ts → arena-sounds-core  [WALL: arena-sounds-core is a banned import]
+- [x] 254 | score:  8 | pages/profile-depth.state.ts → profile-depth.data
+- [x] 255 | score:  8 | reference-arsenal.render.ts → reference-arsenal.utils
+- [x] 256 | score:  8 | reference-arsenal.loadout.ts → reference-arsenal.utils
+- [x] 257 | score:  8 | arena/arena-config-mode-select.ts → arena-queue
+- [x] 258 | score:  8 | reference-arsenal.armory.ts → reference-arsenal.rpc
+- [x] 259 | score:  8 | pages/spectate.vote.ts → tokens
+- [x] 260 | score:  8 | pages/spectate.vote.ts → spectate.state
+- [x] 261 | score:  8 | pages/spectate.render-messages.ts → spectate.state
+- [x] 262 | score:  8 | pages/spectate.chat.ts → spectate.state
+- [x] 263 | score:  8 | pages/home.feed.ts → feed-card
+- [x] 264 | score:  8 | pages/home.feed.ts → dependency-clamps
+- [W] 265 | score:  8 | arena/arena-room-live-audio.ts → arena-room-end  [WALL: arena-room-live-audio directly imports webrtc.ts]
+- [x] 266 | score:  8 | arena/arena-private-lobby.join.ts → arena-types-moderator
+- [W] 267 | score:  8 | arena/arena-private-lobby.join.ts → arena-match-found  [WALL: arena-match-found imports arena-sounds]
+- [W] 268 | score:  8 | arena/arena-feed-realtime.ts → dependency-clamps  [WALL: arena-feed-realtime imports realtime-client]
+- [W] 269 | score:  8 | arena/arena-feed-disconnect-mod.ts → arena-room-end  [WALL: arena-feed-disconnect-mod imports arena-deepgram]
+- [W] 270 | score:  8 | pages/settings.wiring.ts → settings.helpers  [WALL: settings.wiring dynamically imports arena-sounds and intro-music]
+- [x] 271 | score:  8 | pages/settings.save.ts → settings.helpers
+- [x] 272 | score:  8 | pages/settings.moderator.ts → settings.helpers
 - [ ] 273 | score:  8 | pages/settings.load.ts → settings.helpers
 - [ ] 274 | score:  8 | pages/home.arsenal.ts → reference-arsenal
 - [ ] 275 | score:  8 | async.render.wager.ts → async.state

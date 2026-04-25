@@ -220,3 +220,211 @@ describe('ARCH — arena-mod-queue-status.ts imports only from allowed modules',
     }
   });
 });
+
+// ============================================================
+// SEAM #237 — arena-mod-queue-status → arena-types-moderator
+// ModStatusResult shape drives all poll-response branching.
+// ============================================================
+
+describe('TC-237-1: get_debate_mod_status RPC called with correct p_debate_id', () => {
+  it('fires get_debate_mod_status once per poll tick with p_debate_id', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'no data' } });
+    const { startModStatusPoll: startPoll, stopModStatusPoll: stopPoll } =
+      await import('../../src/arena/arena-mod-queue-status.ts');
+    const { set_view } = await import('../../src/arena/arena-state.ts');
+
+    set_view('room');
+    startPoll('debate-seam237');
+
+    await vi.advanceTimersByTimeAsync(4001);
+
+    expect(mockRpc).toHaveBeenCalledWith('get_debate_mod_status', { p_debate_id: 'debate-seam237' });
+
+    stopPoll();
+  });
+});
+
+describe('TC-237-2: ModStatusResult mod_status=requested triggers modal render', () => {
+  it('inserts #mod-request-modal into DOM when mod_status is requested', async () => {
+    mockRpc.mockResolvedValue({
+      data: {
+        mod_status: 'requested',
+        mod_requested_by: 'req-uid',
+        moderator_id: 'mod-uid-42',
+        moderator_display_name: 'Judge Alice',
+      },
+      error: null,
+    });
+
+    const { startModStatusPoll: startPoll, stopModStatusPoll: stopPoll } =
+      await import('../../src/arena/arena-mod-queue-status.ts');
+    const { set_view } = await import('../../src/arena/arena-state.ts');
+
+    set_view('room');
+    startPoll('debate-req-1');
+
+    await vi.advanceTimersByTimeAsync(4001);
+
+    expect(document.getElementById('mod-request-modal')).not.toBeNull();
+
+    stopPoll();
+    document.getElementById('mod-request-modal')?.remove();
+  });
+});
+
+describe('TC-237-3: ModStatusResult mod_status=claimed removes modal and stops poll', () => {
+  it('removes pre-existing modal and nullifies modStatusPollTimer when claimed', async () => {
+    // Arrange: place a modal in the DOM directly and start a poll.
+    // The next poll tick returns mod_status=claimed, which should:
+    //   1. Remove the existing #mod-request-modal
+    //   2. Stop the poll (modStatusPollTimer → null)
+    mockRpc.mockResolvedValue({
+      data: {
+        mod_status: 'claimed',
+        mod_requested_by: null,
+        moderator_id: 'mod-uid-5',
+        moderator_display_name: 'Carol',
+      },
+      error: null,
+    });
+
+    const { startModStatusPoll: startPoll } =
+      await import('../../src/arena/arena-mod-queue-status.ts');
+    const stateMod = await import('../../src/arena/arena-state.ts');
+
+    // Place a modal in DOM manually so we can verify it gets removed
+    const modal = document.createElement('div');
+    modal.id = 'mod-request-modal';
+    document.body.appendChild(modal);
+    expect(document.getElementById('mod-request-modal')).not.toBeNull();
+
+    stateMod.set_view('room');
+    startPoll('debate-claimed-1');
+
+    // Tick: claimed fires → modal removed, poll stopped
+    await vi.advanceTimersByTimeAsync(4001);
+
+    expect(document.getElementById('mod-request-modal')).toBeNull();
+    expect(stateMod.modStatusPollTimer).toBeNull();
+  });
+});
+
+describe('TC-237-4: ModStatusResult mod_status=none stops poll without modal', () => {
+  it('stops the poll timer when mod_status is none', async () => {
+    mockRpc.mockResolvedValue({
+      data: {
+        mod_status: 'none',
+        mod_requested_by: null,
+        moderator_id: null,
+        moderator_display_name: '',
+      },
+      error: null,
+    });
+
+    const { startModStatusPoll: startPoll } =
+      await import('../../src/arena/arena-mod-queue-status.ts');
+    const stateMod = await import('../../src/arena/arena-state.ts');
+
+    stateMod.set_view('room');
+    startPoll('debate-none-1');
+
+    await vi.advanceTimersByTimeAsync(4001);
+
+    expect(stateMod.modStatusPollTimer).toBeNull();
+    expect(document.getElementById('mod-request-modal')).toBeNull();
+  });
+});
+
+describe('TC-237-5: moderator_display_name from ModStatusResult is XSS-safe in modal', () => {
+  it('escapes HTML in moderator_display_name before rendering', async () => {
+    mockRpc.mockResolvedValue({
+      data: {
+        mod_status: 'requested',
+        mod_requested_by: null,
+        moderator_id: 'uid-x',
+        moderator_display_name: '<b>Hack</b>',
+      },
+      error: null,
+    });
+
+    const { startModStatusPoll: startPoll, stopModStatusPoll: stopPoll } =
+      await import('../../src/arena/arena-mod-queue-status.ts');
+    const { set_view } = await import('../../src/arena/arena-state.ts');
+
+    set_view('room');
+    startPoll('debate-xss-1');
+
+    await vi.advanceTimersByTimeAsync(4001);
+
+    const modal = document.getElementById('mod-request-modal');
+    expect(modal).not.toBeNull();
+    expect(modal!.innerHTML).not.toContain('<b>Hack</b>');
+    expect(modal!.innerHTML).toContain('&lt;b&gt;Hack&lt;/b&gt;');
+
+    stopPoll();
+    modal?.remove();
+  });
+});
+
+describe('TC-237-6: respond_to_mod_request RPC called with correct params on accept', () => {
+  it('calls respond_to_mod_request with p_debate_id and p_accept=true', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const { handleModResponse } = await import('../../src/arena/arena-mod-queue-status.ts');
+
+    const modal = document.createElement('div');
+    modal.id = 'test-modal';
+    document.body.appendChild(modal);
+
+    await handleModResponse(true, 'deb-seam237', modal, 'mod-uuid-237', 'Judge Bob');
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'respond_to_mod_request',
+      { p_debate_id: 'deb-seam237', p_accept: true }
+    );
+  });
+
+  it('calls respond_to_mod_request with p_accept=false on decline', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const { handleModResponse } = await import('../../src/arena/arena-mod-queue-status.ts');
+
+    const modal = document.createElement('div');
+    document.body.appendChild(modal);
+
+    await handleModResponse(false, 'deb-decline-1', modal, 'mod-uid-7', 'Judge Eve');
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'respond_to_mod_request',
+      { p_debate_id: 'deb-decline-1', p_accept: false }
+    );
+  });
+});
+
+describe('TC-237-7: ARCH — arena-types-moderator import uses from-filter (seam #237)', () => {
+  it('arena-types-moderator.ts is imported by arena-mod-queue-status via from clause', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-mod-queue-status.ts'),
+      'utf-8'
+    );
+    const importLines = source
+      .split('\n')
+      .filter(l => /from\s+['"]/.test(l));
+
+    const hasTypesModeratorImport = importLines.some(l =>
+      l.includes('./arena-types-moderator.ts')
+    );
+    expect(hasTypesModeratorImport).toBe(true);
+  });
+
+  it('ModStatusResult fields mod_status and moderator_display_name are present in arena-types-moderator', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-types-moderator.ts'),
+      'utf-8'
+    );
+    expect(source).toContain('mod_status');
+    expect(source).toContain('moderator_display_name');
+    expect(source).toContain('moderator_id');
+    expect(source).toContain('mod_requested_by');
+  });
+});

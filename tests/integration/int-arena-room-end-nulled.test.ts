@@ -205,3 +205,147 @@ describe('ARCH — seam #031 import boundary unchanged', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ─── seam #247: arena-room-end-nulled → powerups ────────────────────────────
+
+describe('seam #247 TC-P1 — removeShieldIndicator removes #powerup-shield-indicator', () => {
+  it('removes the shield indicator element from DOM during nulled render', async () => {
+    document.body.innerHTML = `
+      <div id="screen-main"></div>
+      <div id="powerup-shield-indicator"></div>
+    `;
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+    arenaState.set_shieldActive(true);
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    renderNulledDebate({
+      id: 'debate-p01',
+      topic: 'Shield removal test',
+    } as Parameters<typeof renderNulledDebate>[0]);
+
+    expect(document.getElementById('powerup-shield-indicator')).toBeNull();
+    expect(arenaState.shieldActive).toBe(false);
+  });
+});
+
+describe('seam #247 TC-P2 — removeShieldIndicator is safe when element absent', () => {
+  it('renderNulledDebate does not throw when #powerup-shield-indicator is not in DOM', async () => {
+    document.body.innerHTML = '<div id="screen-main"></div>';
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    expect(() =>
+      renderNulledDebate({
+        id: 'debate-p02',
+        topic: 'No shield present',
+      } as Parameters<typeof renderNulledDebate>[0])
+    ).not.toThrow();
+  });
+});
+
+describe('seam #247 TC-P3 — screenEl is cleared before NULLED post is appended', () => {
+  it('empties screenEl.innerHTML before appending the post element', async () => {
+    document.body.innerHTML = '<div id="screen-main"><span id="stale-content">old</span></div>';
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    renderNulledDebate({
+      id: 'debate-p03',
+      topic: 'Clear test',
+    } as Parameters<typeof renderNulledDebate>[0]);
+
+    const screenEl = document.getElementById('screen-main');
+    expect(document.getElementById('stale-content')).toBeNull();
+    expect(screenEl!.querySelector('.arena-post')).not.toBeNull();
+  });
+});
+
+describe('seam #247 TC-P4 — null silenceTimer does not throw', () => {
+  it('renderNulledDebate succeeds when silenceTimer is already null', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = '<div id="screen-main"></div>';
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.set_silenceTimer(null);
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    expect(() =>
+      renderNulledDebate({
+        id: 'debate-p04',
+        topic: 'Null timer test',
+      } as Parameters<typeof renderNulledDebate>[0])
+    ).not.toThrow();
+
+    expect(arenaState.silenceTimer).toBeNull();
+
+    vi.useRealTimers();
+  });
+});
+
+describe('seam #247 TC-P5 — NULLED post contains back-to-lobby button', () => {
+  it('renders #arena-back-to-lobby button inside screenEl after nulled render', async () => {
+    document.body.innerHTML = '<div id="screen-main"></div>';
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    renderNulledDebate({
+      id: 'debate-p05',
+      topic: 'Button render test',
+      _nullReason: 'Timeout expired',
+    } as Parameters<typeof renderNulledDebate>[0]);
+
+    const btn = document.getElementById('arena-back-to-lobby');
+    expect(btn).not.toBeNull();
+    expect(btn!.tagName).toBe('BUTTON');
+  });
+});
+
+describe('seam #247 TC-P6 — activatedPowerUps cleared even when pre-populated', () => {
+  it('clears all entries from activatedPowerUps set before rendering', async () => {
+    document.body.innerHTML = '<div id="screen-main"></div>';
+
+    const arenaState = await import('../../src/arena/arena-state.ts');
+    arenaState.activatedPowerUps.add('silence');
+    arenaState.activatedPowerUps.add('multiplier_2x');
+    arenaState.activatedPowerUps.add('shield');
+    expect(arenaState.activatedPowerUps.size).toBe(3);
+
+    arenaState.set_screenEl(document.getElementById('screen-main'));
+
+    const { renderNulledDebate } = await import('../../src/arena/arena-room-end-nulled.ts');
+
+    renderNulledDebate({
+      id: 'debate-p06',
+      topic: 'Power-ups clear test',
+    } as Parameters<typeof renderNulledDebate>[0]);
+
+    expect(arenaState.activatedPowerUps.size).toBe(0);
+  });
+});
+
+describe('seam #247 ARCH-P — import boundary: arena-room-end-nulled imports from powerups', () => {
+  it('imports removeShieldIndicator from ../powerups.ts', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-room-end-nulled.ts'),
+      'utf-8'
+    );
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('powerups'))).toBe(true);
+    expect(importLines.some(l => l.includes('removeShieldIndicator'))).toBe(true);
+  });
+});
