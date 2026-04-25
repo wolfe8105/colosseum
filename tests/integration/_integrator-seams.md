@@ -8,7 +8,7 @@ Format: [ ] rank | score | importer → imported
 
 - [x] 001 | score: 64 | arena/arena-feed-ui.ts → arena-state
 - [x] 002 | score: 60 | arena/arena-room-live-messages.ts → arena-state
-- [ ] 003 | score: 59 | arena/arena-state.ts → powerups
+- [x] 003 | score: 59 | arena/arena-state.ts → powerups
 - [ ] 004 | score: 59 | arena/arena-room-live-poll.ts → arena-state
 - [ ] 005 | score: 57 | arena/arena-room-end.ts → arena-state
 - [ ] 006 | score: 57 | arena/arena-match-found.ts → arena-state
