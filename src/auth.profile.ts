@@ -150,13 +150,10 @@ export async function showUserProfile(userId: string): Promise<void> {
     }).join('');
   const socialRow = socialHtml ? `<div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">${socialHtml}</div>` : '';
 
-  const lastChild = modal.querySelector('div > div:last-child');
-  if (lastChild) lastChild.remove();
-
   const modalInner = modal.querySelector('div');
   if (!modalInner) return;
 
-  modalInner.innerHTML += `
+  modalInner.insertAdjacentHTML('beforeend', `
     <div style="text-align:center;margin-bottom:16px;">
       <div style="width:64px;height:64px;border-radius:50%;border:3px solid var(--mod-accent);background:rgb(10,17,40);color:var(--mod-accent);font-family:var(--mod-font-display);font-size:${avatarFontSize};font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">${initial}</div>
       <div style="font-family:var(--mod-font-display);font-size:18px;letter-spacing:2px;color:var(--mod-text-heading);">${safeName}${vgBadge(profile.verified_gladiator)}${bountyDot(profile.id)}</div>
@@ -188,7 +185,7 @@ export async function showUserProfile(userId: string): Promise<void> {
       <button id="upm-rival-btn" style="flex:1;padding:12px;background:var(--mod-accent-muted);color:var(--mod-magenta);border:1px solid rgba(204,41,54,0.3);border-radius:10px;font-family:var(--mod-font-display);font-size:14px;letter-spacing:2px;cursor:pointer;">⚔️ RIVAL</button>
       <button id="upm-block-btn" style="padding:12px 14px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;" title="Block user">🚫</button>
       <button id="upm-close-btn" style="padding:12px 16px;background:var(--mod-bg-subtle);color:var(--mod-text-sub);border:1px solid var(--mod-border-primary);border-radius:10px;font-size:14px;cursor:pointer;">✕</button>
-    </div>`;
+    </div>`);
 
   // Close button handler
   document.getElementById('upm-close-btn')?.addEventListener('click', () => {
