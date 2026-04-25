@@ -211,3 +211,31 @@ Then keep going.
 - Do not create a secondary import of any mocked module
 - Do not skip the architecture test — it is required for every file
 - Do not stop unless you hit a wall you cannot pass
+
+---
+
+## LANGUAGE DETECTION
+
+Before writing any tests, check the file extension of the source file you are about to test.
+
+- **.rs** — Rust. Use Cargo's built-in `#[test]` framework. Tests go in a `#[cfg(test)]` module at the bottom of the file, or in `tests/` as integration tests. Run with `cargo test`. No Vitest, no npm, no TypeScript patterns.
+- **.ts** — TypeScript. Use Vitest as described throughout this prompt.
+
+### Rust test pattern
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tc1_what_the_function_should_do() {
+        // arrange
+        // act  
+        // assert
+        assert_eq!(actual, expected);
+    }
+}
+```
+
+All the same rules apply: classify functions, test one behavior per test, paste `cargo test` output verbatim, do not modify source, do not skip. Architecture test equivalent: read the source file and assert `use` statements only import from the allowed list.

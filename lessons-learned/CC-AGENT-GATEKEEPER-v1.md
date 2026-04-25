@@ -274,3 +274,37 @@ Prefix all Gatekeeper test files with `gk-` so they are visually distinct from R
 - Do not write the test and a source fix in the same session
 - Do not skip the architecture test — it is required for every file
 - Do not stop unless you hit a wall you cannot pass without human help
+
+---
+
+## LANGUAGE DETECTION
+
+Before writing any tests, check the spec's "Implementation language" field.
+
+- **Rust** — new project. Use Cargo's built-in test framework. Tests live in the same file as the source, in a `#[cfg(test)]` module at the bottom, or in a `tests/` directory as integration tests. Run with `cargo test`. No external test framework needed.
+- **TypeScript** — The Moderator. Use Vitest as described above.
+
+If the spec has no implementation language field, check the file extension of the source file. `.rs` = Rust. `.ts` = TypeScript.
+
+### Rust test pattern
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tc1_description_of_what_spec_says() {
+        // arrange
+        // act
+        // assert
+        assert_eq!(actual, expected);
+    }
+}
+```
+
+Run: `cargo test`
+Report failures by pasting the full `cargo test` output verbatim.
+Commit with: `cargo test` passing, then `git add`, `git commit`, `git push`.
+
+The same rules apply regardless of language: test the spec, not the code. One test per TC. Architecture test equivalent in Rust is checking that `use` statements only import from the allowed list (verify by reading the source file).
