@@ -1,0 +1,1899 @@
+=== src/analytics.ts ===
+./analytics.utils
+./config
+=== src/analytics.utils.ts ===
+./config
+=== src/arena/arena-bounty-claim.ts ===
+../bounties.ts
+../bounties.ts
+../config.ts
+=== src/arena/arena-config-category.ts ===
+../auth.ts
+../config.ts
+../contracts/dependency-clamps.ts
+../contracts/rpc-schemas.ts
+./arena-config-round-picker.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-state.ts
+=== src/arena/arena-config-mode-select.ts ===
+../auth.ts
+../config.ts
+./arena-config-category.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-private-picker.ts
+./arena-queue.ts
+./arena-state.ts
+./arena-types-moderator.ts
+=== src/arena/arena-config-round-picker.ts ===
+../config.ts
+./arena-constants.ts
+./arena-state.ts
+=== src/arena/arena-config-settings.ts ===
+../auth.ts
+./arena-config-mode-select.ts
+./arena-core.utils.ts
+./arena-state.ts
+./arena-types-results.ts
+=== src/arena/arena-constants.ts ===
+./arena-types.ts
+=== src/arena/arena-core.ts ===
+../auth.ts
+../config.ts
+../voicememo.ts
+../webrtc.ts
+./arena-core.utils.ts
+./arena-css.ts
+./arena-feed-room.ts
+./arena-match-timers.ts
+./arena-mod-queue-status.ts
+./arena-mod-refs.ts
+./arena-private-lobby.join.ts
+./arena-queue.ts
+./arena-room-live-poll.ts
+./arena-types.ts
+=== src/arena/arena-core.utils.ts ===
+../auth.ts
+../config.ts
+=== src/arena/arena-css.ts ===
+./arena-css-after-effects.ts
+./arena-css-feed-controls.ts
+./arena-css-feed-fireworks.ts
+./arena-css-feed-phase4-5.ts
+./arena-css-feed-room.ts
+./arena-css-feed-spec-chat.ts
+./arena-css-feed-stream.ts
+./arena-css-lobby.ts
+./arena-css-misc.ts
+./arena-css-mode-select.ts
+./arena-css-moderator.ts
+./arena-css-post-debate.ts
+./arena-css-pre-debate.ts
+./arena-css-queue-match.ts
+./arena-css-ranked.ts
+./arena-css-references-phase3.ts
+./arena-css-references.ts
+./arena-css-room-input.ts
+./arena-css-room.ts
+./arena-css-transcript.ts
+./arena-css-unplugged.ts
+./arena-state.ts
+=== src/arena/arena-deepgram.token.ts ===
+../auth.ts
+../config.ts
+=== src/arena/arena-deepgram.ts ===
+../contracts/dependency-clamps.ts
+./arena-deepgram.token.ts
+./arena-deepgram.types.ts
+=== src/arena/arena-entrance-render.ts ===
+../config.ts
+=== src/arena/arena-entrance.ts ===
+../auth.ts
+./arena-entrance-css.ts
+./arena-entrance-render.ts
+./arena-sounds.ts
+./arena-types.ts
+=== src/arena/arena-feed-disconnect-debater.ts ===
+../auth.ts
+./arena-feed-room.ts
+./arena-feed-state.ts
+./arena-feed-ui.ts
+./arena-room-end.ts
+./arena-types.ts
+=== src/arena/arena-feed-disconnect-mod.ts ===
+../auth.ts
+./arena-deepgram.ts
+./arena-feed-heartbeat.ts
+./arena-feed-machine-turns.ts
+./arena-feed-room.ts
+./arena-feed-ui.ts
+./arena-room-end.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-feed-disconnect.ts ===
+./arena-deepgram.ts
+./arena-feed-disconnect-debater.ts
+./arena-feed-disconnect-mod.ts
+./arena-feed-heartbeat.ts
+./arena-feed-machine-turns.ts
+./arena-state.ts
+=== src/arena/arena-feed-events-render.ts ===
+../config.ts
+./arena-feed-machine-pause.ts
+./arena-feed-ui.ts
+./arena-sounds.ts
+./arena-types-feed-room.ts
+./arena-types.ts
+=== src/arena/arena-feed-events.ts ===
+../auth.ts
+./arena-core.utils.ts
+./arena-feed-state.ts
+./arena-state.ts
+./arena-types-feed-room.ts
+=== src/arena/arena-feed-heartbeat.ts ===
+./arena-core.utils.ts
+=== src/arena/arena-feed-machine-ads.ts ===
+../auth.ts
+../config.ts
+../nudge.ts
+./arena-feed-events.ts
+./arena-feed-machine-turns.ts
+./arena-room-end.ts
+./arena-sounds.ts
+./arena-types.ts
+=== src/arena/arena-feed-machine-pause.ts ===
+../auth.ts
+../config.ts
+./arena-types-feed-room.ts
+./arena-types.ts
+=== src/arena/arena-feed-machine-turns.ts ===
+../auth.ts
+../webrtc.ts
+./arena-deepgram.ts
+./arena-deepgram.ts
+./arena-feed-events.ts
+./arena-feed-transcript.ts
+./arena-feed-transcript.ts
+./arena-sounds.ts
+./arena-types-feed-room.ts
+./arena-types.ts
+=== src/arena/arena-feed-realtime.ts ===
+../auth.ts
+../contracts/dependency-clamps.ts
+./arena-core.utils.ts
+./arena-feed-disconnect.ts
+./arena-feed-heartbeat.ts
+./arena-realtime-client.ts
+./arena-types-feed-room.ts
+=== src/arena/arena-feed-references.ts ===
+../config.ts
+./arena-feed-machine-pause.ts
+./arena-feed-state.ts
+./arena-feed-ui.ts
+./arena-types.ts
+=== src/arena/arena-feed-room.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../webrtc.ts
+./arena-core.utils.ts
+./arena-deepgram.ts
+./arena-feed-machine-turns.ts
+./arena-feed-spec-chat.ts
+./arena-feed-ui.ts
+./arena-feed-wiring.ts
+./arena-types.ts
+=== src/arena/arena-feed-spec-chat.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+=== src/arena/arena-feed-state.ts ===
+./arena-types-feed-room.ts
+=== src/arena/arena-feed-transcript.ts ===
+../auth.ts
+./arena-deepgram.ts
+./arena-feed-events.ts
+./arena-feed-state.ts
+./arena-types.ts
+=== src/arena/arena-feed-ui.ts ===
+./arena-core.utils.ts
+=== src/arena/arena-feed-wiring-debater.ts ===
+../auth.ts
+../config.ts
+./arena-deepgram.ts
+./arena-feed-events.ts
+./arena-feed-machine-ads.ts
+./arena-feed-machine-turns.ts
+./arena-feed-references.ts
+./arena-feed-state.ts
+./arena-feed-transcript.ts
+./arena-feed-ui.ts
+./arena-types.ts
+=== src/arena/arena-feed-wiring-mod.ts ===
+../auth.ts
+../config.ts
+./arena-feed-events.ts
+./arena-feed-realtime.ts
+./arena-feed-references.ts
+./arena-feed-ui.ts
+./arena-state.ts
+./arena-types-feed-room.ts
+=== src/arena/arena-feed-wiring-spectator.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../depth-gate.ts
+./arena-feed-ui.ts
+./arena-types.ts
+=== src/arena/arena-feed-wiring.ts ===
+../config.ts
+./arena-feed-wiring-debater.ts
+./arena-feed-wiring-mod.ts
+./arena-feed-wiring-spectator.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-intro-music.ts ===
+./arena-sounds-core.ts
+=== src/arena/arena-loadout-presets.ts ===
+../auth.ts
+../config.ts
+../powerups.ts
+../reference-arsenal.loadout.ts
+./arena-types.ts
+=== src/arena/arena-lobby.cards.ts ===
+../config.ts
+./arena-types-feed-list.ts
+=== src/arena/arena-lobby.open-debates.ts ===
+../auth.ts
+../config.ts
+./arena-core.utils.ts
+./arena-types.ts
+=== src/arena/arena-lobby.ts ===
+../auth.ts
+../config.ts
+../navigation.ts
+../powerups.ts
+../powerups.ts
+./arena-config-settings.ts
+./arena-core.utils.ts
+./arena-feed-room.ts
+./arena-lobby.open-debates.ts
+./arena-mod-queue-browse.ts
+./arena-mod-refs.ts
+./arena-pending-challenges.ts
+./arena-private-lobby.join.ts
+./arena-private-picker.ts
+./arena-types-feed-list.ts
+./arena-types.ts
+=== src/arena/arena-match-flow.ts ===
+../auth.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-found.ts
+./arena-match-timers.ts
+./arena-room-predebate.ts
+./arena-types-match.ts
+=== src/arena/arena-match-found.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-timers.ts
+./arena-queue.ts
+./arena-room-enter.ts
+./arena-room-predebate.ts
+./arena-sounds.ts
+./arena-types-match.ts
+./arena-types.ts
+=== src/arena/arena-mod-debate-picker.ts ===
+../auth.ts
+../config.ts
+./arena-config-round-picker.ts
+./arena-mod-debate-waiting.ts
+./arena-types.ts
+=== src/arena/arena-mod-debate-poll.ts ===
+../auth.ts
+../config.ts
+./arena-match-found.ts
+./arena-room-enter.ts
+./arena-types-moderator.ts
+./arena-types.ts
+=== src/arena/arena-mod-debate-waiting.ts ===
+../config.ts
+./arena-mod-debate-poll.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-mod-queue-browse.ts ===
+../auth.ts
+../config.ts
+./arena-mod-debate-picker.ts
+./arena-types-moderator.ts
+=== src/arena/arena-mod-queue-status.ts ===
+../auth.ts
+../config.ts
+./arena-types-moderator.ts
+=== src/arena/arena-mod-refs-ai.ts ===
+../auth.ts
+../config.ts
+./arena-room-ai-response.ts
+./arena-room-live-messages.ts
+./arena-types.ts
+=== src/arena/arena-mod-refs-form.ts ===
+../auth.ts
+../config.ts
+./arena-core.utils.ts
+./arena-mod-refs-ai.ts
+./arena-room-live-messages.ts
+./arena-state.ts
+=== src/arena/arena-mod-refs-ruling.ts ===
+../auth.ts
+../config.ts
+./arena-room-live-messages.ts
+./arena-types-results.ts
+=== src/arena/arena-mod-scoring.ts ===
+../auth.ts
+../config.ts
+./arena-ads.ts
+./arena-types.ts
+=== src/arena/arena-pending-challenges.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-found.ts
+./arena-state.ts
+./arena-types-private-lobby.ts
+./arena-types.ts
+=== src/arena/arena-private-lobby.join.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-found.ts
+./arena-mod-debate-waiting.ts
+./arena-state.ts
+./arena-types-moderator.ts
+./arena-types-private-lobby.ts
+./arena-types.ts
+=== src/arena/arena-private-lobby.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-found.ts
+./arena-types-private-lobby.ts
+./arena-types.ts
+=== src/arena/arena-private-picker.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./arena-config-mode-select.ts
+./arena-config-round-picker.ts
+./arena-core.utils.ts
+./arena-private-lobby.ts
+=== src/arena/arena-queue.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-match-found.ts
+./arena-types-feed-list.ts
+./arena-types-match.ts
+./arena-types.ts
+=== src/arena/arena-realtime-client.ts ===
+../webrtc.types.ts
+@supabase/supabase-js
+=== src/arena/arena-room-ai-response.ts ===
+../auth.ts
+../config.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-room-live-messages.ts
+./arena-room-live-poll.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-room-ai-scoring.ts ===
+../config.ts
+./arena-room-ai-response.ts
+./arena-types-ai-scoring.ts
+./arena-types.ts
+=== src/arena/arena-room-end-after-effects.ts ===
+../config.ts
+./arena-types-results.ts
+=== src/arena/arena-room-end-finalize.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../reference-arsenal.ts
+../staking.ts
+../tokens.ts
+../tournaments.ts
+./arena-types-ai-scoring.ts
+./arena-types-feed-room.ts
+./arena-types-results.ts
+./arena-types.ts
+=== src/arena/arena-room-end-nulled.ts ===
+../config.ts
+../powerups.ts
+./arena-types.ts
+=== src/arena/arena-room-end-render.ts ===
+../auth.ts
+../config.ts
+../nudge.ts
+../share.ts
+./arena-ads.ts
+./arena-mod-scoring.ts
+./arena-queue.ts
+./arena-room-ai-scoring.ts
+./arena-room-end-after-effects.ts
+./arena-room-end-transcript.ts
+./arena-state.ts
+./arena-types-ai-scoring.ts
+./arena-types-results.ts
+./arena-types.ts
+=== src/arena/arena-room-end-scores.ts ===
+./arena-room-ai-scoring.ts
+./arena-state.ts
+./arena-types-ai-scoring.ts
+./arena-types.ts
+=== src/arena/arena-room-end-transcript.ts ===
+../auth.ts
+../config.ts
+./arena-types.ts
+=== src/arena/arena-room-end.ts ===
+../auth.ts
+../nudge.ts
+../powerups.ts
+../webrtc.ts
+./arena-core.utils.ts
+./arena-feed-room.ts
+./arena-mod-queue-status.ts
+./arena-mod-refs.ts
+./arena-room-end-finalize.ts
+./arena-room-end-nulled.ts
+./arena-room-end-render.ts
+./arena-room-end-scores.ts
+./arena-room-live-poll.ts
+./arena-types-results.ts
+=== src/arena/arena-room-enter.ts ===
+../auth.ts
+../nudge.ts
+./arena-core.utils.ts
+./arena-feed-room.ts
+./arena-room-render.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-room-live-audio.ts ===
+../webrtc.ts
+../webrtc.ts
+./arena-core.utils.ts
+./arena-room-end.ts
+./arena-room-live-messages.ts
+./arena-room-live-poll.ts
+./arena-state.ts
+=== src/arena/arena-room-live-input.ts ===
+./arena-constants.ts
+./arena-room-live-audio.ts
+./arena-room-live-poll.ts
+./arena-room-voicememo.ts
+./arena-types.ts
+=== src/arena/arena-room-live-messages.ts ===
+../auth.ts
+../config.ts
+./arena-state.ts
+./arena-types.ts
+=== src/arena/arena-room-live-poll.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+../nudge.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-room-ai-response.ts
+./arena-room-end.ts
+./arena-room-live-messages.ts
+./arena-types.ts
+=== src/arena/arena-room-predebate.ts ===
+../auth.ts
+../bounties.ts
+../config.ts
+../powerups.ts
+../reference-arsenal.ts
+../staking.ts
+./arena-ads.ts
+./arena-bounty-claim.ts
+./arena-core.utils.ts
+./arena-loadout-presets.ts
+./arena-room-enter.ts
+./arena-types.ts
+=== src/arena/arena-room-render.ts ===
+../auth.ts
+../auth.ts
+../bounties.ts
+../config.ts
+../nudge.ts
+./arena-constants.ts
+./arena-core.utils.ts
+./arena-mod-queue-status.ts
+./arena-mod-refs.ts
+./arena-room-live-audio.ts
+./arena-room-live-input.ts
+./arena-room-live-messages.ts
+./arena-room-live-poll.ts
+./arena-types.ts
+=== src/arena/arena-room-voicememo.ts ===
+../auth.ts
+../voicememo.ts
+./arena-core.utils.ts
+./arena-room-live-messages.ts
+./arena-room-live-poll.ts
+./arena-types.ts
+=== src/arena/arena-sounds.ts ===
+./arena-sounds-core.ts
+=== src/arena/arena-state.ts ===
+../config.ts
+../powerups.ts
+../webrtc.types.ts
+./arena-types-feed-room.ts
+./arena-types.ts
+=== src/arena/arena-types-match.ts ===
+./arena-types.ts
+=== src/arena/arena-types.ts ===
+../staking.ts
+=== src/async.actions-predict.ts ===
+./async.fetch.ts
+./async.render.ts
+./async.state.ts
+./auth.ts
+./config.ts
+./contracts/rpc-schemas.ts
+./tokens.ts
+=== src/async.fetch.ts ===
+./async.state.ts
+./async.types.ts
+./config.ts
+=== src/async.render.predictions.ts ===
+./async.state.ts
+./async.types.ts
+./config.ts
+=== src/async.render.ts ===
+./async.render.predictions.ts
+./async.render.wager.ts
+=== src/async.render.wager.ts ===
+./async.state.ts
+./auth.ts
+./config.ts
+=== src/async.rivals.ts ===
+./async.state.ts
+./async.types.ts
+./auth.ts
+./config.ts
+=== src/async.ts ===
+./async.state.ts
+./async.state.ts
+./auth.ts
+./config.ts
+=== src/async.utils.ts ===
+./navigation.ts
+=== src/auth.core.ts ===
+./auth.types.ts
+./config.ts
+@supabase/supabase-js
+@supabase/supabase-js
+=== src/auth.follows.ts ===
+./auth.core.ts
+./auth.rpc.ts
+./auth.types.ts
+=== src/auth.gate.ts ===
+./auth.core.ts
+./config.ts
+=== src/auth.moderator.ts ===
+./auth.core.ts
+./auth.rpc.ts
+./auth.types.ts
+=== src/auth.ops.ts ===
+./auth.core.ts
+./auth.types.ts
+./config.ts
+=== src/auth.profile.ts ===
+./auth.core.ts
+./auth.follows.ts
+./auth.gate.ts
+./auth.rivals.ts
+./auth.rpc.ts
+./auth.types.ts
+./badge.ts
+./bounties.ts
+./config.ts
+=== src/auth.rivals.ts ===
+./auth.core.ts
+./auth.rpc.ts
+./auth.types.ts
+=== src/auth.rpc.ts ===
+./auth.core.ts
+./auth.types.ts
+zod
+=== src/auth.ts ===
+./auth.follows.ts
+./auth.gate.ts
+./auth.ops.ts
+./auth.profile.ts
+./auth.rivals.ts
+./auth.rpc.ts
+=== src/bounties.dot.ts ===
+./auth.ts
+=== src/bounties.render.ts ===
+./bounties.dot.ts
+./bounties.rpc.ts
+./bounties.types.ts
+./config.ts
+=== src/bounties.rpc.ts ===
+./auth.ts
+./auth.types.ts
+./bounties.types.ts
+=== src/cards.helpers.ts ===
+./cards.types.ts
+./cards.types.ts
+=== src/cards.ts ===
+./cards.helpers.ts
+./cards.types.ts
+./cards.types.ts
+=== src/config.toast.ts ===
+./config.types
+=== src/config.ts ===
+./config.toast
+=== src/contracts/dependency-clamps.ts ===
+../analytics.ts
+=== src/contracts/rpc-schemas.ts ===
+zod
+=== src/depth-gate.ts ===
+./auth.ts
+=== src/dm/dm.fetch.ts ===
+../auth.ts
+./dm.types.ts
+=== src/dm/dm.render.ts ===
+../auth.ts
+../config.ts
+=== src/dm/dm.state.ts ===
+./dm.types.ts
+=== src/dm/dm.ts ===
+../auth.ts
+../config.ts
+../contracts/dependency-clamps.ts
+./dm.fetch.ts
+./dm.render.ts
+./dm.types.ts
+=== src/feed-card.ts ===
+./auth.ts
+./badge.ts
+./bounties.ts
+./config.ts
+=== src/intro-music-save.ts ===
+./auth.ts
+=== src/intro-music.ts ===
+./arena/arena-sounds.ts
+./auth.ts
+./config.ts
+./intro-music-css.ts
+./intro-music-save.ts
+=== src/leaderboard.fetch.ts ===
+./auth.ts
+./leaderboard.types.ts
+=== src/leaderboard.list.ts ===
+./badge.ts
+./bounties.ts
+./config.ts
+./leaderboard.fetch.ts
+./leaderboard.state.ts
+=== src/leaderboard.render.ts ===
+./auth.ts
+./config.ts
+./leaderboard.list.ts
+./leaderboard.state.ts
+=== src/leaderboard.state.ts ===
+./leaderboard.types.ts
+=== src/leaderboard.ts ===
+./auth.ts
+./config.ts
+./leaderboard.elo.ts
+./leaderboard.fetch.ts
+./leaderboard.render.ts
+./leaderboard.types.ts
+=== src/modifiers-catalog.ts ===
+./auth.ts
+./contracts/rpc-schemas.ts
+./modifiers.ts
+=== src/modifiers-handlers.ts ===
+./config.ts
+./modifiers-rpc.ts
+=== src/modifiers-render.ts ===
+./config.ts
+./modifiers.ts
+=== src/modifiers-rpc.ts ===
+./auth.ts
+./contracts/rpc-schemas.ts
+./modifiers.ts
+=== src/notifications.actions.ts ===
+./auth.ts
+./notifications.panel.ts
+./notifications.state.ts
+=== src/notifications.deeplink.ts ===
+./navigation.ts
+./notifications.types.ts
+=== src/notifications.panel.ts ===
+./config.ts
+./notifications.actions.ts
+./notifications.deeplink.ts
+./notifications.state.ts
+./notifications.types.ts
+./notifications.types.ts
+=== src/notifications.state.ts ===
+./notifications.types.ts
+=== src/notifications.ts ===
+./auth.ts
+./config.ts
+./notifications.panel.ts
+./notifications.types.ts
+./push-notifications.ts
+=== src/nudge.ts ===
+./config.ts
+=== src/onboarding-drip.ts ===
+./auth.ts
+./config.ts
+./contracts/rpc-schemas.ts
+=== src/pages/cosmetics.modal.ts ===
+../auth.ts
+../config.ts
+./cosmetics.types.ts
+=== src/pages/cosmetics.render.ts ===
+../config.ts
+./cosmetics.modal.ts
+./cosmetics.types.ts
+./cosmetics.types.ts
+=== src/pages/cosmetics.ts ===
+../auth.ts
+../config.ts
+./cosmetics.modal.ts
+./cosmetics.render.ts
+./cosmetics.types.ts
+./cosmetics.types.ts
+=== src/pages/debate-landing.data.ts ===
+./debate-landing.types.ts
+=== src/pages/debate-landing.ts ===
+../cards.ts
+../config.ts
+./debate-landing.data.ts
+@supabase/supabase-js
+=== src/pages/group-banner-upload.ts ===
+../auth.ts
+../config.ts
+=== src/pages/group-banner.ts ===
+../config.ts
+./group-banner-css.ts
+./group-banner-upload.ts
+./groups.types.ts
+=== src/pages/groups.auditions.render.ts ===
+../config.ts
+=== src/pages/groups.auditions.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./groups.auditions.render.ts
+./groups.auditions.render.ts
+./groups.state.ts
+./groups.types.ts
+=== src/pages/groups.challenges.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./groups.state.ts
+./groups.utils.ts
+=== src/pages/groups.create.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./groups.state.ts
+=== src/pages/groups.detail.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./group-banner.ts
+./groups.auditions.ts
+./groups.challenges.ts
+./groups.feed.ts
+./groups.members.ts
+./groups.nav.ts
+./groups.types.ts
+=== src/pages/groups.feed.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../feed-card.ts
+../feed-card.ts
+./groups.state.ts
+./groups.utils.ts
+=== src/pages/groups.load.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+./groups.state.ts
+./groups.utils.ts
+=== src/pages/groups.members.modal.ts ===
+../auth.ts
+../config.ts
+./groups.members.modal.html.ts
+./groups.state.ts
+./groups.types.ts
+./groups.utils.ts
+=== src/pages/groups.members.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./groups.members.modal.ts
+./groups.state.ts
+./groups.types.ts
+./groups.utils.ts
+=== src/pages/groups.nav.ts ===
+./groups.auditions.ts
+=== src/pages/groups.settings.ts ===
+../auth.ts
+../config.ts
+./groups.state.ts
+./groups.types.ts
+=== src/pages/groups.state.ts ===
+@supabase/supabase-js
+=== src/pages/groups.ts ===
+../auth.ts
+./groups.auditions.ts
+./groups.challenges.ts
+./groups.create.ts
+./groups.detail.ts
+./groups.load.ts
+./groups.members.ts
+./groups.nav.ts
+./groups.state.ts
+=== src/pages/groups.utils.ts ===
+../config.ts
+./groups.state.ts
+./groups.types.ts
+=== src/pages/home.arsenal-shop-filters.ts ===
+../modifiers.ts
+./home.arsenal-shop-types.ts
+=== src/pages/home.arsenal-shop-render.ts ===
+../config.ts
+../modifiers-render.ts
+../modifiers.ts
+./home.arsenal-shop-filters.ts
+./home.arsenal-shop-types.ts
+./home.arsenal-shop-wiring.ts
+=== src/pages/home.arsenal-shop-sheet.ts ===
+../config.ts
+../modifiers-handlers.ts
+../modifiers-render.ts
+../modifiers.ts
+./home.arsenal-shop-types.ts
+=== src/pages/home.arsenal-shop-types.ts ===
+../modifiers.ts
+=== src/pages/home.arsenal-shop-wiring.ts ===
+../modifiers.ts
+./home.arsenal-shop-sheet.ts
+./home.arsenal-shop-types.ts
+=== src/pages/home.arsenal-shop.ts ===
+../modifiers-catalog.ts
+./home.arsenal-shop-render.ts
+./home.arsenal-shop-types.ts
+=== src/pages/home.arsenal.ts ===
+../reference-arsenal.ts
+../reference-arsenal.ts
+./home.arsenal-shop.ts
+./home.state.ts
+=== src/pages/home.depth.ts ===
+../auth.ts
+../auth.types.ts
+../config.ts
+=== src/pages/home.feed.ts ===
+../auth.ts
+../config.ts
+../contracts/dependency-clamps.ts
+../contracts/rpc-schemas.ts
+../feed-card.ts
+=== src/pages/home.invite-html.ts ===
+../config.ts
+./home.invite-types.ts
+=== src/pages/home.invite-render.ts ===
+../config.ts
+./home.invite-html.ts
+./home.invite-types.ts
+./home.invite-wiring.ts
+=== src/pages/home.invite-sheet.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../modifiers-catalog.ts
+../modifiers-render.ts
+../modifiers.ts
+./home.invite-html.ts
+./home.invite-types.ts
+=== src/pages/home.invite-wiring.ts ===
+../config.ts
+./home.invite-types.ts
+=== src/pages/home.invite.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+./home.invite-render.ts
+./home.invite-sheet.ts
+./home.invite-types.ts
+=== src/pages/home.nav.ts ===
+../async.ts
+../auth.ts
+../navigation.ts
+../payments.ts
+../profile-debate-archive.ts
+../share.ts
+./home.arsenal.ts
+./home.feed.ts
+./home.invite.ts
+./home.profile.ts
+./home.state.ts
+=== src/pages/home.overlay.ts ===
+../async.ts
+../auth.ts
+../feed-card.ts
+../feed-card.ts
+./home.state.ts
+./home.types.ts
+=== src/pages/home.profile.ts ===
+../auth.ts
+../auth.ts
+../badge.ts
+../config.ts
+@supabase/supabase-js
+=== src/pages/home.state.ts ===
+../reference-arsenal.ts
+./home.types.ts
+=== src/pages/home.ts ===
+../auth.ts
+../auth.ts
+../bounties.ts
+../config.ts
+../onboarding-drip.ts
+../profile-socials.ts
+../rivals-presence.ts
+../tournaments.ts
+./home.feed.ts
+./home.nav.ts
+./home.overlay.ts
+./home.profile.ts
+./home.state.ts
+@supabase/supabase-js
+=== src/pages/login.forms.ts ===
+../auth.ts
+../config.ts
+./login.types.ts
+=== src/pages/login.ts ===
+../auth.ts
+../config.ts
+./login.forms.ts
+=== src/pages/plinko-auth-return.ts ===
+../auth.ts
+../config.ts
+./plinko-helpers.ts
+./plinko-state.ts
+=== src/pages/plinko-helpers.ts ===
+./plinko-state.ts
+=== src/pages/plinko-invite-nudge.ts ===
+../contracts/rpc-schemas.ts
+=== src/pages/plinko-step1-method.ts ===
+../auth.ts
+../config.ts
+./plinko-helpers.ts
+./plinko-password.ts
+./plinko-state.ts
+=== src/pages/plinko-step2-age.ts ===
+./plinko-helpers.ts
+./plinko-state.ts
+=== src/pages/plinko-step3-username.ts ===
+../auth.ts
+../config.ts
+../nudge.ts
+./plinko-helpers.ts
+=== src/pages/plinko-step4-step5.ts ===
+../auth.ts
+./plinko-helpers.ts
+=== src/pages/plinko.ts ===
+../auth.ts
+../config.ts
+./plinko-auth-return.ts
+./plinko-helpers.ts
+./plinko-step1-method.ts
+./plinko-step2-age.ts
+./plinko-step3-username.ts
+./plinko-step4-step5.ts
+=== src/pages/profile-depth.data.ts ===
+./profile-depth.types.ts
+=== src/pages/profile-depth.render.ts ===
+../config.ts
+./profile-depth.data.ts
+./profile-depth.state.ts
+./profile-depth.types.ts
+=== src/pages/profile-depth.section.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+../tokens.ts
+./profile-depth.data.ts
+./profile-depth.render.ts
+./profile-depth.tier.ts
+./profile-depth.types.ts
+=== src/pages/profile-depth.state.ts ===
+./profile-depth.data.ts
+./profile-depth.types.ts
+=== src/pages/profile-depth.tier.ts ===
+../config.ts
+./profile-depth.data.ts
+./profile-depth.state.ts
+=== src/pages/profile-depth.ts ===
+../auth.ts
+../config.ts
+../contracts/rpc-schemas.ts
+./profile-depth.render.ts
+./profile-depth.section.ts
+./profile-depth.state.ts
+./profile-depth.tier.ts
+=== src/pages/settings.blocks.ts ===
+../auth.ts
+../config.ts
+=== src/pages/settings.load.ts ===
+../auth.ts
+./settings.helpers.ts
+./settings.helpers.ts
+=== src/pages/settings.moderator.ts ===
+../auth.ts
+./settings.helpers.ts
+=== src/pages/settings.save.ts ===
+../auth.ts
+../config.ts
+./settings.helpers.ts
+./settings.helpers.ts
+=== src/pages/settings.ts ===
+./settings.blocks.ts
+./settings.helpers.ts
+./settings.load.ts
+./settings.moderator.ts
+./settings.wiring.ts
+=== src/pages/settings.wiring.ts ===
+../auth.ts
+../config.ts
+./settings.helpers.ts
+./settings.save.ts
+=== src/pages/spectate.chat.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+../depth-gate.ts
+./spectate.state.ts
+./spectate.types.ts
+./spectate.utils.ts
+=== src/pages/spectate.render-messages.ts ===
+./spectate.state.ts
+./spectate.types.ts
+./spectate.utils.ts
+=== src/pages/spectate.render-timeline.ts ===
+./spectate.render-messages.ts
+./spectate.state.ts
+./spectate.utils.ts
+=== src/pages/spectate.render.ts ===
+./spectate.chat.ts
+./spectate.render-timeline.ts
+./spectate.share.ts
+./spectate.state.ts
+./spectate.types.ts
+./spectate.utils.ts
+./spectate.vote.ts
+=== src/pages/spectate.share.ts ===
+./spectate.types.ts
+=== src/pages/spectate.state.ts ===
+./spectate.types.ts
+@supabase/supabase-js
+=== src/pages/spectate.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+../nudge.ts
+./spectate.chat.ts
+./spectate.render.ts
+./spectate.state.ts
+./spectate.types.ts
+./spectate.vote.ts
+=== src/pages/spectate.vote.ts ===
+../auth.ts
+../contracts/rpc-schemas.ts
+../nudge.ts
+../tokens.ts
+./spectate.state.ts
+./spectate.types.ts
+=== src/payments.ts ===
+./auth.ts
+./config.ts
+./contracts/dependency-clamps.ts
+=== src/paywall.ts ===
+./auth.ts
+./config.ts
+./navigation.ts
+=== src/powerups.activation.ts ===
+./config.ts
+./powerups.rpc.ts
+./powerups.types.ts
+./powerups.types.ts
+=== src/powerups.loadout.ts ===
+./config.ts
+./powerups.rpc.ts
+./powerups.types.ts
+./powerups.types.ts
+./tiers.ts
+=== src/powerups.overlays.ts ===
+./config.ts
+./powerups.types.ts
+./powerups.types.ts
+=== src/powerups.rpc.ts ===
+./auth.ts
+./powerups.types.ts
+./tokens.ts
+=== src/powerups.shop.ts ===
+./powerups.types.ts
+./powerups.types.ts
+=== src/powerups.ts ===
+./powerups.activation.ts
+./powerups.loadout.ts
+./powerups.overlays.ts
+./powerups.rpc.ts
+./powerups.shop.ts
+./powerups.types.ts
+=== src/profile-debate-archive.edit.ts ===
+./auth.rpc.ts
+./config.ts
+./profile-debate-archive.render.ts
+./profile-debate-archive.state.ts
+./profile-debate-archive.types.ts
+=== src/profile-debate-archive.filter.ts ===
+./profile-debate-archive.state.ts
+./profile-debate-archive.types.ts
+=== src/profile-debate-archive.picker.ts ===
+./auth.rpc.ts
+./config.ts
+./profile-debate-archive.edit.ts
+./profile-debate-archive.types.ts
+=== src/profile-debate-archive.render.ts ===
+./config.ts
+./profile-debate-archive.edit.ts
+./profile-debate-archive.filter.ts
+./profile-debate-archive.picker.ts
+./profile-debate-archive.state.ts
+=== src/profile-debate-archive.state.ts ===
+./profile-debate-archive.types.ts
+=== src/profile-debate-archive.ts ===
+./auth.rpc.ts
+./profile-debate-archive.css.ts
+./profile-debate-archive.edit.ts
+./profile-debate-archive.render.ts
+./profile-debate-archive.state.ts
+./profile-debate-archive.types.ts
+=== src/profile-socials.ts ===
+./auth.ts
+./auth.types.ts
+./config.ts
+=== src/push-notifications.ts ===
+./auth.ts
+=== src/reference-arsenal.armory.sheet.ts ===
+./config.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.rpc.ts
+./reference-arsenal.types.ts
+./reference-arsenal.utils.ts
+=== src/reference-arsenal.armory.ts ===
+./auth.ts
+./config.ts
+./reference-arsenal.armory.sheet.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.render.ts
+./reference-arsenal.rpc.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.constants.ts ===
+./reference-arsenal.types.ts
+=== src/reference-arsenal.debate.ts ===
+./auth.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.forge-render.ts ===
+./config.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.forge-submit.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.forge-submit.ts ===
+./config.ts
+./reference-arsenal.rpc.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.forge-wiring.ts ===
+./config.ts
+./reference-arsenal.forge-submit.ts
+./reference-arsenal.forge-submit.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.forge.ts ===
+./reference-arsenal.forge-render.ts
+./reference-arsenal.forge-submit.ts
+./reference-arsenal.forge-wiring.ts
+./reference-arsenal.types.ts
+=== src/reference-arsenal.loadout.ts ===
+./auth.ts
+./config.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.debate.ts
+./reference-arsenal.types.ts
+./reference-arsenal.utils.ts
+=== src/reference-arsenal.render.ts ===
+./auth.ts
+./config.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.types.ts
+./reference-arsenal.utils.ts
+=== src/reference-arsenal.rpc.ts ===
+./auth.ts
+=== src/reference-arsenal.ts ===
+./reference-arsenal.armory.ts
+./reference-arsenal.constants.ts
+./reference-arsenal.debate.ts
+./reference-arsenal.forge.ts
+./reference-arsenal.loadout.ts
+./reference-arsenal.render.ts
+./reference-arsenal.rpc.ts
+./reference-arsenal.utils.ts
+=== src/reference-arsenal.utils.ts ===
+./reference-arsenal.constants.ts
+./reference-arsenal.types.ts
+=== src/rivals-presence-channel.ts ===
+./async.ts
+./auth.ts
+=== src/rivals-presence-popup.ts ===
+./config.ts
+./rivals-presence-css.ts
+=== src/rivals-presence.ts ===
+./auth.ts
+./config.ts
+./rivals-presence-channel.ts
+./rivals-presence-channel.ts
+./rivals-presence-popup.ts
+./rivals-presence-popup.ts
+=== src/scoring.ts ===
+./auth.ts
+./config.ts
+=== src/search.ts ===
+./auth.ts
+./config.ts
+=== src/share.ts ===
+./auth.ts
+./config.ts
+./contracts/rpc-schemas.ts
+./navigation.ts
+=== src/share.ui.ts ===
+./config.ts
+./share.ts
+./share.ts
+=== src/staking.render.ts ===
+./config.ts
+./staking.rpc.ts
+./staking.types.ts
+./tiers.ts
+=== src/staking.rpc.ts ===
+./auth.ts
+./depth-gate.ts
+./staking.types.ts
+./tokens.ts
+=== src/staking.wire.ts ===
+./staking.rpc.ts
+./staking.types.ts
+=== src/tiers.ts ===
+./config.ts
+=== src/tokens.animations.ts ===
+./config.ts
+=== src/tokens.balance.ts ===
+./auth.core.ts
+./auth.ts
+./config.ts
+./tokens.types.ts
+=== src/tokens.claims.ts ===
+./nudge.ts
+./tokens.animations.ts
+./tokens.balance.ts
+./tokens.milestones.ts
+./tokens.types.ts
+=== src/tokens.milestones.ts ===
+./tokens.animations.ts
+./tokens.balance.ts
+./tokens.types.ts
+=== src/tokens.ts ===
+./auth.ts
+./tokens.animations.ts
+./tokens.balance.ts
+./tokens.claims.ts
+./tokens.milestones.ts
+=== src/tournaments.indicator.ts ===
+./auth.ts
+./tournaments.types.ts
+=== src/tournaments.render.ts ===
+./config.ts
+./tournaments.types.ts
+=== src/tournaments.rpc.ts ===
+./auth.ts
+./tournaments.types.ts
+=== src/tournaments.ts ===
+./auth.ts
+./tournaments.indicator.ts
+=== src/voicememo.player.ts ===
+./config.ts
+=== src/voicememo.record.ts ===
+./config.ts
+=== src/voicememo.sheet.ts ===
+./auth.ts
+./config.ts
+./voicememo.player.ts
+./voicememo.record.ts
+./voicememo.ts
+./voicememo.upload.ts
+=== src/voicememo.ts ===
+./config.ts
+./voicememo.player.ts
+./voicememo.record.ts
+./voicememo.record.ts
+./voicememo.sheet.ts
+./voicememo.upload.ts
+=== src/voicememo.upload.ts ===
+./auth.ts
+./config.ts
+=== src/webrtc.audio.ts ===
+./webrtc.state.ts
+./webrtc.types.ts
+=== src/webrtc.engine.ts ===
+./webrtc.audio.ts
+./webrtc.state.ts
+./webrtc.timer.ts
+./webrtc.types.ts
+=== src/webrtc.ice.ts ===
+./auth.ts
+./config.ts
+./webrtc.state.ts
+=== src/webrtc.monitor.ts ===
+@peermetrics/webrtc-stats
+=== src/webrtc.peer.ts ===
+./webrtc.ice.ts
+./webrtc.monitor.ts
+./webrtc.state.ts
+=== src/webrtc.signaling.ts ===
+./auth.ts
+./webrtc.engine.ts
+./webrtc.peer.ts
+./webrtc.state.ts
+./webrtc.types.ts
+=== src/webrtc.state.ts ===
+./auth.ts
+./config.ts
+@supabase/supabase-js
+=== src/webrtc.timer.ts ===
+./webrtc.state.ts
+=== src/webrtc.ts ===
+./auth.ts
+./webrtc.audio.ts
+./webrtc.engine.ts
+./webrtc.monitor.ts
+./webrtc.signaling.ts
+./webrtc.state.ts
+./webrtc.timer.ts
+./webrtc.turn.ts
+./webrtc.types.ts
+=== src/webrtc.turn.ts ===
+./config.ts
+./webrtc.types.ts
+=== tests/analytics-utils.test.ts ===
+../src/analytics.utils.ts
+=== tests/analytics.test.ts ===
+../src/analytics.ts
+=== tests/arena-bounty-claim.test.ts ===
+../src/arena/arena-bounty-claim.ts
+=== tests/arena-config-category.test.ts ===
+../src/arena/arena-config-category.ts
+=== tests/arena-config-mode-select.test.ts ===
+../src/arena/arena-config-mode-select.ts
+=== tests/arena-config-round-picker.test.ts ===
+../src/arena/arena-config-round-picker.ts
+=== tests/arena-config-settings.test.ts ===
+../src/arena/arena-config-settings.ts
+=== tests/arena-constants.test.ts ===
+../src/arena/arena-constants.ts
+=== tests/arena-core-utils.test.ts ===
+../src/arena/arena-core.utils.ts
+=== tests/arena-css-after-effects.test.ts ===
+../src/arena/arena-css-after-effects.ts
+=== tests/arena-css-feed-controls.test.ts ===
+../src/arena/arena-css-feed-controls.ts
+=== tests/arena-css-feed-fireworks.test.ts ===
+../src/arena/arena-css-feed-fireworks.ts
+=== tests/arena-css-feed-phase4-5.test.ts ===
+../src/arena/arena-css-feed-phase4-5.ts
+=== tests/arena-css-feed-room.test.ts ===
+../src/arena/arena-css-feed-room.ts
+=== tests/arena-css-feed-spec-chat.test.ts ===
+../src/arena/arena-css-feed-spec-chat.ts
+=== tests/arena-css-feed-stream.test.ts ===
+../src/arena/arena-css-feed-stream.ts
+=== tests/arena-css-lobby.test.ts ===
+../src/arena/arena-css-lobby.ts
+=== tests/arena-css-misc.test.ts ===
+../src/arena/arena-css-misc.ts
+=== tests/arena-css-mode-select.test.ts ===
+../src/arena/arena-css-mode-select.ts
+=== tests/arena-css-moderator.test.ts ===
+../src/arena/arena-css-moderator.ts
+=== tests/arena-css-orchestrator.test.ts ===
+../src/arena/arena-css.ts
+=== tests/arena-css-post-debate.test.ts ===
+../src/arena/arena-css-post-debate.ts
+=== tests/arena-css-pre-debate.test.ts ===
+../src/arena/arena-css-pre-debate.ts
+=== tests/arena-css-queue-match.test.ts ===
+../src/arena/arena-css-queue-match.ts
+=== tests/arena-css-ranked.test.ts ===
+../src/arena/arena-css-ranked.ts
+=== tests/arena-css-references-phase3.test.ts ===
+../src/arena/arena-css-references-phase3.ts
+=== tests/arena-css-references.test.ts ===
+../src/arena/arena-css-references.ts
+=== tests/arena-css-room-input.test.ts ===
+../src/arena/arena-css-room-input.ts
+=== tests/arena-css-room.test.ts ===
+../src/arena/arena-css-room.ts
+=== tests/arena-css-transcript.test.ts ===
+../src/arena/arena-css-transcript.ts
+=== tests/arena-css-unplugged.test.ts ===
+../src/arena/arena-css-unplugged.ts
+=== tests/arena-deepgram-token.test.ts ===
+../src/arena/arena-deepgram.token.ts
+=== tests/arena-entrance-render.test.ts ===
+../src/arena/arena-entrance-render.ts
+=== tests/arena-entrance.test.ts ===
+../src/arena/arena-entrance.ts
+=== tests/arena-feed-disconnect-debater.test.ts ===
+../src/arena/arena-feed-disconnect-debater.ts
+=== tests/arena-feed-disconnect-mod.test.ts ===
+../src/arena/arena-feed-disconnect-mod.ts
+=== tests/arena-feed-disconnect.test.ts ===
+../src/arena/arena-feed-disconnect.ts
+=== tests/arena-feed-events-render.test.ts ===
+../src/arena/arena-feed-events-render.ts
+=== tests/arena-feed-events.test.ts ===
+../src/arena/arena-feed-events.ts
+=== tests/arena-feed-heartbeat.test.ts ===
+../src/arena/arena-feed-heartbeat.ts
+=== tests/arena-feed-machine-ads.test.ts ===
+../src/arena/arena-feed-machine-ads.ts
+=== tests/arena-feed-machine-pause.test.ts ===
+../src/arena/arena-feed-machine-pause.ts
+=== tests/arena-feed-machine-turns.test.ts ===
+../src/arena/arena-feed-machine-turns.ts
+=== tests/arena-feed-realtime.test.ts ===
+../src/arena/arena-feed-realtime.ts
+=== tests/arena-feed-references.test.ts ===
+../src/arena/arena-feed-references.ts
+=== tests/arena-feed-room.test.ts ===
+../src/arena/arena-feed-room.ts
+=== tests/arena-feed-spec-chat.test.ts ===
+../src/arena/arena-feed-spec-chat.ts
+=== tests/arena-feed-state.test.ts ===
+../src/arena/arena-feed-state.ts
+=== tests/arena-feed-transcript.test.ts ===
+../src/arena/arena-feed-transcript.ts
+=== tests/arena-feed-ui.test.ts ===
+../src/arena/arena-feed-ui.ts
+=== tests/arena-feed-wiring-debater.test.ts ===
+../src/arena/arena-feed-wiring-debater.ts
+=== tests/arena-feed-wiring-mod.test.ts ===
+../src/arena/arena-feed-wiring-mod.ts
+=== tests/arena-feed-wiring-spectator.test.ts ===
+../src/arena/arena-feed-wiring-spectator.ts
+=== tests/arena-feed-wiring.test.ts ===
+../src/arena/arena-feed-wiring.ts
+=== tests/arena-intro-music.test.ts ===
+../src/arena/arena-intro-music.ts
+=== tests/arena-loadout-presets.test.ts ===
+../src/arena/arena-loadout-presets.ts
+../src/arena/arena-types.ts
+=== tests/arena-lobby-cards.test.ts ===
+../src/arena/arena-lobby.cards.ts
+=== tests/arena-lobby-open-debates.test.ts ===
+../src/arena/arena-lobby.open-debates.ts
+=== tests/arena-lobby.test.ts ===
+../src/arena/arena-lobby.ts
+=== tests/arena-match-flow.test.ts ===
+../src/arena/arena-match-flow.ts
+=== tests/arena-match-found.test.ts ===
+../src/arena/arena-match-found.ts
+../src/arena/arena-types.ts
+=== tests/arena-match-timers.test.ts ===
+../src/arena/arena-match-timers.ts
+=== tests/arena-mod-debate-picker.test.ts ===
+../src/arena/arena-mod-debate-picker.ts
+=== tests/arena-mod-debate-poll.test.ts ===
+../src/arena/arena-mod-debate-poll.ts
+=== tests/arena-mod-debate-waiting.test.ts ===
+../src/arena/arena-mod-debate-waiting.ts
+=== tests/arena-mod-queue-browse.test.ts ===
+../src/arena/arena-mod-queue-browse.ts
+=== tests/arena-mod-queue-status.test.ts ===
+../src/arena/arena-mod-queue-status.ts
+=== tests/arena-mod-refs-ai.test.ts ===
+../src/arena/arena-mod-refs-ai.ts
+=== tests/arena-mod-refs-form.test.ts ===
+../src/arena/arena-mod-refs-form.ts
+=== tests/arena-mod-refs-ruling.test.ts ===
+../src/arena/arena-mod-refs-ruling.ts
+=== tests/arena-mod-scoring.test.ts ===
+../src/arena/arena-mod-scoring.ts
+../src/arena/arena-types.ts
+=== tests/arena-pending-challenges.test.ts ===
+../src/arena/arena-pending-challenges.ts
+=== tests/arena-private-lobby-join.test.ts ===
+../src/arena/arena-private-lobby.join.ts
+=== tests/arena-private-lobby.test.ts ===
+../src/arena/arena-private-lobby.ts
+=== tests/arena-private-picker.test.ts ===
+../src/arena/arena-private-picker.ts
+=== tests/arena-queue.test.ts ===
+../src/arena/arena-queue.ts
+=== tests/arena-realtime-client.test.ts ===
+../src/arena/arena-realtime-client.ts
+=== tests/arena-room-ai-response.test.ts ===
+../src/arena/arena-room-ai-response.ts
+=== tests/arena-room-ai-scoring.test.ts ===
+../src/arena/arena-room-ai-scoring.ts
+=== tests/arena-room-end-after-effects.test.ts ===
+../src/arena/arena-room-end-after-effects.ts
+=== tests/arena-room-end-finalize.test.ts ===
+../src/arena/arena-room-end-finalize.ts
+=== tests/arena-room-end-nulled.test.ts ===
+../src/arena/arena-room-end-nulled.ts
+=== tests/arena-room-end-render.test.ts ===
+../src/arena/arena-room-end-render.ts
+=== tests/arena-room-end-scores.test.ts ===
+../src/arena/arena-room-end-scores.ts
+../src/arena/arena-types.ts
+=== tests/arena-room-end-transcript.test.ts ===
+../src/arena/arena-room-end-transcript.ts
+../src/arena/arena-types.ts
+=== tests/arena-room-end.test.ts ===
+../src/arena/arena-room-end.ts
+=== tests/arena-room-enter.test.ts ===
+../src/arena/arena-room-enter.ts
+../src/arena/arena-types.ts
+=== tests/arena-room-live-audio.test.ts ===
+../src/arena/arena-room-live-audio.ts
+=== tests/arena-room-live-input.test.ts ===
+../src/arena/arena-room-live-input.ts
+=== tests/arena-room-live-messages.test.ts ===
+../src/arena/arena-room-live-messages.ts
+=== tests/arena-room-live-poll.test.ts ===
+../src/arena/arena-room-live-poll.ts
+=== tests/arena-room-predebate.test.ts ===
+../src/arena/arena-room-predebate.ts
+=== tests/arena-room-render.test.ts ===
+../src/arena/arena-room-render.ts
+=== tests/arena-room-voicememo.test.ts ===
+../src/arena/arena-room-voicememo.ts
+=== tests/arena-sounds-core.test.ts ===
+../src/arena/arena-sounds-core.ts
+=== tests/arena-state.test.ts ===
+../src/arena/arena-state.ts
+=== tests/async-actions-predict.test.ts ===
+../src/async.actions-predict.ts
+=== tests/async-fetch.test.ts ===
+../src/async.fetch.ts
+=== tests/async-render-predictions.test.ts ===
+../src/async.render.predictions.ts
+=== tests/async-render-wager.test.ts ===
+../src/async.render.wager.ts
+=== tests/async-render.test.ts ===
+../src/async.render.ts
+=== tests/async-rivals.test.ts ===
+../src/async.rivals.ts
+=== tests/async-state.test.ts ===
+../src/async.state.ts
+=== tests/async-utils.test.ts ===
+../src/async.utils.ts
+=== tests/auth-core.test.ts ===
+../src/auth.core.ts
+=== tests/auth-follows.test.ts ===
+../src/auth.follows.ts
+=== tests/auth-gate.test.ts ===
+../src/auth.gate.ts
+=== tests/auth-moderator.test.ts ===
+../src/auth.moderator.ts
+=== tests/auth-ops.test.ts ===
+../src/auth.ops.ts
+=== tests/auth-profile.test.ts ===
+../src/auth.profile.ts
+=== tests/auth-rivals.test.ts ===
+../src/auth.rivals.ts
+=== tests/auth-rpc.test.ts ===
+../src/auth.rpc.ts
+=== tests/badge.test.ts ===
+../src/badge.ts
+=== tests/bounties-dot.test.ts ===
+../src/bounties.dot.ts
+=== tests/bounties-render.test.ts ===
+../src/bounties.render.ts
+=== tests/bounties-rpc.test.ts ===
+../src/bounties.rpc.ts
+=== tests/cards-helpers.test.ts ===
+../src/cards.helpers.ts
+=== tests/config-toast.test.ts ===
+../src/config.toast.ts
+=== tests/cosmetics-render.test.ts ===
+../src/pages/cosmetics.render.ts
+../src/pages/cosmetics.types.ts
+=== tests/debate-landing-data.test.ts ===
+../src/pages/debate-landing.data.ts
+=== tests/dependency-clamps.test.ts ===
+../src/contracts/dependency-clamps.ts
+=== tests/depth-gate.test.ts ===
+../src/depth-gate.ts
+=== tests/dm-fetch.test.ts ===
+../src/dm/dm.fetch.ts
+=== tests/dm-render.test.ts ===
+../src/dm/dm.render.ts
+=== tests/dm-state.test.ts ===
+../src/dm/dm.state.ts
+=== tests/dm.test.ts ===
+../src/dm/dm.ts
+=== tests/f47-moderator-scoring.test.ts ===
+../src/auth.ts
+=== tests/f48-mod-debate.test.ts ===
+../src/arena.ts
+../src/arena.ts
+=== tests/feed-card.test.ts ===
+../src/feed-card.ts
+=== tests/group-banner-upload.test.ts ===
+../src/pages/group-banner-upload.ts
+=== tests/group-banner.test.ts ===
+../src/pages/group-banner.ts
+../src/pages/groups.types.ts
+=== tests/groups-auditions-render.test.ts ===
+../src/pages/groups.auditions.render.ts
+../src/pages/groups.auditions.render.ts
+=== tests/groups-create.test.ts ===
+../src/pages/groups.create.ts
+=== tests/groups-load.test.ts ===
+../src/pages/groups.load.ts
+=== tests/groups-members-modal-html.test.ts ===
+../src/pages/groups.members.modal.html.ts
+=== tests/groups-nav.test.ts ===
+../src/pages/groups.nav.ts
+=== tests/groups-state.test.ts ===
+../src/pages/groups.state.ts
+=== tests/groups-utils.test.ts ===
+../src/pages/groups.utils.ts
+=== tests/home-invite-html.test.ts ===
+../src/pages/home.invite-html.ts
+=== tests/home-invite-render.test.ts ===
+../src/pages/home.invite-render.ts
+=== tests/home-invite-sheet.test.ts ===
+../src/pages/home.invite-sheet.ts
+=== tests/home-invite-wiring.test.ts ===
+../src/pages/home.invite-wiring.ts
+=== tests/home-invite.test.ts ===
+../src/pages/home.invite.ts
+=== tests/home-profile.test.ts ===
+../src/pages/home.profile.ts
+=== tests/home-state.test.ts ===
+../src/pages/home.state.ts
+=== tests/intro-music-css.test.ts ===
+../src/intro-music-css.ts
+=== tests/intro-music-save.test.ts ===
+../src/intro-music-save.ts
+=== tests/intro-music.test.ts ===
+../src/intro-music.ts
+=== tests/leaderboard-elo.test.ts ===
+../src/leaderboard.elo.ts
+=== tests/leaderboard-fetch.test.ts ===
+../src/leaderboard.fetch.ts
+=== tests/leaderboard-list.test.ts ===
+../src/leaderboard.list.ts
+=== tests/leaderboard-render.test.ts ===
+../src/leaderboard.render.ts
+=== tests/leaderboard-state.test.ts ===
+../src/leaderboard.state.ts
+=== tests/login-forms.test.ts ===
+../src/pages/login.forms.ts
+=== tests/modifiers-catalog.test.ts ===
+../src/modifiers-catalog.ts
+=== tests/modifiers-handlers.test.ts ===
+../src/modifiers-handlers.ts
+=== tests/modifiers-render.test.ts ===
+../src/modifiers-render.ts
+=== tests/modifiers-rpc.test.ts ===
+../src/modifiers-rpc.ts
+=== tests/navigation.test.ts ===
+../src/navigation.ts
+=== tests/notifications-actions.test.ts ===
+../src/notifications.actions.ts
+=== tests/notifications-deeplink.test.ts ===
+../src/notifications.types.ts
+../src/notifications.deeplink.ts
+=== tests/notifications-panel.test.ts ===
+../src/notifications.panel.ts
+=== tests/notifications-state.test.ts ===
+../src/notifications.state.ts
+=== tests/notifications.test.ts ===
+../src/notifications.ts
+=== tests/nudge.test.ts ===
+../src/nudge.ts
+=== tests/onboarding-drip.test.ts ===
+../src/onboarding-drip.ts
+=== tests/payments.test.ts ===
+../src/payments.ts
+=== tests/paywall.test.ts ===
+../src/paywall.ts
+=== tests/plinko-auth-return.test.ts ===
+../src/pages/plinko-auth-return.ts
+=== tests/plinko-helpers.test.ts ===
+../src/pages/plinko-helpers.ts
+=== tests/plinko-password.test.ts ===
+../src/pages/plinko-password.ts
+=== tests/plinko-state.test.ts ===
+../src/pages/plinko-state.ts
+=== tests/plinko-step1-method.test.ts ===
+../src/pages/plinko-step1-method.ts
+=== tests/plinko-step2-age.test.ts ===
+../src/pages/plinko-step2-age.ts
+=== tests/plinko-step3-username.test.ts ===
+../src/pages/plinko-step3-username.ts
+=== tests/plinko-step4-step5.test.ts ===
+../src/pages/plinko-step4-step5.ts
+=== tests/powerups-activation.test.ts ===
+../src/powerups.activation.ts
+=== tests/powerups-loadout.test.ts ===
+../src/powerups.loadout.ts
+=== tests/powerups-overlays.test.ts ===
+../src/powerups.overlays.ts
+=== tests/powerups-rpc.test.ts ===
+../src/powerups.rpc.ts
+=== tests/powerups-shop.test.ts ===
+../src/powerups.shop.ts
+../src/powerups.types.ts
+=== tests/profile-debate-archive-css.test.ts ===
+../src/profile-debate-archive.css.ts
+=== tests/profile-debate-archive-edit.test.ts ===
+../src/profile-debate-archive.edit.ts
+=== tests/profile-debate-archive-filter.test.ts ===
+../src/profile-debate-archive.state.ts
+../src/profile-debate-archive.filter.ts
+=== tests/profile-debate-archive-picker.test.ts ===
+../src/profile-debate-archive.picker.ts
+=== tests/profile-debate-archive-render.test.ts ===
+../src/profile-debate-archive.render.ts
+=== tests/profile-debate-archive-state.test.ts ===
+../src/profile-debate-archive.state.ts
+../src/profile-debate-archive.state.ts
+=== tests/profile-debate-archive.test.ts ===
+../src/profile-debate-archive.ts
+=== tests/profile-depth-state.test.ts ===
+../src/pages/profile-depth.state.ts
+=== tests/profile-depth-tier.test.ts ===
+../src/pages/profile-depth.tier.ts
+=== tests/profile-socials.test.ts ===
+../src/profile-socials.ts
+=== tests/reference-arsenal-armory-sheet.test.ts ===
+../src/reference-arsenal.armory.sheet.ts
+=== tests/reference-arsenal-armory.test.ts ===
+../src/reference-arsenal.armory.ts
+=== tests/reference-arsenal-constants.test.ts ===
+../src/reference-arsenal.constants.ts
+=== tests/reference-arsenal-debate.test.ts ===
+../src/reference-arsenal.debate.ts
+=== tests/reference-arsenal-forge-render.test.ts ===
+../src/reference-arsenal.forge-render.ts
+=== tests/reference-arsenal-forge-submit.test.ts ===
+../src/reference-arsenal.forge-submit.ts
+=== tests/reference-arsenal-forge-wiring.test.ts ===
+../src/reference-arsenal.forge-wiring.ts
+=== tests/reference-arsenal-forge.test.ts ===
+../src/reference-arsenal.forge.ts
+=== tests/reference-arsenal-loadout.test.ts ===
+../src/reference-arsenal.loadout.ts
+=== tests/reference-arsenal-render.test.ts ===
+../src/reference-arsenal.render.ts
+=== tests/reference-arsenal-rpc.test.ts ===
+../src/reference-arsenal.rpc.ts
+=== tests/reference-arsenal-utils.test.ts ===
+../src/reference-arsenal.utils.ts
+=== tests/rivals-presence-channel.test.ts ===
+../src/rivals-presence-channel.ts
+../src/rivals-presence-channel.ts
+=== tests/rivals-presence-css.test.ts ===
+../src/rivals-presence-css.ts
+=== tests/rivals-presence-popup.test.ts ===
+../src/rivals-presence-popup.ts
+../src/rivals-presence-popup.ts
+=== tests/rivals-presence.test.ts ===
+../src/rivals-presence.ts
+=== tests/safe-button.test.ts ===
+../src/safe-button.ts
+=== tests/scoring.test.ts ===
+../src/scoring.ts
+=== tests/search.test.ts ===
+../src/search.ts
+=== tests/settings-blocks.test.ts ===
+../src/pages/settings.blocks.ts
+=== tests/settings-helpers.test.ts ===
+../src/pages/settings.helpers.ts
+=== tests/settings-load.test.ts ===
+../src/pages/settings.load.ts
+=== tests/settings-moderator.test.ts ===
+../src/pages/settings.moderator.ts
+=== tests/settings-save.test.ts ===
+../src/pages/settings.save.ts
+=== tests/settings-wiring.test.ts ===
+../src/pages/settings.wiring.ts
+=== tests/share-ui.test.ts ===
+../src/share.ui.ts
+=== tests/share.test.ts ===
+../src/share.ts
+=== tests/spectate-render-messages.test.ts ===
+../src/pages/spectate.render-messages.ts
+=== tests/spectate-share.test.ts ===
+../src/pages/spectate.share.ts
+=== tests/spectate-state.test.ts ===
+../src/pages/spectate.state.ts
+=== tests/spectate-utils.test.ts ===
+../src/pages/spectate.utils.ts
+=== tests/spectate-vote.test.ts ===
+../src/pages/spectate.vote.ts
+=== tests/staking-render.test.ts ===
+../src/staking.render.ts
+=== tests/staking-rpc.test.ts ===
+../src/staking.rpc.ts
+=== tests/staking-wire.test.ts ===
+../src/staking.wire.ts
+=== tests/tiers.test.ts ===
+../src/tiers.ts
+=== tests/tokens-animations.test.ts ===
+../src/tokens.animations.ts
+=== tests/tokens-balance.test.ts ===
+../src/tokens.balance.ts
+=== tests/tokens-claims.test.ts ===
+../src/tokens.claims.ts
+=== tests/tokens-milestones.test.ts ===
+../src/tokens.milestones.ts
+=== tests/tournaments-barrel.test.ts ===
+../src/tournaments.ts
+=== tests/tournaments-indicator.test.ts ===
+../src/tournaments.indicator.ts
+=== tests/tournaments-render.test.ts ===
+../src/tournaments.render.ts
+=== tests/tournaments-rpc.test.ts ===
+../src/tournaments.rpc.ts
+=== tests/voicememo-barrel.test.ts ===
+../src/voicememo.ts
+../src/voicememo.sheet.ts
+=== tests/voicememo-player.test.ts ===
+../src/voicememo.player.ts
+=== tests/voicememo-record.test.ts ===
+../src/voicememo.record.ts
+=== tests/voicememo-sheet.test.ts ===
+../src/voicememo.sheet.ts
+=== tests/voicememo-upload.test.ts ===
+../src/voicememo.upload.ts
+
+=== REPO STATS (generated 2026-04-25) ===
+Source files: 315
+Test files: 250
+
+=== WALLED — NO TESTS POSSIBLE ===
+WebRTC: src/webrtc.*.ts, src/arena/arena-feed-room.ts, src/webrtc.monitor.ts
+WebAudio: src/arena/arena-room-live-audio.ts, src/arena/arena-intro-music.ts, src/intro-music.ts, src/intro-music-save.ts
+Canvas: src/cards.ts
+
+=== PRE-EXISTING FAILURES (ignore these) ===
+tests/f48-mod-debate.test.ts — 8 failures, WebRTC/jsdom incompatibility, permanently walled
