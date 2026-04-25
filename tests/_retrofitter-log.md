@@ -1,7 +1,7 @@
 # Retrofitter Log — Updated 2026-04-25
 
-## Test count: 1765 passing, 11 failing (8 pre-existing f48-mod-debate + 3 pre-existing auth-profile source bug)
-## Test files: 164 passing, 2 failing
+## Test count: 1918 passing, 19 failing (8 pre-existing f48-mod-debate + 3 pre-existing auth-profile + 8 pre-existing ARCH/TC drift in share/dm/notifications/payments/arena-config-category)
+## Test files: 169 passing, 8 failing (all pre-existing)
 
 ---
 
@@ -185,7 +185,24 @@
 - src/arena/arena-room-end-transcript.ts → tests/arena-room-end-transcript.test.ts ✓
 - src/arena/arena-room-end-after-effects.ts → tests/arena-room-end-after-effects.test.ts ✓
 - src/arena/arena-room-ai-scoring.ts → tests/arena-room-ai-scoring.test.ts ✓
-- src/arena/arena-room-ai-response.ts → tests/arena-room-ai-response.test.ts ✓
+- src/arena/arena-room-ai-response.ts
+- src/arena/arena-room-voicememo.ts → tests/arena-room-voicememo.test.ts (20 tests) ✓
+- src/arena/arena-room-live-input.ts → tests/arena-room-live-input.test.ts (13 tests) ✓
+- src/arena/arena-room-live-audio.ts → tests/arena-room-live-audio.test.ts (12 tests) ✓
+- src/arena/arena-room-live-poll.ts → tests/arena-room-live-poll.test.ts (17 tests) ✓
+- src/arena/arena-room-render.ts → tests/arena-room-render.test.ts (16 tests) ✓
+- src/arena/arena-room-predebate.ts → tests/arena-room-predebate.test.ts (17 tests) ✓
+- src/arena/arena-room-end-render.ts → tests/arena-room-end-render.test.ts (14 tests) ✓
+- src/arena/arena-room-end-finalize.ts → tests/arena-room-end-finalize.test.ts (14 tests) ✓
+- src/arena/arena-private-lobby.join.ts → tests/arena-private-lobby-join.test.ts (8 tests) ✓
+- src/arena/arena-private-lobby.ts → tests/arena-private-lobby.test.ts (15 tests) ✓
+- src/arena/arena-private-picker.ts → tests/arena-private-picker.test.ts (18 tests) ✓
+- src/arena/arena-lobby.ts → tests/arena-lobby.test.ts (17 tests) ✓ → tests/arena-room-ai-response.test.ts ✓
+- src/arena/arena-mod-refs.ts → tests/arena-mod-refs.test.ts (2 tests) ✓
+- src/arena/arena-mod-refs-ai.ts → tests/arena-mod-refs-ai.test.ts (10 tests) ✓
+- src/arena/arena-mod-refs-form.ts → tests/arena-mod-refs-form.test.ts (14 tests) ✓
+- src/arena/arena-mod-refs-ruling.ts → tests/arena-mod-refs-ruling.test.ts (11 tests) ✓
+- src/arena/arena-mod-debate-waiting.ts → tests/arena-mod-debate-waiting.test.ts (10 tests) ✓
 
 ### Feed / Cards
 - src/feed-card.ts → tests/feed-card.test.ts ✓
@@ -253,26 +270,29 @@
 ### Arena files remaining
 - src/arena/arena-sounds.ts (WebAudio API — may wall)
 - src/arena/arena-deepgram.ts (large, realtime browser API)
-- src/arena/arena-room-live-poll.ts (177 lines)
-- src/arena/arena-room-live-input.ts (69 lines)
-- src/arena/arena-room-live-audio.ts (117 lines)
-- src/arena/arena-room-voicememo.ts
-- src/arena/arena-room-render.ts (211 lines)
-- src/arena/arena-room-predebate.ts (195 lines)
-- src/arena/arena-room-end-render.ts (147 lines)
-- src/arena/arena-room-end-finalize.ts (177 lines)
-- src/arena/arena-private-lobby.ts (209 lines)
-- src/arena/arena-private-lobby.join.ts (92 lines)
-- src/arena/arena-private-picker.ts (264 lines)
-- src/arena/arena-lobby.ts (290 lines)
 - src/arena/arena-core.ts
-- src/arena/arena-mod-debate-picker.ts
-- src/arena/arena-mod-debate-poll.ts
-- src/arena/arena-mod-debate-waiting.ts
-- src/arena/arena-mod-queue-browse.ts
-- src/arena/arena-mod-queue-status.ts
-- src/arena/arena-mod-refs*.ts (multiple)
-- src/arena/arena-feed-*.ts (many)
+- src/arena/arena-mod-debate-picker.ts → tests/arena-mod-debate-picker.test.ts (13 tests) ✓
+- src/arena/arena-mod-debate-poll.ts → tests/arena-mod-debate-poll.test.ts (15 tests) ✓
+- src/arena/arena-mod-queue-browse.ts → tests/arena-mod-queue-browse.test.ts (22 tests) ✓
+- src/arena/arena-mod-queue-status.ts → tests/arena-mod-queue-status.test.ts (18 tests) ✓
+- src/arena/arena-feed-heartbeat.ts → tests/arena-feed-heartbeat.test.ts (18 tests) ✓
+- src/arena/arena-feed-disconnect.ts → tests/arena-feed-disconnect.test.ts (15 tests) ✓
+- src/arena/arena-feed-disconnect-debater.ts → tests/arena-feed-disconnect-debater.test.ts (8 tests) ✓
+- src/arena/arena-feed-disconnect-mod.ts → tests/arena-feed-disconnect-mod.test.ts (13 tests) ✓
+- src/arena/arena-feed-ui.ts → tests/arena-feed-ui.test.ts (21 tests) ✓
+- src/arena/arena-feed-realtime.ts → tests/arena-feed-realtime.test.ts ✓
+- src/arena/arena-feed-wiring.ts → tests/arena-feed-wiring.test.ts ✓
+- src/arena/arena-feed-wiring-debater.ts → tests/arena-feed-wiring-debater.test.ts ✓
+- src/arena/arena-feed-wiring-mod.ts → tests/arena-feed-wiring-mod.test.ts ✓
+- src/arena/arena-feed-wiring-spectator.ts → tests/arena-feed-wiring-spectator.test.ts ✓
+- src/arena/arena-feed-events.ts → tests/arena-feed-events.test.ts ✓
+- src/arena/arena-feed-events-render.ts → tests/arena-feed-events-render.test.ts ✓
+- src/arena/arena-feed-machine-ads.ts → tests/arena-feed-machine-ads.test.ts ✓
+- src/arena/arena-feed-machine-pause.ts → tests/arena-feed-machine-pause.test.ts ✓
+- src/arena/arena-feed-machine-turns.ts → tests/arena-feed-machine-turns.test.ts ✓
+- src/arena/arena-feed-references.ts → tests/arena-feed-references.test.ts ✓
+- src/arena/arena-feed-room.ts → tests/arena-feed-room.test.ts (33 tests) ✓
+- src/arena/arena-feed-spec-chat.ts
 - src/arena/arena-config-*.ts (remaining)
 
 ### Barrel files needing ARCH tests only
