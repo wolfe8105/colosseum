@@ -13,17 +13,17 @@ Format: [ ] rank | score | importer → imported
 - [W] 005 | score: 57 | arena/arena-room-end.ts → arena-state  [WALL: direct webrtc.ts import → @peermetrics/webrtc-stats not installed]
 - [W] 006 | score: 57 | arena/arena-match-found.ts → arena-state  [WALL: → arena-room-enter → arena-feed-room → webrtc.ts]
 - [x] 007 | score: 57 | arena/arena-feed-events.ts → arena-state
-- [ ] 008 | score: 56 | arena/arena-queue.ts → arena-state
+- [W] 008 | score: 56 | arena/arena-queue.ts → arena-state  [WALL: → arena-match-found → arena-room-enter → webrtc.ts]
 - [W] 009 | score: 56 | arena/arena-feed-machine-turns.ts → arena-state  [WALL: → webrtc.ts]
 - [W] 010 | score: 55 | arena/arena-room-enter.ts → arena-state  [WALL: → arena-feed-room → webrtc.ts]
-- [ ] 011 | score: 55 | arena/arena-feed-heartbeat.ts → arena-state
-- [ ] 012 | score: 54 | arena/arena-room-predebate.ts → arena-state
-- [ ] 013 | score: 54 | arena/arena-room-ai-response.ts → arena-state
-- [ ] 014 | score: 54 | arena/arena-private-picker.ts → arena-state
-- [ ] 015 | score: 54 | arena/arena-mod-queue-status.ts → arena-state
-- [ ] 016 | score: 54 | arena/arena-match-timers.ts → arena-state
-- [ ] 017 | score: 54 | arena/arena-config-round-picker.ts → arena-state
-- [ ] 018 | score: 54 | arena/arena-config-mode-select.ts → arena-state
+- [x] 011 | score: 55 | arena/arena-feed-heartbeat.ts → arena-state
+- [W] 012 | score: 54 | arena/arena-room-predebate.ts → arena-state  [WALL: → arena-room-enter → webrtc.ts]
+- [W] 013 | score: 54 | arena/arena-room-ai-response.ts → arena-state  [WALL: → arena-room-live-poll → arena-room-end → webrtc.ts]
+- [W] 014 | score: 54 | arena/arena-private-picker.ts → arena-state  [WALL: → arena-match-found → arena-room-enter → webrtc.ts]
+- [x] 015 | score: 54 | arena/arena-mod-queue-status.ts → arena-state
+- [x] 016 | score: 54 | arena/arena-match-timers.ts → arena-state
+- [x] 017 | score: 54 | arena/arena-config-round-picker.ts → arena-state
+- [W] 018 | score: 54 | arena/arena-config-mode-select.ts → arena-state  [WALL: → arena-queue → arena-match-found → webrtc.ts]
 - [ ] 019 | score: 53 | arena/arena-room-live-audio.ts → arena-state
 - [ ] 020 | score: 53 | arena/arena-private-lobby.join.ts → arena-state
 - [ ] 021 | score: 53 | arena/arena-mod-debate-waiting.ts → arena-state
