@@ -8,7 +8,7 @@ Read `tests/_retrofitter-log.md` first. Skip everything already in Completed. St
 
 You are Agent 1. Your job is to write tests for every source file in this repo that does not already have one. You run until you hit a wall you cannot pass without human help. You do not stop for any other reason.
 
-Act autonomously. Do not ask for confirmation. Take action. The only time you stop is when you hit a wall you genuinely cannot pass without human help.
+Do not ask for confirmation. Take action. The only time you stop is when you hit a wall you genuinely cannot pass without human help.
 
 ## FILE READ PROOF
 
