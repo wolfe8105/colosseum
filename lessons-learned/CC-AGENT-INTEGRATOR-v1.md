@@ -376,3 +376,52 @@ The Integrator runs after both the Retrofitter and Gatekeeper have passed for a 
 4. **Integrator runs — proves the modules compose correctly**
 
 If the Gatekeeper or Retrofitter have not yet run for a module, run those first. Do not run the Integrator on untested modules.
+
+---
+
+## SEAM LIST AND LOG
+
+### Master seam list
+`tests/integration/_integrator-seams.md` — 623 seams ranked by score (sum of fan-in of both modules). High score = more things depend on this boundary = higher risk. Work top to bottom.
+
+### Log file
+Before starting, read `tests/integration/_integrator-log.md`. If it exists, skip everything marked done. Start from the first unchecked seam.
+
+If the log doesn't exist, create it:
+```
+# Integrator Log
+
+## Completed
+(none yet)
+
+## Walled
+(none yet)
+
+## Remaining
+(start from _integrator-seams.md rank 001)
+```
+
+Update the log after every seam — completed, walled, or skipped (with reason).
+
+### Per-seam workflow
+1. Find the next unchecked seam in `_integrator-seams.md`
+2. Check the box when the test is written and passing
+3. Update `_integrator-log.md`
+4. Commit both files along with the test
+5. Move to the next seam
+
+### Commit format
+```bash
+git add tests/integration/int-[name].test.ts tests/integration/_integrator-seams.md tests/integration/_integrator-log.md
+git commit -m "test(int): [importer] → [imported] — [N] TCs (seam #[rank])"
+git push
+```
+
+### Known walls — skip these seams entirely, mark as walled in log
+- Any seam involving: `webrtc`, `feed-room`, `intro-music`, `cards`, `deepgram`, `realtime-client`, `voicememo`, `arena-css`
+- Mark in log: `WALL: [reason]`
+
+### One file per boundary pair
+If A imports B and B imports A (circular), one test file covers both directions.
+If A imports B, C, and D — one test file covers all three seams from A.
+Name it `int-[A-basename].test.ts`.
