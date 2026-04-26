@@ -530,6 +530,7 @@ describe('TC-469-2 — PrivateLobbyResult.join_code drives code-display DOM when
 
 describe('TC-469-3 — CheckPrivateLobbyResult status=matched triggers match transition', () => {
   it('clears poll timer and calls onPrivateLobbyMatched when matched + player_b_ready + opponent_id', async () => {
+    mockRpc.mockReset();
     vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
 
     const matchedData = {
@@ -574,6 +575,7 @@ describe('TC-469-3 — CheckPrivateLobbyResult status=matched triggers match tra
 
 describe('TC-469-4 — CheckPrivateLobbyResult status field drives poll control flow', () => {
   it('check_private_lobby p_debate_id matches the debate_id passed to startPrivateLobbyPoll', async () => {
+    mockRpc.mockReset();
     // Verify the status field from CheckPrivateLobbyResult is consumed by checking
     // that the poll correctly passes through the debate_id it received.
     // We use 'waiting' status to avoid triggering dynamic imports (matched/cancelled branches).
