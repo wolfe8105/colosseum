@@ -183,3 +183,14 @@ Findings this sub-session:
 6. B18 — REACT FAILED on own debate flame button. May be intentional (self-react blocked) or bug. S4 pending clarification.
 7. B18 — VIEW on VERDICT card navigates to /debate/{uuid} but renders "No debate ID provided." S4.
 8. B22 — RESET PASSWORD button non-functional. No feedback of any kind. S4.
+
+### Pass 1 — Gate Group B23 (Groups lobby)
+[17:XX:00] [PASS 1] [B23] DISCOVER tab → PASS — all public groups listed (The Founders, Walkthrough Test Squad)
+[17:XX:05] [PASS 1] [B23] MY GROUPS tab → PASS — shows groups user belongs to, both tagged LEADER
+[17:XX:10] [PASS 1] [B23] RANKINGS tab → PASS — sorted by ELO descending (#1 The Founders 1600, #2 Walkthrough Test Squad 1000)
+[17:XX:15] [PASS 1] [B23] + CREATE button → PASS — modal opens with NAME, DESCRIPTION, CATEGORY, GROUP EMOJI picker
+[17:XX:20] [PASS 1] [B23] Create modal name input → SKIP — keyboard input automation gap; JS workaround used
+[17:XX:25] [PASS 1] [B23] CREATE GROUP button — name empty → PASS (partial) — button not disabled by attribute but click does nothing; no error message shown (silent block)
+[17:XX:30] [PASS 1] [B23] CREATE GROUP button — name filled (JS) → PASS — group "S301 Test Group" created, navigated to group detail page. Group shows: 1 member, 1000 ELO, YOU OWN THIS GROUP, CHALLENGE ANOTHER GROUP, FEED/CHALLENGES/MEMBERS tabs.
+
+Note: Group feed on detail page shows "Let your opinion be heard..." composer — this is the group-scoped post feature. The main feed post feature was removed but group feeds appear to have their own composer.
