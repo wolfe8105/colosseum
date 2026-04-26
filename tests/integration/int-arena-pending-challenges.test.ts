@@ -368,3 +368,236 @@ describe('TC-098-005 — ARCH: AI_TOPICS is the fallback topic pool used with ra
     expect(typeof AI_TOPICS[0]).toBe('string');
   });
 });
+
+// ─── SEAM #470: arena-pending-challenges → arena-types-private-lobby ───
+
+// TC-470-001: ARCH — seam boundary import verified
+describe('TC-470-001 — ARCH: imports PendingChallenge and JoinPrivateLobbyResult from arena-types-private-lobby', () => {
+  it('arena-pending-challenges.ts imports both types from arena-types-private-lobby', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-pending-challenges.ts'),
+      'utf-8',
+    );
+    const importLines = source.split('\n').filter((l: string) => /from\s+['"]/.test(l));
+    const privateLobbyLine = importLines.find((l: string) => l.includes('arena-types-private-lobby'));
+    expect(privateLobbyLine).toBeDefined();
+    expect(privateLobbyLine).toContain('PendingChallenge');
+    expect(privateLobbyLine).toContain('JoinPrivateLobbyResult');
+  });
+});
+
+// TC-470-002: PendingChallenge fields all rendered into DOM card
+describe('TC-470-002 — PendingChallenge all fields rendered into DOM card', () => {
+  it('challenge card DOM contains debate_id, mode, topic, challenger_name, challenger_elo', async () => {
+    vi.resetModules();
+    const challenge = {
+      debate_id: 'ccc00000-0000-0000-0000-000000000003',
+      mode: 'text',
+      topic: 'TypeScript is overrated',
+      challenger_id: 'ddd00000-0000-0000-0000-000000000004',
+      challenger_name: 'TypistFan',
+      challenger_elo: 1420,
+      ranked: false,
+      created_at: '2026-04-25T00:00:00Z',
+    };
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [challenge], error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const feed = document.getElementById('arena-pending-challenges-feed')!;
+    const card = feed.querySelector('.arena-card') as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.dataset.debateId).toBe(challenge.debate_id);
+    expect(feed.innerHTML).toContain('TypistFan');
+    expect(feed.innerHTML).toContain('TypeScript is overrated');
+    expect(feed.innerHTML).toContain('TEXT');
+    expect(feed.innerHTML).toContain('1420');
+  });
+});
+
+// TC-470-003: PendingChallenge null topic shows "Challenger's choice"
+describe("TC-470-003 — PendingChallenge null topic renders Challenger's choice", () => {
+  it("renders \"Topic: Challenger's choice\" when PendingChallenge.topic is null", async () => {
+    vi.resetModules();
+    const challenge = {
+      debate_id: 'eee00000-0000-0000-0000-000000000005',
+      mode: 'live',
+      topic: null,
+      challenger_id: 'fff00000-0000-0000-0000-000000000006',
+      challenger_name: 'MysteryDebater',
+      challenger_elo: 1200,
+      ranked: false,
+      created_at: '2026-04-25T00:00:00Z',
+    };
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [challenge], error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const feed = document.getElementById('arena-pending-challenges-feed')!;
+    expect(feed.innerHTML).toContain("Challenger's choice");
+  });
+});
+
+// TC-470-004: JoinPrivateLobbyResult.ruleset defaults to 'amplified' when absent
+describe('TC-470-004 — JoinPrivateLobbyResult ruleset defaults to amplified', () => {
+  it('CurrentDebate.ruleset is amplified when JoinPrivateLobbyResult has no ruleset field', async () => {
+    vi.resetModules();
+    const capturedDebates: unknown[] = [];
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({
+      showMatchFound: vi.fn((d: unknown) => capturedDebates.push(d)),
+    }));
+
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [FAKE_CHALLENGE], error: null });
+      }
+      if (rpcName === 'join_private_lobby') {
+        return Promise.resolve({
+          data: {
+            debate_id: FAKE_CHALLENGE.debate_id,
+            topic: FAKE_CHALLENGE.topic,
+            total_rounds: 3,
+            // ruleset intentionally absent
+            language: 'en',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const acceptBtn = document.querySelector('.challenge-accept-btn') as HTMLButtonElement;
+    acceptBtn.click();
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(capturedDebates.length).toBe(1);
+    const debate = capturedDebates[0] as { ruleset: string };
+    expect(debate.ruleset).toBe('amplified');
+  });
+});
+
+// TC-470-005: JoinPrivateLobbyResult.language defaults to 'en' when absent
+describe('TC-470-005 — JoinPrivateLobbyResult language defaults to en', () => {
+  it('CurrentDebate.language is en when JoinPrivateLobbyResult has no language field', async () => {
+    vi.resetModules();
+    const capturedDebates: unknown[] = [];
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({
+      showMatchFound: vi.fn((d: unknown) => capturedDebates.push(d)),
+    }));
+
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [FAKE_CHALLENGE], error: null });
+      }
+      if (rpcName === 'join_private_lobby') {
+        return Promise.resolve({
+          data: {
+            debate_id: FAKE_CHALLENGE.debate_id,
+            topic: FAKE_CHALLENGE.topic,
+            total_rounds: 3,
+            ruleset: 'unplugged',
+            // language intentionally absent
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const acceptBtn = document.querySelector('.challenge-accept-btn') as HTMLButtonElement;
+    acceptBtn.click();
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(capturedDebates.length).toBe(1);
+    const debate = capturedDebates[0] as { language: string };
+    expect(debate.language).toBe('en');
+  });
+});
+
+// TC-470-006: JoinPrivateLobbyResult.debate_id becomes CurrentDebate.id
+describe('TC-470-006 — JoinPrivateLobbyResult.debate_id maps to CurrentDebate.id', () => {
+  it('CurrentDebate.id equals the debate_id from JoinPrivateLobbyResult', async () => {
+    vi.resetModules();
+    const capturedDebates: unknown[] = [];
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({
+      showMatchFound: vi.fn((d: unknown) => capturedDebates.push(d)),
+    }));
+
+    const JOIN_DEBATE_ID = 'fff11111-0000-0000-0000-000000000099';
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [FAKE_CHALLENGE], error: null });
+      }
+      if (rpcName === 'join_private_lobby') {
+        return Promise.resolve({
+          data: {
+            debate_id: JOIN_DEBATE_ID,
+            topic: 'Some topic',
+            total_rounds: 3,
+            ruleset: 'amplified',
+            language: 'en',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const acceptBtn = document.querySelector('.challenge-accept-btn') as HTMLButtonElement;
+    acceptBtn.click();
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(capturedDebates.length).toBe(1);
+    const debate = capturedDebates[0] as { id: string };
+    expect(debate.id).toBe(JOIN_DEBATE_ID);
+  });
+});
+
+// TC-470-007: JoinPrivateLobbyResult error restores accept button
+describe('TC-470-007 — join_private_lobby error restores accept button text', () => {
+  it('accept button is re-enabled and shows ACCEPT after join_private_lobby returns an error', async () => {
+    vi.resetModules();
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_pending_challenges') {
+        return Promise.resolve({ data: [FAKE_CHALLENGE], error: null });
+      }
+      if (rpcName === 'join_private_lobby') {
+        return Promise.resolve({ data: null, error: new Error('lobby full') });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { loadPendingChallenges } = await import('../../src/arena/arena-pending-challenges.ts');
+    await loadPendingChallenges();
+
+    const acceptBtn = document.querySelector('.challenge-accept-btn') as HTMLButtonElement;
+    acceptBtn.click();
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(acceptBtn.disabled).toBe(false);
+    expect(acceptBtn.textContent).toBe('ACCEPT');
+  });
+});

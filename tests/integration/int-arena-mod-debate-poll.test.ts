@@ -235,3 +235,182 @@ describe('ARCH — seam #037 import boundary unchanged', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ─── Seam #321: arena-mod-debate-poll → arena-types-moderator ───────────────
+
+// TC-321-1: ARCH — arena-types-moderator is imported for ModDebateCheckResult
+describe('TC-321-1 — ARCH: arena-mod-debate-poll imports ModDebateCheckResult from arena-types-moderator', () => {
+  it('has an import line referencing arena-types-moderator', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-mod-debate-poll.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-types-moderator'))).toBe(true);
+  });
+});
+
+// TC-321-2: ModDebateCheckResult shape — poll reads .debater_a_name / .debater_b_name to update DOM
+describe('TC-321-2 — poll reads debater_a_name and debater_b_name from ModDebateCheckResult', () => {
+  it('updates slot-a-name and slot-b-name textContent from ModDebateCheckResult fields', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="screen-main"></div>
+      <span id="slot-a-name">waiting…</span>
+      <span id="slot-b-name">waiting…</span>
+    `;
+
+    const checkResult: {
+      status: string; debater_a_id: string | null; debater_a_name: string;
+      debater_b_id: string | null; debater_b_name: string; topic: string | null;
+      ruleset: string | null; total_rounds?: number; language?: string;
+    } = {
+      status: 'pending',
+      debater_a_id: 'user-a',
+      debater_a_name: 'CheckerAlice',
+      debater_b_id: null,
+      debater_b_name: 'CheckerBob',
+      topic: 'Test topic',
+      ruleset: 'amplified',
+      total_rounds: 3,
+      language: 'en',
+    };
+
+    const safeRpcMock = vi.fn().mockResolvedValue({ data: checkResult, error: null });
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: safeRpcMock,
+      getCurrentProfile: vi.fn().mockReturnValue({ id: 'mod-user-id' }),
+    }));
+    vi.doMock('../../src/arena/arena-room-enter.ts', () => ({ enterRoom: vi.fn() }));
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({ showMatchFound: vi.fn() }));
+
+    const state = await import('../../src/arena/arena-state.ts');
+    const { startModDebatePoll } = await import('../../src/arena/arena-mod-debate-poll.ts');
+
+    state.set_view('modDebateWaiting' as any);
+    startModDebatePoll('debate-321-2', 'text', false);
+
+    await vi.advanceTimersByTimeAsync(4000);
+
+    expect(document.getElementById('slot-a-name')?.textContent).toBe('CheckerAlice');
+    expect(document.getElementById('slot-b-name')?.textContent).toBe('CheckerBob');
+
+    state.set_modDebatePollTimer(null);
+    vi.useRealTimers();
+  });
+});
+
+// TC-321-3: ModDebateCheckResult.status === 'matched' triggers poll stop
+describe('TC-321-3 — poll stops when ModDebateCheckResult.status is matched', () => {
+  it('clears poll timer when check returns status=matched', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const matchedResult: {
+      status: string; debater_a_id: string | null; debater_a_name: string;
+      debater_b_id: string | null; debater_b_name: string; topic: string | null;
+      ruleset: string | null; total_rounds?: number; language?: string;
+    } = {
+      status: 'matched',
+      debater_a_id: 'user-a',
+      debater_a_name: 'MatchedAlice',
+      debater_b_id: 'user-b',
+      debater_b_name: 'MatchedBob',
+      topic: 'Matched debate',
+      ruleset: 'amplified',
+      total_rounds: 3,
+      language: 'en',
+    };
+
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: vi.fn().mockResolvedValue({ data: matchedResult, error: null }),
+      getCurrentProfile: vi.fn().mockReturnValue({ id: 'mod-user-id' }),
+    }));
+    vi.doMock('../../src/arena/arena-room-enter.ts', () => ({ enterRoom: vi.fn() }));
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({ showMatchFound: vi.fn() }));
+
+    const state = await import('../../src/arena/arena-state.ts');
+    const { startModDebatePoll } = await import('../../src/arena/arena-mod-debate-poll.ts');
+
+    state.set_view('modDebateWaiting' as any);
+    startModDebatePoll('debate-321-3', 'text', false);
+
+    await vi.advanceTimersByTimeAsync(4000);
+
+    // Once status=matched, timer is cleared
+    expect(state.modDebatePollTimer).toBeNull();
+
+    vi.useRealTimers();
+  });
+});
+
+// TC-321-4: onModDebateReady uses ModDebateCheckResult.total_rounds in CurrentDebate
+describe('TC-321-4 — onModDebateReady maps ModDebateCheckResult.total_rounds into CurrentDebate', () => {
+  it('passes total_rounds from ModDebateCheckResult to enterRoom as totalRounds', async () => {
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+      getCurrentProfile: vi.fn().mockReturnValue({ id: 'pure-mod-id' }),
+    }));
+    const enterRoomMock = vi.fn();
+    vi.doMock('../../src/arena/arena-room-enter.ts', () => ({ enterRoom: enterRoomMock }));
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({ showMatchFound: vi.fn() }));
+
+    const { onModDebateReady } = await import('../../src/arena/arena-mod-debate-poll.ts');
+
+    const result: {
+      status: string; debater_a_id: string | null; debater_a_name: string;
+      debater_b_id: string | null; debater_b_name: string; topic: string | null;
+      ruleset: string | null; total_rounds?: number; language?: string;
+    } = {
+      status: 'matched',
+      debater_a_id: 'user-a',
+      debater_a_name: 'Alice',
+      debater_b_id: 'user-b',
+      debater_b_name: 'Bob',
+      topic: 'Total rounds test',
+      ruleset: 'amplified',
+      total_rounds: 5,
+      language: 'en',
+    };
+
+    onModDebateReady('debate-321-4', result, 'text', false);
+
+    expect(enterRoomMock).toHaveBeenCalledOnce();
+    const passedDebate = enterRoomMock.mock.calls[0][0] as { totalRounds: number };
+    expect(passedDebate.totalRounds).toBe(5);
+  });
+});
+
+// TC-321-5: ModDebateCheckResult.ruleset is passed into CurrentDebate.ruleset
+describe('TC-321-5 — onModDebateReady maps ModDebateCheckResult.ruleset into CurrentDebate', () => {
+  it('passes ruleset from ModDebateCheckResult to enterRoom', async () => {
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+      getCurrentProfile: vi.fn().mockReturnValue({ id: 'pure-mod-id-2' }),
+    }));
+    const enterRoomMock = vi.fn();
+    vi.doMock('../../src/arena/arena-room-enter.ts', () => ({ enterRoom: enterRoomMock }));
+    vi.doMock('../../src/arena/arena-match-found.ts', () => ({ showMatchFound: vi.fn() }));
+
+    const { onModDebateReady } = await import('../../src/arena/arena-mod-debate-poll.ts');
+
+    const result: {
+      status: string; debater_a_id: string | null; debater_a_name: string;
+      debater_b_id: string | null; debater_b_name: string; topic: string | null;
+      ruleset: string | null; total_rounds?: number; language?: string;
+    } = {
+      status: 'matched',
+      debater_a_id: 'user-a',
+      debater_a_name: 'Alice',
+      debater_b_id: 'user-b',
+      debater_b_name: 'Bob',
+      topic: 'Ruleset test',
+      ruleset: 'unplugged',
+      total_rounds: 3,
+      language: 'en',
+    };
+
+    onModDebateReady('debate-321-5', result, 'live', true);
+
+    expect(enterRoomMock).toHaveBeenCalledOnce();
+    const passedDebate = enterRoomMock.mock.calls[0][0] as { ruleset: string };
+    expect(passedDebate.ruleset).toBe('unplugged');
+  });
+});

@@ -411,3 +411,224 @@ describe('ARCH — arena-feed-events.ts imports only from allowed modules', () =
     }
   });
 });
+
+// ============================================================
+// SEAM #292 — arena-feed-events → arena-feed-events-render
+// These TCs exercise the render helpers dispatched by appendFeedEvent.
+// No Supabase calls originate from arena-feed-events-render.
+// ============================================================
+
+describe('SEAM #292 — renderSpeechEvent: mod side renders .feed-evt-mod', () => {
+  it('creates a .feed-evt-mod element with moderator name from event', () => {
+    set_currentDebate({ id: 'd1', role: 'a', opponentName: 'Bob', messages: [] });
+
+    appendFeedEvent({
+      id: 'r01',
+      event_type: 'speech',
+      side: 'mod',
+      round: 1,
+      content: 'Time is up',
+      author_name: 'Judge',
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-mod');
+    expect(el).not.toBeNull();
+    expect(el!.innerHTML).toContain('Judge');
+    expect(el!.innerHTML).toContain('Time is up');
+  });
+
+  it('creates .feed-evt-a element with debater name for side-a speech', () => {
+    set_currentDebate({ id: 'd1', role: 'a', opponentName: 'Bob', messages: [] });
+
+    appendFeedEvent({
+      id: 'r02',
+      event_type: 'speech',
+      side: 'a',
+      round: 1,
+      content: 'My opening',
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-a');
+    expect(el).not.toBeNull();
+    expect(el!.innerHTML).toContain('You');
+  });
+});
+
+describe('SEAM #292 — renderReferenceChallengeEvent: pauses feed and marks ref as challenged', () => {
+  it('creates .feed-evt-challenge element and marks ref as challenged in opponentCitedRefs', async () => {
+    set_currentDebate({ id: 'd1', role: 'a', opponentName: 'Bob', messages: [] });
+    set_opponentCitedRefs([{
+      reference_id: 'ref-777',
+      claim: 'some claim',
+      url: 'https://ex.com',
+      domain: 'ex.com',
+      source_type: 'article',
+      feed_event_id: 'e-prev',
+      already_challenged: false,
+    }]);
+    // feedPaused must be false so pauseFeed is invoked
+    set_feedPaused(false);
+
+    appendFeedEvent({
+      id: 'r03',
+      event_type: 'reference_challenge',
+      side: 'b',
+      round: 1,
+      content: 'Challenge: some claim',
+      reference_id: 'ref-777',
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-challenge');
+    expect(el).not.toBeNull();
+
+    // Verify opponentCitedRefs updated in arena-state
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    const challenged = stateMod.opponentCitedRefs.find(
+      (r: { reference_id: string }) => r.reference_id === 'ref-777'
+    );
+    expect(challenged?.already_challenged).toBe(true);
+  });
+});
+
+describe('SEAM #292 — renderModRulingEvent: unpauses feed and renders ruling icon', () => {
+  it('renders upheld ruling with checkmark icon', () => {
+    appendFeedEvent({
+      id: 'r04',
+      event_type: 'mod_ruling',
+      side: 'mod',
+      round: 1,
+      content: 'Source is valid',
+      metadata: { ruling: 'upheld' },
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-ruling');
+    expect(el).not.toBeNull();
+    expect(el!.innerHTML).toContain('UPHELD');
+  });
+
+  it('renders rejected ruling with X icon', () => {
+    appendFeedEvent({
+      id: 'r05',
+      event_type: 'mod_ruling',
+      side: 'mod',
+      round: 1,
+      content: 'Source not credible',
+      metadata: { ruling: 'rejected' },
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const els = stream.querySelectorAll('.feed-evt-ruling');
+    const last = els[els.length - 1];
+    expect(last.innerHTML).toContain('REJECTED');
+  });
+});
+
+describe('SEAM #292 — renderPowerUpEvent: renders power-up and unpauses on shield', () => {
+  it('renders .feed-evt-powerup element', () => {
+    appendFeedEvent({
+      id: 'r06',
+      event_type: 'power_up',
+      side: 'a',
+      round: 1,
+      content: 'Shield activated',
+      metadata: { power_up_id: 'shield' },
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-powerup');
+    expect(el).not.toBeNull();
+    expect(el!.innerHTML).toContain('Shield activated');
+  });
+
+  it('renders reveal power-up icon', () => {
+    appendFeedEvent({
+      id: 'r07',
+      event_type: 'power_up',
+      side: 'b',
+      round: 1,
+      content: 'Reveal used',
+      metadata: { power_up_id: 'reveal' },
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const els = stream.querySelectorAll('.feed-evt-powerup');
+    const last = els[els.length - 1];
+    expect(last.innerHTML).toContain('Reveal used');
+  });
+});
+
+describe('SEAM #292 — renderDefaultEvent: unknown event_type renders as .feed-evt-system', () => {
+  it('creates a .feed-evt-system element for unrecognized event type', () => {
+    appendFeedEvent({
+      id: 'r08',
+      event_type: 'unknown_future_type' as never,
+      side: null,
+      round: 1,
+      content: 'System: something happened',
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    const el = stream.querySelector('.feed-evt-system');
+    expect(el).not.toBeNull();
+    expect(el!.textContent).toBe('System: something happened');
+  });
+});
+
+describe('SEAM #292 — applySentimentEvent: accumulates tip amount from metadata', () => {
+  it('accumulates metadata.amount for sentiment_tip side-b', () => {
+    appendFeedEvent({
+      id: 'r09',
+      event_type: 'sentiment_tip',
+      side: 'b',
+      round: 1,
+      content: '',
+      metadata: { amount: 5 },
+    });
+
+    const stream = document.getElementById('feed-stream')!;
+    expect(stream.children.length).toBe(0); // no DOM append
+    expect(pendingSentimentB()).toBe(5);
+  });
+
+  it('defaults to amount=1 for sentiment_vote (legacy)', () => {
+    appendFeedEvent({
+      id: 'r10',
+      event_type: 'sentiment_vote',
+      side: 'a',
+      round: 1,
+      content: '',
+    });
+
+    expect(pendingSentimentA()).toBe(1);
+  });
+});
+
+describe('ARCH — arena-feed-events-render.ts import boundaries (SEAM #292)', () => {
+  it('imports only from allowed modules', () => {
+    const allowed = new Set([
+      '../config.ts',
+      './arena-sounds.ts',
+      './arena-state.ts',
+      './arena-types-feed-room.ts',
+      './arena-types.ts',
+      './arena-feed-state.ts',
+      './arena-feed-ui.ts',
+      './arena-feed-machine-pause.ts',
+    ]);
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-feed-events-render.ts'),
+      'utf-8'
+    );
+    const paths = source.split('\n')
+      .filter(l => /from\s+['"]/.test(l))
+      .map(l => l.match(/from\s+['"]([^'"]+)['"]/)?.[1])
+      .filter((p): p is string => Boolean(p));
+    for (const path of paths) {
+      expect(allowed, `Unexpected import in arena-feed-events-render.ts: ${path}`).toContain(path);
+    }
+  });
+});

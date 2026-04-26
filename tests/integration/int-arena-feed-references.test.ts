@@ -943,3 +943,327 @@ describe('TC-240-7: ARCH — reference-arsenal.debate.ts uses safeRpc and does n
     expect(rawRpcCalls.length).toBe(0);
   });
 });
+
+// ============================================================
+// SEAM #446 — arena-feed-references → arena-feed-machine-pause
+// Focuses on: pauseFeed is called from showChallengeDropdown
+// when result.blocked === false. Verifies feedPaused state,
+// DOM mutations, auto-accept timer RPC chain (modView path),
+// and non-mod path behaviour.
+// ============================================================
+
+describe('TC-446-1: non-blocked challenge calls pauseFeed which sets feedPaused=true in arena-state', () => {
+  it('feedPaused becomes true after showChallengeDropdown click with blocked=false', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (2)</button>
+      <button id="feed-finish-turn">Finish</button>
+    `;
+
+    mockRpc.mockResolvedValue({
+      data: { blocked: false, challenges_remaining: 1, challenge_id: 'chid-446-1' },
+      error: null,
+    });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-446-1', claim: 'Pause trigger claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(2);
+
+    // modView: false — non-mod debater
+    set_currentDebate({ id: 'debate-446-1', role: 'a', opponentName: 'Opp', messages: [], modView: false });
+
+    const debate = { id: 'debate-446-1', role: 'a', opponentName: 'Opp', messages: [], modView: false };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    expect(stateMod.feedPaused).toBe(true);
+
+    // Cleanup
+    stateMod.set_feedPaused(false);
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-446-2: pauseFeed disables #feed-finish-turn DOM button', () => {
+  it('#feed-finish-turn is disabled after pauseFeed is called via non-blocked challenge', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (1)</button>
+      <button id="feed-finish-turn">Finish Turn</button>
+    `;
+
+    mockRpc.mockResolvedValue({
+      data: { blocked: false, challenges_remaining: 0, challenge_id: 'chid-446-2' },
+      error: null,
+    });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-446-2', claim: 'Finish-btn disable claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(1);
+    set_currentDebate({ id: 'debate-446-2', role: 'b', opponentName: 'Opp', messages: [], modView: false });
+
+    const debate = { id: 'debate-446-2', role: 'b', opponentName: 'Opp', messages: [], modView: false };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement;
+    expect(finishBtn.disabled).toBe(true);
+
+    // Cleanup
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    stateMod.set_feedPaused(false);
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-446-3: pauseFeed with modView=true fires insert_feed_event after 60s auto-accept countdown', () => {
+  it('calls insert_feed_event RPC with mod_ruling / upheld after FEED_CHALLENGE_RULING_SEC ticks', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (2)</button>
+      <button id="feed-finish-turn">Finish Turn</button>
+      <div id="feed-timer">60s</div>
+      <div id="feed-challenge-overlay"></div>
+    `;
+
+    // First call: file_reference_challenge (non-blocked)
+    // Second+ calls: insert_feed_event + rule_on_reference
+    mockRpc
+      .mockResolvedValueOnce({
+        data: { blocked: false, challenges_remaining: 1, challenge_id: 'chid-446-3' },
+        error: null,
+      })
+      .mockResolvedValue({ data: {}, error: null });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-446-3', claim: 'Auto-accept claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(2);
+    set_currentDebate({ id: 'debate-446-3', role: 'a', opponentName: 'Opp', messages: [], modView: true });
+
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    stateMod.set_activeChallengeRefId('oref-446-3');
+    stateMod.set_activeChallengeId('chid-446-3');
+
+    const debate = { id: 'debate-446-3', role: 'a', opponentName: 'Opp', messages: [], modView: true };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    // Advance past the challenge RPC resolution
+    await vi.advanceTimersByTimeAsync(100);
+
+    // Advance 60 full seconds to trigger auto-accept
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    // insert_feed_event should have been called with mod_ruling upheld
+    expect(mockRpc).toHaveBeenCalledWith(
+      'insert_feed_event',
+      expect.objectContaining({
+        p_debate_id: 'debate-446-3',
+        p_event_type: 'mod_ruling',
+        p_side: 'mod',
+        p_metadata: { ruling: 'upheld' },
+      }),
+    );
+
+    // Cleanup
+    stateMod.set_feedPaused(false);
+    stateMod.set_challengeRulingTimer(null);
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-446-4: pauseFeed auto-accept fires rule_on_reference with stored challenge_id', () => {
+  it('calls rule_on_reference with activeChallengeId after countdown completes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (1)</button>
+      <button id="feed-finish-turn">Finish Turn</button>
+      <div id="feed-timer">60s</div>
+    `;
+
+    mockRpc
+      .mockResolvedValueOnce({
+        data: { blocked: false, challenges_remaining: 0, challenge_id: 'chid-446-4' },
+        error: null,
+      })
+      .mockResolvedValue({ data: {}, error: null });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-446-4', claim: 'Rule-on-ref claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(1);
+    set_currentDebate({ id: 'debate-446-4', role: 'a', opponentName: 'Opp', messages: [], modView: true });
+
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    stateMod.set_activeChallengeId('chid-446-4');
+    stateMod.set_activeChallengeRefId('oref-446-4');
+
+    const debate = { id: 'debate-446-4', role: 'a', opponentName: 'Opp', messages: [], modView: true };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'rule_on_reference',
+      expect.objectContaining({
+        p_challenge_id: 'chid-446-4',
+        p_ruling: 'upheld',
+      }),
+    );
+
+    // Cleanup
+    stateMod.set_feedPaused(false);
+    stateMod.set_challengeRulingTimer(null);
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-446-5: pauseFeed with modView=false does NOT render #feed-challenge-overlay', () => {
+  it('no overlay element appended to DOM when debate.modView is false', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (1)</button>
+      <button id="feed-finish-turn">Finish Turn</button>
+    `;
+
+    mockRpc.mockResolvedValue({
+      data: { blocked: false, challenges_remaining: 0, challenge_id: 'chid-446-5' },
+      error: null,
+    });
+
+    set_opponentCitedRefs([
+      { reference_id: 'oref-446-5', claim: 'No overlay claim', domain: 'ex.com', already_challenged: false },
+    ]);
+    set_challengesRemaining(1);
+    set_currentDebate({ id: 'debate-446-5', role: 'b', opponentName: 'Opp', messages: [], modView: false });
+
+    const debate = { id: 'debate-446-5', role: 'b', opponentName: 'Opp', messages: [], modView: false };
+    showChallengeDropdown(debate);
+
+    const dropdown = document.getElementById('feed-ref-dropdown')!;
+    const item = dropdown.querySelector('.feed-dropdown-item') as HTMLElement;
+    expect(item).not.toBeNull();
+    item.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    // No challenge overlay for non-mod view
+    expect(document.getElementById('feed-challenge-overlay')).toBeNull();
+
+    // Cleanup
+    const stateMod = await import('../../src/arena/arena-state.ts');
+    stateMod.set_feedPaused(false);
+    vi.useRealTimers();
+  });
+});
+
+describe('TC-446-6: ARCH — arena-feed-machine-pause.ts imports only from allowed modules', () => {
+  it('contains no wall imports', () => {
+    // Match exact module names (as they would appear as import path segments).
+    // Note: 'arena-types-feed-room' is a types-only helper and is permitted.
+    // We exclude it from wall matching by checking the FULL path excludes these exact strings
+    // as standalone module references (not as sub-strings of allowed types files).
+    const wallPatterns = [
+      /webrtc/,
+      /arena-feed-room(?!-)/,   // arena-feed-room but NOT arena-feed-room-* (types files are ok)
+      /intro-music/,
+      /cards\.ts/,
+      /deepgram/,
+      /realtime-client/,
+      /voicememo/,
+      /arena-css/,
+      /arena-room-live-audio/,
+      /arena-sounds(?!-core|-types)/,  // match arena-sounds but not arena-sounds-core etc
+      /arena-sounds-core/,
+      /peermetrics/,
+    ];
+    const source = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-feed-machine-pause.ts'),
+      'utf-8'
+    );
+    const importPaths = source.split('\n')
+      .filter(l => /from\s+['"]/.test(l))
+      .map(l => l.match(/from\s+['"]([^'"]+)['"]/)?.[1])
+      .filter((p): p is string => Boolean(p));
+    for (const pattern of wallPatterns) {
+      for (const path of importPaths) {
+        expect(path, `arena-feed-machine-pause.ts imports wall module matching /${pattern.source}/: ${path}`).not.toMatch(pattern);
+      }
+    }
+  });
+});
+
+describe('TC-446-7: pauseFeed is idempotent — calling it twice does not double-pause', () => {
+  it('feedPaused stays true and finish-turn stays disabled on second pauseFeed call', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="feed-ref-dropdown" style="display:none"></div>
+      <button id="feed-challenge-btn">⚔️ CHALLENGE (2)</button>
+      <button id="feed-finish-turn">Finish Turn</button>
+    `;
+
+    const pauseMod = await import('../../src/arena/arena-feed-machine-pause.ts');
+    const stateMod = await import('../../src/arena/arena-state.ts');
+
+    // Ensure clean state
+    stateMod.set_feedPaused(false);
+
+    const debate = { id: 'debate-446-7', role: 'a', opponentName: 'Opp', messages: [], modView: false };
+
+    // First pause
+    pauseMod.pauseFeed(debate as Parameters<typeof pauseMod.pauseFeed>[0]);
+    expect(stateMod.feedPaused).toBe(true);
+
+    const finishBtn = document.getElementById('feed-finish-turn') as HTMLButtonElement;
+    expect(finishBtn.disabled).toBe(true);
+
+    // Second pause should be no-op (early return if already paused)
+    finishBtn.disabled = false; // manually re-enable to detect if second call fires
+    pauseMod.pauseFeed(debate as Parameters<typeof pauseMod.pauseFeed>[0]);
+
+    // The second call should have returned early — button should NOT have been re-disabled
+    // (because feedPaused was already true, the guard `if (feedPaused) return` fires)
+    expect(finishBtn.disabled).toBe(false);
+
+    // Cleanup
+    stateMod.set_feedPaused(false);
+    vi.useRealTimers();
+  });
+});

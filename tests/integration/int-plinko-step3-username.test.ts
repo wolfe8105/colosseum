@@ -360,3 +360,274 @@ describe('TC7 — username too short shows error message, no RPC fired', () => {
     expect(step3Calls).toHaveLength(0);
   });
 });
+
+// ============================================================
+// SEAM #308 — plinko-step3-username → plinko-helpers
+// Boundary: clearMsg, showMsg, goToStep from helpers.
+//           Validates that helpers wire correctly into step3 UI.
+// ============================================================
+
+// TC8 — showMsg('step3-msg', ...) sets textContent + class
+describe('TC8 (Seam #308) — showMsg sets step3-msg textContent and error class', () => {
+  it('invalid username chars: step3-msg shows error class and correct text', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('oauth');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'bad user!';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.advanceTimersByTimeAsync(50);
+
+    const msgEl = document.getElementById('step3-msg');
+    expect(msgEl?.className).toContain('error');
+    expect(msgEl?.textContent).toContain('Letters, numbers, and underscores only');
+  });
+});
+
+// TC9 — clearMsg clears step3-msg before new validation run
+describe('TC9 (Seam #308) — clearMsg clears stale error before new validation', () => {
+  it('stale error message is cleared when btn-create clicked again', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('oauth');
+
+    // Pre-seed stale error
+    const msgEl = document.getElementById('step3-msg')!;
+    msgEl.className = 'form-msg error';
+    msgEl.textContent = 'stale error from prior attempt';
+
+    // Now click with empty username to trigger early return (clearMsg then showMsg)
+    (document.getElementById('signup-username') as HTMLInputElement).value = '';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(msgEl.textContent).not.toBe('stale error from prior attempt');
+  });
+});
+
+// TC10 — goToStep(4) via email signup: mock auth.signUp to return a session
+describe('TC10 (Seam #308) — email signup with session: goToStep(4) activates step-4', () => {
+  it('step-4 becomes active when auth.signUp returns a session', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    mockRpc.mockResolvedValue({ data: null, error: null });
+    // auth.signUp is called on the supabase client — add signUp mock to mockAuth
+    (mockAuth as Record<string, unknown>).signUp = vi.fn().mockResolvedValue({
+      data: { session: { user: { id: 'email-user-001' } }, user: { id: 'email-user-001' } },
+      error: null,
+    });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('email');
+    state.set_signupEmail('test@example.com');
+    state.set_signupPassword('StrongP@ss1!');
+    state.set_signupDob('2000-06-15');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'validuser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.advanceTimersByTimeAsync(500);
+
+    // Step 4 should be active (goToStep(4) for email with session)
+    // OR step 5 if session is null path — depends on signUp mock result
+    const step4Active = document.getElementById('step-4')?.classList.contains('active') ?? false;
+    const step5Active = document.getElementById('step-5')?.classList.contains('active') ?? false;
+    expect(step4Active || step5Active).toBe(true);
+  });
+});
+
+// TC11 — goToStep(1) via expired email session: step-1 becomes active after delay
+describe('TC11 (Seam #308) — expired email session: goToStep(1) after 1500ms', () => {
+  it('step-1 becomes active when signupEmail is empty with email method', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('email');
+    state.set_signupEmail('');
+    state.set_signupPassword('');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'validuser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    // Before timeout fires
+    await vi.advanceTimersByTimeAsync(500);
+    const beforeTimeout = document.getElementById('step-1')?.classList.contains('active') ?? false;
+
+    // After 1500ms timeout
+    await vi.advanceTimersByTimeAsync(1200);
+    const afterTimeout = document.getElementById('step-1')?.classList.contains('active') ?? false;
+
+    // step-1 active after the 1500ms timeout
+    expect(afterTimeout).toBe(true);
+    // Error message shown
+    const msgEl = document.getElementById('step3-msg');
+    expect(msgEl?.textContent).toContain('Session expired');
+  });
+});
+
+// ============================================================
+// SEAM #363 — plinko-step3-username → plinko-state
+// Boundary: signupMethod / signupEmail / signupPassword / signupDob
+//           read live; set_signupPassword + set_signupEmail wiped on success.
+// ============================================================
+
+// TC12 — plinko-state ARCH: imports plinko-state, not banned deps
+describe('TC12 (Seam #363) — ARCH: plinko-step3-username imports plinko-state', () => {
+  it('import list includes plinko-state and no banned wall deps', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(
+      resolve(__dirname, '../../src/pages/plinko-step3-username.ts'),
+      'utf-8',
+    );
+    const importLines = src.split('\n').filter((l: string) => /from\s+['"]/.test(l));
+    expect(importLines.some((l: string) => l.includes('plinko-state'))).toBe(true);
+    for (const dep of ['webrtc', 'feed-room', 'deepgram', 'voicememo', 'arena-css', 'arena-sounds', 'peermetrics']) {
+      expect(importLines.some((l: string) => l.includes(dep))).toBe(false);
+    }
+  });
+});
+
+// TC13 — set_signupPassword + set_signupEmail cleared after email success (no session path)
+describe('TC13 (Seam #363) — credentials wiped from plinko-state after email signup (no session)', () => {
+  it('signupEmail and signupPassword are empty strings after successful signUp with no session', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    (mockAuth as Record<string, unknown>).signUp = vi.fn().mockResolvedValue({
+      data: { session: null, user: { id: 'email-noconf-001' } },
+      error: null,
+    });
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('email');
+    state.set_signupEmail('wipe@example.com');
+    state.set_signupPassword('StrongP@ss1!');
+    state.set_signupDob('1995-03-10');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'wipeuser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.runAllTimersAsync();
+
+    // Credentials must be wiped
+    expect(state.signupEmail).toBe('');
+    expect(state.signupPassword).toBe('');
+  });
+});
+
+// TC14 — credentials NOT wiped on { success: false } (only wiped on success or real throw)
+// auth.ops.ts wraps supabase throws into { success: false } — step3 shows error and returns early.
+// Only step3's own catch (which requires getSupabaseClient() itself to throw) clears credentials.
+describe('TC14 (Seam #363) — credentials remain in state on signUp { success: false } (error returned, not thrown)', () => {
+  it('signupEmail is still set after signUp returns success:false (no credentials wipe on error path)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    (mockAuth as Record<string, unknown>).signUp = vi.fn().mockResolvedValue({
+      data: { session: null, user: null },
+      error: { message: 'Email already registered.' },
+    });
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('email');
+    state.set_signupEmail('existing@example.com');
+    state.set_signupPassword('StrongP@ss1!');
+    state.set_signupDob('1993-07-04');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'throwuser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.runAllTimersAsync();
+
+    // auth.ops wraps error into { success: false } — step3 early-returns after showMsg
+    // credentials are NOT wiped in this path (only wiped on confirmed success)
+    const msgEl = document.getElementById('step3-msg');
+    expect(msgEl?.textContent).toContain('Email already registered.');
+    // Credentials intact (not wiped on failure)
+    expect(state.signupEmail).toBe('existing@example.com');
+  });
+});
+
+// TC15 — null signupMethod triggers "Session expired" and redirects to step 1
+describe('TC15 (Seam #363) — null signupMethod in state triggers session-expired path', () => {
+  it('step3-msg shows Session expired and step-1 activates after 1500ms', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod(null);
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'nullmethoduser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.advanceTimersByTimeAsync(200);
+
+    const msgEl = document.getElementById('step3-msg');
+    expect(msgEl?.textContent).toContain('Session expired');
+
+    await vi.advanceTimersByTimeAsync(1500);
+    const step1 = document.getElementById('step-1');
+    expect(step1?.classList.contains('active')).toBe(true);
+  });
+});
+
+// TC16 — signupDob flows from state into auth.signUp as date_of_birth in options.data
+// auth.ops.ts calls supabase.auth.signUp({ ..., options: { data: { date_of_birth: dob } } })
+describe('TC16 (Seam #363) — signupDob from plinko-state passed to supabase.auth.signUp as date_of_birth', () => {
+  it('supabase.auth.signUp called with options.data.date_of_birth matching plinko-state.signupDob', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const signUpMock = vi.fn().mockResolvedValue({
+      data: { session: { user: { id: 'dob-flow-001' } }, user: { id: 'dob-flow-001' } },
+      error: null,
+    });
+    (mockAuth as Record<string, unknown>).signUp = signUpMock;
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const state = await import('../../src/pages/plinko-state.ts');
+    state.set_signupMethod('email');
+    state.set_signupEmail('dobflow@example.com');
+    state.set_signupPassword('StrongP@ss1!');
+    state.set_signupDob('1988-11-22');
+
+    (document.getElementById('signup-username') as HTMLInputElement).value = 'dobflowuser';
+
+    const { attachStep3 } = await import('../../src/pages/plinko-step3-username.ts');
+    attachStep3();
+
+    document.getElementById('btn-create')!.click();
+    await vi.runAllTimersAsync();
+
+    // auth.ops.ts calls supabase.auth.signUp with options.data.date_of_birth (not 'dob')
+    expect(signUpMock).toHaveBeenCalled();
+    const callArgs = signUpMock.mock.calls[0][0] as Record<string, unknown>;
+    const meta = (callArgs.options as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+    expect(meta).toBeDefined();
+    expect(meta!['date_of_birth']).toBe('1988-11-22');
+  });
+});

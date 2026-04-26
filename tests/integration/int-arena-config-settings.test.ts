@@ -316,3 +316,292 @@ describe('ARCH — seam #241', () => {
     expect(importLines.some(l => l.includes('arena-types-results'))).toBe(true);
   });
 });
+
+// ============================================================
+// SEAM #410 — arena-config-settings → arena-config-mode-select
+// showRulesetPicker calls showModeSelect() after ruleset card click
+// ============================================================
+
+// TC-410-1: clicking "amplified" ruleset card calls showModeSelect
+describe('TC-410-1 — amplified ruleset card click calls showModeSelect', () => {
+  it('clicking [data-ruleset="amplified"] invokes showModeSelect', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowModeSelect = vi.fn();
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const amplifiedCard = document.querySelector('.arena-rank-card[data-ruleset="amplified"]') as HTMLElement | null;
+    expect(amplifiedCard).not.toBeNull();
+    amplifiedCard?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(mockShowModeSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+// TC-410-2: clicking "unplugged" ruleset card also calls showModeSelect
+describe('TC-410-2 — unplugged ruleset card click calls showModeSelect', () => {
+  it('clicking [data-ruleset="unplugged"] invokes showModeSelect', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowModeSelect = vi.fn();
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const unpluggedCard = document.querySelector('.arena-rank-card[data-ruleset="unplugged"]') as HTMLElement | null;
+    expect(unpluggedCard).not.toBeNull();
+    unpluggedCard?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(mockShowModeSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+// TC-410-3: cancel button does NOT call showModeSelect
+describe('TC-410-3 — cancel button does not trigger showModeSelect', () => {
+  it('clicking #arena-ruleset-cancel does not invoke showModeSelect', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowModeSelect = vi.fn();
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const histBack = vi.spyOn(history, 'back').mockImplementation(() => {});
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const cancelBtn = document.getElementById('arena-ruleset-cancel') as HTMLButtonElement | null;
+    expect(cancelBtn).not.toBeNull();
+    cancelBtn?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(mockShowModeSelect).not.toHaveBeenCalled();
+    histBack.mockRestore();
+  });
+});
+
+// TC-410-4: ruleset overlay is removed from DOM before showModeSelect is called
+describe('TC-410-4 — ruleset overlay removed from DOM when showModeSelect fires', () => {
+  it('overlay is absent when showModeSelect is invoked', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    let overlayPresentOnCall = true;
+    const mockShowModeSelect = vi.fn(() => {
+      overlayPresentOnCall = !!document.getElementById('arena-ruleset-overlay');
+    });
+
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const amplifiedCard = document.querySelector('.arena-rank-card[data-ruleset="amplified"]') as HTMLElement | null;
+    amplifiedCard?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(mockShowModeSelect).toHaveBeenCalledTimes(1);
+    expect(overlayPresentOnCall).toBe(false);
+  });
+});
+
+// TC-410-5: set_selectedRuleset is called before showModeSelect
+describe('TC-410-5 — set_selectedRuleset called before showModeSelect', () => {
+  it('set_selectedRuleset("amplified") is called before showModeSelect fires', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const callOrder: string[] = [];
+    const mockSetRuleset = vi.fn(() => { callOrder.push('set_selectedRuleset'); });
+    const mockShowModeSelect = vi.fn(() => { callOrder.push('showModeSelect'); });
+
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: mockSetRuleset,
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const amplifiedCard = document.querySelector('.arena-rank-card[data-ruleset="amplified"]') as HTMLElement | null;
+    amplifiedCard?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(callOrder).toEqual(['set_selectedRuleset', 'showModeSelect']);
+  });
+});
+
+// TC-410-6: backdrop click does not call showModeSelect
+describe('TC-410-6 — backdrop click does not call showModeSelect', () => {
+  it('clicking #arena-ruleset-backdrop removes overlay and does not invoke showModeSelect', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowModeSelect = vi.fn();
+    vi.doMock('../../src/auth.ts', () => ({
+      safeRpc: mockRpc,
+      getCurrentUser: vi.fn(() => null),
+      getCurrentProfile: vi.fn(() => null),
+      getSupabaseClient: vi.fn(() => null),
+    }));
+    vi.doMock('../../src/config.ts', () => ({
+      isAnyPlaceholder: true,
+      escapeHTML: (s: string) => s,
+      friendlyError: vi.fn(),
+      showToast: vi.fn(),
+      FEATURES: { liveDebates: false },
+      DEBATE: { defaultRounds: 3 },
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      selectedRanked: false,
+      selectedRuleset: 'amplified',
+      set_selectedRanked: vi.fn(),
+      set_selectedRuleset: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-config-mode-select.ts', () => ({
+      showModeSelect: mockShowModeSelect,
+    }));
+
+    const histBack = vi.spyOn(history, 'back').mockImplementation(() => {});
+    const { showRulesetPicker } = await import('../../src/arena/arena-config-settings.ts');
+    showRulesetPicker();
+
+    const backdrop = document.getElementById('arena-ruleset-backdrop') as HTMLElement | null;
+    expect(backdrop).not.toBeNull();
+    backdrop?.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTicks();
+
+    expect(document.getElementById('arena-ruleset-overlay')).toBeNull();
+    expect(mockShowModeSelect).not.toHaveBeenCalled();
+    histBack.mockRestore();
+  });
+});
+
+// ARCH: seam #410 — arena-config-settings imports arena-config-mode-select
+describe('ARCH — seam #410', () => {
+  it('src/arena/arena-config-settings.ts imports showModeSelect from arena-config-mode-select', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-config-settings.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-config-mode-select'))).toBe(true);
+  });
+});

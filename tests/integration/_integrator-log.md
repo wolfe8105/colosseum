@@ -1,6 +1,8 @@
 # Integrator Log
 
 ## Completed
+- Seam #339 — `async.ts` → `async.render` — 6 TCs — `int-async.test.ts`
+- Seam #340 — `async.ts` → `async.fetch` — 5 TCs — `int-async.test.ts`
 - Seam #001 (canonical) — `arena-feed-ui` → `arena-state` + `arena-feed-state` + `arena-core.utils` — 20 TCs — `int-arena-feed-ui.test.ts`
 - Seam #002 (canonical) — `arena-room-live-messages` → `arena-state` + `auth` + `config` — 12 TCs — `int-arena-room-live-messages.test.ts`
 - Seam #003 (canonical) — `arena-state` → `powerups` (type binding + overlays runtime) — 13 TCs — `int-arena-state-powerups.test.ts`
@@ -310,3 +312,389 @@ Remaining: 338
 
 ## Remaining
 See `_integrator-seams.md` starting at rank 273.
+
+## Batch 22 (seams #273–#282)
+Passed: #273 (16), #274 (7), #275 (7), #276 (24), #277 (8), #278 (7 new, 32 total), #279+#280 (11), #281 (12), #282 (7 new, 21 total)
+Walled: none
+Failed: none
+
+## Totals
+Done: 202 / 623
+Walled: 93
+Failed: 0
+Remaining: 328
+
+## Remaining
+See `_integrator-seams.md` starting at rank 283.
+
+## Batch 23 (seams #283–#292)
+Passed: #284 (9 new, 17 total), #285 (8 new, 57 total), #286 (8), #287 (8), #292 (20 new, 31 total)
+Walled: #283 (home.ts imports cards.ts), #288–#291 (arena-room-end.ts imports webrtc.ts)
+Failed: none
+
+## Totals
+Done: 207 / 623
+Walled: 98
+Failed: 0
+Remaining: 318
+
+## Remaining
+See `_integrator-seams.md` starting at rank 293.
+
+## Batch 24 (seams #293–#302)
+Passed: #293 (8), #294 (10), #295 (8), #296 (9), #297 (9), #298 (9), #299 (8), #302 (8)
+Walled: #300 (arena-feed-disconnect imports arena-deepgram), #301 (arena-feed-disconnect-mod imports arena-deepgram)
+Failed: none
+
+## Totals
+Done: 215 / 623
+Walled: 100
+Failed: 0
+Remaining: 308
+
+## Remaining
+See `_integrator-seams.md` starting at rank 303.
+
+## Batch 25 (seams #303–#312)
+Passed: #303 (10), #304 (9), #305 (8), #306 (9), #307 (7), #308 (4 new, 12 total), #309 (6), #310 (6), #311 (6), #312 (14)
+Walled: none
+Failed: none
+
+## Totals
+Done: 225 / 623
+Walled: 100
+Failed: 0
+Remaining: 298
+
+## Remaining
+See `_integrator-seams.md` starting at rank 313.
+
+## Batch 26 (seams #313–#322)
+Passed: #313 (9), #314 (9), #315 (10), #316 (6 new, 14 total), #317 (6 new, 17 total), #320 (5 new, 13 total), #321 (5 new, 12 total)
+Walled: #318 (arena-match-found imports arena-sounds), #319 (same), #322 (same)
+Failed: none
+
+## Totals
+Done: 232 / 623
+Walled: 103
+Failed: 0
+Remaining: 288
+
+## Remaining
+See `_integrator-seams.md` starting at rank 323.
+
+## Batch 27 (seams #323–#332)
+Passed: #323 (7 new, 29 total), #330 (7 new, 20 total), #331 (12)
+Walled: #324 (deepgram), #325–#327 (arena-feed-machine-ads imports arena-sounds), #328 (arena-feed-events-render imports arena-sounds), #329 (arena-feed-disconnect-debater → arena-room-end → webrtc), #332 (arena.ts re-exports voicememo)
+Failed: none
+
+## Totals
+Done: 235 / 623
+Walled: 110
+Failed: 0
+Remaining: 278
+
+## Remaining
+See `_integrator-seams.md` starting at rank 333.
+
+## Batch 28 (seams #333–#342)
+Passed: #333 (6 new, 20 total), #334 (6 new, 20 total), #335 (5), #336 (5), #337 (7), #338 (11), #339 (6), #340 (5), #341 (5), #342 (5)
+Walled: none
+Failed: none
+
+## Totals
+Done: 245 / 623
+Walled: 110
+Failed: 0
+Remaining: 268
+
+## Remaining
+See `_integrator-seams.md` starting at rank 343.
+
+## Batch 29 (seams #343–#352)
+Passed: #343 (5 new, 13 total), #344 (6 new, 13 total), #345 (6 new, 21 total), #346 (7 new, 20 total), #347 (8), #348 (7), #349 (6), #350 (6), #351 (7), #352 (10)
+Walled: none
+Failed: none
+
+## Totals
+Done: 255 / 623
+Walled: 110
+Failed: 0
+Remaining: 258
+
+## Remaining
+See `_integrator-seams.md` starting at rank 353.
+
+## Batch 30 (seams #353–#362)
+Passed: #353 (4 new, 12 total), #354 (5 new, 12 total), #355 (5 new, 13 total), #356 (5 new, 13 total), #357 (5), #358 (6), #362 (5 new, 13 total)
+Walled: #359 (realtime-client + feed-room), #360 (deepgram + feed-room), #361 (deepgram + feed-room)
+Failed: none
+
+## Totals
+Done: 262 / 623
+Walled: 113
+Failed: 0
+Remaining: 248
+
+## Remaining
+See `_integrator-seams.md` starting at rank 363.
+
+## Batch 31 (seams #363–#372)
+Passed: #363 (5 new), #364 (5 new), #365 (5 new), #366 (5 new), #367 (6), #368 (6 new, 15 total), #370 (8 new, 17 total), #371 (7 new), #372 (8 new)
+Walled: #369 (arena-room-render.ts does not exist in repo)
+Failed: none
+
+## Totals
+Done: 271 / 623
+Walled: 114
+Failed: 0
+Remaining: 238
+
+## Remaining
+See `_integrator-seams.md` starting at rank 373.
+
+## Batch 32 (seams #373–#382)
+Passed: #373 (7 new, 25 total), #378 (9), #379 (7), #380 (10), #381 (7), #382 (13)
+Walled: #374 (arena-feed-wiring-debater imports deepgram), #375 (arena-feed-machine-turns imports webrtc+deepgram), #376 (arena-core imports webrtc+voicememo), #377 (same)
+Failed: none
+
+## Totals
+Done: 277 / 623
+Walled: 118
+Failed: 0
+Remaining: 228
+
+## Remaining
+See `_integrator-seams.md` starting at rank 383.
+
+## Batch 33 (seams #383–#393)
+Passed: #384 (7 new, 24 total), #385 (7), #386 (7 new, 64 total), #389 (10 existing), #390 (16), #391 (7 new, 18 total), #392 (7 new), #393 (6 new, 25 total int-async)
+Walled: #383 (arena-match-found imports arena-sounds), #387 (arena.ts contains voicememo re-export), #388 (arena-room-enter dynamically imports arena-sounds)
+Failed: none
+
+## Totals
+Done: 285 / 623
+Walled: 121
+Failed: 0
+Remaining: 217
+
+## Remaining
+See `_integrator-seams.md` starting at rank 394.
+
+## Batch 34 (seams #394–#404)
+Passed: #394 (7 new, 27 total), #395 (7), #396 (9), #397 (7 new, 14 total), #398 (6 new, 17 total), #399 (8), #400 (7), #401 (6, 15 total panel), #402 (7, 10 total), #403 (5 new), #404 (7 new, 18 total)
+Walled: none
+Failed: none
+
+## Totals
+Done: 296 / 623
+Walled: 121
+Failed: 0
+Remaining: 206
+
+## Remaining
+See `_integrator-seams.md` starting at rank 405.
+
+## Batch 35 (seams #405–#416)
+Passed: #405 (7 new, 26 total), #406 (7 new, 14 total), #407 (8), #408 (8), #409 (7 new, 21 total), #410 (6 new, 15 total), #411 (7 new, 17 total), #412 (8), #413 (9), #414 (6), #415 (7), #416 (7 new, 17 total)
+Walled: none
+Failed: none
+
+## Totals
+Done: 308 / 623
+Walled: 121
+Failed: 0
+Remaining: 194
+
+## Remaining
+See `_integrator-seams.md` starting at rank 417.
+
+## Batch 36 (seams #417–#428)
+Passed: #417 (7 new, 15 total), #418 (7), #419 (7, 25 total), #420 (5 new, 20 total), #421 (8 new, 17 total), #422 (6 new, 28 total), #423 (6 new, 13 total), #424 (9), #425 (7 new, 56 total), #428 (7 new, 31 total)
+Walled: #426 (arena-room-enter imports feed-room+arena-sounds), #427 (arena-feed-wiring-debater imports deepgram)
+Failed: none
+
+## Totals
+Done: 318 / 623
+Walled: 123
+Failed: 0
+Remaining: 182
+
+## Remaining
+See `_integrator-seams.md` starting at rank 429.
+
+## Batch 37 (seams #429–#440)
+Passed: #429 (6 new, 84 total), #430 (7 new, 84 total), #431 (7 new, 84 total), #432 (7 new, 19 total), #433 (7 new, 19 total), #434 (4), #435 (5, 12 total), #436 (5 new, 21 total), #437 (6 new, 21 total), #438 (7 new, 21 total), #439 (7 new, 28 total), #440 (13)
+Walled: none
+Failed: none
+
+## Totals
+Done: 330 / 623
+Walled: 123
+Failed: 0
+Remaining: 170
+
+## Batch 38 (seams #441–#450)
+Passed: #441 (8 new, 14 total), #442 (7 new, 18 total), #443 (7 new, 25 total), #444 (7 new, 17 total), #445 (7 new, 15 total), #446 (7 new, 38 total), #449 (7 new, 25 total), #450 (7)
+Walled: #447 (arena-feed-realtime imports arena-feed-room), #448 (arena-feed-disconnect imports arena-deepgram)
+Failed: none
+
+## Totals
+Done: 338 / 623
+Walled: 125
+Failed: 0
+Remaining: 160
+
+## Batch 39 (seams #451–#460)
+Passed: #451 (7), #452 (7 new, 14 total), #453 (8), #454 (7 new, 27 total), #455 (7 new, 35 total), #456 (14), #457 (12), #458 (8), #459 (9), #460 (8)
+Walled: none
+Failed: none
+
+## Totals
+Done: 348 / 623
+Walled: 125
+Failed: 0
+Remaining: 150
+
+## Batch 40 (seams #461–#470)
+Passed: #461 (5 new, 14 total), #463 (11), #464 (7 new), #465 (7 new, 28 total), #467 (7 new, 63 total), #468 (6 new, 32 total), #469 (7 new, 21 total), #470 (7 new, 21 total)
+Walled: #462 (dm.render.ts does not exist in repo), #466 (arena-room-render imports arena-room-live-audio)
+Failed: none
+
+## Totals
+Done: 356 / 623
+Walled: 127
+Failed: 0
+Remaining: 140
+
+## Batch 41 (seams #471–#480)
+Passed: #471 (11 new, 18 total), #472 (8 new, 15 total), #473 (5 new, 18 total), #476 (8 new, 28 total), #477 (10), #478 (10), #479 (7), #480 (7 new, 23 total)
+Walled: #474 (arena-core imports webrtc + voicememo), #475 (same)
+Failed: none
+
+## Totals
+Done: 364 / 623
+Walled: 129
+Failed: 0
+Remaining: 130
+
+## Batch 42 (seams #481–#490)
+Passed: #485 (16 new, 50 total), #486 (22 new, 33 total), #487 (7 new, 26 total), #488 (7 new, 18 total), #489 (13), #490 (7 new, 21 total)
+Walled: #481 (imports feed-room + cards.ts), #482 (arena.ts imports voicememo), #483 (same), #484 (same)
+Failed: none
+
+## Totals
+Done: 370 / 623
+Walled: 133
+Failed: 0
+Remaining: 120
+
+## Batch 43 (seams #491–#500)
+Passed: #491 (8 new, 29 total), #492 (7 new, 23 total), #493 (7), #494 (8), #496 (8 new, 33 total), #497 (6 new, 13 total), #498 (10), #499 (14), #500 (7 new, 21 total)
+Walled: #495 (arena-feed-disconnect.ts does not exist in repo)
+Failed: none
+
+## Totals
+Done: 379 / 623
+Walled: 134
+Failed: 0
+Remaining: 110
+
+## Batch 44 (seams #501–#510)
+Passed: #501 (8 new, 39 total), #502 (8 new, 24 total), #503 (7 new, 31 total), #504 (6 new, 21 total), #505 (7 new, 39 total), #506 (7 new, 32 total), #507 (7 new, 51 total), #508 (7 new, 43 total), #510 (7 new, 22 total)
+Walled: #509 (home.invite-sheet.ts does not exist in repo)
+Failed: none
+
+## Totals
+Done: 388 / 623
+Walled: 135
+Failed: 0
+Remaining: 100
+
+## Remaining
+See `_integrator-seams.md` starting at rank 511.
+
+## Batch 45 (seams #511–#520)
+Passed: #511 (29, new file), #512 (10, new file), #513 (8 new, 31 total), #514 (6 new, 23 total), #515 (8 new, 17 total), #516 (12, new file), #517 (6 new, 20 total), #518 (10, new file), #519 (10 appended)
+Walled: #520 (arena-room-render.ts does not exist in repo)
+Failed: none
+
+## Totals
+Done: 397 / 623
+Walled: 136
+Failed: 0
+Remaining: 90
+
+## Remaining
+See `_integrator-seams.md` starting at rank 521.
+
+## Batch 46 (seams #521–#530)
+Passed: #522 (10 new, 26 total), #523 (14 new, 76 total), #524 (8 new, 84 total), #525 (7 new, 40 total), #526 (7 new, 29 total), #527 (7 new, 27 total), #528 (8 new, 43 total), #529 (6 new)
+Walled: #521 (imports arena-room-live-audio), #530 (imports arena-deepgram)
+Failed: none
+
+## Totals
+Done: 405 / 623
+Walled: 138
+Failed: 0
+Remaining: 80
+
+## Remaining
+See `_integrator-seams.md` starting at rank 531.
+
+## Batch 47 (seams #531–#540)
+Passed: #533 (21), #534 (11), #535 (11), #536 (10 new), #537 (8 new, 15 total), #538 (7 new, 39 total), #539 (7 new, 31 total), #540 (7 new, 38 total)
+Walled: #531 (imports arena-sounds), #532 (imports webrtc, arena-css, voicememo, feed-room)
+Failed: none
+
+## Totals
+Done: 413 / 623
+Walled: 140
+Failed: 0
+Remaining: 70
+
+## Remaining
+See `_integrator-seams.md` starting at rank 541.
+
+## Batch 48 (seams #541–#550)
+Passed: #541 (7 new, 98 total), #543 (7 new, 91 total), #544 (7 new, 47 total), #545 (8 new, 55 total), #547 (7 new, 18 total), #548 (7 new, 75 total), #549 (7 new, 59 total), #550 (7 new, 67 total)
+Walled: #542 (arena.ts re-exports voicememo), #546 (imports arena-sounds)
+Failed: none
+
+## Totals
+Done: 421 / 623
+Walled: 142
+Failed: 0
+Remaining: 60
+
+## Remaining
+See `_integrator-seams.md` starting at rank 551.
+
+## Batch 49 (seams #551–#559, #560 skip)
+Passed: #551 (7 new, 82 total), #552 (10), #553 (9), #554 (7 new, 36 total), #555 (7 new, 21 total), #556 (7 new, 17 total), #557 (7), #558 (7 new, 19 total), #559 (7 new, 22 total)
+Walled: none
+Failed: none
+Note: #560 worker tested wrong seam (modifiers-catalog vs home.arsenal-shop-filters) — left pending
+
+## Totals
+Done: 430 / 623
+Walled: 142
+Failed: 0
+Remaining: 51
+
+## Remaining
+See `_integrator-seams.md` starting at rank 560.
+
+## Batch 50 (seams #560–#569)
+Passed: #560 (7 new, 29 total), #561 (7 new, 39 total), #562 (7 new, 46 total), #563 (7), #564 (7), #565 (7 new, 8 total), #567 (7 new, 91 total), #568 (7 new, 98 total), #569 (7 new, 20 total)
+Walled: #566 (arena-room-render.ts does not exist)
+Failed: none
+
+## Totals
+Done: 439 / 623
+Walled: 143
+Failed: 0
+Remaining: 41
+
+## Remaining
+See `_integrator-seams.md` starting at rank 570.

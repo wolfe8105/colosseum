@@ -1,6 +1,9 @@
 /**
  * Integration tests — seam #186
  * src/arena/arena-mod-refs-ai.ts → arena-room-live-messages
+ *
+ * Integration tests — seam #409
+ * src/arena/arena-mod-refs-ai.ts → arena-room-ai-response (getUserJwt)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
@@ -380,5 +383,192 @@ describe('requestAIModRuling — debateContext slicing', () => {
 
     expect(capturedBody).not.toBeNull();
     expect((capturedBody as Record<string, unknown>).debateContext).toBeNull();
+  });
+});
+
+// ─── Seam #409: arena-mod-refs-ai → arena-room-ai-response (getUserJwt) ──────
+
+describe('ARCH: arena-mod-refs-ai imports getUserJwt from arena-room-ai-response', () => {
+  const source = readFileSync(
+    resolve(__dirname, '../../src/arena/arena-mod-refs-ai.ts'),
+    'utf-8',
+  );
+  const importLines = source.split('\n').filter((l) => /from\s+['"]/.test(l));
+
+  it('TC-409-A1: imports getUserJwt from arena-room-ai-response', () => {
+    const hasImport = importLines.some(
+      (l) => l.includes('arena-room-ai-response') && l.includes('getUserJwt'),
+    );
+    expect(hasImport).toBe(true);
+  });
+});
+
+describe('getUserJwt — returns session access token', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('TC-409-1: returns access_token when session exists', async () => {
+    vi.doMock('@supabase/supabase-js', () => makeSupabaseMock('session-token-xyz'));
+
+    const { getUserJwt } = await import('../../src/arena/arena-room-ai-response.ts');
+    const jwt = await getUserJwt();
+    expect(jwt).toBe('session-token-xyz');
+  });
+
+  it('TC-409-2: returns null when session has no access_token', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => ({
+        rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+        auth: {
+          getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+          onAuthStateChange: vi.fn().mockReturnValue({
+            data: { subscription: { unsubscribe: vi.fn() } },
+          }),
+        },
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    }));
+
+    const { getUserJwt } = await import('../../src/arena/arena-room-ai-response.ts');
+    const jwt = await getUserJwt();
+    // With no session and no cached access token, result should be null
+    expect(jwt).toBeNull();
+  });
+
+  it('TC-409-3: falls back to getAccessToken when getSession throws', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => ({
+        rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+        auth: {
+          getSession: vi.fn().mockRejectedValue(new Error('session unavailable')),
+          onAuthStateChange: vi.fn().mockReturnValue({
+            data: { subscription: { unsubscribe: vi.fn() } },
+          }),
+        },
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    }));
+
+    const { getUserJwt } = await import('../../src/arena/arena-room-ai-response.ts');
+    // getSession throws → falls through to getAccessToken() which returns null (no cached token)
+    const jwt = await getUserJwt();
+    expect(jwt).toBeNull();
+  });
+});
+
+describe('requestAIModRuling — getUserJwt seam (seam #409)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+    document.body.innerHTML = '';
+    makeDom();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    document.body.innerHTML = '';
+  });
+
+  it('TC-409-4: JWT from session is passed in Authorization header to edge function', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ruling: 'allowed', reason: 'Seam test OK' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    vi.doMock('@supabase/supabase-js', () => makeSupabaseMock('bearer-token-409'));
+
+    const { requestAIModRuling } = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = buildDebate({ topic: 'Seam 409 topic', round: 1 });
+
+    await requestAIModRuling(debate as never, 'ref-seam-409', 'https://seam409.com', 'Seam source', 'A');
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const opts = mockFetch.mock.calls[0][1] as RequestInit;
+    const headers = opts.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer bearer-token-409');
+  });
+
+  it('TC-409-5: getUserJwt returning null triggers catch path (auto-denied)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ruling: 'allowed', reason: 'Should not reach' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    vi.doMock('@supabase/supabase-js', () => makeSupabaseMock(null));
+
+    const { requestAIModRuling } = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = buildDebate();
+
+    await requestAIModRuling(debate as never, 'ref-seam-409b', 'https://any.com', 'Any', null);
+
+    const messages = document.getElementById('arena-messages')!;
+    const texts = Array.from(messages.children).map((c) => c.textContent ?? '');
+    expect(texts.some((t) => t.includes('AUTO-DENIED') && t.includes('moderator unavailable'))).toBe(true);
+  });
+
+  it('TC-409-6: fetch is not called when getUserJwt returns null', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ruling: 'allowed', reason: 'Unreachable' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    vi.doMock('@supabase/supabase-js', () => makeSupabaseMock(null));
+
+    const { requestAIModRuling } = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = buildDebate();
+
+    await requestAIModRuling(debate as never, 'ref-seam-409c', 'https://any.com', 'Any', null);
+
+    // fetch should not be called because getUserJwt returns null → error before fetch
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('TC-409-7: getSession throwing still resolves the full function without unhandled rejection', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ruling: 'allowed', reason: 'Fallback path' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn(() => ({
+        rpc: vi.fn().mockResolvedValue({ data: { success: true }, error: null }),
+        auth: {
+          getSession: vi.fn().mockRejectedValue(new Error('session error')),
+          onAuthStateChange: vi.fn().mockReturnValue({
+            data: { subscription: { unsubscribe: vi.fn() } },
+          }),
+        },
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    }));
+
+    const { requestAIModRuling } = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = buildDebate();
+
+    // Should resolve without throwing even when getSession rejects
+    await expect(
+      requestAIModRuling(debate as never, 'ref-seam-409d', 'https://any.com', 'Any', null)
+    ).resolves.toBeUndefined();
+
+    // With no JWT, the catch path fires auto-denied
+    const messages = document.getElementById('arena-messages')!;
+    const texts = Array.from(messages.children).map((c) => c.textContent ?? '');
+    expect(texts.some((t) => t.includes('AUTO-DENIED'))).toBe(true);
   });
 });

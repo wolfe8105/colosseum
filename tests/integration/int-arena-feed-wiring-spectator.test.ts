@@ -436,3 +436,84 @@ describe('TC12 — wireSpectatorTipButtons calls get_user_watch_tier RPC with co
     expect(mockRpc).toHaveBeenCalledWith('get_user_watch_tier', {});
   });
 });
+
+// ============================================================
+// SEAM #473 — arena-feed-wiring-spectator → depth-gate
+// These TCs cover the isDepthBlocked() call site in
+// wireSpectatorTipButtons at depth-gate boundary.
+// ============================================================
+
+// ============================================================
+// TC473-1: isDepthBlocked not called when tier is Unranked
+// (function returns early before depth check)
+// ============================================================
+describe('TC473-1 — isDepthBlocked not called for Unranked tier', () => {
+  it('does not call isDepthBlocked when watch tier is Unranked', async () => {
+    mockRpc.mockResolvedValueOnce({ data: [{ tier: 'Unranked' }], error: null });
+
+    await wireSpectatorTipButtons(makeDebate());
+
+    expect(isDepthBlockedMock).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================================
+// TC473-2: isDepthBlocked called exactly once for non-Unranked tier
+// ============================================================
+describe('TC473-2 — isDepthBlocked called exactly once for non-Unranked tier', () => {
+  it('calls isDepthBlocked exactly one time when tier is non-Unranked', async () => {
+    mockRpc.mockResolvedValueOnce({ data: [{ tier: 'Gold' }], error: null });
+    isDepthBlockedMock.mockReturnValue(false);
+
+    await wireSpectatorTipButtons(makeDebate());
+
+    expect(isDepthBlockedMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ============================================================
+// TC473-3: isDepthBlocked called with zero arguments
+// ============================================================
+describe('TC473-3 — isDepthBlocked called with no arguments', () => {
+  it('calls isDepthBlocked with zero arguments (no side-effects from call site)', async () => {
+    mockRpc.mockResolvedValueOnce({ data: [{ tier: 'Silver' }], error: null });
+    isDepthBlockedMock.mockReturnValue(false);
+
+    await wireSpectatorTipButtons(makeDebate());
+
+    expect(isDepthBlockedMock).toHaveBeenCalledWith();
+  });
+});
+
+// ============================================================
+// TC473-4: depth-blocked user — status text NOT set to tier·Tap to tip
+// ============================================================
+describe('TC473-4 — depth-blocked user never sees tier Tap-to-tip status text', () => {
+  it('status text is not updated to tier+Tap to tip when isDepthBlocked returns true', async () => {
+    mockRpc.mockResolvedValueOnce({ data: [{ tier: 'Platinum' }], error: null });
+    isDepthBlockedMock.mockReturnValue(true);
+
+    const statusEl = document.getElementById('feed-tip-status')!;
+    statusEl.textContent = 'original';
+
+    await wireSpectatorTipButtons(makeDebate());
+
+    expect(statusEl.textContent).not.toContain('Tap to tip');
+    // text stays as originally set (function returned early)
+    expect(statusEl.textContent).toBe('original');
+  });
+});
+
+// ============================================================
+// TC473-5: safeRpc error on watch tier — isDepthBlocked not called
+// (defaults to Unranked on RPC error, returns before depth check)
+// ============================================================
+describe('TC473-5 — safeRpc error on watch tier skips isDepthBlocked', () => {
+  it('does not call isDepthBlocked when get_user_watch_tier RPC throws', async () => {
+    mockRpc.mockRejectedValueOnce(new Error('network failure'));
+
+    await wireSpectatorTipButtons(makeDebate());
+
+    expect(isDepthBlockedMock).not.toHaveBeenCalled();
+  });
+});

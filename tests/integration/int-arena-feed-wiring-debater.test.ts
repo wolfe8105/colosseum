@@ -398,3 +398,23 @@ describe('ARCH — seam #042', () => {
     expect(importLines.some(l => l.includes('arena-state'))).toBe(true);
   });
 });
+
+// ============================================================
+// SEAM #324 — WALL
+// arena-feed-wiring-debater.ts imports arena-deepgram.ts
+// (wall item: deepgram). Runtime TCs skipped per wall policy.
+// ARCH-only check is safe (static source read, no module load).
+// ============================================================
+
+// ============================================================
+// ARCH — seam #324
+// ============================================================
+describe('ARCH — seam #324', () => {
+  it('src/arena/arena-feed-wiring-debater.ts imports appendFeedEvent and writeFeedEvent from arena-feed-events', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-feed-wiring-debater.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-feed-events'))).toBe(true);
+    expect(source).toMatch(/\bappendFeedEvent\b/);
+    expect(source).toMatch(/\bwriteFeedEvent\b/);
+  });
+});

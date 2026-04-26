@@ -707,3 +707,498 @@ describe('TC14 — mode card click when maybeRoutePrivate returns true skips ent
     expect(mockShowCategoryPicker).not.toHaveBeenCalled();
   });
 });
+
+// ── Seam #345: arena-config-mode-select → arena-private-picker ───────────────
+
+// ── TC15: maybeRoutePrivate called with correct mode and topic for 'live' card ─
+describe('TC15 — live mode card calls maybeRoutePrivate with mode="live" and topic=""', () => {
+  it('maybeRoutePrivate receives ("live", "") when live card is clicked', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockMaybeRoutePrivate = vi.fn(() => false);
+    const mockShowCategoryPicker = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: mockMaybeRoutePrivate,
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const liveCard = document.querySelector('.arena-mode-card[data-mode="live"]') as HTMLElement;
+    expect(liveCard).not.toBeNull();
+    liveCard.click();
+
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledOnce();
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledWith('live', '');
+  });
+});
+
+// ── TC16: maybeRoutePrivate called with mode="voicememo" for voicememo card ───
+describe('TC16 — voicememo mode card calls maybeRoutePrivate with mode="voicememo"', () => {
+  it('maybeRoutePrivate receives ("voicememo", "") when voicememo card is clicked', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockMaybeRoutePrivate = vi.fn(() => false);
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: mockMaybeRoutePrivate,
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const vmCard = document.querySelector('.arena-mode-card[data-mode="voicememo"]') as HTMLElement;
+    expect(vmCard).not.toBeNull();
+    vmCard.click();
+
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledOnce();
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledWith('voicememo', '');
+  });
+});
+
+// ── TC17: AI mode card does NOT call maybeRoutePrivate ───────────────────────
+describe('TC17 — ai mode card bypasses maybeRoutePrivate entirely', () => {
+  it('maybeRoutePrivate is never called when ai card is clicked', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockMaybeRoutePrivate = vi.fn(() => false);
+    const mockEnterQueue = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: mockEnterQueue }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: mockMaybeRoutePrivate,
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const aiCard = document.querySelector('.arena-mode-card[data-mode="ai"]') as HTMLElement;
+    expect(aiCard).not.toBeNull();
+    aiCard.click();
+
+    // AI path short-circuits before maybeRoutePrivate
+    expect(mockMaybeRoutePrivate).not.toHaveBeenCalled();
+    expect(mockEnterQueue).toHaveBeenCalledWith('ai', '');
+  });
+});
+
+// ── TC18: text mode card calls maybeRoutePrivate with correct args ────────────
+describe('TC18 — text mode card calls maybeRoutePrivate with mode="text"', () => {
+  it('maybeRoutePrivate receives ("text", "") when text card is clicked', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockMaybeRoutePrivate = vi.fn(() => false);
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: mockMaybeRoutePrivate,
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const textCard = document.querySelector('.arena-mode-card[data-mode="text"]') as HTMLElement;
+    expect(textCard).not.toBeNull();
+    textCard.click();
+
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledOnce();
+    expect(mockMaybeRoutePrivate).toHaveBeenCalledWith('text', '');
+  });
+});
+
+// ── TC19: overlay removed from DOM when maybeRoutePrivate returns true ────────
+describe('TC19 — overlay is removed from DOM when maybeRoutePrivate returns true (private route intercepted)', () => {
+  it('arena-mode-overlay is absent after private-route interception via maybeRoutePrivate', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => true),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    expect(document.getElementById('arena-mode-overlay')).not.toBeNull();
+
+    const liveCard = document.querySelector('.arena-mode-card[data-mode="live"]') as HTMLElement;
+    liveCard.click();
+
+    // closeModeSelect(true) removes the overlay
+    expect(document.getElementById('arena-mode-overlay')).toBeNull();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Seam #439 — arena-config-mode-select → arena-config-category
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── TC-S439-A: voicememo card calls showCategoryPicker("voicememo", "") ───────
+describe('TC-S439-A — voicememo mode card calls showCategoryPicker with mode="voicememo"', () => {
+  it('showCategoryPicker receives ("voicememo", "") when voicememo card clicked and maybeRoutePrivate=false', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowCategoryPicker = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const vmCard = document.querySelector('.arena-mode-card[data-mode="voicememo"]') as HTMLElement;
+    expect(vmCard).not.toBeNull();
+    vmCard.click();
+
+    expect(mockShowCategoryPicker).toHaveBeenCalledOnce();
+    expect(mockShowCategoryPicker).toHaveBeenCalledWith('voicememo', '');
+  });
+});
+
+// ── TC-S439-B: ai mode card never calls showCategoryPicker ───────────────────
+describe('TC-S439-B — ai mode card does NOT call showCategoryPicker', () => {
+  it('showCategoryPicker is never invoked for ai mode (goes to enterQueue instead)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowCategoryPicker = vi.fn();
+    const mockEnterQueue = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: mockEnterQueue }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const aiCard = document.querySelector('.arena-mode-card[data-mode="ai"]') as HTMLElement;
+    aiCard.click();
+
+    expect(mockShowCategoryPicker).not.toHaveBeenCalled();
+    expect(mockEnterQueue).toHaveBeenCalledOnce();
+  });
+});
+
+// ── TC-S439-C: showCategoryPicker args are exactly (mode, '') — two args ──────
+describe('TC-S439-C — showCategoryPicker receives exactly 2 arguments: mode string and empty-string topic', () => {
+  it('showCategoryPicker is called with exactly (mode, "") — no extra args', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowCategoryPicker = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const liveCard = document.querySelector('.arena-mode-card[data-mode="live"]') as HTMLElement;
+    liveCard.click();
+
+    expect(mockShowCategoryPicker).toHaveBeenCalledOnce();
+    const callArgs = mockShowCategoryPicker.mock.calls[0];
+    expect(callArgs).toHaveLength(2);
+    expect(callArgs[0]).toBe('live');
+    expect(callArgs[1]).toBe('');
+  });
+});
+
+// ── TC-S439-D: overlay removed before showCategoryPicker is called ────────────
+describe('TC-S439-D — arena-mode-overlay is removed from DOM before showCategoryPicker is invoked', () => {
+  it('closeModeSelect(forward=true) removes the overlay; overlay absent when showCategoryPicker fires', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    let overlayPresentWhenPickerCalled: boolean | null = null;
+    const mockShowCategoryPicker = vi.fn(() => {
+      overlayPresentWhenPickerCalled = document.getElementById('arena-mode-overlay') !== null;
+    });
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const textCard = document.querySelector('.arena-mode-card[data-mode="text"]') as HTMLElement;
+    textCard.click();
+
+    expect(mockShowCategoryPicker).toHaveBeenCalledOnce();
+    // Overlay must be gone by the time showCategoryPicker runs
+    expect(overlayPresentWhenPickerCalled).toBe(false);
+  });
+});
+
+// ── TC-S439-E: no .mod-picker-opt.selected → set_selectedModerator(null) ──────
+describe('TC-S439-E — set_selectedModerator(null) when no mod-picker-opt.selected exists in overlay', () => {
+  it('set_selectedModerator is called with null when overlay has no selected mod option', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockSetSelectedModerator = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-state.ts', () => ({
+      set_selectedModerator: mockSetSelectedModerator,
+      set_selectedRuleset: vi.fn(),
+      view: 'lobby',
+      selectedMode: null,
+      selectedRanked: false,
+      selectedRuleset: null,
+      selectedRounds: 3,
+      selectedCategory: null,
+      queuePollTimer: null,
+      queueElapsedTimer: null,
+      queueSeconds: 0,
+      queueErrorState: false,
+      aiFallbackShown: false,
+      _queuePollInFlight: false,
+      screenEl: null,
+      selectedLinkUrl: null,
+      selectedLinkPreview: null,
+      set_view: vi.fn(),
+      set_selectedMode: vi.fn(),
+      set_queuePollTimer: vi.fn(),
+      set_queueElapsedTimer: vi.fn(),
+      set_queueSeconds: vi.fn(),
+      set_queueErrorState: vi.fn(),
+      set_aiFallbackShown: vi.fn(),
+      set__queuePollInFlight: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    // Verify no .mod-picker-opt.selected exists in the freshly-rendered overlay
+    expect(document.querySelector('.mod-picker-opt.selected')).toBeNull();
+
+    const liveCard = document.querySelector('.arena-mode-card[data-mode="live"]') as HTMLElement;
+    liveCard.click();
+
+    expect(mockSetSelectedModerator).toHaveBeenCalledWith(null);
+  });
+});
+
+// ── TC-S439-F: showCategoryPicker NOT called when maybeRoutePrivate=true (voicememo) ──
+describe('TC-S439-F — showCategoryPicker not called for voicememo when maybeRoutePrivate returns true', () => {
+  it('showCategoryPicker is skipped when maybeRoutePrivate intercepts voicememo mode', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    const mockShowCategoryPicker = vi.fn();
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => []),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => true),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: mockShowCategoryPicker,
+    }));
+
+    const { showModeSelect } = await import('../../src/arena/arena-config-mode-select.ts');
+    showModeSelect();
+
+    const vmCard = document.querySelector('.arena-mode-card[data-mode="voicememo"]') as HTMLElement;
+    vmCard.click();
+
+    expect(mockShowCategoryPicker).not.toHaveBeenCalled();
+  });
+});
+
+// ── TC-S439-G: ARCH filter detects showCategoryPicker import in source ────────
+describe('TC-S439-G — ARCH: arena-config-mode-select imports showCategoryPicker from arena-config-category', () => {
+  it('source import lines include arena-config-category with showCategoryPicker', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/arena/arena-config-mode-select.ts'),
+      'utf8'
+    );
+    const importLines = src.split('\n').filter(l => /from\s+['"]/.test(l));
+    const categoryImport = importLines.find(l => l.includes('arena-config-category'));
+    expect(categoryImport).toBeDefined();
+    expect(categoryImport).toContain('showCategoryPicker');
+  });
+});
+
+// ── TC20: loadAvailableModerators is no-op without #mod-picker-humans ─────────
+describe('TC20 — loadAvailableModerators is no-op when #mod-picker-humans container is absent', () => {
+  it('does not throw and appends nothing when container element is missing', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    vi.doMock('../../src/auth.ts', () => ({
+      getCurrentUser: vi.fn(() => ({ id: 'user-1', email: 'a@b.com' })),
+      getAvailableModerators: vi.fn(async () => [
+        {
+          id: 'mod-xyz',
+          display_name: 'ShouldNotRender',
+          username: 'nope',
+          mod_rating: 1000,
+          mod_debates_total: 5,
+          mod_approval_pct: 50,
+        },
+      ]),
+      safeRpc: vi.fn(async () => ({ data: null, error: null })),
+    }));
+    vi.doMock('../../src/arena/arena-core.utils.ts', () => ({
+      isPlaceholder: vi.fn(() => false),
+      pushArenaState: vi.fn(),
+    }));
+    vi.doMock('../../src/arena/arena-queue.ts', () => ({ enterQueue: vi.fn() }));
+    vi.doMock('../../src/arena/arena-private-picker.ts', () => ({
+      maybeRoutePrivate: vi.fn(() => false),
+    }));
+    vi.doMock('../../src/arena/arena-config-category.ts', () => ({
+      showCategoryPicker: vi.fn(),
+    }));
+
+    const { loadAvailableModerators } = await import('../../src/arena/arena-config-mode-select.ts');
+
+    // overlay WITHOUT #mod-picker-humans
+    const overlay = document.createElement('div');
+    overlay.innerHTML = '<div id="some-other-container"></div>';
+    document.body.appendChild(overlay);
+
+    // Should not throw
+    await expect(loadAvailableModerators(overlay)).resolves.toBeUndefined();
+
+    // Nothing rendered
+    expect(document.querySelector('.mod-picker-opt')).toBeNull();
+  });
+});

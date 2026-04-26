@@ -471,6 +471,333 @@ describe('TC-06: long-press — calls delete_loadout_preset RPC', () => {
   });
 });
 
+// ════════════════════════════════════════════════════════════════════════════
+// SEAM #472 — arena-loadout-presets → reference-arsenal.loadout
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── TC-08 (ARCH): imports renderLoadoutPicker from reference-arsenal.loadout ──
+
+describe('ARCH #472: arena-loadout-presets imports reference-arsenal.loadout', () => {
+  const src = readFileSync(resolve(__dirname, '../../src/arena/arena-loadout-presets.ts'), 'utf-8');
+
+  it('has import from reference-arsenal.loadout', () => {
+    const imports = src.split('\n').filter(l => /from\s+['"]/.test(l));
+    const loadoutLine = imports.find(l => /reference-arsenal\.loadout/.test(l));
+    expect(loadoutLine).toBeTruthy();
+  });
+
+  it('imports renderLoadoutPicker from reference-arsenal.loadout', () => {
+    const imports = src.split('\n').filter(l => /from\s+['"]/.test(l));
+    const loadoutLine = imports.find(l => /reference-arsenal\.loadout/.test(l));
+    expect(loadoutLine).toMatch(/renderLoadoutPicker/);
+  });
+});
+
+// ── TC-09: applyPreset calls renderLoadoutPicker → get_my_arsenal RPC ────────
+
+describe('TC-09: applyPreset — calls get_my_arsenal via renderLoadoutPicker', () => {
+  let rpcMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+
+    const { createClient } = await import('@supabase/supabase-js');
+
+    const preset = makePreset({ reference_ids: ['ref-x'], powerup_effect_ids: [] });
+
+    rpcMock = vi.fn().mockImplementation((name: string) => {
+      if (name === 'get_my_loadout_presets') return Promise.resolve({ data: [preset], error: null });
+      if (name === 'get_my_arsenal') return Promise.resolve({ data: [], error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    (createClient as ReturnType<typeof vi.fn>).mockReturnValue({
+      auth: {
+        onAuthStateChange: vi.fn(),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      },
+      rpc: rpcMock,
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('calls get_my_arsenal when chip is clicked and mode is not ai', async () => {
+    const { renderPresetBar } = await import('../../src/arena/arena-loadout-presets.ts');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const debate = makeDebate({ mode: 'live' });
+    const refsContainer = document.createElement('div');
+
+    await renderPresetBar(container, debate as never, refsContainer, null);
+
+    const chip = container.querySelector<HTMLElement>('.preset-chip');
+    expect(chip).not.toBeNull();
+
+    chip!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    chip!.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    chip!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    for (let i = 0; i < 20; i++) {
+      await Promise.resolve();
+    }
+
+    const calls = rpcMock.mock.calls as [string, Record<string, unknown>][];
+    const arsenalCall = calls.find(([name]) => name === 'get_my_arsenal');
+    expect(arsenalCall).toBeTruthy();
+
+    document.body.removeChild(container);
+  }, 10000);
+});
+
+// ── TC-10: applyPreset skips renderLoadoutPicker when mode is 'ai' ────────────
+
+describe('TC-10: applyPreset — skips renderLoadoutPicker when mode is ai', () => {
+  let rpcMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+
+    const { createClient } = await import('@supabase/supabase-js');
+
+    const preset = makePreset({ reference_ids: ['ref-y'], powerup_effect_ids: [] });
+
+    rpcMock = vi.fn().mockImplementation((name: string) => {
+      if (name === 'get_my_loadout_presets') return Promise.resolve({ data: [preset], error: null });
+      if (name === 'get_my_arsenal') return Promise.resolve({ data: [], error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    (createClient as ReturnType<typeof vi.fn>).mockReturnValue({
+      auth: {
+        onAuthStateChange: vi.fn(),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      },
+      rpc: rpcMock,
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('does NOT call get_my_arsenal when debate mode is ai', async () => {
+    const { renderPresetBar } = await import('../../src/arena/arena-loadout-presets.ts');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const debate = makeDebate({ mode: 'ai' });
+    const refsContainer = document.createElement('div');
+
+    await renderPresetBar(container, debate as never, refsContainer, null);
+
+    const chip = container.querySelector<HTMLElement>('.preset-chip');
+    expect(chip).not.toBeNull();
+
+    chip!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    chip!.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    chip!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    for (let i = 0; i < 20; i++) {
+      await Promise.resolve();
+    }
+
+    const calls = rpcMock.mock.calls as [string, Record<string, unknown>][];
+    const arsenalCalls = calls.filter(([name]) => name === 'get_my_arsenal');
+    expect(arsenalCalls).toHaveLength(0);
+
+    document.body.removeChild(container);
+  }, 10000);
+});
+
+// ── TC-11: renderLoadoutPicker renders ref-loadout-grid when arsenal has items ─
+
+describe('TC-11: renderLoadoutPicker — renders ref-loadout-grid on apply', () => {
+  let rpcMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+
+    const { createClient } = await import('@supabase/supabase-js');
+
+    const mockArsenal = [
+      {
+        id: 'ref-uuid-1',
+        claim_text: 'Climate data supports this',
+        source_title: 'Nature',
+        source_author: 'Smith',
+        source_type: 'academic',
+        rarity: 'common',
+        current_power: 10,
+        created_at: '2024-01-01T00:00:00Z',
+        challenge_status: null,
+      },
+    ];
+
+    const preset = makePreset({ reference_ids: ['ref-uuid-1'], powerup_effect_ids: [] });
+
+    rpcMock = vi.fn().mockImplementation((name: string) => {
+      if (name === 'get_my_loadout_presets') return Promise.resolve({ data: [preset], error: null });
+      if (name === 'get_my_arsenal') return Promise.resolve({ data: mockArsenal, error: null });
+      if (name === 'save_debate_loadout') return Promise.resolve({ data: { success: true }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    (createClient as ReturnType<typeof vi.fn>).mockReturnValue({
+      auth: {
+        onAuthStateChange: vi.fn(),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      },
+      rpc: rpcMock,
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('populates refsContainer with ref-loadout-grid after chip apply', async () => {
+    const { renderPresetBar } = await import('../../src/arena/arena-loadout-presets.ts');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const debate = makeDebate({ mode: 'text' });
+    const refsContainer = document.createElement('div');
+    document.body.appendChild(refsContainer);
+
+    await renderPresetBar(container, debate as never, refsContainer, null);
+
+    const chip = container.querySelector<HTMLElement>('.preset-chip');
+    expect(chip).not.toBeNull();
+
+    chip!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    chip!.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    chip!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    for (let i = 0; i < 20; i++) {
+      await Promise.resolve();
+    }
+
+    expect(refsContainer.querySelector('.ref-loadout-grid')).not.toBeNull();
+
+    document.body.removeChild(container);
+    document.body.removeChild(refsContainer);
+  }, 10000);
+});
+
+// ── TC-12: renderLoadoutPicker pre-selects refs from preset ──────────────────
+
+describe('TC-12: renderLoadoutPicker — pre-selects initialRefs from preset', () => {
+  let rpcMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+    vi.resetModules();
+
+    const { createClient } = await import('@supabase/supabase-js');
+
+    const mockArsenal = [
+      {
+        id: 'ref-uuid-A',
+        claim_text: 'First claim',
+        source_title: 'Journal A',
+        source_author: 'Jones',
+        source_type: 'academic',
+        rarity: 'common',
+        current_power: 8,
+        created_at: '2024-01-01T00:00:00Z',
+        challenge_status: null,
+      },
+      {
+        id: 'ref-uuid-B',
+        claim_text: 'Second claim',
+        source_title: 'Journal B',
+        source_author: 'Brown',
+        source_type: 'news',
+        rarity: 'rare',
+        current_power: 15,
+        created_at: '2024-01-02T00:00:00Z',
+        challenge_status: null,
+      },
+    ];
+
+    // Preset pre-selects ref-uuid-A only
+    const preset = makePreset({ reference_ids: ['ref-uuid-A'], powerup_effect_ids: [] });
+
+    rpcMock = vi.fn().mockImplementation((name: string) => {
+      if (name === 'get_my_loadout_presets') return Promise.resolve({ data: [preset], error: null });
+      if (name === 'get_my_arsenal') return Promise.resolve({ data: mockArsenal, error: null });
+      if (name === 'save_debate_loadout') return Promise.resolve({ data: { success: true }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    (createClient as ReturnType<typeof vi.fn>).mockReturnValue({
+      auth: {
+        onAuthStateChange: vi.fn(),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      },
+      rpc: rpcMock,
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('marks ref-uuid-A card as selected and ref-uuid-B as not selected', async () => {
+    const { renderPresetBar } = await import('../../src/arena/arena-loadout-presets.ts');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const debate = makeDebate({ mode: 'voice' });
+    const refsContainer = document.createElement('div');
+    document.body.appendChild(refsContainer);
+
+    await renderPresetBar(container, debate as never, refsContainer, null);
+
+    const chip = container.querySelector<HTMLElement>('.preset-chip');
+    chip!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    chip!.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    chip!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    for (let i = 0; i < 20; i++) {
+      await Promise.resolve();
+    }
+
+    const cardA = refsContainer.querySelector<HTMLElement>('[data-ref-id="ref-uuid-A"]');
+    const cardB = refsContainer.querySelector<HTMLElement>('[data-ref-id="ref-uuid-B"]');
+    expect(cardA).not.toBeNull();
+    expect(cardA!.classList.contains('selected')).toBe(true);
+    expect(cardB).not.toBeNull();
+    expect(cardB!.classList.contains('selected')).toBe(false);
+
+    document.body.removeChild(container);
+    document.body.removeChild(refsContainer);
+  }, 10000);
+});
+
 // ── TC-07: 6 presets hides save button ───────────────────────────────────────
 
 describe('TC-07: 6 presets — save button hidden', () => {

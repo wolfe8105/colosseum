@@ -355,3 +355,148 @@ describe('SEAM #223 TC-7 — ARCH: arena-mod-refs-ruling imports addSystemMessag
     expect(importLines.some(l => l.includes('addSystemMessage'))).toBe(true);
   });
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SEAM #282 — arena-mod-refs-ruling → arena-types-results (ReferenceItem)
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('SEAM #282 TC-1 — ReferenceItem.id is passed to ruleOnReference', () => {
+  it('ruleOnReference receives ref.id as first argument on allow', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = {
+      id: 's282-id-check',
+      round: 1,
+      supports_side: 'a' as const,
+      submitter_name: 'Tester',
+      url: null,
+      description: null,
+    };
+
+    showRulingPanel(ref as any);
+
+    const allowBtn = document.getElementById('mod-ruling-allow') as HTMLButtonElement;
+    allowBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockRuleOnReference).toHaveBeenCalledWith('s282-id-check', 'allowed', expect.any(String));
+  });
+});
+
+describe('SEAM #282 TC-2 — ReferenceItem.supports_side drives sideLabel: a → Side A', () => {
+  it('overlay contains "Side A" when supports_side is "a"', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = {
+      id: 'ref-side-a',
+      round: 1,
+      supports_side: 'a' as const,
+      submitter_name: 'Alpha',
+      url: null,
+      description: null,
+    };
+
+    showRulingPanel(ref as any);
+
+    const overlay = document.getElementById('mod-ruling-overlay');
+    expect(overlay).not.toBeNull();
+    expect(overlay!.innerHTML).toContain('Side A');
+    expect(overlay!.innerHTML).not.toContain('Side B');
+    expect(overlay!.innerHTML).not.toContain('Neutral');
+  });
+});
+
+describe('SEAM #282 TC-3 — ReferenceItem.supports_side drives sideLabel: b → Side B, else → Neutral', () => {
+  it('overlay contains "Side B" for supports_side b and "Neutral" for anything else', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    // Side B
+    showRulingPanel({ id: 'ref-b', round: 1, supports_side: 'b', submitter_name: 'Beta', url: null, description: null } as any);
+    const overlayB = document.getElementById('mod-ruling-overlay');
+    expect(overlayB!.innerHTML).toContain('Side B');
+
+    // Neutral (unknown side)
+    showRulingPanel({ id: 'ref-n', round: 2, supports_side: 'neutral', submitter_name: 'Gamma', url: null, description: null } as any);
+    const overlayN = document.getElementById('mod-ruling-overlay');
+    expect(overlayN!.innerHTML).toContain('Neutral');
+  });
+});
+
+describe('SEAM #282 TC-4 — ReferenceItem.submitter_name is escapeHTML-escaped in overlay', () => {
+  it('XSS-unsafe chars in submitter_name are entity-encoded in innerHTML', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = {
+      id: 'ref-xss',
+      round: 1,
+      supports_side: 'a' as const,
+      submitter_name: '<script>alert(1)</script>',
+      url: null,
+      description: null,
+    };
+
+    showRulingPanel(ref as any);
+
+    const overlay = document.getElementById('mod-ruling-overlay');
+    expect(overlay).not.toBeNull();
+    // Raw script tag must NOT appear
+    expect(overlay!.innerHTML).not.toContain('<script>');
+    // Escaped form must appear
+    expect(overlay!.innerHTML).toContain('&lt;script&gt;');
+  });
+});
+
+describe('SEAM #282 TC-5 — ReferenceItem.url renders conditionally', () => {
+  it('url div rendered when url is present, omitted when url is falsy', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    // With URL
+    showRulingPanel({ id: 'ref-url-yes', round: 1, supports_side: 'a', submitter_name: 'A', url: 'https://example.com', description: null } as any);
+    const overlayYes = document.getElementById('mod-ruling-overlay');
+    expect(overlayYes!.querySelector('.mod-ruling-ref-url')).not.toBeNull();
+    expect(overlayYes!.innerHTML).toContain('https://example.com');
+
+    // Without URL
+    showRulingPanel({ id: 'ref-url-no', round: 1, supports_side: 'a', submitter_name: 'B', url: null, description: null } as any);
+    const overlayNo = document.getElementById('mod-ruling-overlay');
+    expect(overlayNo!.querySelector('.mod-ruling-ref-url')).toBeNull();
+  });
+});
+
+describe('SEAM #282 TC-6 — ReferenceItem.round is cast with Number() before innerHTML', () => {
+  it('round is rendered as Number(round) — numeric coercion prevents injection', async () => {
+    const { showRulingPanel } = await import('../../src/arena/arena-mod-refs-ruling.ts');
+
+    const ref = {
+      id: 'ref-round',
+      round: 5,
+      supports_side: 'a' as const,
+      submitter_name: 'Tester',
+      url: null,
+      description: null,
+    };
+
+    showRulingPanel(ref as any);
+
+    const overlay = document.getElementById('mod-ruling-overlay');
+    expect(overlay!.innerHTML).toContain('ROUND 5');
+
+    // Non-numeric round should render as 0 (Number(undefined) === NaN → || '?' fallback)
+    showRulingPanel({ id: 'ref-round-nan', round: undefined, supports_side: 'a', submitter_name: 'X', url: null, description: null } as any);
+    const overlayNaN = document.getElementById('mod-ruling-overlay');
+    // Number(undefined) is NaN which is falsy, so fallback '?' is used
+    expect(overlayNaN!.innerHTML).toContain('ROUND ?');
+  });
+});
+
+describe('SEAM #282 TC-7 — ARCH: arena-mod-refs-ruling imports ReferenceItem from arena-types-results', () => {
+  it('import boundary for seam #282 (arena-types-results) is present in source', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-mod-refs-ruling.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-types-results'))).toBe(true);
+    // Must be a type-only import (ReferenceItem is an interface)
+    const arenaTypesLine = importLines.find(l => l.includes('arena-types-results'));
+    expect(arenaTypesLine).toMatch(/import\s+type/);
+  });
+});

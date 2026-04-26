@@ -677,3 +677,399 @@ describe('ARCH — seam #224 import boundary: arena-mod-refs-form → arena-room
     expect(importLines.some(l => l.includes('arena-room-live-messages'))).toBe(true);
   });
 });
+
+// ============================================================
+// SEAM #526: arena-mod-refs-form → arena-mod-refs-ai (requestAIModRuling)
+// ============================================================
+
+// TC526-1: AI mod path — submit with moderatorType 'ai' + reference_id returned
+// → fetch is called to the ai-moderator Edge Function URL
+describe('TC526-1 — AI mod submit calls fetch to ai-moderator edge function', () => {
+  it('calls fetch to URL containing ai-moderator when moderatorType=ai and reference_id returned', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="screen-main">
+        <div id="arena-messages"></div>
+      </div>
+    `;
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    // Provide a valid JWT so getUserJwt() succeeds and fetch is actually called
+    mockAuth.getSession.mockResolvedValue({
+      data: { session: { access_token: 'tok-526-1' } },
+      error: null,
+    });
+
+    // submit_reference returns reference_id; ai-moderator edge fn returns ruling
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'submit_reference') {
+        return Promise.resolve({ data: { reference_id: 'ref-526-1' }, error: null });
+      }
+      if (name === 'rule_on_reference') {
+        return Promise.resolve({ data: { success: true }, error: null });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ruling: 'allowed', reason: 'Strong evidence.' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const state = await import('../../src/arena/arena-state.ts');
+    state.set_currentDebate({
+      id: 'debate-526-1',
+      topic: 'AI jobs test',
+      status: 'live',
+      mode: 'text',
+      moderatorType: 'ai',
+      side: 'a',
+      opponentId: 'opp-526',
+      opponentUsername: 'opp-526',
+      round: 1,
+      totalRounds: 3,
+      ruleset: 'amplified',
+      ranked: false,
+      category: null,
+      startedAt: null,
+      endedAt: null,
+      isSpectating: false,
+      linkUrl: null,
+      linkPreview: null,
+      messages: [],
+    } as unknown as Parameters<typeof state.set_currentDebate>[0]);
+    state.set_screenEl(document.getElementById('screen-main'));
+
+    const mod = await import('../../src/arena/arena-mod-refs-form.ts');
+    mod.showReferenceForm();
+
+    const descEl = document.getElementById('arena-ref-desc') as HTMLTextAreaElement;
+    descEl.value = 'Peer-reviewed study';
+
+    const submitBtn = document.getElementById('arena-ref-submit-btn') as HTMLButtonElement;
+    submitBtn.click();
+
+    // Flush microtasks + async timers
+    await vi.advanceTimersByTimeAsync(100);
+
+    // fetch should have been called with a URL containing 'ai-moderator'
+    const fetchCalls = fetchMock.mock.calls;
+    const aiModeratorCall = fetchCalls.find((args: unknown[]) =>
+      typeof args[0] === 'string' && (args[0] as string).includes('ai-moderator')
+    );
+    expect(aiModeratorCall).toBeDefined();
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-2: Non-AI mod — submit with moderatorType null
+// → requestAIModRuling NOT called, ai-moderator fetch does NOT fire
+describe('TC526-2 — non-AI mod submit does NOT call ai-moderator fetch', () => {
+  it('does not call fetch when moderatorType is null', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="screen-main">
+        <div id="arena-messages"></div>
+      </div>
+    `;
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'submit_reference') {
+        return Promise.resolve({ data: { reference_id: 'ref-526-2' }, error: null });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const state = await import('../../src/arena/arena-state.ts');
+    state.set_currentDebate({
+      id: 'debate-526-2',
+      topic: 'Human mod debate',
+      status: 'live',
+      mode: 'text',
+      moderatorType: null,
+      side: 'a',
+      opponentId: 'opp-526-2',
+      opponentUsername: 'opp-526-2',
+      round: 1,
+      totalRounds: 3,
+      ruleset: 'amplified',
+      ranked: false,
+      category: null,
+      startedAt: null,
+      endedAt: null,
+      isSpectating: false,
+      linkUrl: null,
+      linkPreview: null,
+      messages: [],
+    } as unknown as Parameters<typeof state.set_currentDebate>[0]);
+    state.set_screenEl(document.getElementById('screen-main'));
+
+    const mod = await import('../../src/arena/arena-mod-refs-form.ts');
+    mod.showReferenceForm();
+
+    const descEl = document.getElementById('arena-ref-desc') as HTMLTextAreaElement;
+    descEl.value = 'Human reviewed evidence';
+
+    const submitBtn = document.getElementById('arena-ref-submit-btn') as HTMLButtonElement;
+    submitBtn.click();
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    // fetch should NOT have been called for ai-moderator
+    const aiModeratorCalls = fetchMock.mock.calls.filter((args: unknown[]) =>
+      typeof args[0] === 'string' && (args[0] as string).includes('ai-moderator')
+    );
+    expect(aiModeratorCalls.length).toBe(0);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-3: AI mod but no reference_id in result — requestAIModRuling NOT called
+describe('TC526-3 — AI mod submit skips requestAIModRuling when reference_id absent', () => {
+  it('does not call ai-moderator fetch when submit_reference returns no reference_id', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = `
+      <div id="screen-main">
+        <div id="arena-messages"></div>
+      </div>
+    `;
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    // Returns success but no reference_id field
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'submit_reference') {
+        return Promise.resolve({ data: {}, error: null });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const state = await import('../../src/arena/arena-state.ts');
+    state.set_currentDebate({
+      id: 'debate-526-3',
+      topic: 'No ref id test',
+      status: 'live',
+      mode: 'text',
+      moderatorType: 'ai',
+      side: 'a',
+      opponentId: 'opp-526-3',
+      opponentUsername: 'opp-526-3',
+      round: 1,
+      totalRounds: 3,
+      ruleset: 'amplified',
+      ranked: false,
+      category: null,
+      startedAt: null,
+      endedAt: null,
+      isSpectating: false,
+      linkUrl: null,
+      linkPreview: null,
+      messages: [],
+    } as unknown as Parameters<typeof state.set_currentDebate>[0]);
+    state.set_screenEl(document.getElementById('screen-main'));
+
+    const mod = await import('../../src/arena/arena-mod-refs-form.ts');
+    mod.showReferenceForm();
+
+    const descEl = document.getElementById('arena-ref-desc') as HTMLTextAreaElement;
+    descEl.value = 'Evidence without ref id';
+
+    document.getElementById('arena-ref-submit-btn')!.click();
+    await vi.advanceTimersByTimeAsync(100);
+
+    const aiCalls = fetchMock.mock.calls.filter((args: unknown[]) =>
+      typeof args[0] === 'string' && (args[0] as string).includes('ai-moderator')
+    );
+    expect(aiCalls.length).toBe(0);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-4: requestAIModRuling success path
+// → rule_on_reference RPC called with referenceId + 'allowed', system message posted
+describe('TC526-4 — requestAIModRuling success: calls rule_on_reference + posts allowed message', () => {
+  it('calls rule_on_reference with referenceId and allowed ruling, posts ✅ system message', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = '<div id="arena-messages"></div>';
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    // Provide a valid JWT so getUserJwt() succeeds and fetch is actually called
+    mockAuth.getSession.mockResolvedValue({
+      data: { session: { access_token: 'tok-526-4' } },
+      error: null,
+    });
+
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'rule_on_reference') {
+        return Promise.resolve({ data: { success: true }, error: null });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ruling: 'allowed', reason: 'Great source.' }),
+    }));
+
+    const ai = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = {
+      id: 'debate-526-4',
+      topic: 'Climate change',
+      round: 1,
+      messages: [],
+      moderatorType: 'ai',
+    };
+
+    const ruling = ai.requestAIModRuling(
+      debate as unknown as Parameters<typeof ai.requestAIModRuling>[0],
+      'ref-526-4',
+      'https://example.com',
+      'My evidence',
+      'a'
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    await ruling;
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'rule_on_reference',
+      expect.objectContaining({ p_reference_id: 'ref-526-4', p_ruling: 'allowed' })
+    );
+
+    const systemMsg = messagesEl.querySelector('.arena-msg.system') as HTMLElement | null;
+    expect(systemMsg).not.toBeNull();
+    expect(systemMsg?.textContent).toMatch(/✅|ALLOWED/i);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-5: requestAIModRuling Edge Function non-ok response
+// → fallback rule_on_reference called with 'denied', auto-denied message posted
+describe('TC526-5 — requestAIModRuling Edge Function error: fallback denied ruling posted', () => {
+  it('calls rule_on_reference with denied ruling when Edge Function returns non-ok status', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = '<div id="arena-messages"></div>';
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    mockRpc.mockResolvedValue({ data: { success: true }, error: null });
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({}),
+    }));
+
+    const ai = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = {
+      id: 'debate-526-5',
+      topic: 'Energy policy',
+      round: 1,
+      messages: [],
+      moderatorType: 'ai',
+    };
+
+    const ruling = ai.requestAIModRuling(
+      debate as unknown as Parameters<typeof ai.requestAIModRuling>[0],
+      'ref-526-5',
+      '',
+      'Evidence text',
+      'b'
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    await ruling;
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'rule_on_reference',
+      expect.objectContaining({ p_reference_id: 'ref-526-5', p_ruling: 'denied' })
+    );
+
+    const systemMsg = messagesEl.querySelector('.arena-msg.system') as HTMLElement | null;
+    expect(systemMsg).not.toBeNull();
+    expect(systemMsg?.textContent).toMatch(/AUTO-DENIED/i);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-6: requestAIModRuling fetch throws (network error)
+// → fallback rule_on_reference called with 'denied'
+describe('TC526-6 — requestAIModRuling fetch throws: fallback denied ruling', () => {
+  it('calls rule_on_reference with denied when fetch throws a network error', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+
+    document.body.innerHTML = '<div id="arena-messages"></div>';
+    const messagesEl = document.getElementById('arena-messages')!;
+    messagesEl.scrollTo = vi.fn();
+
+    mockRpc.mockResolvedValue({ data: { success: true }, error: null });
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')));
+
+    const ai = await import('../../src/arena/arena-mod-refs-ai.ts');
+    const debate = {
+      id: 'debate-526-6',
+      topic: 'Net neutrality',
+      round: 2,
+      messages: [
+        { role: 'user', text: 'My argument', round: 1 },
+        { role: 'assistant', text: 'Counter arg', round: 1 },
+      ],
+      moderatorType: 'ai',
+    };
+
+    const ruling = ai.requestAIModRuling(
+      debate as unknown as Parameters<typeof ai.requestAIModRuling>[0],
+      'ref-526-6',
+      'https://source.com',
+      'Reliable source',
+      null
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    await ruling;
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      'rule_on_reference',
+      expect.objectContaining({ p_reference_id: 'ref-526-6', p_ruling: 'denied' })
+    );
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
+// TC526-7: ARCH seam boundary — arena-mod-refs-form imports from arena-mod-refs-ai
+describe('ARCH — seam #526 import boundary: arena-mod-refs-form → arena-mod-refs-ai', () => {
+  it('src/arena/arena-mod-refs-form.ts imports requestAIModRuling from arena-mod-refs-ai', () => {
+    const source = readFileSync(resolve(__dirname, '../../src/arena/arena-mod-refs-form.ts'), 'utf-8');
+    const importLines = source.split('\n').filter(l => /from\s+['"]/.test(l));
+    expect(importLines.some(l => l.includes('arena-mod-refs-ai'))).toBe(true);
+  });
+});
