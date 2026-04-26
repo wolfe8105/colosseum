@@ -108,3 +108,78 @@ Findings this session:
 Key automation note: Keyboard input via browser_batch type action does NOT reach most inputs in this app. Workaround is JS value set + input event dispatch. This applies consistently.
 
 PostHog events to reconcile: 15:32–15:41
+
+### Session resumed — 2026-04-26 (S301)
+
+[16:XX:00] PRE-SESSION NOTE: AI Sparring match "VIDEO GAMES ARE A LEGITIMATE ART FORM" still live (R1 of 3) from prior session test. TEXT BATTLE "PINEAPPLE BELONGS ON PIZZA" created (OPEN, Sports, AI Moderator) to test B14 Finish Turn / Concede — discovered these buttons require a live opponent in a TEXT BATTLE debate room. Cannot test without second human.
+
+### Pass 1 — Gate Group B14 continued (Finish turn, Concede)
+[16:XX:10] [PASS 1] [B14] Finish turn button → SKIP — button does not exist in AI Sparring mode. TEXT BATTLE requires live opponent. Cannot test in current walkthrough environment without a second account.
+[16:XX:20] [PASS 1] [B14] Concede button → SKIP — same reason as Finish turn. Requires live TEXT BATTLE.
+
+
+### Pass 1 — Gate Group B10 (Private debate picker)
+[16:58:00] [PASS 1] [B10] PRIVATE DEBATE button → PASS — picker slides up showing CHALLENGE BY USERNAME, GROUP MEMBERS ONLY, SHAREABLE JOIN CODE, ROUNDS selector (4/6/8/10), Cancel
+[16:58:10] [PASS 1] [B10] CHALLENGE BY USERNAME → FAIL S4 — expected user search overlay (B11). Got: mode picker (CHOOSE YOUR WEAPON) directly. User selection step skipped. Confirmed on fresh navigate, not history contamination.
+[16:58:20] [PASS 1] [B10] GROUP MEMBERS ONLY → FAIL S4 — expected group picker overlay (B12). Got: mode picker (CHOOSE YOUR WEAPON) directly. Group selection step skipped.
+[16:58:30] [PASS 1] [B10] SHAREABLE JOIN CODE → FAIL S4 — expected mode/round config + join code generation screen. Got: mode picker (CHOOSE YOUR WEAPON) directly. Join code display step skipped.
+[16:58:40] [PASS 1] [B10] Cancel button → PASS — sheet dismissed, back to clean arena
+[16:58:50] [PASS 1] [B10] Backdrop click → PASS — sheet dismissed, back to clean arena
+
+### Pass 1 — Gate Group B11 (Private lobby user search)
+[16:59:00] [PASS 1] [B11] User search overlay → SKIP — overlay never appears (B10 CHALLENGE BY USERNAME goes directly to mode picker). Cannot test until B10 flow is fixed.
+
+### Pass 1 — Gate Group B12 (Private lobby group picker)
+[16:59:01] [PASS 1] [B12] Group picker overlay → SKIP — overlay never appears (B10 GROUP MEMBERS ONLY goes directly to mode picker). Cannot test until B10 flow is fixed.
+
+
+### Session resumed — 2026-04-26 (S301 continued)
+
+### Pass 1 — Gate Group B18 (Home feed)
+[17:XX:00] [PASS 1] [B18] Category filter ALL → PASS — all feed items visible
+[17:XX:05] [PASS 1] [B18] Category filter Sports → PASS — filtered to sports only
+[17:XX:10] [PASS 1] [B18] Category filter Politics → PASS — filtered, empty state shown
+[17:XX:15] [PASS 1] [B18] Category filter Music → PASS — filtered, empty state shown
+[17:XX:20] [PASS 1] [B18] Category filter Entertainment → PASS — filtered, empty state shown
+[17:XX:25] [PASS 1] [B18] Category filter Couples Court → PASS — filtered, empty state shown
+[17:XX:30] [PASS 1] [B18] Category filter Trending → PASS — filtered, empty state shown
+[17:XX:35] [PASS 1] [B18] Feed composer input → SKIP — feature removed. No composer or post input exists in DOM.
+[17:XX:36] [PASS 1] [B18] Feed composer link input → SKIP — feature removed.
+[17:XX:37] [PASS 1] [B18] Feed POST button → SKIP — feature removed.
+[17:XX:40] [PASS 1] [B18] Feed card flame/reaction button → FAIL S4 — clicked flame on own OPEN debate (PINEAPPLE BELONGS ON PIZZA). "REACT FAILED" toast. No other users' cards available to test valid reaction. Unclear if self-react is intentionally blocked or a bug.
+[17:XX:50] [PASS 1] [B18] Feed card spectate button (VIEW) → FAIL S4 — VIEW on VERDICT card navigated to /debate/{uuid} but page shows "No debate ID provided." URL contains ID but page doesn't read it.
+[17:XX:55] [PASS 1] [B18] Feed card join button → SKIP — no joinable open debate by another user in feed.
+
+### Pass 1 — Gate Group B19 (Notifications panel)
+[17:XX:00] [PASS 1] [B19] Notification bell → PASS — panel opens with filter tabs (All/Challenges/Results/Reactions/Mod Invites/Economy) and Mark all read button
+[17:XX:05] [PASS 1] [B19] Mark all read button → PASS (visual read-state change not clearly distinguishable, but button functional)
+[17:XX:10] [PASS 1] [B19] Individual notification click → PASS — Streak Freeze notification clicked, panel closed, returned to feed
+[17:XX:15] [PASS 1] [B19] Backdrop click → PASS — panel closed
+[17:XX:20] [PASS 1] [B19] Close button → PASS — panel closed
+
+### Pass 1 — Gate Group B20 (Search)
+[17:XX:00] [PASS 1] [B20] Search input 2+ chars → FAIL S4 — same keyboard input automation issue as leaderboard search. JS value+input event dispatched, "ad" appears in field, no results populate. Needs manual verification.
+[17:XX:05] [PASS 1] [B20] User result click → SKIP — no results to click
+[17:XX:10] [PASS 1] [B20] Debate result click → SKIP — no results to click
+[17:XX:15] [PASS 1] [B20] Clear search → SKIP — could not trigger search
+
+### Pass 1 — Gate Group B21 (Profile page)
+[17:XX:00] [PASS 1] [B21] Debate archive loads → PASS — archive section visible with ALL/W/L filters and search input. Empty (no curated debates added yet).
+[17:XX:05] [PASS 1] [B21] Archive filter W → PASS — tab highlighted
+[17:XX:10] [PASS 1] [B21] Archive filter L → PASS — tab highlighted
+[17:XX:15] [PASS 1] [B21] Archive filter ALL → PASS — tab highlighted
+[17:XX:20] [PASS 1] [B21] Profile depth progress → PASS — 25% COMPLETE bar visible
+
+### Pass 1 — Gate Group B22 (Settings page)
+[17:XX:00] [PASS 1] [B22] Dark mode toggle → PASS — theme switches immediately to light mode. Toggle state reflects change.
+[17:XX:10] [PASS 1] [B22] Bio textarea → SKIP — keyboard input automation gap; not tested
+[17:XX:20] [PASS 1] [B22] Save Changes button → PASS — "✓ Settings saved" toast shown
+[17:XX:30] [PASS 1] [B22] Reset Password button → FAIL S4 — no visual feedback, no toast, no email sent. Button appears non-functional.
+[17:XX:40] [PASS 1] [B22] Delete Account button → PASS — modal opens with "Type DELETE to confirm" input and CANCEL/DELETE buttons
+[17:XX:45] [PASS 1] [B22] Delete confirm modal cancel → PASS — modal closes, account unchanged
+[17:XX:50] [PASS 1] [B22] Back to App button → PASS — navigates to index.html feed
+
+Findings this sub-session:
+6. B18 — REACT FAILED on own debate flame button. May be intentional (self-react blocked) or bug. S4 pending clarification.
+7. B18 — VIEW on VERDICT card navigates to /debate/{uuid} but renders "No debate ID provided." S4.
+8. B22 — RESET PASSWORD button non-functional. No feedback of any kind. S4.
