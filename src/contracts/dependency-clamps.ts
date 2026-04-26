@@ -135,7 +135,35 @@ export function clampDeepgram(status: string): void {
 
 
 // ============================================================
-// CLAMP 4: VERCEL SERVERLESS FUNCTIONS
+// CLAMP 5: HIBP (HaveIBeenPwned)
+// ============================================================
+
+/**
+ * Call after every fetch to api.pwnedpasswords.com.
+ * Pass the fetch Response (or null on network failure).
+ */
+export function clampHibp(response: Response | null, errorText?: string): void {
+  if (!response) {
+    console.error('[clamp:hibp] network failure');
+    trackEvent('clamp:hibp:failure', {
+      http_status: 0,
+      error: errorText || 'network failure',
+    });
+    return;
+  }
+  if (response.status === 429) {
+    console.warn('[clamp:hibp] rate limited');
+    trackEvent('clamp:hibp:rate_limited', { http_status: 429 });
+    return;
+  }
+  if (!response.ok) {
+    console.error(`[clamp:hibp] failed: HTTP ${response.status}`, errorText || '');
+    trackEvent('clamp:hibp:failure', {
+      http_status: response.status,
+      error: errorText || `HTTP ${response.status}`,
+    });
+  }
+}
 // ============================================================
 
 /**

@@ -2,6 +2,8 @@
  * plinko-password.ts — Pure password validation utilities (no DOM).
  */
 
+import { clampHibp } from '../contracts/dependency-clamps.ts';
+
 /** Validate password meets Supabase complexity rules. Returns error string or null. */
 export function validatePasswordComplexity(password: string): string | null {
   if (password.length < 8) return 'Password must be at least 8 characters.';
@@ -31,11 +33,13 @@ export async function checkHIBP(password: string): Promise<boolean> {
     });
     clearTimeout(timeout);
 
+    clampHibp(response);
     if (!response.ok) return false; // API error — don't block signup
 
     const text = await response.text();
     return text.split('\n').some(line => line.split(':')[0].trim() === suffix);
-  } catch {
+  } catch (err) {
+    clampHibp(null, err instanceof Error ? err.message : 'unknown error');
     return false; // timeout or network error — don't block signup
   }
 }

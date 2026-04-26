@@ -16,6 +16,7 @@
 import { getSupabaseClient } from './auth.core.ts';
 import type { SafeRpcResult } from './auth.types.ts';
 import type { ZodType } from 'zod';
+import { trackEvent } from './analytics.ts';
 
 /**
  * Wrapper around supabase.rpc() with 401 recovery and optional Zod contract validation.
@@ -77,8 +78,12 @@ export async function safeRpc<T = unknown>(
           `[safeRpc] Contract violation on "${fnName}": ${parsed.error.message}`
         );
       } else {
-        // Prod: log + fall through with raw data (no user-facing crash)
+        // Prod: log + fire clamp event + fall through with raw data (no user-facing crash)
         console.warn('[safeRpc] CONTRACT VIOLATION (prod, non-blocking):', violation);
+        trackEvent('clamp:rpc:contract_violation', {
+          rpc: fnName,
+          issues: parsed.error.issues.map(i => i.message).join('; '),
+        });
       }
     }
   }
