@@ -201,3 +201,62 @@ Check the campaign doc for D group elements before starting.
 - Do NOT click KICK without warning Pat — it triggers a native confirm() that automation cannot handle
 - Do NOT try to unban from group settings — there is no UI for it
 - Do NOT use AI Sparring to set up spectator tests — it doesn't appear in the live feed
+
+---
+
+## ADDENDUM — SPECTATOR3 ACCOUNT CREATED (same session, S305 continuation)
+
+### New 3rd browser connected
+- **chrome3** = SPECTATOR3 (`test3@colosseum.test` / `Colosseum305!`)
+- deviceId: `117e6664-a9a0-4fd2-a76c-4ee99136c1c5`
+- Supabase user ID: `954e6885-1f91-4298-b77a-a4e304b70edb`
+- Token balance: 55, ELO: 1200, profile_depth_pct: **0%**, day streak: 1
+- Created directly via Supabase SQL (bypassed normal signup). Required manual fix: `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`, `phone_change_token` all set to '' (were NULL, caused "Database error querying schema" on login).
+- Profile and user_settings rows were auto-created by `on_auth_user_created` trigger (`handle_new_user()`).
+- chrome3 is logged in and on the Arena page at session end.
+
+### UNBLOCKED by SPECTATOR3
+- **C1** — spectate chat input visible at depth ≥ 25%: wolfe8105 (25%) can spectate → UNBLOCKED
+- **C2** — spectate chat input NOT visible at depth < 25%: SPECTATOR3 (0%) can spectate → UNBLOCKED
+- **C3** — spectate chat SEND: UNBLOCKED
+- **C5** — RANKED at depth < 25% redirects: SPECTATOR3 (0%) → UNBLOCKED
+- **C6–C12** — all bounty panel items: UNBLOCKED (need live debate)
+- **C7** — bounty panel locked at depth < 25%: SPECTATOR3 (0%) → UNBLOCKED
+
+### TO GET A SPECTATABLE DEBATE
+AI Sparring does NOT appear in the public live feed. Need MODERATED LIVE:
+1. wolfe8105 (chrome2) starts PRIVATE DEBATE → MODERATED LIVE → SHAREABLE JOIN CODE
+2. GLADIATOR (chrome1) enters join code → accepts match → debate goes live
+3. SPECTATOR3 (chrome3) enters same join code → lands in spectator view
+4. wolfe8105 can also spectate from a 4th angle but we only have 3 browsers
+
+### FULL OPEN ITEMS LIST (as of S305 end)
+
+**NOW UNBLOCKED (C group):**
+- C1, C2, C3 — spectate chat (all 3 variants)
+- C4 — RANKED ≥ 25%: PASSED this session
+- C5 — RANKED < 25%: SPECTATOR3 can test
+- C6–C12 — bounty panel (all variants)
+
+**STILL BLOCKED (B group):**
+- B28–B31 — reference button (📎): needs human vs human Text Battle in progress
+- B32 — Direct Messages: needs a completed debate between wolfe8105 and GLADIATOR
+- B33 — Rivals popup: no rivals exist yet
+
+**FINDINGS NEEDING CLARIFICATION:**
+- Finding #2 — BECOME A MODERATOR shown to wolfe8105 (IS a moderator). Intentional or bug? Ask Pat.
+- Finding #6 — REACT FAILED on own debate flame. Intentional (can't react to own)? Ask Pat.
+- Finding #11 — SPECTATE button from feed does nothing. Still broken — reconfirm with live debate.
+- Finding #15 — "0 WATCHING" with active spectator. Reconfirm with SPECTATOR3 in room.
+
+**PASS 1 PROGRESS:** ~58% done. A and B mostly complete. C unblocked. D not started.
+
+### NEXT SESSION START SEQUENCE
+1. Navigate all 3 browsers fresh to themoderator.app
+2. Verify all 3 logged in: wolfe8105 (chrome2), GLADIATOR (chrome1), SPECTATOR3 (chrome3)
+3. wolfe8105 starts MODERATED LIVE private debate with shareable join code
+4. GLADIATOR joins as opponent
+5. SPECTATOR3 joins via same join code as spectator
+6. Run C1, C2 (swap who spectates), C3, C6–C12 in order
+7. Then C5 (SPECTATOR3 tries RANKED, should redirect)
+8. Then move to D group
