@@ -29,7 +29,7 @@ export const QUEUE_CATEGORIES: readonly QueueCategory[] = [
   { id: 'trending',      icon: '🔥', label: 'Trending' },
 ] as const;
 
-export const MATCH_ACCEPT_SEC = 12;
+export const MATCH_ACCEPT_SEC = 60;
 export const MATCH_ACCEPT_POLL_TIMEOUT_SEC = 15;
 export const ROUND_DURATION = 120;
 export const AI_TOTAL_ROUNDS = 6;
