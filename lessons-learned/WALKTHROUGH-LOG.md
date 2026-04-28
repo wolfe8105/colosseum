@@ -276,3 +276,6 @@ The `questions_answered` field in profiles is driven purely by incremental RPC c
 - chrome2 renderer freezes when CANCEL is clicked on expired debates (finding #1 interaction). Navigate away to recover.
 - NATLOG_1617 is an unknown stranger — appeared in wolfe8105's live debate feed. Not a test account.
 - wolfe8105 token_balance: 881. questions_answered: 18 (understated — actual 47 answers saved in DB across 10 sections).
+
+### Finding #11 — Feed not auto-scrapping expired open debates
+[2026-04-28] [PASS 1] [PRE-PASS] Feed shows multiple OPEN debates marked "expired" that have not been removed. Per spec, open debates that haven't started within 30 minutes should be auto-scrapped from the feed. Completed debates should move to archives, keeping the feed fresh. Neither is happening — expired open debates persist in the feed indefinitely and completed debates remain in the feed alongside live/open ones. S3 — feed cleanliness and user experience impact.
