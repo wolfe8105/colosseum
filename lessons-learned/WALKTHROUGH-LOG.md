@@ -202,3 +202,77 @@ Slider questions in the profile depth section are not recognized by the app if l
 ### Finding #10 — questions_answered counter is decoupled from actual saved answers
 [2026-04-28] [PASS 1] [B21] Profile depth — questions_answered accuracy
 The `questions_answered` field in profiles is driven purely by incremental RPC calls from the frontend (increment_questions_answered), not by counting actual saved answers in profile_depth_answers. As a result the two are permanently out of sync: wolfe8105 has 47 individual answers saved across 10 sections in profile_depth_answers, but questions_answered = 18. Any session where the RPC was not called (e.g. slider-default answers per finding #9, network failures, or answers saved before the increment logic was added) are silently lost from the counter. This means tier gates (D1 staking, D2 powerup slots) are based on a number that understates actual engagement. S2 — no workaround; the counter cannot self-heal without a backfill migration or a recount RPC that derives the value from actual saved answers.
+
+---
+
+## Handoff — S306 — 2026-04-28
+
+**Pass:** 1 (Unplugged baseline)
+**Pass % complete:** ~58% — A done, B mostly done, C not started, D not started
+
+---
+
+### Account state at handoff
+| Account | Browser | Email | Password | ELO | Tokens | Depth | questions_answered |
+|---------|---------|-------|----------|-----|--------|-------|--------------------|
+| wolfe8105 | chrome2 | wolfe8105+test1@gmail.com | (known) | 1650 | 881 | 50% | 18 (actual saved answers: 47) |
+| GLADIATOR | chrome1 | gladiator@arena.com | (known) | 1200 | 60 | 35% | unknown |
+| SPECTATOR3 | Browser 1 | test3@colosseum.test | Colosseum305! | 1200 | 61 | 0% | 0 |
+
+---
+
+### Next session start sequence
+1. Open 3 Chrome windows — log into each account above
+2. Confirm wolfe8105 has no open debates (cancel any if present)
+3. wolfe8105 (chrome2) → Arena → PRIVATE DEBATE → SHAREABLE JOIN CODE → MODERATED LIVE → generate join code
+4. GLADIATOR (chrome1) → Arena → JOIN CODE field → enter code → ACCEPT (now 60s timer — code change deployed)
+5. SPECTATOR3 (Browser 1) → feed → find the live debate → SPECTATE
+6. Begin C group from C1
+
+---
+
+### C group test order (next session)
+- C1 — Spectate chat input visible when depth ≥ 25% (wolfe8105 or GLADIATOR)
+- C2 — Spectate chat input NOT visible when depth < 25% (SPECTATOR3 at 0%)
+- C3 — Spectate chat SEND — type message, click send
+- C4 — RANKED arena option (depth ≥ 25%) — already PASSED S305
+- C5 — RANKED arena option (depth < 25%) — SPECTATOR3 tries RANKED, should redirect
+- C6–C12 — remaining spectator UI checks per campaign doc
+
+---
+
+### Blocked items (cannot test until live wolfe8105 vs GLADIATOR debate exists)
+- B28–B31 — reference button (needs live Text Battle)
+- B32 — Direct Messages (needs completed debate between wolfe8105 + GLADIATOR)
+- B33 — Rivals popup (no rivals exist yet)
+- B14 — Finish turn, Concede (need live Text Battle opponent)
+
+---
+
+### Open findings at handoff
+| # | Group | Description | Severity |
+|---|-------|-------------|----------|
+| 1 | PRE-PASS | Expired debates show CANCEL that returns CANCEL FAILED | S4 |
+| 2 | PRE-PASS | BECOME A MODERATOR shown to moderator | S5 |
+| 3 | A2 | Leaderboard search non-functional in automation env | S4 |
+| 4 | B9 | SHARE TO WATCH LIVE no toast/confirmation | S4 |
+| 5 | B14 | Debate textarea requires JS workaround for input | S4 |
+| 6 | B18 | REACT FAILED on own post — intentional or bug? | S4 |
+| 7 | B18 | VIEW on VERDICT card → "No debate ID provided" | S4 |
+| 8 | B22 | RESET PASSWORD button non-functional | S4 |
+| 9 | B21 | Profile depth slider not recognized at default position | S3 |
+| 10 | B21 | questions_answered counter decoupled from actual saved answers (18 in DB, 47 actually saved) | S2 |
+
+---
+
+### Code changes deployed this session
+- `src/arena/arena-constants.ts` — MATCH_ACCEPT_SEC increased from 12 → 60 seconds (commit e4d7ea5)
+  Reason: 12s timer was too short for cross-browser automation to complete join code flow
+
+---
+
+### Known environment notes
+- Keyboard input via browser automation does NOT reach most inputs in this app. Use JS value set + input event dispatch as workaround.
+- chrome2 renderer freezes when CANCEL is clicked on expired debates (finding #1 interaction). Navigate away to recover.
+- NATLOG_1617 is an unknown stranger — appeared in wolfe8105's live debate feed. Not a test account.
+- wolfe8105 token_balance: 881. questions_answered: 18 (understated — actual 47 answers saved in DB across 10 sections).
