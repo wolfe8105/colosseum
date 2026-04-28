@@ -194,3 +194,7 @@ Findings this sub-session:
 [17:XX:30] [PASS 1] [B23] CREATE GROUP button — name filled (JS) → PASS — group "S301 Test Group" created, navigated to group detail page. Group shows: 1 member, 1000 ELO, YOU OWN THIS GROUP, CHALLENGE ANOTHER GROUP, FEED/CHALLENGES/MEMBERS tabs.
 
 Note: Group feed on detail page shows "Let your opinion be heard..." composer — this is the group-scoped post feature. The main feed post feature was removed but group feeds appear to have their own composer.
+
+### Finding #9 — Profile depth slider not recognized at default position
+[2026-04-28] [PASS 1] [B21] Profile depth section — slider input
+Slider questions in the profile depth section are not recognized by the app if left at the default (starting) position. The app does not count the question as answered unless the slider has been moved. Moving it away from the default and then back to the original value causes it to register correctly. S3 — workaround exists (move then return) but default-position answers are silently dropped, inflating unanswered question count and potentially undercounting profile_depth_pct and questions_answered.
