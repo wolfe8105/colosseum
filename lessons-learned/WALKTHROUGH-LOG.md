@@ -279,3 +279,90 @@ The `questions_answered` field in profiles is driven purely by incremental RPC c
 
 ### Finding #11 — Feed not auto-scrapping expired open debates
 [2026-04-28] [PASS 1] [PRE-PASS] Feed shows multiple OPEN debates marked "expired" that have not been removed. Per spec, open debates that haven't started within 30 minutes should be auto-scrapped from the feed. Completed debates should move to archives, keeping the feed fresh. Neither is happening — expired open debates persist in the feed indefinitely and completed debates remain in the feed alongside live/open ones. S3 — feed cleanliness and user experience impact.
+
+### Finding #12 — SPECTATE button unclickable inside feed card
+[2026-04-28] [PASS 1] [C1] Feed card for live debate has a card-level click handler that intercepts taps before the SPECTATE button inside it can fire. Clicking directly on the SPECTATE button does nothing — the card swallows the event. Cannot enter spectator view from the feed. S3 — spectating is a core C group feature and this blocks the entire spectator flow from the feed entry point.
+
+### Finding #13 — No forfeit or cancel button in live debate room
+[2026-04-28] [PASS 1] [B14] The live debate room has no forfeit or cancel button for debaters. Once in a live debate there is no way to exit, concede, or cancel the match from within the room. S3 — debaters are trapped with no exit path.
+
+### Finding #14 — Missing exit/forfeit/cleanup flows in debate room
+[2026-04-28] [PASS 1] [B14] Three related missing behaviors identified:
+1. Spectators have no way to leave a spectated debate and enter a different one — no exit button in spectator view.
+2. Debaters have no forfeit button to concede and exit mid-debate.
+3. Debate creator has no way to cancel/leave the lobby if no opponent shows up — and when the creator does leave, the debate should be automatically deleted but is not (ghost debates persist in the feed as shown by 3 simultaneous live debates). S3 across all three — core debate lifecycle management is incomplete.
+
+### Pass 1 — Gate Group C5 (RANKED arena — depth < 25%)
+[2026-04-29] [PASS 1] [C5] Browser 1 (0% depth) → ENTER THE ARENA → RANKED card clicked → FAIL S4 — no redirect to profile, no error message, no explanation. App silently navigated back to the feed. Expected: redirect to profile depth page with message explaining the 25% requirement. Actual: silent dismiss to feed.
+
+---
+
+## Handoff — S307 — 2026-04-29
+
+**Pass:** 1 (Unplugged baseline)
+**Pass % complete:** ~65% — A done, B mostly done, C done, D not started
+
+---
+
+### Account state at handoff
+| Account | Browser | Email | Password | ELO | Tokens | Depth | questions_answered |
+|---------|---------|-------|----------|-----|--------|-------|--------------------| 
+| wolfe8105 | chrome2 | wolfe8105@gmail.com | (known) | 1650 | 888 | 50% | 18 (actual: 47) |
+| GLADIATOR | chrome1 | test3@colosseum.test | Colosseum305! | 1200 | 68 | 0% | 0 |
+| new account | Browser 1 | test4@colosseum.test | Colosseum4! | 1200 | 61 | 0% | 0 |
+
+---
+
+### C group final results
+- C1, C2, C3 — BLOCKED — SPECTATE button on feed card does nothing (finding #12)
+- C4 — PASS — RANKED visible and clickable at depth ≥ 25%
+- C5 — FAIL S4 — RANKED clicked at 0% depth, silently returns to feed with no message
+- C6–C12 — BLOCKED — require spectator view (same blocker as C1–C3)
+
+---
+
+### New findings this session
+| # | Group | Description | Severity |
+|---|-------|-------------|----------|
+| 11 | PRE-PASS | Feed not auto-scrapping expired open debates after 30 min | S3 |
+| 12 | C1 | SPECTATE button on feed card unclickable — card click handler swallows the tap | S3 |
+| 13 | B14 | No forfeit or cancel button in live debate room | S3 |
+| 14 | B14 | No spectator exit, no debater forfeit, creator can't delete lobby — ghost debates persist | S3 |
+
+---
+
+### D group — next session start
+D group requires `questions_answered` tier gates. wolfe8105 has 18 in DB (actual 47). To test all D tiers properly, set `questions_answered` directly in Supabase before each sub-group:
+- D1 (staking) — set questions_answered = 10
+- D2 (power-up slots) — set questions_answered = 25, 50, 75, 100 progressively
+- D3 (power-up activations) — requires amplified ruleset + equipped powerups + live debate
+- D4 (bounty slots) — driven by depth %, not questions_answered. wolfe8105 at 50% = 3 slots expected
+
+**Important:** D3 requires a live MODERATED LIVE debate in amplified mode. Need chrome1 as opponent. SPECTATE button still broken so Browser 1 cannot observe — skip spectator-only D items until finding #12 is fixed.
+
+**Start sequence for D:**
+1. Set wolfe8105 questions_answered = 10 in Supabase
+2. Navigate wolfe8105 to a live debate pre-battle screen
+3. Observe staking panel — run D1
+4. Then bump questions_answered = 25, run D2
+5. Then D3 and D4
+
+---
+
+### All open findings (14 total)
+| # | Group | Description | Severity |
+|---|-------|-------------|----------|
+| 1 | PRE-PASS | Expired debates show CANCEL that returns CANCEL FAILED | S4 |
+| 2 | PRE-PASS | BECOME A MODERATOR shown to moderator | S5 |
+| 3 | A2 | Leaderboard search non-functional in automation env | S4 |
+| 4 | B9 | SHARE TO WATCH LIVE no toast/confirmation | S4 |
+| 5 | B14 | Debate textarea requires JS workaround for input | S4 |
+| 6 | B18 | REACT FAILED on own post — intentional or bug? | S4 |
+| 7 | B18 | VIEW on VERDICT card → "No debate ID provided" | S4 |
+| 8 | B22 | RESET PASSWORD button non-functional | S4 |
+| 9 | B21 | Profile depth slider not recognized at default position | S3 |
+| 10 | B21 | questions_answered counter decoupled from actual saved answers | S2 |
+| 11 | PRE-PASS | Feed not auto-scrapping expired open debates | S3 |
+| 12 | C1 | SPECTATE button on feed card does nothing | S3 |
+| 13 | B14 | No forfeit or cancel button in live debate room | S3 |
+| 14 | B14 | No spectator exit, no debater forfeit, ghost debates persist | S3 |
